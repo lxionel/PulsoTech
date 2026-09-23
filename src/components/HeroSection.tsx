@@ -1,154 +1,178 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
-import { ArrowDown, MessageSquare, ShieldCheck, Truck, Sparkles, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { Headphones, Zap, Watch, ShieldCheck, ArrowRight, MessageSquare, Truck, CheckCircle2 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
-import { PRODUCTS, STORE_SETTINGS } from "@/data/products";
-import { getAssetUrl } from "@/utils/paths";
 
 export default function HeroSection() {
-  const { whatsappNumber, setSelectedProductForModal } = useCart();
+  const { whatsappNumber } = useCart();
 
-  // Star product for the commercial showcase card: Redmi Buds 8 Lite
-  const featuredProduct = PRODUCTS.find((p) => p.id === "redmi-buds-8-lite") || PRODUCTS[0];
+  const categories = [
+    {
+      icon: Headphones,
+      title: "Audífonos Inalámbricos",
+      subtitle: "Modelos originales Xiaomi/Redmi sellados",
+      status: "Disponible Hoy",
+      statusColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      active: true,
+      href: "#catalogo",
+    },
+    {
+      icon: Zap,
+      title: "Cargadores & Cables GaN",
+      subtitle: "Carga rápida inteligente multiespecificaciones",
+      status: "Próximamente",
+      statusColor: "bg-neutral-100 text-neutral-600 border-neutral-200",
+      active: false,
+      href: "#",
+    },
+    {
+      icon: Watch,
+      title: "Smartwatches & Pulseras",
+      subtitle: "Monitoreo deportivo, llamadas y salud",
+      status: "Próximamente",
+      statusColor: "bg-neutral-100 text-neutral-600 border-neutral-200",
+      active: false,
+      href: "#",
+    },
+    {
+      icon: ShieldCheck,
+      title: "Garantía & Entrega Local",
+      subtitle: "Mismo día en Chimbote con pago al recibir",
+      status: "100% Confiable",
+      statusColor: "bg-blue-50 text-blue-700 border-blue-200",
+      active: false,
+      href: "#garantia",
+    },
+  ];
 
   return (
-    <section className="relative overflow-hidden pt-8 pb-12 md:pt-12 md:pb-16 bg-[#fbfbfd]">
+    <section className="relative overflow-hidden bg-gradient-to-b from-white via-neutral-50/50 to-[#fbfbfd] pt-8 pb-12 md:pt-12 md:pb-16 border-b border-neutral-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          {/* Left Column: Commercial Pitch */}
-          <div className="lg:col-span-7 space-y-5">
+        {/* Main Banner Hero */}
+        <div className="rounded-3xl bg-neutral-950 text-white p-8 sm:p-12 md:p-14 relative overflow-hidden shadow-xl mb-10">
+          {/* Subtle geometric background accents (no neon / no cyberpunk) */}
+          <div className="absolute -right-20 -top-20 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute right-1/4 -bottom-24 w-80 h-80 bg-neutral-800/40 rounded-full blur-2xl pointer-events-none" />
+
+          <div className="relative z-10 max-w-2xl space-y-5">
             {/* Store Location Eyebrow */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-100 border border-neutral-200 text-xs font-semibold text-neutral-800">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Tienda Local en Chimbote · Stock Disponible</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-xs font-semibold text-neutral-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Tienda de Tecnología · Entregas en Chimbote</span>
             </div>
 
-            {/* Main Retail Headline */}
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-neutral-950 leading-[1.12]">
-              Audífonos originales. <br />
-              <span className="text-neutral-500 font-semibold">
-                Calidad de sonido al mejor precio directo.
-              </span>
+            {/* Headline */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.12]">
+              Tecnología, audio y accesorios originales.
             </h1>
 
-            {/* Commercial Body */}
-            <p className="text-sm sm:text-base text-neutral-600 max-w-xl leading-relaxed font-normal">
-              En <strong>PulsoTech</strong> encuentras modelos 100% auténticos sellados de fábrica con garantía de funcionamiento. Compra con total seguridad y paga contra entrega al recibir tu pedido en Chimbote.
+            {/* Description */}
+            <p className="text-sm sm:text-base text-neutral-300 leading-relaxed font-normal">
+              En <strong>PulsoTech</strong> seleccionamos dispositivos garantizados en caja sellada de fábrica. Comienza explorando nuestro catálogo de audífonos con entrega el mismo día y pago seguro contra entrega en Chimbote.
             </p>
 
-            {/* Quick Actions */}
-            <div className="flex flex-wrap items-center gap-3 pt-1">
+            {/* Actions */}
+            <div className="flex flex-wrap items-center gap-3 pt-2">
               <a
                 href="#catalogo"
-                className="px-6 py-3.5 rounded-full bg-black text-white hover:bg-neutral-800 transition-all font-semibold text-xs flex items-center gap-2 shadow-md active:scale-95"
+                className="px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition-all flex items-center gap-2 shadow-md active:scale-95"
               >
-                <span>Explorar Catálogo Completo</span>
-                <ArrowDown className="w-3.5 h-3.5" />
+                <span>Ver Catálogo Disponible</span>
+                <ArrowRight className="w-4 h-4" />
               </a>
 
               <a
                 href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-                  "¡Hola PulsoTech! Deseo consultar sobre la disponibilidad de audífonos y pedidos en Chimbote."
+                  "¡Hola PulsoTech! Deseo consultar sobre los productos disponibles y entregas en Chimbote."
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-5 py-3.5 rounded-full border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-800 font-medium text-xs transition-colors flex items-center gap-2 shadow-xs"
+                className="px-5 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-semibold text-xs transition-colors flex items-center gap-2"
               >
-                <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                <MessageSquare className="w-4 h-4 text-emerald-400" />
                 <span>Pedir por WhatsApp</span>
               </a>
             </div>
 
-            {/* Quick Trust Checklist */}
-            <div className="pt-2 flex flex-wrap gap-y-2 gap-x-5 text-xs text-neutral-600 font-medium">
+            {/* Value checklist */}
+            <div className="pt-2 flex flex-wrap gap-y-2 gap-x-6 text-xs text-neutral-300 font-medium">
               <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <CheckCircle2 className="w-4 h-4 text-blue-400" />
+                <span>Empaque sellado de fábrica</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-blue-400" />
                 <span>Entrega hoy en Chimbote</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>Empaque sellado original</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <CheckCircle2 className="w-4 h-4 text-blue-400" />
                 <span>Efectivo o Yape al recibir</span>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Right Column: Featured Product Commercial Showcase Card */}
-          <div className="lg:col-span-5">
-            <div className="relative bg-white rounded-3xl p-6 sm:p-7 border border-neutral-200/90 shadow-lg shadow-neutral-900/5 hover:border-neutral-300 transition-all">
-              {/* Card Header Badge */}
-              <div className="flex items-center justify-between gap-2 mb-4">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black text-white text-[11px] font-bold tracking-wider uppercase">
-                  <Sparkles className="w-3 h-3 text-amber-400" />
-                  Modelo Destacado
-                </span>
-                <span className="text-[11px] font-mono font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                  En Stock Chimbote
-                </span>
-              </div>
+        {/* Categories Grid (Retail Structure) */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-extrabold uppercase tracking-wider text-neutral-900">
+              Departamentos & Categorías
+            </h2>
+            <span className="text-xs text-neutral-500 font-medium">
+              Lanzamiento inicial en Chimbote
+            </span>
+          </div>
 
-              {/* Product Visual */}
-              <div className="relative aspect-4/3 rounded-2xl bg-neutral-50 border border-neutral-100 flex items-center justify-center p-6 overflow-hidden group">
-                <div className="absolute inset-0 bg-radial from-neutral-200/40 via-transparent to-transparent opacity-60" />
-                <Image
-                  src={featuredProduct.colors[0]?.image || getAssetUrl("/placeholder-earbuds.svg")}
-                  alt={featuredProduct.name}
-                  width={240}
-                  height={180}
-                  className="w-44 h-auto object-contain relative z-10 transition-transform duration-300 group-hover:scale-105"
-                  priority
-                />
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {categories.map((cat, index) => {
+              const Icon = cat.icon;
+              return (
+                <a
+                  key={index}
+                  href={cat.href}
+                  className={`group p-5 rounded-2xl border transition-all flex flex-col justify-between bg-white ${
+                    cat.active
+                      ? "border-blue-300 ring-2 ring-blue-500/10 hover:shadow-md cursor-pointer"
+                      : "border-neutral-200 hover:border-neutral-300 shadow-xs"
+                  }`}
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+                          cat.active ? "bg-blue-600 text-white" : "bg-neutral-100 text-neutral-700"
+                        }`}
+                      >
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${cat.statusColor}`}
+                      >
+                        {cat.status}
+                      </span>
+                    </div>
 
-              {/* Product Information */}
-              <div className="mt-5 space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <span className="text-[11px] font-mono text-neutral-400 uppercase tracking-wider block">
-                      {featuredProduct.brand}
-                    </span>
-                    <h3 className="text-xl font-extrabold text-neutral-950 tracking-tight">
-                      {featuredProduct.name}
-                    </h3>
+                    <div>
+                      <h3 className="text-sm font-bold text-neutral-950 group-hover:text-blue-600 transition-colors">
+                        {cat.title}
+                      </h3>
+                      <p className="text-xs text-neutral-500 leading-relaxed mt-0.5">
+                        {cat.subtitle}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-[10px] text-neutral-400 uppercase block font-sans">Precio Directo</span>
-                    <span className="text-2xl font-extrabold text-neutral-950 font-mono tracking-tight">
-                      {STORE_SETTINGS.currencySymbol}
-                      {featuredProduct.price.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
 
-                {/* Key Spec Badges */}
-                <div className="flex flex-wrap gap-2 text-[11px] font-mono">
-                  <span className="px-2.5 py-1 rounded-lg bg-neutral-100 text-neutral-700 font-semibold border border-neutral-200/80">
-                    Batería: {featuredProduct.specs.battery}
-                  </span>
-                  <span className="px-2.5 py-1 rounded-lg bg-neutral-100 text-neutral-700 font-semibold border border-neutral-200/80">
-                    ANC: {featuredProduct.specs.anc}
-                  </span>
-                  <span className="px-2.5 py-1 rounded-lg bg-neutral-100 text-neutral-700 font-semibold border border-neutral-200/80">
-                    Certificación: IP54
-                  </span>
-                </div>
-
-                {/* Card Action */}
-                <div className="pt-2">
-                  <button
-                    onClick={() => setSelectedProductForModal(featuredProduct)}
-                    className="w-full py-3 px-4 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 active:scale-98 shadow-xs"
-                  >
-                    <span>Ver Especificaciones y Comprar</span>
-                  </button>
-                </div>
-              </div>
-            </div>
+                  {cat.active && (
+                    <div className="pt-3 border-t border-neutral-100 mt-3 flex items-center gap-1 text-xs font-semibold text-blue-600 group-hover:gap-1.5 transition-all">
+                      <span>Explorar modelos</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </div>
+                  )}
+                </a>
+              );
+            })}
           </div>
         </div>
       </div>

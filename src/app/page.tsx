@@ -8,7 +8,6 @@ import ProductCatalog from "@/components/ProductCatalog";
 import HowToBuy from "@/components/HowToBuy";
 import FaqSection from "@/components/FaqSection";
 import CartDrawer from "@/components/CartDrawer";
-import ProductDetailModal from "@/components/ProductDetailModal";
 import Footer from "@/components/Footer";
 import { MessageSquare } from "lucide-react";
 import { useCart } from "@/context/CartContext";
@@ -55,9 +54,8 @@ export default function Home() {
         </a>
       </main>
 
-      {/* Global Drawers & Modals */}
+      {/* Global Cart Drawer */}
       <CartDrawer />
-      <ProductDetailModal />
 
       {/* Clean Customer Footer */}
       <Footer />

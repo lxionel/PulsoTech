@@ -32,7 +32,7 @@ export default function HowToBuy() {
     <section id="como-comprar" className="py-16 bg-[#f4f4f7] border-y border-neutral-200/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
-          <span className="text-xs font-mono uppercase tracking-wider text-neutral-500 font-semibold">
+          <span className="text-xs uppercase tracking-wider text-blue-600 font-bold">
             Proceso Simple y Confiable
           </span>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-neutral-950 tracking-tight">
@@ -53,7 +53,7 @@ export default function HowToBuy() {
               >
                 <div>
                   <div className="flex items-center justify-between mb-5">
-                    <span className="text-2xl font-extrabold font-mono text-neutral-300">
+                    <span className="text-2xl font-black text-neutral-300">
                       {item.step}
                     </span>
                     <div className="w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-800">

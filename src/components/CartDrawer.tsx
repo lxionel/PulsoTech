@@ -102,7 +102,7 @@ export default function CartDrawer() {
               <div className="flex items-center gap-2">
                 <ShoppingBag className="w-5 h-5 text-neutral-900" />
                 <h2 className="text-base font-bold tracking-tight text-neutral-900">Bolsa de Compra</h2>
-                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700 font-semibold">
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700 font-semibold">
                   {itemsCount} {itemsCount === 1 ? "artículo" : "artículos"}
                 </span>
               </div>
@@ -127,7 +127,7 @@ export default function CartDrawer() {
                     </span>
                   )}
                 </span>
-                <span className="text-neutral-400 font-mono text-[11px]">Meta {STORE_SETTINGS.currencySymbol}{STORE_SETTINGS.freeShippingThreshold}</span>
+                <span className="text-neutral-400 text-[11px] font-medium">Meta {STORE_SETTINGS.currencySymbol}{STORE_SETTINGS.freeShippingThreshold}</span>
               </div>
               <div className="h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden">
                 <div
@@ -180,7 +180,7 @@ export default function CartDrawer() {
                     <span className="text-[11px] text-neutral-500 block">
                       {item.selectedColor.name}
                     </span>
-                    <span className="text-xs font-bold font-mono text-neutral-900 mt-1 block">
+                    <span className="text-xs font-bold text-neutral-900 mt-1 block">
                       {STORE_SETTINGS.currencySymbol}
                       {(item.product.price * item.quantity).toFixed(2)}
                     </span>
@@ -204,7 +204,7 @@ export default function CartDrawer() {
                       >
                         <Minus className="w-3 h-3" />
                       </button>
-                      <span className="text-xs font-mono font-bold px-1 text-neutral-900">
+                      <span className="text-xs font-bold px-1 text-neutral-900">
                         {item.quantity}
                       </span>
                       <button
@@ -227,7 +227,7 @@ export default function CartDrawer() {
             <div className="pt-4 border-t border-neutral-200 space-y-4">
               {/* Customer Inputs */}
               <div className="space-y-2.5 p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200">
-                <span className="text-xs font-bold text-neutral-700 uppercase tracking-wide block font-mono">
+                <span className="text-xs font-bold text-neutral-700 uppercase tracking-wide block">
                   Datos de Envío:
                 </span>
 
@@ -278,8 +278,8 @@ export default function CartDrawer() {
               </div>
 
               {/* Price summary */}
-              <div className="space-y-1 text-xs font-mono">
-                <div className="flex justify-between text-neutral-500">
+              <div className="space-y-1 text-xs">
+                <div className="flex justify-between text-neutral-500 font-medium">
                   <span>Subtotal</span>
                   <span>
                     {STORE_SETTINGS.currencySymbol}

@@ -1,140 +1,113 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Product } from "@/types";
 import { STORE_SETTINGS } from "@/data/products";
 import { useCart } from "@/context/CartContext";
-import { ShoppingBag, Check } from "lucide-react";
+import { ShoppingBag, ArrowRight } from "lucide-react";
 
 export default function ProductCard({ product }: { product: Product }) {
-  const [selectedColorIndex, setSelectedColorIndex] = useState(0);
-  const { addItem, setSelectedProductForModal } = useCart();
-  const currentColor = product.colors[selectedColorIndex] || product.colors[0];
+  const { addItem } = useCart();
+  const currentColor = product.colors[0];
 
   const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     addItem(product, currentColor, 1);
   };
 
   return (
-    <div
-      onClick={() => setSelectedProductForModal(product)}
-      className="group relative rounded-2xl bg-white border border-neutral-200/90 hover:border-neutral-400/80 transition-all duration-300 p-5 flex flex-col justify-between cursor-pointer shadow-xs hover:shadow-md"
-    >
-      {/* Top Badges */}
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-            Stock Chimbote
-          </span>
-          {product.isNew && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono uppercase font-semibold bg-neutral-900 text-white">
-              NUEVO
+    <div className="group relative rounded-2xl bg-white border border-neutral-200/90 hover:border-blue-500/40 hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden">
+      {/* Top Card Image Link */}
+      <Link href={`/producto/${product.slug}`} className="block p-4 sm:p-5 pb-0">
+        {/* Top Header: Brand & Status */}
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+              {product.brand}
             </span>
-          )}
-        </div>
+            {product.isNew && (
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-600 text-white tracking-wide uppercase">
+                Nuevo
+              </span>
+            )}
+          </div>
 
-        <span className="text-[10px] font-mono uppercase font-semibold text-neutral-400">
-          {product.brand}
-        </span>
-      </div>
-
-      {/* Product Image Frame */}
-      <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-[#f5f5f7] mb-4 flex items-center justify-center p-3">
-        <div className="relative w-full h-full transition-transform duration-500 group-hover:scale-105">
-          <Image
-            src={currentColor.image}
-            alt={`${product.name}`}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-contain p-2 rounded-lg"
-          />
-        </div>
-      </div>
-
-      {/* Color Selector Dots (Oculto si no hay variantes de color confirmadas) */}
-      {product.colors.length > 1 && (
-        <div
-          className="flex items-center justify-between mb-3"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <span className="text-[11px] text-neutral-500 font-medium">
-            {currentColor.name}
-          </span>
-          <div className="flex items-center gap-1.5">
-            {product.colors.map((color, index) => (
-              <button
-                key={color.name}
-                onClick={() => setSelectedColorIndex(index)}
-                title={color.name}
-                aria-label={color.name}
-                className={`w-4 h-4 rounded-full border transition-all flex items-center justify-center ${
-                  selectedColorIndex === index
-                    ? "border-black scale-125 ring-1 ring-black/20"
-                    : "border-neutral-300 opacity-70 hover:opacity-100"
-                }`}
-                style={{ backgroundColor: color.hex }}
-              >
-                {selectedColorIndex === index && (
-                  <Check
-                    className={`w-2 h-2 ${
-                      color.hex === "#fafafa" || color.hex === "#e4e4e7" || color.hex === "#fcfcfc"
-                        ? "text-black"
-                        : "text-white"
-                    }`}
-                  />
-                )}
-              </button>
-            ))}
+          <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 bg-emerald-50/90 px-2 py-0.5 rounded-md border border-emerald-200/60">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span>Chimbote</span>
           </div>
         </div>
-      )}
 
-      {/* Title & Description */}
-      <div className="space-y-1 mb-4">
-        <h3 className="text-base font-bold text-neutral-900 group-hover:text-black transition-colors leading-snug">
-          {product.name}
-        </h3>
-        <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed">
-          {product.subtitle}
-        </p>
-      </div>
-
-      {/* Mini Specs Row */}
-      <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-neutral-600 py-2.5 border-y border-neutral-100 mb-4 bg-neutral-50/50 px-2.5 rounded-lg">
-        <div>
-          <span className="text-neutral-400 block text-[9px] uppercase font-sans">Batería:</span>
-          <span className="font-semibold text-neutral-800">{product.specs.battery}</span>
+        {/* Large Product Image Frame */}
+        <div className="relative w-full aspect-square rounded-xl bg-[#fafafc] flex items-center justify-center p-3 overflow-hidden border border-neutral-100">
+          <div className="relative w-full h-full transition-transform duration-300 group-hover:scale-105">
+            <Image
+              src={currentColor.image}
+              alt={product.name}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-contain p-2"
+              priority
+            />
+          </div>
         </div>
-        <div>
-          <span className="text-neutral-400 block text-[9px] uppercase font-sans">Aislamiento:</span>
-          <span className="font-semibold text-neutral-800">{product.specs.anc}</span>
-        </div>
-      </div>
 
-      {/* Price & Action */}
-      <div className="flex items-center justify-between pt-1">
+        {/* Title & Subtitle */}
+        <div className="space-y-1.5 pt-4">
+          <h3 className="text-base sm:text-lg font-extrabold text-neutral-950 group-hover:text-blue-600 transition-colors leading-snug">
+            {product.name}
+          </h3>
+          <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed">
+            {product.subtitle}
+          </p>
+        </div>
+
+        {/* Specs Highlights */}
+        <div className="flex flex-wrap gap-1.5 pt-3 text-[11px] font-medium text-neutral-600">
+          <span className="px-2.5 py-1 rounded-md bg-neutral-100/90 border border-neutral-200/40">
+            {product.specs.battery} batería
+          </span>
+          <span className="px-2.5 py-1 rounded-md bg-neutral-100/90 border border-neutral-200/40">
+            {product.specs.anc}
+          </span>
+          <span className="px-2.5 py-1 rounded-md bg-neutral-100/90 border border-neutral-200/40">
+            {product.specs.connectivity}
+          </span>
+        </div>
+      </Link>
+
+      {/* Card Bottom: Price and Actions */}
+      <div className="p-4 sm:p-5 pt-4 border-t border-neutral-100 mt-4 flex items-center justify-between gap-3 bg-neutral-50/50">
         <div>
-          {product.originalPrice && (
-            <span className="text-xs text-neutral-400 line-through mr-1.5 font-mono">
-              {STORE_SETTINGS.currencySymbol}
-              {product.originalPrice.toFixed(2)}
-            </span>
-          )}
-          <span className="text-lg font-bold font-mono text-neutral-900">
+          <span className="text-[10px] text-neutral-400 uppercase font-semibold block">
+            Precio Directo
+          </span>
+          <span className="text-xl font-extrabold text-neutral-950 tracking-tight">
             {STORE_SETTINGS.currencySymbol}
             {product.price.toFixed(2)}
           </span>
         </div>
 
-        <button
-          onClick={handleAddToCart}
-          className="px-3.5 py-2 rounded-full bg-black text-white hover:bg-neutral-800 transition-colors font-medium text-xs flex items-center gap-1.5 shadow-xs active:scale-95"
-        >
-          <ShoppingBag className="w-3.5 h-3.5" />
-          <span>Añadir</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/producto/${product.slug}`}
+            className="px-3 py-2 rounded-xl border border-neutral-200 hover:border-neutral-300 bg-white text-neutral-800 hover:text-black font-semibold text-xs transition-colors flex items-center gap-1 shadow-2xs"
+          >
+            <span>Ver Ficha</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+
+          <button
+            onClick={handleAddToCart}
+            className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-colors"
+          >
+            <ShoppingBag className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Añadir</span>
+          </button>
+        </div>
       </div>
     </div>
   );
