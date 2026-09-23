@@ -70,9 +70,6 @@ export default function Footer() {
             <span className="text-base font-extrabold text-neutral-900 tracking-tight">
               {STORE_SETTINGS.name}
             </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 font-semibold">
-              AUDÍFONOS & ACCESORIOS
-            </span>
           </div>
           <p className="text-neutral-500 max-w-sm text-xs leading-relaxed">
             Reventa y distribución de audífonos 100% originales y accesorios tecnológicos. Entrega local en Chimbote y envíos a todo el Perú.

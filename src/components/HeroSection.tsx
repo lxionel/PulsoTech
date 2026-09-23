@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowRight, Sparkles, MessageSquare } from "lucide-react";
+import { ArrowRight, MessageSquare } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
 export default function HeroSection() {
@@ -12,11 +12,6 @@ export default function HeroSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Pitch */}
         <div className="max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-neutral-300 bg-white text-neutral-800 text-[11px] font-mono uppercase tracking-wider shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 text-neutral-900" />
-            <span>AUDÍFONOS & ACCESORIOS // PERÚ</span>
-          </div>
-
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-neutral-950 leading-[1.08]">
             Audífonos originales. <br />
             <span className="text-neutral-500 font-semibold">

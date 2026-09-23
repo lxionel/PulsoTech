@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { PRODUCTS, TECH_CATEGORIES } from "@/data/products";
 import ProductCard from "./ProductCard";
-import { Search, Filter, Layers } from "lucide-react";
+import { Search, Filter } from "lucide-react";
 
 export default function ProductCatalog() {
   const [selectedCategory, setSelectedCategory] = useState("todos");
@@ -31,10 +31,6 @@ export default function ProductCatalog() {
       {/* Top Welcome & Catalog Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 pb-6 border-b border-neutral-200">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-100 text-neutral-800 text-[11px] font-mono uppercase font-bold tracking-wider">
-            <Layers className="w-3.5 h-3.5 text-neutral-900" />
-            <span>CATÁLOGO DISPONIBLE // PERÚ</span>
-          </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-neutral-950">
             Catálogo de Audífonos
           </h2>

@@ -17,14 +17,9 @@ export default function Navbar() {
           <div className="w-7 h-7 rounded-md bg-black text-white flex items-center justify-center font-bold text-xs tracking-tighter shadow-sm">
             P
           </div>
-          <div className="flex flex-col">
-            <span className="text-base font-bold tracking-tight text-neutral-900 group-hover:text-black transition-colors">
-              {STORE_SETTINGS.name}
-            </span>
-            <span className="text-[9px] tracking-widest uppercase text-neutral-400 -mt-1 font-mono">
-              AUDÍFONOS & ACCESORIOS
-            </span>
-          </div>
+          <span className="text-base font-bold tracking-tight text-neutral-900 group-hover:text-black transition-colors">
+            {STORE_SETTINGS.name}
+          </span>
         </Link>
 
         {/* Navigation Categories */}

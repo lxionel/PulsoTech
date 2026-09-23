@@ -75,7 +75,7 @@ export const PRODUCTS: Product[] = [
     description:
       "Audífonos True Wireless originales Xiaomi Redmi Buds 8 Lite (Modelo 2026). Equipados con Cancelación Activa de Ruido (ANC) de hasta 42dB, diafragma dinámico de 12.4mm con diafragma de titanio, 36h de batería total y certificación IP54.",
     price: 89.0,
-    originalPrice: 109.0,
+    originalPrice: undefined,
     brand: "Xiaomi",
     category: "in-ear",
     inStock: true,
@@ -123,7 +123,7 @@ export const PRODUCTS: Product[] = [
     description:
       "Audífonos True Wireless originales Xiaomi Redmi Buds 7S. Cuentan con sistema de Cancelación Activa de Ruido inteligente, diafragmas de alta fidelidad, 32 horas de autonomía combinada con estuche y protección IP54.",
     price: 139.0,
-    originalPrice: 179.0,
+    originalPrice: undefined,
     brand: "Xiaomi",
     category: "in-ear",
     inStock: true,
