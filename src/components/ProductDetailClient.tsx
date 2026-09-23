@@ -86,13 +86,13 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           {/* Left Column: Stage Image Gallery + Lab Tech Specs Grid */}
           <div className="lg:col-span-7 space-y-6">
             {/* Main Stage Image Frame */}
-            <div className="relative aspect-square w-full rounded-3xl bg-white border border-neutral-200/90 p-8 sm:p-14 flex items-center justify-center shadow-xs overflow-hidden group">
+            <div className="relative aspect-square w-full rounded-3xl bg-white border border-neutral-200/90 p-4 sm:p-8 flex items-center justify-center shadow-xs overflow-hidden group">
               <div className="relative w-full h-full">
                 <Image
                   src={activeImage}
                   alt={product.name}
                   fill
-                  sizes="(max-width: 1024px) 100vw, 650px"
+                  sizes="(max-width: 1024px) 100vw, 700px"
                   className="object-contain p-2 transition-transform duration-300 group-hover:scale-105"
                   priority
                 />

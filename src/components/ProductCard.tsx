@@ -62,14 +62,14 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
 
         {/* Large Product Image Frame */}
-        <div className="relative w-full aspect-square rounded-xl bg-[#fafafc] flex items-center justify-center p-3 overflow-hidden border border-neutral-100">
+        <div className="relative w-full aspect-square rounded-xl bg-white flex items-center justify-center p-1.5 overflow-hidden border border-neutral-100">
           <div className="relative w-full h-full transition-transform duration-300 group-hover:scale-105">
             <Image
               src={currentColor.image}
               alt={product.name}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="object-contain p-2"
+              className="object-contain p-1"
               priority
             />
           </div>

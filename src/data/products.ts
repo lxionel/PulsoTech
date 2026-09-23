@@ -150,6 +150,7 @@ export const PRODUCTS: Product[] = [
     ],
     images: [
       getAssetUrl("/images/products/redmi-buds-7s.png"),
+      getAssetUrl("/images/products/redmi-buds-7s-earbuds.png"),
     ],
     specs: {
       battery: "32h",
