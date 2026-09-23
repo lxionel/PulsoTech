@@ -9,37 +9,6 @@ export default function FloatingWidgets() {
 
   return (
     <>
-      {/* Right Edge Social Icons (Despegatec Style) */}
-      <div className="fixed right-0 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col shadow-md rounded-l-lg overflow-hidden">
-        <a
-          href="https://facebook.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Facebook"
-          className="w-10 h-10 bg-[#3b5998] hover:bg-[#2d4373] text-white flex items-center justify-center transition-colors text-xs font-bold"
-        >
-          f
-        </a>
-        <a
-          href="https://instagram.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Instagram"
-          className="w-10 h-10 bg-[#e4405f] hover:bg-[#c13584] text-white flex items-center justify-center transition-colors text-xs font-bold"
-        >
-          ig
-        </a>
-        <a
-          href="https://tiktok.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="TikTok"
-          className="w-10 h-10 bg-black hover:bg-neutral-800 text-white flex items-center justify-center transition-colors text-xs font-bold"
-        >
-          tk
-        </a>
-      </div>
-
       {/* Floating WhatsApp Action Button (Despegatec Style) */}
       <aside aria-label="Contacto por WhatsApp" className="fixed bottom-6 right-6 z-50">
         <a

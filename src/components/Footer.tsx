@@ -4,6 +4,7 @@ import React from "react";
 import { STORE_SETTINGS } from "@/data/products";
 import { ShieldCheck, Truck, Headphones, MessageSquare, ArrowUpRight } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import Logo from "./Logo";
 
 export default function Footer() {
   const { whatsappNumber } = useCart();
@@ -65,12 +66,8 @@ export default function Footer() {
 
       {/* Main Footer Links */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="text-base font-extrabold text-neutral-950 tracking-tight">
-              {STORE_SETTINGS.name}
-            </span>
-          </div>
+        <div className="space-y-3">
+          <Logo size="sm" />
           <p className="text-neutral-500 max-w-sm text-xs leading-relaxed">
             Distribución de tecnología, audífonos 100% originales y accesorios garantizados. Entrega el mismo día y pago seguro contra entrega.
           </p>
