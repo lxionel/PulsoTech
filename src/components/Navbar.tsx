@@ -29,7 +29,10 @@ export default function Navbar() {
             className="hover:text-black transition-colors flex items-center gap-1.5"
           >
             <Headphones className="w-3.5 h-3.5 text-neutral-400" />
-            <span>Audífonos</span>
+            <span>Productos</span>
+          </a>
+          <a href="#como-comprar" className="hover:text-black transition-colors">
+            Cómo Comprar
           </a>
           <a href="#garantia" className="hover:text-black transition-colors">
             Garantía y Entregas

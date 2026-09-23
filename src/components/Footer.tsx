@@ -78,7 +78,10 @@ export default function Footer() {
 
         <div className="flex flex-wrap items-center gap-6 text-xs font-medium text-neutral-600">
           <a href="#catalogo" className="hover:text-black transition-colors">
-            Catálogo de Audífonos
+            Catálogo de Productos
+          </a>
+          <a href="#como-comprar" className="hover:text-black transition-colors">
+            Cómo Comprar
           </a>
           <a href="#garantia" className="hover:text-black transition-colors">
             Políticas de Garantía

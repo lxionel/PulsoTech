@@ -3,7 +3,10 @@
 import React from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
+import TrustBar from "@/components/TrustBar";
 import ProductCatalog from "@/components/ProductCatalog";
+import HowToBuy from "@/components/HowToBuy";
+import FaqSection from "@/components/FaqSection";
 import CartDrawer from "@/components/CartDrawer";
 import ProductDetailModal from "@/components/ProductDetailModal";
 import Footer from "@/components/Footer";
@@ -20,16 +23,25 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="flex-1">
-        {/* 1. Main Store Hero Section */}
+        {/* 1. Commercial 2-Column Hero Showcase */}
         <HeroSection />
 
-        {/* 2. Complete Products Catalog */}
+        {/* 2. Retail Value / Trust Bar */}
+        <TrustBar />
+
+        {/* 3. Real E-Commerce Product Catalog with Filters and Sorting */}
         <ProductCatalog />
+
+        {/* 4. Simple 3-Step Buying Guide */}
+        <HowToBuy />
+
+        {/* 5. Frequently Asked Questions */}
+        <FaqSection />
 
         {/* Floating WhatsApp Concierge Button */}
         <a
           href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-            "¡Hola PulsoTech! Me gustaría consultar sobre los audífonos disponibles y envíos."
+            "¡Hola PulsoTech! Me gustaría consultar sobre los audífonos disponibles y entregas en Chimbote."
           )}`}
           target="_blank"
           rel="noopener noreferrer"
