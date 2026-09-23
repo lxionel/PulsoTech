@@ -5,8 +5,8 @@ export const STORE_SETTINGS = {
   name: "PulsoTech",
   tagline: "Audífonos Originales & Accesorios en Chimbote",
   description: "Especialistas en audífonos originales y accesorios tecnológicos con garantía local.",
-  whatsappNumber: "51987654321", // Número de WhatsApp editable
-  whatsappDisplay: "+51 987 654 321",
+  whatsappNumber: "51902377567",
+  whatsappDisplay: "+51 902 377 567",
   currencySymbol: "S/ ",
   currencyCode: "PEN",
   freeShippingThreshold: 150,

@@ -13,8 +13,8 @@ export default function HowToBuy() {
         "Explora nuestro catálogo con especificaciones reales de batería, cancelación de ruido y precios finales sin sorpresas.",
     },
     {
-      step: "02",
       icon: MessageSquare,
+      step: "02",
       title: "Coordina tu entrega",
       description:
         "Agrégalo a tu bolsa en la web o escríbenos directamente a WhatsApp indicando tu dirección en Chimbote.",
@@ -29,16 +29,16 @@ export default function HowToBuy() {
   ];
 
   return (
-    <section id="como-comprar" className="py-16 bg-[#f4f4f7] border-y border-neutral-200/80">
+    <section id="como-comprar" className="py-16 bg-[#0c0c10] border-y border-neutral-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
-          <span className="text-xs uppercase tracking-wider text-blue-600 font-bold">
+          <span className="text-xs uppercase tracking-wider text-blue-400 font-bold">
             Proceso Simple y Confiable
           </span>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-neutral-950 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
             ¿Cómo comprar en PulsoTech?
           </h2>
-          <p className="text-xs sm:text-sm text-neutral-600">
+          <p className="text-xs sm:text-sm text-neutral-400">
             Comprar audífonos originales en Chimbote nunca fue tan rápido y transparente.
           </p>
         </div>
@@ -49,21 +49,21 @@ export default function HowToBuy() {
             return (
               <div
                 key={index}
-                className="relative bg-white rounded-2xl p-6 sm:p-7 border border-neutral-200/90 shadow-xs flex flex-col justify-between"
+                className="relative bg-[#121216] rounded-2xl p-6 sm:p-7 border border-neutral-800 shadow-sm flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between mb-5">
-                    <span className="text-2xl font-black text-neutral-300">
+                    <span className="text-2xl font-black text-neutral-600">
                       {item.step}
                     </span>
-                    <div className="w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-800">
-                      <Icon className="w-5 h-5 text-neutral-900" />
+                    <div className="w-10 h-10 rounded-xl bg-neutral-800 flex items-center justify-center text-blue-400">
+                      <Icon className="w-5 h-5 text-blue-400" />
                     </div>
                   </div>
-                  <h3 className="text-base font-bold text-neutral-950 mb-2">
+                  <h3 className="text-base font-bold text-white mb-2">
                     {item.title}
                   </h3>
-                  <p className="text-xs text-neutral-600 leading-relaxed">
+                  <p className="text-xs text-neutral-400 leading-relaxed">
                     {item.description}
                   </p>
                 </div>

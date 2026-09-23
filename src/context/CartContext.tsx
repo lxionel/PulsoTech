@@ -43,7 +43,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== "undefined") {
       try {
         const savedPhone = localStorage.getItem("pulsotech_phone");
-        if (savedPhone) return savedPhone;
+        if (savedPhone && savedPhone !== "51987654321") return savedPhone;
       } catch {
         // Ignorar error
       }
