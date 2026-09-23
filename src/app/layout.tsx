@@ -23,6 +23,8 @@ export const metadata: Metadata = {
     "Tienda especializada en audífonos originales y accesorios. Entrega el mismo día en Chimbote con garantía y atención personalizada.",
 };
 
+import FloatingWidgets from "@/components/FloatingWidgets";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -34,7 +36,10 @@ export default function RootLayout({
       className={`${plusJakarta.variable} ${spaceGrotesk.variable} h-full antialiased scroll-smooth`}
     >
       <body className="min-h-full flex flex-col font-sans bg-[#fbfbfd] text-[#111113] selection:bg-neutral-900 selection:text-white">
-        <CartProvider>{children}</CartProvider>
+        <CartProvider>
+          {children}
+          <FloatingWidgets />
+        </CartProvider>
       </body>
     </html>
   );
