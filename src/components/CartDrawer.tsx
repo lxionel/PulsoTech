@@ -81,7 +81,7 @@ export default function CartDrawer() {
     lines.push(`🚚 *Envío:* ${shipping === 0 ? "GRATIS" : `${STORE_SETTINGS.currencySymbol}${shipping.toFixed(2)}`}`);
     lines.push(`💰 *TOTAL A PAGAR:* ${STORE_SETTINGS.currencySymbol}${total.toFixed(2)}`);
     lines.push(`━━━━━━━━━━━━━━━━━━━━━━`);
-    lines.push(`¡Hola PulsoTech! Armé este pedido en la web. ¿Tienen disponibilidad para coordinar la entrega en Perú?`);
+    lines.push(`¡Hola PulsoTech! Armé este pedido en la web. ¿Tienen disponibilidad para coordinar la entrega en Chimbote?`);
 
     const message = lines.join("\n");
     const encoded = encodeURIComponent(message);
@@ -241,7 +241,7 @@ export default function CartDrawer() {
                   />
                   <input
                     type="text"
-                    placeholder="Ciudad y Dirección de Envío *"
+                    placeholder="Dirección de entrega en Chimbote *"
                     value={customerAddress}
                     onChange={(e) => setCustomerAddress(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-200 text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-400 shadow-xs"

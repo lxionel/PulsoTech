@@ -2,20 +2,20 @@ import { Product } from "@/types";
 
 export const STORE_SETTINGS = {
   name: "PulsoTech",
-  tagline: "Audífonos Originales & Accesorios en Perú",
+  tagline: "Audífonos Originales & Accesorios en Chimbote",
   description: "Especialistas en audífonos originales y accesorios tecnológicos con garantía local.",
-  whatsappNumber: "51987654321", // Número de Perú editable
+  whatsappNumber: "51987654321", // Número de WhatsApp editable
   whatsappDisplay: "+51 987 654 321",
   currencySymbol: "S/ ",
   currencyCode: "PEN",
   freeShippingThreshold: 150,
   shippingCost: 12.0,
   guaranteeMonths: 12,
-  deliveryTime: "Entrega el mismo día en Chimbote · Envíos a todo el Perú por Olva Courier",
+  deliveryTime: "Entrega el mismo día en Chimbote",
 };
 
 export const TECH_CATEGORIES = [
-  { id: "todos", name: "Todos los Audífonos", count: 3, active: true },
+  { id: "todos", name: "Todos los productos", count: 3, active: true },
 ];
 
 export const PRODUCTS: Product[] = [

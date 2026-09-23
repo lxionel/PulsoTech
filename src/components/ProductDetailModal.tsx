@@ -174,7 +174,7 @@ export default function ProductDetailModal() {
               <div className="flex items-center gap-1.5 text-xs text-neutral-700 font-medium pt-1 border-t border-neutral-200/60">
                 <Truck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                 <span className="text-neutral-700">
-                  Entrega el mismo día en Chimbote · Envíos a todo el Perú por Olva Courier
+                  Entrega el mismo día en Chimbote · Coordinación por WhatsApp
                 </span>
               </div>
             </div>

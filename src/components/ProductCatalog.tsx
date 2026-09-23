@@ -35,7 +35,7 @@ export default function ProductCatalog() {
             Catálogo de Audífonos
           </h2>
           <p className="text-sm sm:text-base text-neutral-600 max-w-2xl leading-relaxed">
-            Modelos 100% auténticos listos para entrega inmediata en Chimbote y envíos nacionales por Olva Courier. Selecciona tu modelo y coordina tu pedido por WhatsApp.
+            Modelos 100% auténticos listos para entrega inmediata el mismo día en Chimbote. Selecciona tu modelo y coordina tu pedido por WhatsApp.
           </p>
         </div>
 

@@ -30,9 +30,9 @@ export default function Footer() {
               <Truck className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="font-bold text-neutral-900 text-sm">Coordinación inmediata por WhatsApp</h4>
+              <h4 className="font-bold text-neutral-900 text-sm">Entrega el Mismo Día</h4>
               <p className="text-neutral-500 mt-1 leading-relaxed">
-                Entrega el mismo día en Chimbote y envíos a todo el Perú por Olva Courier.
+                Entrega local en Chimbote con coordinación inmediata por WhatsApp.
               </p>
             </div>
           </div>
@@ -72,7 +72,7 @@ export default function Footer() {
             </span>
           </div>
           <p className="text-neutral-500 max-w-sm text-xs leading-relaxed">
-            Reventa y distribución de audífonos 100% originales y accesorios tecnológicos. Entrega local en Chimbote y envíos a todo el Perú.
+            Reventa y distribución de audífonos 100% originales y accesorios tecnológicos. Entrega local el mismo día en Chimbote.
           </p>
         </div>
 

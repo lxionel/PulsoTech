@@ -20,7 +20,7 @@ export default function HeroSection() {
           </h1>
 
           <p className="text-base sm:text-lg text-neutral-600 max-w-2xl leading-relaxed font-normal">
-            En <strong>PulsoTech</strong> seleccionamos y distribuimos audífonos 100% originales y accesorios de alta fidelidad. Modelos auténticos, garantía de funcionamiento, entrega el mismo día en Chimbote y envíos seguros a todo el Perú por Olva Courier.
+            En <strong>PulsoTech</strong> seleccionamos y distribuimos audífonos 100% originales y accesorios de alta fidelidad. Modelos auténticos, garantía de funcionamiento y entrega el mismo día en Chimbote.
           </p>
 
           {/* Quick CTA Actions */}

@@ -3,11 +3,11 @@
 import React from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
-import { ShoppingBag, MessageSquare, Headphones } from "lucide-react";
+import { ShoppingBag, Headphones } from "lucide-react";
 import { STORE_SETTINGS } from "@/data/products";
 
 export default function Navbar() {
-  const { itemsCount, setIsCartOpen, whatsappNumber } = useCart();
+  const { itemsCount, setIsCartOpen } = useCart();
 
   return (
     <header className="sticky top-0 z-40 w-full glass-nav transition-all">
@@ -32,24 +32,12 @@ export default function Navbar() {
             <span>Audífonos</span>
           </a>
           <a href="#garantia" className="hover:text-black transition-colors">
-            Garantía y Envíos
+            Garantía y Entregas
           </a>
         </nav>
 
-        {/* Right Actions: WhatsApp direct + Cart */}
+        {/* Right Actions: Cart */}
         <div className="flex items-center gap-3">
-          <a
-            href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-              "¡Hola PulsoTech! Deseo consultar sobre disponibilidad y asesoramiento de audífonos."
-            )}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Contactar por WhatsApp"
-            className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 px-3 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 transition-colors"
-          >
-            <MessageSquare className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600" />
-            <span className="hidden sm:inline">WhatsApp</span>
-          </a>
 
           <button
             onClick={() => setIsCartOpen(true)}

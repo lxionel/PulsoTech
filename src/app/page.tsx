@@ -15,18 +15,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fbfbfd] text-[#111113]">
-      {/* Top Banner: Minimalist */}
-      <div className="w-full bg-[#f4f4f6] border-b border-neutral-200/90 py-2 px-4 text-center text-xs text-neutral-600 flex items-center justify-center gap-2 font-medium">
-        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-        <span>
-          Entrega el mismo día en Chimbote · Envíos a todo el Perú por Olva Courier
-        </span>
-        <span className="text-neutral-400">•</span>
-        <span className="hidden sm:inline text-neutral-500">
-          Coordinación inmediata por WhatsApp
-        </span>
-      </div>
-
       {/* Main Navigation */}
       <Navbar />
 
