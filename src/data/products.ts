@@ -2,8 +2,8 @@ import { Product } from "@/types";
 
 export const STORE_SETTINGS = {
   name: "PulsoTech",
-  tagline: "Audífonos Originales Xiaomi y Redmi en Perú",
-  description: "Especialistas en audífonos originales Xiaomi y Redmi con garantía local.",
+  tagline: "Audífonos Originales & Accesorios en Perú",
+  description: "Especialistas en audífonos originales y accesorios tecnológicos con garantía local.",
   whatsappNumber: "51987654321", // Número de Perú editable
   whatsappDisplay: "+51 987 654 321",
   currencySymbol: "S/ ",

@@ -14,7 +14,7 @@ export default function HeroSection() {
         <div className="max-w-3xl space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-neutral-300 bg-white text-neutral-800 text-[11px] font-mono uppercase tracking-wider shadow-xs">
             <Sparkles className="w-3.5 h-3.5 text-neutral-900" />
-            <span>AUDÍFONOS ORIGINALES XIAOMI & REDMI // PERÚ</span>
+            <span>AUDÍFONOS & ACCESORIOS // PERÚ</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-neutral-950 leading-[1.08]">
@@ -25,7 +25,7 @@ export default function HeroSection() {
           </h1>
 
           <p className="text-base sm:text-lg text-neutral-600 max-w-2xl leading-relaxed font-normal">
-            En <strong>PulsoTech</strong> nos especializamos en la reventa de audífonos 100% originales <strong>Xiaomi y Redmi</strong>. Modelos auténticos, garantía de funcionamiento, entrega el mismo día en Chimbote y envíos seguros a todo el Perú por Olva Courier.
+            En <strong>PulsoTech</strong> seleccionamos y distribuimos audífonos 100% originales y accesorios de alta fidelidad. Modelos auténticos, garantía de funcionamiento, entrega el mismo día en Chimbote y envíos seguros a todo el Perú por Olva Courier.
           </p>
 
           {/* Quick CTA Actions */}
@@ -40,7 +40,7 @@ export default function HeroSection() {
 
             <a
               href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-                "¡Hola PulsoTech! Deseo consultar sobre la disponibilidad de audífonos Xiaomi/Redmi."
+                "¡Hola PulsoTech! Deseo consultar sobre la disponibilidad de audífonos."
               )}`}
               target="_blank"
               rel="noopener noreferrer"

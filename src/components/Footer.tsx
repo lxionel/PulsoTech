@@ -20,7 +20,7 @@ export default function Footer() {
             <div>
               <h4 className="font-bold text-neutral-900 text-sm">Garantía PulsoTech</h4>
               <p className="text-neutral-500 mt-1 leading-relaxed">
-                Productos 100% originales Xiaomi y Redmi con garantía ante fallas técnicas.
+                Productos 100% originales con garantía ante cualquier falla técnica.
               </p>
             </div>
           </div>
@@ -44,7 +44,7 @@ export default function Footer() {
             <div>
               <h4 className="font-bold text-neutral-900 text-sm">Originales Garantizados</h4>
               <p className="text-neutral-500 mt-1 leading-relaxed">
-                Empaque sellado de fábrica con número de serie y verificación auténtica.
+                Empaque sellado de fábrica con verificación auténtica y números de serie.
               </p>
             </div>
           </div>
@@ -56,7 +56,7 @@ export default function Footer() {
             <div>
               <h4 className="font-bold text-neutral-900 text-sm">Asesoría Personalizada</h4>
               <p className="text-neutral-500 mt-1 leading-relaxed">
-                Te asesoramos directamente por WhatsApp para escoger el modelo Redmi Buds ideal para ti.
+                Te asesoramos directamente por WhatsApp para escoger el modelo ideal para ti.
               </p>
             </div>
           </div>
@@ -71,11 +71,11 @@ export default function Footer() {
               {STORE_SETTINGS.name}
             </span>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 font-semibold">
-              XIAOMI & REDMI AUDIO
+              AUDÍFONOS & ACCESORIOS
             </span>
           </div>
           <p className="text-neutral-500 max-w-sm text-xs leading-relaxed">
-            Reventa y distribución de audífonos 100% originales Xiaomi y Redmi. Entrega local en Chimbote y envíos a todo el Perú.
+            Reventa y distribución de audífonos 100% originales y accesorios tecnológicos. Entrega local en Chimbote y envíos a todo el Perú.
           </p>
         </div>
 

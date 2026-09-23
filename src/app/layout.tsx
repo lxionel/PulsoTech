@@ -18,9 +18,9 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "PulsoTech | Audífonos Originales Xiaomi y Redmi en Perú",
+  title: "PulsoTech",
   description:
-    "Tienda especializada en audífonos originales Xiaomi y Redmi. Entrega el mismo día en Chimbote y envíos a todo el Perú por Olva Courier.",
+    "Tienda especializada en audífonos originales y accesorios. Entrega el mismo día en Chimbote y envíos a todo el Perú por Olva Courier.",
 };
 
 export default function RootLayout({

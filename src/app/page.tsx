@@ -41,7 +41,7 @@ export default function Home() {
         {/* Floating WhatsApp Concierge Button */}
         <a
           href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-            "¡Hola PulsoTech! Me gustaría consultar sobre los audífonos Xiaomi y Redmi disponibles y envíos."
+            "¡Hola PulsoTech! Me gustaría consultar sobre los audífonos disponibles y envíos."
           )}`}
           target="_blank"
           rel="noopener noreferrer"

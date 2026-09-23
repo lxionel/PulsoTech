@@ -22,21 +22,20 @@ export default function Navbar() {
               {STORE_SETTINGS.name}
             </span>
             <span className="text-[9px] tracking-widest uppercase text-neutral-400 -mt-1 font-mono">
-              XIAOMI & REDMI AUDIO
+              AUDÍFONOS & ACCESORIOS
             </span>
           </div>
         </Link>
 
-        {/* Navigation Categories for Customers */}
+        {/* Navigation Categories */}
         <nav className="hidden md:flex items-center gap-7 text-xs font-medium text-neutral-600">
           <a
             href="#catalogo"
             className="hover:text-black transition-colors flex items-center gap-1.5"
           >
             <Headphones className="w-3.5 h-3.5 text-neutral-400" />
-            <span>Audífonos Xiaomi & Redmi</span>
+            <span>Audífonos</span>
           </a>
-          {/* Enlaces de Carga Rápida y Wearables ocultos temporalmente */}
           <a href="#garantia" className="hover:text-black transition-colors">
             Garantía y Envíos
           </a>
@@ -46,7 +45,7 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           <a
             href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-              "¡Hola PulsoTech! Deseo consultar sobre disponibilidad y asesoramiento de audífonos Xiaomi/Redmi."
+              "¡Hola PulsoTech! Deseo consultar sobre disponibilidad y asesoramiento de audífonos."
             )}`}
             target="_blank"
             rel="noopener noreferrer"

@@ -33,10 +33,10 @@ export default function ProductCatalog() {
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-100 text-neutral-800 text-[11px] font-mono uppercase font-bold tracking-wider">
             <Layers className="w-3.5 h-3.5 text-neutral-900" />
-            <span>CATÁLOGO OFICIAL XIAOMI & REDMI // PERÚ</span>
+            <span>CATÁLOGO DISPONIBLE // PERÚ</span>
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-neutral-950">
-            Audífonos Xiaomi & Redmi en Stock
+            Catálogo de Audífonos
           </h2>
           <p className="text-sm sm:text-base text-neutral-600 max-w-2xl leading-relaxed">
             Modelos 100% auténticos listos para entrega inmediata en Chimbote y envíos nacionales por Olva Courier. Selecciona tu modelo y coordina tu pedido por WhatsApp.
