@@ -179,14 +179,14 @@ export default function HeroSection() {
                       {slide.subtitle}
                     </p>
 
-                    {/* Action CTA Button: Despegatec Solid Blue Style */}
+                    {/* Action CTA Button: Sober Retail Style (No neon) */}
                     <div className="pt-2">
                       {slide.isWhatsApp ? (
                         <a
                           href={slide.buttonLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-8 py-3.5 sm:py-4 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer"
+                          className="inline-flex items-center gap-2 px-8 py-3.5 sm:py-4 rounded-xl bg-[#15803d] hover:bg-[#166534] text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer"
                         >
                           <span>{slide.buttonText}</span>
                           <ArrowRight className="w-4 h-4" />
@@ -194,7 +194,7 @@ export default function HeroSection() {
                       ) : (
                         <Link
                           href={slide.buttonLink}
-                          className="inline-flex items-center gap-2 px-8 py-3.5 sm:py-4 rounded-xl bg-[#155dfc] hover:bg-[#0d47c4] text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer"
+                          className="inline-flex items-center gap-2 px-8 py-3.5 sm:py-4 rounded-xl bg-[#1d4ed8] hover:bg-[#1e40af] text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer"
                         >
                           <span>{slide.buttonText}</span>
                           <ArrowRight className="w-4 h-4" />
@@ -256,12 +256,12 @@ export default function HeroSection() {
                   className="group flex flex-col items-center justify-center text-center p-3 rounded-2xl hover:bg-neutral-50/80 transition-all cursor-pointer"
                 >
                   {/* Clean Minimalist Line Icon */}
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-neutral-50 group-hover:bg-blue-50 border border-neutral-200/60 group-hover:border-blue-200 flex items-center justify-center text-neutral-900 group-hover:text-[#155dfc] group-hover:-translate-y-1 transition-all duration-300 shadow-2xs mb-2.5">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-neutral-50 group-hover:bg-neutral-100 border border-neutral-200/70 group-hover:border-neutral-400 flex items-center justify-center text-neutral-900 group-hover:text-black group-hover:-translate-y-1 transition-all duration-300 shadow-2xs mb-2.5">
                     <Icon className="w-7 h-7 sm:w-8 sm:h-8 stroke-[1.6]" />
                   </div>
 
                   {/* Category Title */}
-                  <h3 className="text-sm sm:text-base font-extrabold text-neutral-950 group-hover:text-[#155dfc] transition-colors">
+                  <h3 className="text-sm sm:text-base font-extrabold text-neutral-950 group-hover:text-black transition-colors">
                     {cat.label}
                   </h3>
 

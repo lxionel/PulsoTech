@@ -18,7 +18,7 @@ export default function Logo({ className = "", showText = true, size = "md" }: L
     <Link href="/" className={`flex items-center gap-2.5 group select-none ${className}`}>
       {/* Isotipo PulsoTech SVG Vectorial */}
       <div 
-        className="relative shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 shadow-sm shadow-blue-500/20 group-hover:shadow-md group-hover:shadow-blue-500/30 transition-all duration-300"
+        className="relative shrink-0 flex items-center justify-center rounded-xl bg-neutral-950 text-white shadow-xs group-hover:bg-neutral-800 transition-all duration-200"
         style={{ width: iconSize, height: iconSize }}
       >
         <svg
@@ -39,10 +39,11 @@ export default function Logo({ className = "", showText = true, size = "md" }: L
           {/* Línea de Pulso Tecnológico / Onda Sonora Dinámica */}
           <path
             d="M 7 21 H 11 L 14 15 L 18 27 L 22 17 L 25 21 H 37"
-            stroke="#38BDF8"
-            strokeWidth="2.4"
+            stroke="#FFFFFF"
+            strokeWidth="2.2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            opacity="0.85"
           />
 
           {/* Punto de energía del pulso */}
@@ -54,7 +55,7 @@ export default function Logo({ className = "", showText = true, size = "md" }: L
       {showText && (
         <div className="flex flex-col">
           <div className={`font-black tracking-tight leading-none ${textSize} text-neutral-950 transition-colors`}>
-            Pulso<span className="text-blue-600">Tech</span>
+            Pulso<span className="text-blue-700">Tech</span>
           </div>
           <span className={`font-extrabold tracking-[0.22em] text-neutral-400 uppercase leading-tight mt-0.5 ${subSize}`}>
             Tecnología &amp; Audio
