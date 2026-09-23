@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%" fill="none">
+  <rect width="400" height="400" rx="32" fill="#F4F4F6"/>
+  <!-- Minimalist background soft radial effect -->
+  <circle cx="200" cy="200" r="140" fill="#EAECEF" opacity="0.6"/>
+  
+  <g transform="translate(100, 90)">
+    <!-- Left Earbud -->
+    <g transform="translate(25, 20)">
+      <!-- Earbud tip -->
+      <path d="M45 45 C35 30 15 35 10 50 C5 65 15 85 30 85 C42 85 48 70 45 45 Z" fill="#27272A"/>
+      <!-- Body housing -->
+      <ellipse cx="48" cy="58" rx="20" ry="26" fill="#18181B"/>
+      <!-- Stem -->
+      <rect x="42" y="70" width="14" height="65" rx="7" fill="#18181B"/>
+      <rect x="46" y="125" width="6" height="5" rx="2.5" fill="#A1A1AA"/>
+      <!-- Detail accent -->
+      <circle cx="48" cy="50" r="4" fill="#3F3F46"/>
+    </g>
+
+    <!-- Right Earbud -->
+    <g transform="translate(105, 20)">
+      <!-- Earbud tip -->
+      <path d="M25 45 C35 30 55 35 60 50 C65 65 55 85 40 85 C28 85 22 70 25 45 Z" fill="#27272A"/>
+      <!-- Body housing -->
+      <ellipse cx="22" cy="58" rx="20" ry="26" fill="#18181B"/>
+      <!-- Stem -->
+      <rect x="14" y="70" width="14" height="65" rx="7" fill="#18181B"/>
+      <rect x="18" y="125" width="6" height="5" rx="2.5" fill="#A1A1AA"/>
+      <!-- Detail accent -->
+      <circle cx="22" cy="50" r="4" fill="#3F3F46"/>
+    </g>
+
+    <!-- Subtle Soundwave / Wireless Accents -->
+    <path d="M-5 70 C -15 85 -15 105 -5 120" stroke="#CBD5E1" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <path d="M175 70 C 185 85 185 105 175 120" stroke="#CBD5E1" stroke-width="3" stroke-linecap="round" fill="none"/>
+  </g>
+
+  <!-- Clean Minimalist Label -->
+  <text x="200" y="320" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#71717A" letter-spacing="1.5">
+    AUDÍFONOS ORIGINALES
+  </text>
+  <text x="200" y="342" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="500" fill="#A1A1AA">
+    100% Original
+  </text>
+</svg>
