@@ -17,7 +17,7 @@ export default function HowToBuy() {
       step: "02",
       title: "Coordina tu entrega",
       description:
-        "Agrégalo a tu bolsa en la web o escríbenos directamente a WhatsApp indicando tu dirección en Chimbote.",
+        "Agrégalo a tu bolsa en la web o escríbenos directamente a WhatsApp indicando tu dirección.",
     },
     {
       icon: CheckCircle,
@@ -39,7 +39,7 @@ export default function HowToBuy() {
             ¿Cómo comprar en PulsoTech?
           </h2>
           <p className="text-xs sm:text-sm text-neutral-600">
-            Comprar audífonos originales en Chimbote nunca fue tan rápido y transparente.
+            Comprar productos tecnológicos originales nunca fue tan rápido y transparente.
           </p>
         </div>
 

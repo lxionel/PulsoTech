@@ -6,11 +6,12 @@ import Link from "next/link";
 import { Product } from "@/types";
 import { STORE_SETTINGS } from "@/data/products";
 import { useCart } from "@/context/CartContext";
-import { ShoppingBag, ArrowRight } from "lucide-react";
+import { ShoppingBag, ArrowRight, Heart } from "lucide-react";
 
 export default function ProductCard({ product }: { product: Product }) {
-  const { addItem } = useCart();
+  const { addItem, toggleFavorite, isFavorite } = useCart();
   const currentColor = product.colors[0];
+  const isFav = isFavorite(product.id);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -18,11 +19,17 @@ export default function ProductCard({ product }: { product: Product }) {
     addItem(product, currentColor, 1);
   };
 
+  const handleToggleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFavorite(product.id);
+  };
+
   return (
     <div className="group relative rounded-2xl bg-white border border-neutral-200/90 hover:border-blue-500/40 hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden">
       {/* Top Card Image Link */}
       <Link href={`/producto/${product.slug}`} className="block p-4 sm:p-5 pb-0">
-        {/* Top Header: Brand & Chimbote Badge (Fondo negro y letras blancas) */}
+        {/* Top Header: Brand, New Tag & Favorite */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
@@ -35,10 +42,23 @@ export default function ProductCard({ product }: { product: Product }) {
             )}
           </div>
 
-          {/* Etiqueta Chimbote: Fondo negro y letras blancas */}
-          <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-neutral-950 text-white tracking-wide">
-            Chimbote
-          </span>
+          <div className="flex items-center gap-2">
+            {/* Etiqueta Stock: Fondo negro y letras blancas */}
+            <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-neutral-950 text-white tracking-wide">
+              En Stock
+            </span>
+
+            {/* Favorite button */}
+            <button
+              type="button"
+              onClick={handleToggleFavorite}
+              aria-label="Guardar en favoritos"
+              className="p-1 rounded-full text-neutral-400 hover:text-red-500 transition-colors cursor-pointer"
+              title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
+            >
+              <Heart className={`w-4 h-4 ${isFav ? "text-red-500 fill-red-500" : ""}`} />
+            </button>
+          </div>
         </div>
 
         {/* Large Product Image Frame */}

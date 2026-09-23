@@ -22,15 +22,15 @@ export default function HeroSection() {
   const slides = [
     {
       id: "slide-1",
-      tagline: "TIENDA DE TECNOLOGÍA EN CHIMBOTE",
+      tagline: "TIENDA OFICIAL DE TECNOLOGÍA",
       title: "¡Tecnología y audio original!",
       subtitle:
-        "Encuentra audífonos, smartwatches y accesorios garantizados en caja sellada de fábrica. Entrega hoy en Chimbote con pago contra entrega.",
+        "Encuentra audífonos, smartwatches y accesorios garantizados en caja sellada de fábrica. Entrega el mismo día con pago seguro contra entrega.",
       buttonText: "VER CATÁLOGO",
       buttonLink: "#catalogo",
       image: getAssetUrl("/images/banners/hero-tech-1.png"),
-      alt: "PulsoTech Tecnología y Audio en Chimbote",
-      badge: "STOCK EN CHIMBOTE",
+      alt: "PulsoTech Tecnología y Audio Original",
+      badge: "STOCK DISPONIBLE",
       theme: "dark" as const,
       isWhatsApp: false,
     },
@@ -56,7 +56,7 @@ export default function HeroSection() {
         "Cargadores inteligentes, accesorios y wearables con garantía de funcionamiento. Coordinamos tu entrega en minutos por WhatsApp.",
       buttonText: "PEDIR POR WHATSAPP",
       buttonLink: `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-        "¡Hola PulsoTech! Deseo consultar sobre los productos disponibles y coordinar una entrega hoy en Chimbote."
+        "¡Hola PulsoTech! Deseo consultar sobre los productos disponibles y coordinar una entrega hoy."
       )}`,
       image: getAssetUrl("/images/banners/hero-tech-2.jpg"),
       alt: "Ecosistema Tecnológico PulsoTech",
@@ -107,7 +107,7 @@ export default function HeroSection() {
     {
       icon: ShieldCheck,
       label: "Garantía Local",
-      subtitle: "Entregas Chimbote",
+      subtitle: "Envíos Directos",
       href: "#garantia",
     },
   ];

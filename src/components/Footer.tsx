@@ -32,7 +32,7 @@ export default function Footer() {
             <div>
               <h4 className="font-bold text-neutral-900 text-sm">Entrega el Mismo Día</h4>
               <p className="text-neutral-500 mt-1 leading-relaxed">
-                Entrega local en Chimbote con coordinación inmediata por WhatsApp.
+                Entrega puntual con coordinación inmediata por WhatsApp.
               </p>
             </div>
           </div>
@@ -72,7 +72,7 @@ export default function Footer() {
             </span>
           </div>
           <p className="text-neutral-500 max-w-sm text-xs leading-relaxed">
-            Reventa y distribución de audífonos 100% originales y accesorios tecnológicos. Entrega local el mismo día en Chimbote.
+            Distribución de tecnología, audífonos 100% originales y accesorios garantizados. Entrega el mismo día y pago seguro contra entrega.
           </p>
         </div>
 

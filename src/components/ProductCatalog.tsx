@@ -6,31 +6,24 @@ import ProductCard from "./ProductCard";
 import { Search, SlidersHorizontal, ArrowUpDown, X } from "lucide-react";
 
 export default function ProductCatalog() {
-  const [selectedFilter, setSelectedFilter] = useState<"todos" | "anc" | "economicos">("todos");
+  const [selectedFilter, setSelectedFilter] = useState<"todos" | "audifonos">("todos");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"featured" | "price-asc" | "price-desc">("featured");
 
   const filterOptions = [
     { id: "todos", label: "Todos los productos", count: PRODUCTS.length },
     {
-      id: "anc",
-      label: "Con Cancelación (ANC)",
-      count: PRODUCTS.filter((p) => p.specs.anc !== "Sin cancelación").length,
-    },
-    {
-      id: "economicos",
-      label: "Gama de Entrada",
-      count: PRODUCTS.filter((p) => p.price < 80).length,
+      id: "audifonos",
+      label: "Audífonos",
+      count: PRODUCTS.length,
     },
   ] as const;
 
   const filteredProducts = useMemo(() => {
     return PRODUCTS.filter((product) => {
       let matchesFilter = true;
-      if (selectedFilter === "anc") {
-        matchesFilter = product.specs.anc !== "Sin cancelación";
-      } else if (selectedFilter === "economicos") {
-        matchesFilter = product.price < 80;
+      if (selectedFilter === "audifonos") {
+        matchesFilter = true; // Actualmente todos los productos iniciales son audífonos
       }
 
       const query = searchQuery.trim().toLowerCase();
@@ -69,7 +62,7 @@ export default function ProductCatalog() {
             Catálogo Disponible
           </h2>
           <p className="text-sm sm:text-base text-neutral-600 max-w-2xl leading-relaxed">
-            Modelos 100% auténticos en caja sellada con entrega el mismo día en Chimbote. Compra en la web o coordina directamente por WhatsApp con pago contra entrega.
+            Modelos 100% auténticos en caja sellada con entrega el mismo día. Compra en la web o coordina directamente por WhatsApp con pago contra entrega.
           </p>
         </div>
 

@@ -3,7 +3,7 @@ import { getAssetUrl } from "@/utils/paths";
 
 export const STORE_SETTINGS = {
   name: "PulsoTech",
-  tagline: "Audífonos Originales & Accesorios en Chimbote",
+  tagline: "Audífonos Originales & Accesorios Tecnológicos",
   description: "Especialistas en audífonos originales y accesorios tecnológicos con garantía local.",
   whatsappNumber: "51902377567",
   whatsappDisplay: "+51 902 377 567",
@@ -12,7 +12,7 @@ export const STORE_SETTINGS = {
   freeShippingThreshold: 150,
   shippingCost: 12.0,
   guaranteeMonths: 12,
-  deliveryTime: "Entrega el mismo día en Chimbote",
+  deliveryTime: "Entrega el mismo día",
 };
 
 export const TECH_CATEGORIES = [

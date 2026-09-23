@@ -8,7 +8,6 @@ import { PRODUCTS, STORE_SETTINGS } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import CartDrawer from "@/components/CartDrawer";
 import ProductCard from "@/components/ProductCard";
 import {
   Battery,
@@ -25,13 +24,15 @@ import {
   Clock,
   Star,
   Check,
+  Heart,
 } from "lucide-react";
 
 export default function ProductDetailClient({ product }: { product: Product }) {
-  const { addItem, setIsCartOpen, whatsappNumber } = useCart();
+  const { addItem, setIsCartOpen, whatsappNumber, toggleFavorite, isFavorite } = useCart();
 
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const isFav = isFavorite(product.id);
 
   const galleryImages =
     product.images && product.images.length > 0
@@ -59,7 +60,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
   const relatedProducts = PRODUCTS.filter((p) => p.id !== product.id);
 
-  const waMessage = `¡Hola PulsoTech! Deseo comprar el modelo *${product.name}* (Precio: ${STORE_SETTINGS.currencySymbol}${product.price.toFixed(2)}). ¿Tienen stock disponible para entrega hoy en Chimbote?`;
+  const waMessage = `¡Hola PulsoTech! Deseo comprar el modelo *${product.name}* (Precio: ${STORE_SETTINGS.currencySymbol}${product.price.toFixed(2)}). ¿Tienen stock disponible para entrega hoy?`;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fbfbfd] text-[#111113]">
@@ -269,9 +270,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   {product.brand}
                 </span>
 
-                {/* Etiqueta Chimbote: Fondo negro y letras blancas */}
+                {/* Etiqueta Stock: Fondo negro y letras blancas */}
                 <span className="px-3 py-1 rounded-md text-xs font-bold bg-neutral-950 text-white tracking-wide">
-                  Chimbote
+                  En Stock
                 </span>
 
                 {product.isNew && (
@@ -320,7 +321,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200/60 text-xs text-emerald-950 space-y-1.5">
                 <div className="flex items-center gap-2 font-bold text-emerald-900">
                   <Truck className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Entrega hoy en Chimbote — Pago contra entrega</span>
+                  <span>Entrega el mismo día — Pago contra entrega</span>
                 </div>
                 <p className="text-[11px] text-emerald-800 pl-6 leading-relaxed">
                   Te lo llevamos a tu domicilio o punto de encuentro. Pagas cómodamente con Efectivo, Yape o Plin al recibir y comprobar tu producto.
@@ -334,7 +335,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               </div>
             </div>
 
-            {/* Quantity Selector & Cart Buttons */}
+            {/* Quantity Selector, Cart Buttons & Favorites */}
             <div className="space-y-3 pt-1">
               <div className="flex items-center gap-3">
                 <span className="text-xs font-semibold text-neutral-700">Cantidad:</span>
@@ -357,11 +358,11 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 </div>
               </div>
 
-              {/* Action Buttons: Add to Cart + Buy Now */}
-              <div className="grid grid-cols-2 gap-3 pt-1">
+              {/* Action Buttons: Add to Cart + Buy Now + Favorite */}
+              <div className="flex items-center gap-3 pt-1">
                 <button
                   onClick={handleAddToCart}
-                  className="w-full py-3.5 px-4 rounded-xl border border-neutral-300 hover:border-black bg-white text-neutral-900 font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xs cursor-pointer"
+                  className="flex-1 py-3.5 px-4 rounded-xl border border-neutral-300 hover:border-black bg-white text-neutral-900 font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xs cursor-pointer"
                 >
                   <ShoppingBag className="w-4 h-4" />
                   <span>Añadir al Carrito</span>
@@ -369,9 +370,22 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
                 <button
                   onClick={handleBuyNow}
-                  className="w-full py-3.5 px-4 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-98 shadow-sm cursor-pointer"
+                  className="flex-1 py-3.5 px-4 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-98 shadow-sm cursor-pointer"
                 >
                   <span>Comprar Ahora</span>
+                </button>
+
+                <button
+                  onClick={() => toggleFavorite(product.id)}
+                  aria-label="Guardar en favoritos"
+                  className={`p-3.5 rounded-xl border transition-all active:scale-90 cursor-pointer ${
+                    isFav
+                      ? "border-red-200 bg-red-50 text-red-500 shadow-xs"
+                      : "border-neutral-200 bg-white text-neutral-400 hover:text-red-500 hover:border-neutral-300"
+                  }`}
+                  title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
+                >
+                  <Heart className={`w-5 h-5 ${isFav ? "fill-red-500" : ""}`} />
                 </button>
               </div>
 
@@ -420,7 +434,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   Otros modelos disponibles
                 </h2>
                 <p className="text-xs text-neutral-500">
-                  Compara y encuentra los audífonos ideales para ti en Chimbote.
+                  Compara y encuentra los audífonos ideales para ti.
                 </p>
               </div>
               <Link
@@ -442,7 +456,6 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       </main>
 
       <Footer />
-      <CartDrawer />
     </div>
   );
 }

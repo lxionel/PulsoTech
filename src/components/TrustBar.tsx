@@ -8,7 +8,7 @@ export default function TrustBar() {
     {
       icon: Truck,
       title: "Entrega el Mismo Día",
-      description: "Delivery directo y puntual en Chimbote",
+      description: "Delivery directo y puntual a tu dirección",
     },
     {
       icon: Banknote,

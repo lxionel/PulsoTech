@@ -8,19 +8,19 @@ export default function FaqSection() {
 
   const faqs = [
     {
-      question: "¿Cómo funciona el pago contra entrega en Chimbote?",
+      question: "¿Cómo funciona el pago contra entrega?",
       answer:
-        "Coordinamos la entrega a tu dirección o punto de encuentro en Chimbote. Una vez que tienes el producto en mano y verificas su caja sellada, realizas el pago en efectivo o mediante transferencia digital inmediata (Yape o Plin).",
+        "Coordinamos la entrega a tu dirección o punto de encuentro. Una vez que tienes el producto en mano y verificas su caja sellada, realizas el pago en efectivo o mediante transferencia digital inmediata (Yape o Plin).",
     },
     {
       question: "¿Los productos son originales y vienen en caja sellada?",
       answer:
-        "Totalmente. Solo comercializamos audífonos 100% auténticos y nuevos en sus cajas selladas de fábrica con números de serie comprobables.",
+        "Totalmente. Solo comercializamos dispositivos 100% auténticos y nuevos en sus cajas selladas de fábrica con números de serie comprobables.",
     },
     {
       question: "¿Cuánto demora en llegar mi pedido?",
       answer:
-        "Las entregas locales en Chimbote se realizan el mismo día de la coordinación. Acordamos contigo el horario que más te convenga para recibirlo.",
+        "Las entregas se realizan el mismo día de la coordinación. Acordamos contigo el horario que más te convenga para recibirlo.",
     },
     {
       question: "¿Cuentan con garantía ante fallas?",

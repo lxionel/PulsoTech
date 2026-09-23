@@ -3,11 +3,17 @@
 import React from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
-import { ShoppingBag, Headphones, MessageSquare } from "lucide-react";
+import { ShoppingBag, Headphones, Heart } from "lucide-react";
 import { STORE_SETTINGS } from "@/data/products";
 
 export default function Navbar() {
-  const { itemsCount, setIsCartOpen, whatsappNumber, subtotal } = useCart();
+  const {
+    itemsCount,
+    setIsCartOpen,
+    subtotal,
+    favoritesCount,
+    setIsFavoritesOpen,
+  } = useCart();
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-neutral-200 shadow-2xs transition-all">
@@ -46,12 +52,32 @@ export default function Navbar() {
             Preguntas Frecuentes
           </Link>
           <Link href="/#garantia" className="hover:text-blue-600 transition-colors">
-            Garantía Chimbote
+            Garantía Oficial
           </Link>
         </nav>
 
-        {/* Right Actions: Cart with Total */}
-        <div className="flex items-center gap-3">
+        {/* Right Actions: Favorites + Cart with Total */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Favorites Button (Despegatec Style) */}
+          <button
+            onClick={() => setIsFavoritesOpen(true)}
+            aria-label="Ver favoritos guardados"
+            className="relative flex items-center justify-center p-2.5 rounded-xl border border-neutral-200 hover:border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-red-500 transition-all shadow-2xs active:scale-95 cursor-pointer"
+            title="Mis Favoritos"
+          >
+            <Heart
+              className={`w-4 h-4 ${
+                favoritesCount > 0 ? "text-red-500 fill-red-500" : ""
+              }`}
+            />
+            {favoritesCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center text-[9px] font-bold px-1 rounded-full bg-red-500 text-white min-w-3.5 h-3.5">
+                {favoritesCount}
+              </span>
+            )}
+          </button>
+
+          {/* Cart Drawer Trigger */}
           <button
             onClick={() => setIsCartOpen(true)}
             aria-label="Abrir bolsa de compra"

@@ -44,7 +44,7 @@ export default function FloatingWidgets() {
       <aside aria-label="Contacto por WhatsApp" className="fixed bottom-6 right-6 z-50">
         <a
           href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-            "¡Hola PulsoTech! Deseo consultar sobre los audífonos y productos disponibles en Chimbote."
+            "¡Hola PulsoTech! Deseo consultar sobre los audífonos y productos disponibles."
           )}`}
           target="_blank"
           rel="noopener noreferrer"

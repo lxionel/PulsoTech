@@ -21,6 +21,13 @@ interface CartContextType {
   freeShippingRemaining: number;
   whatsappNumber: string;
   setWhatsappNumber: (num: string) => void;
+  // Favorites
+  favorites: string[];
+  toggleFavorite: (productId: string) => void;
+  isFavorite: (productId: string) => boolean;
+  favoritesCount: number;
+  isFavoritesOpen: boolean;
+  setIsFavoritesOpen: (isOpen: boolean) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -37,7 +44,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
     return [];
   });
+
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("pulsotech_favorites");
+        if (saved) return JSON.parse(saved);
+      } catch {
+        // Ignorar error
+      }
+    }
+    return [];
+  });
+
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
   const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
   const [whatsappNumber, setWhatsappNumber] = useState(() => {
     if (typeof window !== "undefined") {
@@ -55,11 +76,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       localStorage.setItem("pulsotech_cart", JSON.stringify(items));
+      localStorage.setItem("pulsotech_favorites", JSON.stringify(favorites));
       localStorage.setItem("pulsotech_phone", whatsappNumber);
     } catch {
       // Ignorar error
     }
-  }, [items, whatsappNumber]);
+  }, [items, favorites, whatsappNumber]);
 
   const addItem = (product: Product, color: ProductColor, quantity = 1) => {
     setItems((prev) => {
@@ -102,11 +124,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const clearCart = () => setItems([]);
 
+  const toggleFavorite = (productId: string) => {
+    setFavorites((prev) => {
+      if (prev.includes(productId)) {
+        return prev.filter((id) => id !== productId);
+      } else {
+        return [...prev, productId];
+      }
+    });
+  };
+
+  const isFavorite = (productId: string) => favorites.includes(productId);
+
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const shipping = subtotal >= STORE_SETTINGS.freeShippingThreshold || subtotal === 0 ? 0 : STORE_SETTINGS.shippingCost;
   const total = subtotal + shipping;
   const itemsCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const freeShippingRemaining = Math.max(0, STORE_SETTINGS.freeShippingThreshold - subtotal);
+  const favoritesCount = favorites.length;
 
   return (
     <CartContext.Provider
@@ -127,6 +162,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         freeShippingRemaining,
         whatsappNumber,
         setWhatsappNumber,
+        favorites,
+        toggleFavorite,
+        isFavorite,
+        favoritesCount,
+        isFavoritesOpen,
+        setIsFavoritesOpen,
       }}
     >
       {children}
