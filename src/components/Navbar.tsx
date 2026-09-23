@@ -10,7 +10,7 @@ export default function Navbar() {
   const { itemsCount, setIsCartOpen, whatsappNumber } = useCart();
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-[#09090b]/95 backdrop-blur-md border-b border-neutral-800 shadow-sm transition-all">
+    <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-neutral-200 shadow-xs transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         {/* Brand Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
@@ -18,31 +18,31 @@ export default function Navbar() {
             P
           </div>
           <div>
-            <span className="text-lg font-extrabold tracking-tight text-white group-hover:text-blue-400 transition-colors block leading-tight">
+            <span className="text-lg font-extrabold tracking-tight text-neutral-950 group-hover:text-blue-600 transition-colors block leading-tight">
               {STORE_SETTINGS.name}
             </span>
-            <span className="text-[10px] text-neutral-400 font-semibold tracking-wider uppercase block">
+            <span className="text-[10px] text-neutral-500 font-semibold tracking-wider uppercase block">
               Tecnología & Audio
             </span>
           </div>
         </Link>
 
         {/* Navigation Categories */}
-        <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-neutral-300">
-          <Link href="/" className="hover:text-white transition-colors">
+        <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-neutral-700">
+          <Link href="/" className="hover:text-blue-600 transition-colors">
             Inicio
           </Link>
           <Link
             href="/#catalogo"
-            className="hover:text-white transition-colors flex items-center gap-1.5"
+            className="hover:text-blue-600 transition-colors flex items-center gap-1.5"
           >
-            <Headphones className="w-3.5 h-3.5 text-blue-500" />
+            <Headphones className="w-3.5 h-3.5 text-blue-600" />
             <span>Audífonos</span>
           </Link>
-          <Link href="/#como-comprar" className="hover:text-white transition-colors">
+          <Link href="/#como-comprar" className="hover:text-blue-600 transition-colors">
             Cómo Comprar
           </Link>
-          <Link href="/#garantia" className="hover:text-white transition-colors">
+          <Link href="/#garantia" className="hover:text-blue-600 transition-colors">
             Garantía Local
           </Link>
         </nav>
@@ -56,18 +56,18 @@ export default function Navbar() {
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Contactar por WhatsApp"
-            className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-emerald-400 bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-800/60 transition-colors"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors"
           >
-            <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
+            <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
             <span>WhatsApp</span>
           </a>
 
           <button
             onClick={() => setIsCartOpen(true)}
             aria-label="Abrir bolsa de compra"
-            className="relative flex items-center justify-center px-4 py-2 rounded-xl bg-white hover:bg-neutral-200 text-neutral-950 transition-all font-bold text-xs gap-2 shadow-xs active:scale-95 cursor-pointer"
+            className="relative flex items-center justify-center px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white transition-all font-semibold text-xs gap-2 shadow-xs active:scale-95 cursor-pointer"
           >
-            <ShoppingBag className="w-4 h-4 text-neutral-950" />
+            <ShoppingBag className="w-4 h-4 text-white" />
             <span>Bolsa</span>
             {itemsCount > 0 && (
               <span className="inline-flex items-center justify-center text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-600 text-white min-w-4 h-4">

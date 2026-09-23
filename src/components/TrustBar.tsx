@@ -28,7 +28,7 @@ export default function TrustBar() {
   ];
 
   return (
-    <section className="border-y border-neutral-800/80 bg-[#0d0d11]">
+    <section className="border-y border-neutral-200/80 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {perks.map((perk, index) => {
@@ -36,16 +36,16 @@ export default function TrustBar() {
             return (
               <div
                 key={index}
-                className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-900/50 transition-colors"
+                className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-50/80 transition-colors"
               >
-                <div className="w-10 h-10 rounded-xl bg-neutral-800/80 border border-neutral-700/60 flex items-center justify-center shrink-0 text-white shadow-2xs">
-                  <Icon className="w-5 h-5 text-blue-400" />
+                <div className="w-10 h-10 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center shrink-0 text-neutral-800">
+                  <Icon className="w-5 h-5 text-neutral-900" />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-xs sm:text-sm font-bold text-white leading-snug">
+                  <h4 className="text-xs sm:text-sm font-bold text-neutral-900 leading-snug">
                     {perk.title}
                   </h4>
-                  <p className="text-[11px] sm:text-xs text-neutral-400 leading-tight truncate sm:whitespace-normal">
+                  <p className="text-[11px] sm:text-xs text-neutral-500 leading-tight truncate sm:whitespace-normal">
                     {perk.description}
                   </p>
                 </div>

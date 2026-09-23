@@ -16,7 +16,7 @@ export default function Home() {
   const { whatsappNumber } = useCart();
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#09090b] text-[#f4f4f5]">
+    <div className="min-h-screen flex flex-col bg-[#fbfbfd] text-[#111113]">
       {/* Main Navigation */}
       <Navbar />
 

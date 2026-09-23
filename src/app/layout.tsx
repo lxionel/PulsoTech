@@ -33,7 +33,7 @@ export default function RootLayout({
       lang="es"
       className={`${plusJakarta.variable} ${spaceGrotesk.variable} h-full antialiased scroll-smooth`}
     >
-      <body className="min-h-full flex flex-col font-sans bg-[#09090b] text-[#f4f4f5] selection:bg-blue-600 selection:text-white">
+      <body className="min-h-full flex flex-col font-sans bg-[#fbfbfd] text-[#111113] selection:bg-neutral-900 selection:text-white">
         <CartProvider>{children}</CartProvider>
       </body>
     </html>
