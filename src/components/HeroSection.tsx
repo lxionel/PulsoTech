@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ArrowDown, MessageSquare, ShieldCheck, Truck, Sparkles, CheckCircle2 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { PRODUCTS, STORE_SETTINGS } from "@/data/products";
+import { getAssetUrl } from "@/utils/paths";
 
 export default function HeroSection() {
   const { whatsappNumber, setSelectedProductForModal } = useCart();
@@ -95,7 +96,7 @@ export default function HeroSection() {
               <div className="relative aspect-4/3 rounded-2xl bg-neutral-50 border border-neutral-100 flex items-center justify-center p-6 overflow-hidden group">
                 <div className="absolute inset-0 bg-radial from-neutral-200/40 via-transparent to-transparent opacity-60" />
                 <Image
-                  src={featuredProduct.colors[0]?.image || "/placeholder-earbuds.svg"}
+                  src={featuredProduct.colors[0]?.image || getAssetUrl("/placeholder-earbuds.svg")}
                   alt={featuredProduct.name}
                   width={240}
                   height={180}
