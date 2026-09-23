@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { PRODUCTS, STORE_SETTINGS, TECH_CATEGORIES } from "@/data/products";
+import { PRODUCTS } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import {
   TrendingUp,
@@ -12,7 +12,6 @@ import {
   PlusCircle,
   CheckCircle,
   Phone,
-  Layers,
   Save,
   ShoppingBag,
   ArrowLeft,
@@ -52,27 +51,27 @@ export default function AdminPage() {
   const [sales, setSales] = useState<SaleRecord[]>([
     {
       id: "VTA-1001",
-      productName: "Pulso Apex One (Negro Mate)",
+      productName: "Redmi Buds 6 Play",
       quantity: 1,
-      total: 89.99,
+      total: 49.00,
       channel: "WhatsApp",
       customerName: "Carlos Méndez",
       date: "Hoy, 14:20",
     },
     {
       id: "VTA-1002",
-      productName: "Pulso Pods Pro (Blanco)",
+      productName: "Redmi Buds 8 Lite",
       quantity: 2,
-      total: 99.98,
+      total: 178.00,
       channel: "WhatsApp",
       customerName: "Mariana Rivas",
       date: "Hoy, 11:05",
     },
     {
       id: "VTA-1003",
-      productName: "Pulso GaN Turbo 65W",
+      productName: "Redmi Buds 7S",
       quantity: 1,
-      total: 34.99,
+      total: 139.00,
       channel: "Presencial",
       customerName: "Lucas Benítez",
       date: "Ayer, 18:40",

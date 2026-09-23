@@ -3,14 +3,14 @@
 import React from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
-import AudioSpotlight from "@/components/AudioSpotlight";
+// AudioSpotlight oculto temporalmente hasta disponer de modelo 3D fiel al producto real
+// import AudioSpotlight from "@/components/AudioSpotlight";
 import ProductCatalog from "@/components/ProductCatalog";
 import CartDrawer from "@/components/CartDrawer";
 import ProductDetailModal from "@/components/ProductDetailModal";
 import Footer from "@/components/Footer";
-import { MessageSquare, Headphones, BatteryCharging, ShieldCheck, Watch } from "lucide-react";
+import { MessageSquare, Headphones, Truck, ShieldCheck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
-import { STORE_SETTINGS } from "@/data/products";
 
 export default function Home() {
   const { whatsappNumber } = useCart();
@@ -21,25 +21,27 @@ export default function Home() {
       <div className="w-full bg-[#f4f4f6] border-b border-neutral-200/90 py-2 px-4 text-center text-xs text-neutral-600 flex items-center justify-center gap-2 font-medium">
         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
         <span>
-          Envíos Gratis a todo el Perú en compras mayores a {STORE_SETTINGS.currencySymbol}
-          {STORE_SETTINGS.freeShippingThreshold}
+          Entrega el mismo día en Chimbote · Envíos a todo el Perú por Olva Courier
         </span>
         <span className="text-neutral-400">•</span>
         <span className="hidden sm:inline text-neutral-500">
-          Atención personalizada y pedidos directos por WhatsApp
+          Coordinación inmediata por WhatsApp
         </span>
       </div>
 
-      {/* Main Navigation (Clean, 100% Customer Facing) */}
+      {/* Main Navigation */}
       <Navbar />
 
       {/* Main Content */}
       <main className="flex-1">
-        {/* 1. Main Tech Store Hero Section (Bento Grid of Categories) */}
+        {/* 1. Main Tech Store Hero Section */}
         <HeroSection />
 
         {/* 2. Specialized Audio Spotlight Section with 3D Headphone Viewer */}
-        <AudioSpotlight />
+        {/*
+          <AudioSpotlight />
+          Nota: Oculto temporalmente. Se retomará más adelante con un modelo 3D fiel al producto real.
+        */}
 
         {/* 3. Tech Department Pillars */}
         <section className="py-12 border-b border-neutral-200/80 bg-white">
@@ -51,24 +53,24 @@ export default function Home() {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-neutral-900">
-                    Audio & Auriculares de Precisión
+                    Audífonos Xiaomi & Redmi Originales
                   </h3>
                   <p className="text-xs text-neutral-500 mt-1 leading-relaxed">
-                    Over-Ear y True Wireless con diafragmas de titanio y cancelación activa hasta 45dB.
+                    Modelos True Wireless 100% auténticos con cancelación activa de ruido, gran autonomía y garantía.
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-4 p-5 rounded-2xl bg-[#f8f8fa] border border-neutral-200/70">
                 <div className="p-3 rounded-xl bg-white text-neutral-900 border border-neutral-200 shrink-0 shadow-xs">
-                  <BatteryCharging className="w-5 h-5" />
+                  <Truck className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-neutral-900">
-                    Carga Rápida GaN III
+                    Entrega Local y Envíos Perú
                   </h3>
                   <p className="text-xs text-neutral-500 mt-1 leading-relaxed">
-                    Semiconductores de Nitruro de Galio de alta eficiencia para laptops, tablets y celulares.
+                    Entrega el mismo día en Chimbote y envíos a todo el Perú por Olva Courier con seguimiento.
                   </p>
                 </div>
               </div>
@@ -79,10 +81,10 @@ export default function Home() {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-neutral-900">
-                    Garantía Oficial Perú
+                    Garantía & Trato Directo
                   </h3>
                   <p className="text-xs text-neutral-500 mt-1 leading-relaxed">
-                    12 meses de cobertura directa. Coordinas en la web y pagas contra entrega o transferencia.
+                    Garantía oficial contra fallas de fábrica. Coordinación inmediata y segura vía WhatsApp.
                   </p>
                 </div>
               </div>
@@ -90,13 +92,13 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 4. Complete Products Catalog (Filterable by Category) */}
+        {/* 4. Complete Products Catalog */}
         <ProductCatalog />
 
         {/* Floating WhatsApp Concierge Button */}
         <a
           href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-            "¡Hola PulsoTech! Me gustaría consultar sobre los accesorios tecnológicos disponibles y envíos."
+            "¡Hola PulsoTech! Me gustaría consultar sobre los audífonos Xiaomi y Redmi disponibles y envíos."
           )}`}
           target="_blank"
           rel="noopener noreferrer"

@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
-import { ShoppingBag, MessageSquare, Headphones, Zap, Watch } from "lucide-react";
+import { ShoppingBag, MessageSquare, Headphones } from "lucide-react";
 import { STORE_SETTINGS } from "@/data/products";
 
 export default function Navbar() {
@@ -12,7 +12,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-40 w-full glass-nav transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Brand Logo: Clean Apple/Nothing Style */}
+        {/* Brand Logo */}
         <Link href="/" className="flex items-center gap-2 group">
           <div className="w-7 h-7 rounded-md bg-black text-white flex items-center justify-center font-bold text-xs tracking-tighter shadow-sm">
             P
@@ -22,7 +22,7 @@ export default function Navbar() {
               {STORE_SETTINGS.name}
             </span>
             <span className="text-[9px] tracking-widest uppercase text-neutral-400 -mt-1 font-mono">
-              TECH & GADGETS
+              XIAOMI & REDMI AUDIO
             </span>
           </div>
         </Link>
@@ -30,28 +30,15 @@ export default function Navbar() {
         {/* Navigation Categories for Customers */}
         <nav className="hidden md:flex items-center gap-7 text-xs font-medium text-neutral-600">
           <a
-            href="#audio-destacado"
+            href="#catalogo"
             className="hover:text-black transition-colors flex items-center gap-1.5"
           >
             <Headphones className="w-3.5 h-3.5 text-neutral-400" />
-            <span>Audífonos & Audio (3D)</span>
+            <span>Audífonos Xiaomi & Redmi</span>
           </a>
-          <a
-            href="#catalogo"
-            className="hover:text-black transition-colors flex items-center gap-1.5"
-          >
-            <Zap className="w-3.5 h-3.5 text-neutral-400" />
-            <span>Carga Rápida</span>
-          </a>
-          <a
-            href="#catalogo"
-            className="hover:text-black transition-colors flex items-center gap-1.5"
-          >
-            <Watch className="w-3.5 h-3.5 text-neutral-400" />
-            <span>Wearables</span>
-          </a>
+          {/* Enlaces de Carga Rápida y Wearables ocultos temporalmente */}
           <a href="#garantia" className="hover:text-black transition-colors">
-            Garantía Oficial
+            Garantía y Envíos
           </a>
         </nav>
 
@@ -59,7 +46,7 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           <a
             href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-              "¡Hola PulsoTech! Deseo consultar sobre disponibilidad y asesoramiento de productos."
+              "¡Hola PulsoTech! Deseo consultar sobre disponibilidad y asesoramiento de audífonos Xiaomi/Redmi."
             )}`}
             target="_blank"
             rel="noopener noreferrer"

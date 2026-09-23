@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
 import { PRODUCTS, STORE_SETTINGS } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import Headphones3DViewer from "./Headphones3DViewer";
@@ -11,10 +10,6 @@ import {
   BatteryCharging,
   Watch,
   ArrowRight,
-  ShieldCheck,
-  Zap,
-  Sparkles,
-  Check,
   Info,
 } from "lucide-react";
 

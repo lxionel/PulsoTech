@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Sliders, Volume2, VolumeX, Play, Pause, Waves, ShieldCheck } from "lucide-react";
+import { Sliders, Volume2, VolumeX, Play, Pause, Waves } from "lucide-react";
 
 interface EnvironmentScenario {
   id: string;

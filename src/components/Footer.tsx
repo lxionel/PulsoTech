@@ -1,9 +1,8 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
 import { STORE_SETTINGS } from "@/data/products";
-import { ShieldCheck, Truck, Headphones, MessageSquare, ArrowUpRight, Lock } from "lucide-react";
+import { ShieldCheck, Truck, Headphones, MessageSquare, ArrowUpRight } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
 export default function Footer() {
@@ -21,7 +20,7 @@ export default function Footer() {
             <div>
               <h4 className="font-bold text-neutral-900 text-sm">Garantía PulsoTech</h4>
               <p className="text-neutral-500 mt-1 leading-relaxed">
-                12 meses de garantía oficial y cambio directo por falla técnica.
+                Productos 100% originales Xiaomi y Redmi con garantía ante fallas técnicas.
               </p>
             </div>
           </div>
@@ -31,9 +30,9 @@ export default function Footer() {
               <Truck className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="font-bold text-neutral-900 text-sm">Despacho en 24/48h</h4>
+              <h4 className="font-bold text-neutral-900 text-sm">Coordinación inmediata por WhatsApp</h4>
               <p className="text-neutral-500 mt-1 leading-relaxed">
-                Empaque protector blindado y seguimiento de entrega en tiempo real.
+                Entrega el mismo día en Chimbote y envíos a todo el Perú por Olva Courier.
               </p>
             </div>
           </div>
@@ -43,9 +42,9 @@ export default function Footer() {
               <Headphones className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="font-bold text-neutral-900 text-sm">Tecnología Calibrada</h4>
+              <h4 className="font-bold text-neutral-900 text-sm">Originales Garantizados</h4>
               <p className="text-neutral-500 mt-1 leading-relaxed">
-                Cada audífono y accesorio es verificado individualmente en laboratorio.
+                Empaque sellado de fábrica con número de serie y verificación auténtica.
               </p>
             </div>
           </div>
@@ -55,9 +54,9 @@ export default function Footer() {
               <MessageSquare className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="font-bold text-neutral-900 text-sm">Asesoría por WhatsApp</h4>
+              <h4 className="font-bold text-neutral-900 text-sm">Asesoría Personalizada</h4>
               <p className="text-neutral-500 mt-1 leading-relaxed">
-                Te asesoramos directamente para elegir el gadget adecuado para ti.
+                Te asesoramos directamente por WhatsApp para escoger el modelo Redmi Buds ideal para ti.
               </p>
             </div>
           </div>
@@ -72,17 +71,17 @@ export default function Footer() {
               {STORE_SETTINGS.name}
             </span>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 font-semibold">
-              TECH & GADGETS
+              XIAOMI & REDMI AUDIO
             </span>
           </div>
           <p className="text-neutral-500 max-w-sm text-xs leading-relaxed">
-            Reventa y distribución de tecnología moderna, accesorios de alto rendimiento y experiencia de sonido premium.
+            Reventa y distribución de audífonos 100% originales Xiaomi y Redmi. Entrega local en Chimbote y envíos a todo el Perú.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-6 text-xs font-medium text-neutral-600">
           <a href="#catalogo" className="hover:text-black transition-colors">
-            Catálogo de Productos
+            Catálogo de Audífonos
           </a>
           <a href="#garantia" className="hover:text-black transition-colors">
             Políticas de Garantía

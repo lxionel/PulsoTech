@@ -4,15 +4,21 @@ import React, { useState } from "react";
 import { PRODUCTS, STORE_SETTINGS } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import Headphones3DViewer from "./Headphones3DViewer";
-import { ArrowRight, ShieldCheck, Truck, Sparkles, Info, Headphones } from "lucide-react";
+import { ArrowRight, ShieldCheck, Truck, Info, Headphones } from "lucide-react";
 
 export default function AudioSpotlight() {
-  const flagship = PRODUCTS[0]; // Pulso Apex One
+  const flagship = PRODUCTS[0];
   const { addItem, setSelectedProductForModal } = useCart();
-  const [selectedColorName, setSelectedColorName] = useState(flagship.colors[0].name);
+  const [selectedColorName, setSelectedColorName] = useState(flagship?.colors?.[0]?.name || "Original");
+
+  if (!flagship) return null;
 
   const currentColor =
-    flagship.colors.find((c) => c.name === selectedColorName) || flagship.colors[0];
+    flagship.colors?.find((c) => c.name === selectedColorName) || flagship.colors?.[0] || {
+      name: "Original",
+      hex: "#18181b",
+      image: "/placeholder-earbuds.svg",
+    };
 
   const handleBuyNow = () => {
     addItem(flagship, currentColor, 1);
@@ -132,7 +138,7 @@ export default function AudioSpotlight() {
               </span>
               <span className="inline-flex items-center gap-1.5 font-medium text-neutral-700">
                 <Truck className="w-4 h-4 text-neutral-900" />
-                Despacho 24/48h
+                Coordinación inmediata por WhatsApp
               </span>
             </div>
           </div>

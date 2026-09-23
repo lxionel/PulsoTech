@@ -26,36 +26,40 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("pulsotech_cart");
+        if (saved) return JSON.parse(saved);
+      } catch {
+        // Ignorar error
+      }
+    }
+    return [];
+  });
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
-  const [whatsappNumber, setWhatsappNumber] = useState(STORE_SETTINGS.whatsappNumber);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  // Cargar carrito desde localStorage en cliente
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("pulsotech_cart");
-      if (saved) {
-        setItems(JSON.parse(saved));
+  const [whatsappNumber, setWhatsappNumber] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const savedPhone = localStorage.getItem("pulsotech_phone");
+        if (savedPhone) return savedPhone;
+      } catch {
+        // Ignorar error
       }
-      const savedPhone = localStorage.getItem("pulsotech_phone");
-      if (savedPhone) {
-        setWhatsappNumber(savedPhone);
-      }
-    } catch {
-      // Ignorar errores de parseo
     }
-    setIsLoaded(true);
-  }, []);
+    return STORE_SETTINGS.whatsappNumber;
+  });
 
   // Guardar en localStorage cuando cambie
   useEffect(() => {
-    if (isLoaded) {
+    try {
       localStorage.setItem("pulsotech_cart", JSON.stringify(items));
       localStorage.setItem("pulsotech_phone", whatsappNumber);
+    } catch {
+      // Ignorar error
     }
-  }, [items, whatsappNumber, isLoaded]);
+  }, [items, whatsappNumber]);
 
   const addItem = (product: Product, color: ProductColor, quantity = 1) => {
     setItems((prev) => {
