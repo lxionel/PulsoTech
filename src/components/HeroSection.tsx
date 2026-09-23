@@ -25,7 +25,7 @@ export default function HeroSection() {
       tagline: "TIENDA OFICIAL DE TECNOLOGÍA",
       title: "¡Tecnología y audio original!",
       subtitle:
-        "Encuentra audífonos, smartwatches y accesorios garantizados en caja sellada de fábrica. Entrega el mismo día con pago seguro contra entrega.",
+        "Caja sellada de fábrica, garantía oficial y pago contra entrega.",
       buttonText: "VER CATÁLOGO",
       buttonLink: "#catalogo",
       image: getAssetUrl("/images/banners/hero-tech-1.png"),
@@ -39,7 +39,7 @@ export default function HeroSection() {
       tagline: "COLECCIÓN OFICIAL DE AUDÍFONOS",
       title: "¡Impulsa tu sonido!",
       subtitle:
-        "Audífonos inalámbricos Xiaomi y Redmi con sonido envolvente, cancelación de ruido y hasta 36 horas de batería.",
+        "Cancelación de ruido, alta fidelidad y máxima batería.",
       buttonText: "VER AUDÍFONOS",
       buttonLink: "#catalogo",
       image: getAssetUrl("/images/banners/hero-audio-1.jpg"),
@@ -53,7 +53,7 @@ export default function HeroSection() {
       tagline: "ECOSISTEMA & CARGA RÁPIDA",
       title: "¡Potencia tus dispositivos!",
       subtitle:
-        "Cargadores inteligentes, accesorios y wearables con garantía de funcionamiento. Coordinamos tu entrega en minutos por WhatsApp.",
+        "Accesorios originales con coordinación directa por WhatsApp.",
       buttonText: "PEDIR POR WHATSAPP",
       buttonLink: `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
         "¡Hola PulsoTech! Deseo consultar sobre los productos disponibles y coordinar una entrega hoy."

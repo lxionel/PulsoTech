@@ -8,22 +8,22 @@ export default function TrustBar() {
     {
       icon: Truck,
       title: "Entrega el Mismo Día",
-      description: "Delivery directo y puntual a tu dirección",
+      description: "Delivery directo y puntual",
     },
     {
       icon: Banknote,
       title: "Pago Contra Entrega",
-      description: "Paga con Efectivo o Yape al recibir",
+      description: "Efectivo o Yape al recibir",
     },
     {
       icon: ShieldCheck,
       title: "100% Originales",
-      description: "Empaque sellado y garantía de funcionamiento",
+      description: "Caja sellada de fábrica",
     },
     {
       icon: MessageSquare,
       title: "Atención Inmediata",
-      description: "Respuesta rápida y pedidos por WhatsApp",
+      description: "Pedidos por WhatsApp",
     },
   ];
 
