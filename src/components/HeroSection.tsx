@@ -7,8 +7,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Headphones,
-  Volume2,
-  Package,
+  Watch,
+  Zap,
   ShieldCheck,
   ArrowRight,
 } from "lucide-react";
@@ -22,43 +22,46 @@ export default function HeroSection() {
   const slides = [
     {
       id: "slide-1",
-      tagline: "COLECCIÓN OFICIAL 2026",
-      title: "¡Impulsa tu sonido!",
+      tagline: "TIENDA DE TECNOLOGÍA EN CHIMBOTE",
+      title: "¡Tecnología y audio original!",
       subtitle:
-        "Encuentra audífonos inalámbricos potentes y modernos, ideales para trabajar, estudiar o entrenar sin límites.",
-      buttonText: "VER AUDÍFONOS",
+        "Encuentra audífonos, smartwatches y accesorios garantizados en caja sellada de fábrica. Entrega hoy en Chimbote con pago contra entrega.",
+      buttonText: "VER CATÁLOGO",
       buttonLink: "#catalogo",
-      image: getAssetUrl("/images/banners/hero-audio-1.jpg"),
-      alt: "Audífonos Inalámbricos PulsoTech",
+      image: getAssetUrl("/images/banners/hero-tech-1.png"),
+      alt: "PulsoTech Tecnología y Audio en Chimbote",
       badge: "STOCK EN CHIMBOTE",
+      theme: "dark" as const,
       isWhatsApp: false,
     },
     {
       id: "slide-2",
-      tagline: "AISLAMIENTO ACÚSTICO INTELIGENTE",
-      title: "¡Cancelación de ruido activa!",
+      tagline: "COLECCIÓN OFICIAL DE AUDÍFONOS",
+      title: "¡Impulsa tu sonido!",
       subtitle:
-        "Hasta 42dB de reducción de ruido ambiental. Sumérgete en tu música y llamadas nítidas en cualquier lugar.",
-      buttonText: "VER MODELOS ANC",
-      buttonLink: "/producto/redmi-buds-8-lite",
-      image: getAssetUrl("/images/banners/hero-audio-2.jpg"),
-      alt: "Cancelación de Ruido Activa PulsoTech",
-      badge: "HASTA 42dB ANC",
+        "Audífonos inalámbricos Xiaomi y Redmi con sonido envolvente, cancelación de ruido y hasta 36 horas de batería.",
+      buttonText: "VER AUDÍFONOS",
+      buttonLink: "#catalogo",
+      image: getAssetUrl("/images/banners/hero-audio-1.jpg"),
+      alt: "Audífonos Inalámbricos TWS PulsoTech",
+      badge: "AUDIO DE ALTA FIDELIDAD",
+      theme: "light" as const,
       isWhatsApp: false,
     },
     {
       id: "slide-3",
-      tagline: "ENTREGA LOCAL INMEDIATA",
-      title: "¡Recibe hoy y paga al recibir!",
+      tagline: "ECOSISTEMA & CARGA RÁPIDA",
+      title: "¡Potencia tus dispositivos!",
       subtitle:
-        "Productos 100% originales en caja sellada de fábrica. Coordinamos tu entrega hoy en Chimbote con pago contra entrega en Efectivo o Yape.",
+        "Cargadores inteligentes, accesorios y wearables con garantía de funcionamiento. Coordinamos tu entrega en minutos por WhatsApp.",
       buttonText: "PEDIR POR WHATSAPP",
       buttonLink: `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-        "¡Hola PulsoTech! Deseo consultar sobre la disponibilidad y entregas hoy en Chimbote."
+        "¡Hola PulsoTech! Deseo consultar sobre los productos disponibles y coordinar una entrega hoy en Chimbote."
       )}`,
-      image: getAssetUrl("/images/banners/hero-audio-3.jpg"),
-      alt: "Entrega Inmediata y Pago Seguro en Chimbote",
-      badge: "PAGO CONTRA ENTREGA",
+      image: getAssetUrl("/images/banners/hero-tech-2.jpg"),
+      alt: "Ecosistema Tecnológico PulsoTech",
+      badge: "ENTREGA EL MISMO DÍA",
+      theme: "dark" as const,
       isWhatsApp: true,
     },
   ];
@@ -90,15 +93,15 @@ export default function HeroSection() {
       href: "#catalogo",
     },
     {
-      icon: Volume2,
-      label: "Cancelación ANC",
-      subtitle: "Aislamiento Activo",
-      href: "/producto/redmi-buds-8-lite",
+      icon: Watch,
+      label: "Smartwatches",
+      subtitle: "Relojes & Pulseras",
+      href: "#catalogo",
     },
     {
-      icon: Package,
-      label: "Cajas Selladas",
-      subtitle: "100% Originales",
+      icon: Zap,
+      label: "Carga & Cables",
+      subtitle: "GaN Inteligente",
       href: "#catalogo",
     },
     {
@@ -113,83 +116,107 @@ export default function HeroSection() {
     <section className="w-full bg-white">
       {/* Cinematic E-Commerce Slider (Inspired by Despegatec Layout) */}
       <div
-        className="relative w-full overflow-hidden bg-neutral-100 select-none"
+        className="relative w-full overflow-hidden bg-neutral-950 select-none"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
         <div
-          className="flex transition-transform duration-700 ease-out h-[420px] sm:h-[480px] lg:h-[540px]"
+          className="flex transition-transform duration-700 ease-out h-[440px] sm:h-[500px] lg:h-[560px]"
           style={{ transform: `translateX(-${currentSlide * 100}%)` }}
         >
-          {slides.map((slide, index) => (
-            <div
-              key={slide.id}
-              className="relative w-full h-full shrink-0 flex items-center overflow-hidden"
-            >
-              {/* Background Panoramic Photography */}
-              <div className="absolute inset-0 z-0">
-                <Image
-                  src={slide.image}
-                  alt={slide.alt}
-                  fill
-                  priority={index === 0}
-                  className="object-cover object-right lg:object-center"
-                />
-                {/* Legibility Gradient Overlay (Left to Right) */}
-                <div className="absolute inset-0 bg-gradient-to-r from-white via-white/85 sm:via-white/70 to-transparent lg:w-3/5 z-1" />
-              </div>
+          {slides.map((slide, index) => {
+            const isDark = slide.theme === "dark";
+            return (
+              <div
+                key={slide.id}
+                className="relative w-full h-full shrink-0 flex items-center overflow-hidden"
+              >
+                {/* Background Panoramic Photography */}
+                <div className="absolute inset-0 z-0">
+                  <Image
+                    src={slide.image}
+                    alt={slide.alt}
+                    fill
+                    priority={index === 0}
+                    className="object-cover object-center"
+                  />
 
-              {/* Foreground Commercial Content */}
-              <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 w-full">
-                <div className="max-w-xl space-y-4 sm:space-y-5">
-                  {/* Subtle Badge */}
-                  <span className="inline-block px-3 py-1 rounded-md text-[10px] sm:text-xs font-black tracking-widest uppercase bg-neutral-950 text-white shadow-xs">
-                    {slide.badge}
-                  </span>
+                  {/* Legibility Gradient Overlay (Left to Right) */}
+                  <div
+                    className={`absolute inset-0 z-1 ${
+                      isDark
+                        ? "bg-gradient-to-r from-black/95 via-black/75 sm:via-black/55 to-transparent lg:w-3/5"
+                        : "bg-gradient-to-r from-white via-white/90 sm:via-white/75 to-transparent lg:w-3/5"
+                    }`}
+                  />
+                </div>
 
-                  {/* Big Bold Headline */}
-                  <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-neutral-950 leading-[1.08]">
-                    {slide.title}
-                  </h1>
+                {/* Foreground Commercial Content */}
+                <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 w-full">
+                  <div className="max-w-xl space-y-4 sm:space-y-5">
+                    {/* Subtle Badge */}
+                    <span
+                      className={`inline-block px-3 py-1 rounded-md text-[10px] sm:text-xs font-black tracking-widest uppercase shadow-xs ${
+                        isDark
+                          ? "bg-blue-600 text-white"
+                          : "bg-neutral-950 text-white"
+                      }`}
+                    >
+                      {slide.badge}
+                    </span>
 
-                  {/* Subtitle */}
-                  <p className="text-xs sm:text-sm lg:text-base text-neutral-700 leading-relaxed font-normal max-w-lg">
-                    {slide.subtitle}
-                  </p>
+                    {/* Big Bold Headline */}
+                    <h1
+                      className={`text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.08] ${
+                        isDark ? "text-white" : "text-neutral-950"
+                      }`}
+                    >
+                      {slide.title}
+                    </h1>
 
-                  {/* Action CTA Button (Despegatec Blue Style) */}
-                  <div className="pt-2">
-                    {slide.isWhatsApp ? (
-                      <a
-                        href={slide.buttonLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-8 py-3.5 sm:py-4 rounded-xl bg-[#155dfc] hover:bg-[#0d47c4] text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-lg hover:shadow-xl active:scale-95 transition-all cursor-pointer"
-                      >
-                        <span>{slide.buttonText}</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </a>
-                    ) : (
-                      <Link
-                        href={slide.buttonLink}
-                        className="inline-flex items-center gap-2 px-8 py-3.5 sm:py-4 rounded-xl bg-[#155dfc] hover:bg-[#0d47c4] text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-lg hover:shadow-xl active:scale-95 transition-all cursor-pointer"
-                      >
-                        <span>{slide.buttonText}</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </Link>
-                    )}
+                    {/* Subtitle */}
+                    <p
+                      className={`text-xs sm:text-sm lg:text-base leading-relaxed font-normal max-w-lg ${
+                        isDark ? "text-neutral-300" : "text-neutral-700"
+                      }`}
+                    >
+                      {slide.subtitle}
+                    </p>
+
+                    {/* Action CTA Button (Despegatec Blue Style) */}
+                    <div className="pt-2">
+                      {slide.isWhatsApp ? (
+                        <a
+                          href={slide.buttonLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-8 py-3.5 sm:py-4 rounded-xl bg-[#155dfc] hover:bg-[#0d47c4] text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-lg hover:shadow-xl active:scale-95 transition-all cursor-pointer"
+                        >
+                          <span>{slide.buttonText}</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </a>
+                      ) : (
+                        <Link
+                          href={slide.buttonLink}
+                          className="inline-flex items-center gap-2 px-8 py-3.5 sm:py-4 rounded-xl bg-[#155dfc] hover:bg-[#0d47c4] text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-lg hover:shadow-xl active:scale-95 transition-all cursor-pointer"
+                        >
+                          <span>{slide.buttonText}</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Previous Slide Arrow */}
         <button
           onClick={prevSlide}
           aria-label="Slide anterior"
-          className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/80 hover:bg-white text-neutral-800 hover:text-black flex items-center justify-center shadow-md transition-all active:scale-90 cursor-pointer"
+          className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-xs transition-all active:scale-90 cursor-pointer"
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
@@ -198,13 +225,13 @@ export default function HeroSection() {
         <button
           onClick={nextSlide}
           aria-label="Siguiente slide"
-          className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/80 hover:bg-white text-neutral-800 hover:text-black flex items-center justify-center shadow-md transition-all active:scale-90 cursor-pointer"
+          className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-xs transition-all active:scale-90 cursor-pointer"
         >
           <ChevronRight className="w-6 h-6" />
         </button>
 
         {/* Pagination Dots (Despegatec Style) */}
-        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/20 backdrop-blur-xs px-3 py-1.5 rounded-full">
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/40 backdrop-blur-xs px-3.5 py-1.5 rounded-full">
           {slides.map((_, idx) => (
             <button
               key={idx}
