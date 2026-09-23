@@ -3,13 +3,11 @@
 import React from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
-// AudioSpotlight oculto temporalmente hasta disponer de modelo 3D fiel al producto real
-// import AudioSpotlight from "@/components/AudioSpotlight";
 import ProductCatalog from "@/components/ProductCatalog";
 import CartDrawer from "@/components/CartDrawer";
 import ProductDetailModal from "@/components/ProductDetailModal";
 import Footer from "@/components/Footer";
-import { MessageSquare, Headphones, Truck, ShieldCheck } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
 export default function Home() {
@@ -34,65 +32,10 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="flex-1">
-        {/* 1. Main Tech Store Hero Section */}
+        {/* 1. Main Store Hero Section */}
         <HeroSection />
 
-        {/* 2. Specialized Audio Spotlight Section with 3D Headphone Viewer */}
-        {/*
-          <AudioSpotlight />
-          Nota: Oculto temporalmente. Se retomará más adelante con un modelo 3D fiel al producto real.
-        */}
-
-        {/* 3. Tech Department Pillars */}
-        <section className="py-12 border-b border-neutral-200/80 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="flex items-start gap-4 p-5 rounded-2xl bg-[#f8f8fa] border border-neutral-200/70">
-                <div className="p-3 rounded-xl bg-white text-neutral-900 border border-neutral-200 shrink-0 shadow-xs">
-                  <Headphones className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-neutral-900">
-                    Audífonos Xiaomi & Redmi Originales
-                  </h3>
-                  <p className="text-xs text-neutral-500 mt-1 leading-relaxed">
-                    Modelos True Wireless 100% auténticos con cancelación activa de ruido, gran autonomía y garantía.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 p-5 rounded-2xl bg-[#f8f8fa] border border-neutral-200/70">
-                <div className="p-3 rounded-xl bg-white text-neutral-900 border border-neutral-200 shrink-0 shadow-xs">
-                  <Truck className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-neutral-900">
-                    Entrega Local y Envíos Perú
-                  </h3>
-                  <p className="text-xs text-neutral-500 mt-1 leading-relaxed">
-                    Entrega el mismo día en Chimbote y envíos a todo el Perú por Olva Courier con seguimiento.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 p-5 rounded-2xl bg-[#f8f8fa] border border-neutral-200/70">
-                <div className="p-3 rounded-xl bg-white text-neutral-900 border border-neutral-200 shrink-0 shadow-xs">
-                  <ShieldCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-neutral-900">
-                    Garantía & Trato Directo
-                  </h3>
-                  <p className="text-xs text-neutral-500 mt-1 leading-relaxed">
-                    Garantía oficial contra fallas de fábrica. Coordinación inmediata y segura vía WhatsApp.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 4. Complete Products Catalog */}
+        {/* 2. Complete Products Catalog */}
         <ProductCatalog />
 
         {/* Floating WhatsApp Concierge Button */}
