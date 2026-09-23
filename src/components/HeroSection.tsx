@@ -11,7 +11,6 @@ import {
   Zap,
   ShieldCheck,
   ArrowRight,
-  CheckCircle2,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { STORE_SETTINGS } from "@/data/products";
@@ -24,8 +23,6 @@ export default function HeroSection() {
     {
       id: "slide-1",
       tagline: "TIENDA OFICIAL DE TECNOLOGÍA",
-      titlePrefix: "¡Tecnología y audio ",
-      highlight: "original!",
       title: "¡Tecnología y audio original!",
       subtitle:
         "Encuentra audífonos, smartwatches y accesorios garantizados en caja sellada de fábrica. Entrega el mismo día con pago seguro contra entrega.",
@@ -34,19 +31,12 @@ export default function HeroSection() {
       image: getAssetUrl("/images/banners/hero-tech-1.png"),
       alt: "PulsoTech Tecnología y Audio Original",
       badge: "STOCK DISPONIBLE",
-      features: [
-        "100% Caja sellada",
-        "Garantía oficial",
-        "Pago contra entrega",
-      ],
       theme: "dark" as const,
       isWhatsApp: false,
     },
     {
       id: "slide-2",
       tagline: "COLECCIÓN OFICIAL DE AUDÍFONOS",
-      titlePrefix: "¡Impulsa ",
-      highlight: "tu sonido!",
       title: "¡Impulsa tu sonido!",
       subtitle:
         "Audífonos inalámbricos Xiaomi y Redmi con sonido envolvente, cancelación de ruido y hasta 36 horas de batería.",
@@ -55,19 +45,12 @@ export default function HeroSection() {
       image: getAssetUrl("/images/banners/hero-audio-1.jpg"),
       alt: "Audífonos Inalámbricos TWS PulsoTech",
       badge: "AUDIO DE ALTA FIDELIDAD",
-      features: [
-        "Cancelación de ruido",
-        "Bluetooth 5.4",
-        "Batería hasta 36h",
-      ],
       theme: "light" as const,
       isWhatsApp: false,
     },
     {
       id: "slide-3",
       tagline: "ECOSISTEMA & CARGA RÁPIDA",
-      titlePrefix: "¡Potencia ",
-      highlight: "tus dispositivos!",
       title: "¡Potencia tus dispositivos!",
       subtitle:
         "Cargadores inteligentes, accesorios y wearables con garantía de funcionamiento. Coordinamos tu entrega en minutos por WhatsApp.",
@@ -78,11 +61,6 @@ export default function HeroSection() {
       image: getAssetUrl("/images/banners/hero-tech-2.jpg"),
       alt: "Ecosistema Tecnológico PulsoTech",
       badge: "ENTREGA EL MISMO DÍA",
-      features: [
-        "Atención inmediata",
-        "Coordinación directa",
-        "Envíos exprés",
-      ],
       theme: "dark" as const,
       isWhatsApp: true,
     },
@@ -143,7 +121,7 @@ export default function HeroSection() {
         onMouseLeave={() => setIsPaused(false)}
       >
         <div
-          className="flex transition-transform duration-700 ease-out h-[480px] sm:h-[540px] lg:h-[600px]"
+          className="flex transition-transform duration-700 ease-out h-[440px] sm:h-[500px] lg:h-[560px]"
           style={{ transform: `translateX(-${currentSlide * 100}%)` }}
         >
           {slides.map((slide, index) => {
@@ -163,119 +141,63 @@ export default function HeroSection() {
                     className="object-cover object-center"
                   />
 
-                  {/* Soft atmospheric gradient */}
+                  {/* Legibility Gradient Overlay (Left to Right) */}
                   <div
-                    className={`absolute inset-0 z-1 pointer-events-none transition-opacity duration-500 ${
+                    className={`absolute inset-0 z-1 pointer-events-none ${
                       isDark
-                        ? "bg-gradient-to-r from-black/70 via-black/35 to-transparent"
-                        : "bg-gradient-to-r from-white/70 via-white/35 to-transparent"
+                        ? "bg-gradient-to-r from-black/85 via-black/50 to-transparent lg:w-3/5"
+                        : "bg-gradient-to-r from-white via-white/85 sm:via-white/70 to-transparent lg:w-3/5"
                     }`}
                   />
                 </div>
 
-                {/* Foreground Commercial Content with Glassmorphic Card */}
-                <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 w-full flex items-center">
-                  <div
-                    className={`w-full max-w-lg lg:max-w-xl p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl space-y-4 sm:space-y-5 transition-all duration-300 ${
-                      isDark
-                        ? "bg-neutral-950/65 backdrop-blur-xl border border-white/10 shadow-black/70"
-                        : "bg-white/85 backdrop-blur-xl border border-neutral-200/90 shadow-neutral-900/10"
-                    }`}
-                  >
-                    {/* Glowing Pill Badge */}
+                {/* Foreground Commercial Content (Directly on image, no box) */}
+                <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 w-full">
+                  <div className="max-w-xl space-y-4 sm:space-y-5">
+                    {/* Badge: Fondo negro y letras blancas */}
                     <div>
-                      <div
-                        className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-bold tracking-wider uppercase backdrop-blur-md ${
-                          isDark
-                            ? "bg-blue-500/15 border border-blue-400/30 text-blue-400"
-                            : "bg-blue-50 border border-blue-200 text-blue-600"
-                        }`}
-                      >
-                        <span className="relative flex h-2 w-2">
-                          <span
-                            className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                              isDark ? "bg-blue-400" : "bg-blue-500"
-                            }`}
-                          />
-                          <span
-                            className={`relative inline-flex rounded-full h-2 w-2 ${
-                              isDark ? "bg-blue-500" : "bg-blue-600"
-                            }`}
-                          />
-                        </span>
-                        <span>{slide.badge}</span>
-                      </div>
+                      <span className="inline-block px-3 py-1 rounded-md text-[11px] sm:text-xs font-black tracking-widest uppercase bg-neutral-950 text-white shadow-xs">
+                        {slide.badge}
+                      </span>
                     </div>
 
-                    {/* Big Bold Headline with Gradient Accent */}
+                    {/* Headline: Clean, solid text without cyberpunk gradient */}
                     <h1
-                      className={`text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.12] ${
+                      className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.1] ${
                         isDark ? "text-white" : "text-neutral-950"
                       }`}
                     >
-                      {slide.titlePrefix}
-                      <span
-                        className={
-                          isDark
-                            ? "bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300 bg-clip-text text-transparent"
-                            : "bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 bg-clip-text text-transparent"
-                        }
-                      >
-                        {slide.highlight}
-                      </span>
+                      {slide.title}
                     </h1>
 
                     {/* Subtitle */}
                     <p
-                      className={`text-xs sm:text-sm lg:text-[15px] leading-relaxed font-normal ${
-                        isDark ? "text-neutral-300/90" : "text-neutral-600"
+                      className={`text-xs sm:text-sm lg:text-base leading-relaxed font-normal max-w-lg ${
+                        isDark ? "text-neutral-300" : "text-neutral-700"
                       }`}
                     >
                       {slide.subtitle}
                     </p>
 
-                    {/* Value Proposition Micro-chips */}
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-0.5">
-                      {slide.features.map((feat, fIdx) => (
-                        <div
-                          key={fIdx}
-                          className={`inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold ${
-                            isDark ? "text-neutral-300" : "text-neutral-700"
-                          }`}
-                        >
-                          <CheckCircle2
-                            className={`w-3.5 h-3.5 shrink-0 ${
-                              isDark ? "text-blue-400" : "text-blue-600"
-                            }`}
-                          />
-                          <span>{feat}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Action CTA Button */}
+                    {/* Action CTA Button: Despegatec Solid Blue Style */}
                     <div className="pt-2">
                       {slide.isWhatsApp ? (
                         <a
                           href={slide.buttonLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs sm:text-sm tracking-wider uppercase shadow-lg shadow-emerald-600/30 hover:shadow-emerald-600/50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
+                          className="inline-flex items-center gap-2 px-8 py-3.5 sm:py-4 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer"
                         >
                           <span>{slide.buttonText}</span>
-                          <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                          <ArrowRight className="w-4 h-4" />
                         </a>
                       ) : (
                         <Link
                           href={slide.buttonLink}
-                          className={`group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl text-white font-bold text-xs sm:text-sm tracking-wider uppercase shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer ${
-                            isDark
-                              ? "bg-gradient-to-r from-blue-600 via-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-600/30 hover:shadow-blue-600/50"
-                              : "bg-neutral-950 hover:bg-neutral-800 shadow-neutral-950/20 hover:shadow-neutral-950/40"
-                          }`}
+                          className="inline-flex items-center gap-2 px-8 py-3.5 sm:py-4 rounded-xl bg-[#155dfc] hover:bg-[#0d47c4] text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer"
                         >
                           <span>{slide.buttonText}</span>
-                          <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                          <ArrowRight className="w-4 h-4" />
                         </Link>
                       )}
                     </div>
