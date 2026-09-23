@@ -1,90 +1,18 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  ChevronLeft,
-  ChevronRight,
   Headphones,
   Watch,
   Zap,
   ShieldCheck,
   ArrowRight,
 } from "lucide-react";
-import { useCart } from "@/context/CartContext";
-import { STORE_SETTINGS } from "@/data/products";
 import { getAssetUrl } from "@/utils/paths";
 
 export default function HeroSection() {
-  const { whatsappNumber } = useCart();
-
-  const slides = [
-    {
-      id: "slide-1",
-      tagline: "TIENDA OFICIAL DE TECNOLOGÍA",
-      title: "¡Tecnología y audio original!",
-      subtitle:
-        "Caja sellada de fábrica, garantía oficial y pago contra entrega.",
-      buttonText: "VER CATÁLOGO",
-      buttonLink: "#catalogo",
-      image: getAssetUrl("/images/banners/hero-tech-1.png"),
-      alt: "PulsoTech Tecnología y Audio Original",
-      badge: "STOCK DISPONIBLE",
-      theme: "dark" as const,
-      isWhatsApp: false,
-    },
-    {
-      id: "slide-2",
-      tagline: "COLECCIÓN OFICIAL DE AUDÍFONOS",
-      title: "¡Impulsa tu sonido!",
-      subtitle:
-        "Cancelación de ruido, alta fidelidad y máxima batería.",
-      buttonText: "VER AUDÍFONOS",
-      buttonLink: "#catalogo",
-      image: getAssetUrl("/images/banners/hero-audio-1.jpg"),
-      alt: "Audífonos Inalámbricos TWS PulsoTech",
-      badge: "AUDIO DE ALTA FIDELIDAD",
-      theme: "light" as const,
-      isWhatsApp: false,
-    },
-    {
-      id: "slide-3",
-      tagline: "ECOSISTEMA & CARGA RÁPIDA",
-      title: "¡Potencia tus dispositivos!",
-      subtitle:
-        "Accesorios originales con coordinación directa por WhatsApp.",
-      buttonText: "PEDIR POR WHATSAPP",
-      buttonLink: `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-        "¡Hola PulsoTech! Deseo consultar sobre los productos disponibles y coordinar una entrega hoy."
-      )}`,
-      image: getAssetUrl("/images/banners/hero-tech-2.jpg"),
-      alt: "Ecosistema Tecnológico PulsoTech",
-      badge: "ENTREGA EL MISMO DÍA",
-      theme: "dark" as const,
-      isWhatsApp: true,
-    },
-  ];
-
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-
-  const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
-  }, [slides.length]);
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
-  };
-
-  useEffect(() => {
-    if (isPaused) return;
-    const interval = setInterval(() => {
-      nextSlide();
-    }, 6000);
-    return () => clearInterval(interval);
-  }, [isPaused, nextSlide]);
-
   const categories = [
     {
       icon: Headphones,
@@ -114,136 +42,57 @@ export default function HeroSection() {
 
   return (
     <section className="w-full bg-white">
-      {/* Cinematic E-Commerce Slider */}
-      <div
-        className="relative w-full overflow-hidden bg-neutral-950 select-none"
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
-      >
-        <div
-          className="flex transition-transform duration-700 ease-out h-[440px] sm:h-[500px] lg:h-[560px]"
-          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-        >
-          {slides.map((slide, index) => {
-            const isDark = slide.theme === "dark";
-            return (
-              <div
-                key={slide.id}
-                className="relative w-full h-full shrink-0 flex items-center overflow-hidden"
-              >
-                {/* Background Panoramic Photography */}
-                <div className="absolute inset-0 z-0">
-                  <Image
-                    src={slide.image}
-                    alt={slide.alt}
-                    fill
-                    priority={index === 0}
-                    className="object-cover object-center"
-                  />
+      {/* Main Panoramic Hero Banner (Fixed single image, no slider) */}
+      <div className="relative w-full overflow-hidden bg-neutral-950 select-none h-[460px] sm:h-[520px] lg:h-[580px] flex items-center">
+        {/* Background Panoramic Photography */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src={getAssetUrl("/images/banners/hero-tech-2.jpg")}
+            alt="PulsoTech Tecnología y Audio Original"
+            fill
+            priority
+            className="object-cover object-center"
+          />
 
-                  {/* Legibility Gradient Overlay (Left to Right) */}
-                  <div
-                    className={`absolute inset-0 z-1 pointer-events-none ${
-                      isDark
-                        ? "bg-gradient-to-r from-black/85 via-black/50 to-transparent lg:w-3/5"
-                        : "bg-gradient-to-r from-white via-white/85 sm:via-white/70 to-transparent lg:w-3/5"
-                    }`}
-                  />
-                </div>
-
-                {/* Foreground Commercial Content (Directly on image, no box) */}
-                <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 w-full">
-                  <div className="max-w-xl space-y-4 sm:space-y-5">
-                    {/* Badge: Fondo negro y letras blancas */}
-                    <div>
-                      <span className="inline-block px-3 py-1 rounded-md text-[11px] sm:text-xs font-black tracking-widest uppercase bg-neutral-950 text-white shadow-xs">
-                        {slide.badge}
-                      </span>
-                    </div>
-
-                    {/* Headline: Clean, solid text without cyberpunk gradient */}
-                    <h1
-                      className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.1] ${
-                        isDark ? "text-white" : "text-neutral-950"
-                      }`}
-                    >
-                      {slide.title}
-                    </h1>
-
-                    {/* Subtitle */}
-                    <p
-                      className={`text-xs sm:text-sm lg:text-base leading-relaxed font-normal max-w-lg ${
-                        isDark ? "text-neutral-300" : "text-neutral-700"
-                      }`}
-                    >
-                      {slide.subtitle}
-                    </p>
-
-                    {/* Action CTA Button: Sober Retail Style (No neon) */}
-                    <div className="pt-2">
-                      {slide.isWhatsApp ? (
-                        <a
-                          href={slide.buttonLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-8 py-3.5 sm:py-4 rounded-xl bg-[#15803d] hover:bg-[#166534] text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer"
-                        >
-                          <span>{slide.buttonText}</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </a>
-                      ) : (
-                        <Link
-                          href={slide.buttonLink}
-                          className="inline-flex items-center gap-2 px-8 py-3.5 sm:py-4 rounded-xl bg-[#1d4ed8] hover:bg-[#1e40af] text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer"
-                        >
-                          <span>{slide.buttonText}</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {/* Legibility Gradient Overlay (Left to Right) */}
+          <div className="absolute inset-0 z-1 pointer-events-none bg-gradient-to-r from-black/85 via-black/45 to-transparent lg:w-3/5" />
         </div>
 
-        {/* Previous Slide Arrow */}
-        <button
-          onClick={prevSlide}
-          aria-label="Slide anterior"
-          className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-xs transition-all active:scale-90 cursor-pointer"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
+        {/* Foreground Commercial Content */}
+        <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 w-full">
+          <div className="max-w-xl space-y-4 sm:space-y-5">
+            {/* Badge: Fondo negro y letras blancas */}
+            <div>
+              <span className="inline-block px-3 py-1 rounded-md text-[11px] sm:text-xs font-black tracking-widest uppercase bg-neutral-950 text-white shadow-xs">
+                STOCK DISPONIBLE
+              </span>
+            </div>
 
-        {/* Next Slide Arrow */}
-        <button
-          onClick={nextSlide}
-          aria-label="Siguiente slide"
-          className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-xs transition-all active:scale-90 cursor-pointer"
-        >
-          <ChevronRight className="w-6 h-6" />
-        </button>
+            {/* Headline */}
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.1] text-white">
+              ¡Tecnología y audio original!
+            </h1>
 
-        {/* Pagination Dots (Despegatec Style) */}
-        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/40 backdrop-blur-xs px-3.5 py-1.5 rounded-full">
-          {slides.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrentSlide(idx)}
-              aria-label={`Ir a slide ${idx + 1}`}
-              className={`rounded-full transition-all cursor-pointer ${
-                currentSlide === idx
-                  ? "w-6 h-2 bg-white"
-                  : "w-2 h-2 bg-white/50 hover:bg-white/80"
-              }`}
-            />
-          ))}
+            {/* Essential Subtitle */}
+            <p className="text-xs sm:text-sm lg:text-base leading-relaxed font-normal max-w-lg text-neutral-300">
+              Caja sellada de fábrica, garantía oficial y pago contra entrega.
+            </p>
+
+            {/* Action CTA Button: Verde solicitado con enlace al catálogo */}
+            <div className="pt-2">
+              <Link
+                href="#catalogo"
+                className="inline-flex items-center gap-2 px-8 py-3.5 sm:py-4 rounded-xl bg-[#15803d] hover:bg-[#166534] text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer"
+              >
+                <span>VER CATÁLOGO</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Iconic Categories Bar (Directly below hero banner, exact Despegatec structure) */}
+      {/* Iconic Categories Bar (Directly below hero banner) */}
       <div className="border-b border-neutral-200/80 bg-white py-8 sm:py-10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 items-center justify-center">
