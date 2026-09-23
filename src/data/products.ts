@@ -40,8 +40,12 @@ export const PRODUCTS: Product[] = [
       {
         name: "Original",
         hex: "#18181b",
-        image: "/placeholder-earbuds.svg",
+        image: "/images/products/redmi-buds-6-play.png",
       },
+    ],
+    images: [
+      "/images/products/redmi-buds-6-play.png",
+      "/images/products/redmi-buds-6-play-earbuds.png",
     ],
     specs: {
       battery: "36h",
@@ -88,8 +92,12 @@ export const PRODUCTS: Product[] = [
       {
         name: "Original",
         hex: "#18181b",
-        image: "/placeholder-earbuds.svg",
+        image: "/images/products/redmi-buds-8-lite.png",
       },
+    ],
+    images: [
+      "/images/products/redmi-buds-8-lite.png",
+      "/images/products/redmi-buds-8-lite-features.png",
     ],
     specs: {
       battery: "36h",
@@ -136,8 +144,11 @@ export const PRODUCTS: Product[] = [
       {
         name: "Original",
         hex: "#18181b",
-        image: "/placeholder-earbuds.svg",
+        image: "/images/products/redmi-buds-7s.png",
       },
+    ],
+    images: [
+      "/images/products/redmi-buds-7s.png",
     ],
     specs: {
       battery: "32h",

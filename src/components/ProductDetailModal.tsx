@@ -9,15 +9,22 @@ import { X, Check, ShoppingBag, Waves, Truck } from "lucide-react";
 export default function ProductDetailModal() {
   const { selectedProductForModal, setSelectedProductForModal, addItem } = useCart();
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   if (!selectedProductForModal) return null;
 
   const product = selectedProductForModal;
   const currentColor = product.colors[selectedColorIndex] || product.colors[0];
+  const activeImage = selectedImage || product.images?.[0] || currentColor.image;
+
+  const handleClose = () => {
+    setSelectedImage(null);
+    setSelectedProductForModal(null);
+  };
 
   const handleAddAndClose = () => {
     addItem(product, currentColor, 1);
-    setSelectedProductForModal(null);
+    handleClose();
   };
 
   return (
@@ -28,7 +35,7 @@ export default function ProductDetailModal() {
       >
         {/* Close Button */}
         <button
-          onClick={() => setSelectedProductForModal(null)}
+          onClick={handleClose}
           aria-label="Cerrar ventana"
           className="absolute top-5 right-5 p-2 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-600 hover:text-black transition-colors z-10"
         >
@@ -40,13 +47,41 @@ export default function ProductDetailModal() {
           <div className="space-y-4">
             <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-[#f5f5f7] border border-neutral-100 p-6 flex items-center justify-center">
               <Image
-                src={currentColor.image}
+                src={activeImage}
                 alt={`${product.name}`}
                 fill
                 sizes="(max-width: 768px) 100vw, 400px"
                 className="object-contain p-4 rounded-xl"
               />
             </div>
+
+            {/* Image Gallery Thumbnails */}
+            {product.images && product.images.length > 1 && (
+              <div className="flex items-center gap-2 pt-1">
+                {product.images.map((img, idx) => {
+                  const isSelected = activeImage === img;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setSelectedImage(img)}
+                      className={`relative w-16 h-16 rounded-xl overflow-hidden border p-1 bg-[#f5f5f7] transition-all cursor-pointer ${
+                        isSelected
+                          ? "border-black ring-2 ring-black/20"
+                          : "border-neutral-200 opacity-70 hover:opacity-100"
+                      }`}
+                    >
+                      <Image
+                        src={img}
+                        alt={`${product.name} foto ${idx + 1}`}
+                        fill
+                        className="object-contain p-1"
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Color Selector (Oculto si no hay variantes de color confirmadas) */}
             {product.colors.length > 1 && (

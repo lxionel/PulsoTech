@@ -42,6 +42,7 @@ export interface Product {
   soundProfile: SoundProfile;
   features: string[];
   tags: string[];
+  images?: string[];
 }
 
 export interface CartItem {
