@@ -19,32 +19,20 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-neutral-200 shadow-2xs transition-all">
       <div className="w-full max-w-[1650px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 h-16 flex items-center justify-between gap-4 lg:gap-8">
-        {/* Brand Logo PulsoTech */}
-        <div className="shrink-0">
+        {/* Brand Logo PulsoTech + Nav */}
+        <div className="flex items-center gap-6 lg:gap-8 shrink-0">
           <Logo size="md" />
-        </div>
 
-        {/* Navigation Categories - Espaciadas limpiamente y centradas para no chocar */}
-        <nav className="hidden md:flex items-center mx-auto gap-4 lg:gap-7 xl:gap-8 text-[13px] lg:text-sm font-semibold text-neutral-700 whitespace-nowrap">
-          <Link href="/" className="hover:text-black transition-colors px-1 py-1">
-            Inicio
-          </Link>
-          <Link
-            href="/#catalogo"
-            className="hover:text-black transition-colors px-1 py-1"
-          >
-            Catálogo
-          </Link>
-          <Link href="/#como-comprar" className="hover:text-black transition-colors px-1 py-1">
-            Métodos de Pago
-          </Link>
-          <Link href="/#faq" className="hover:text-black transition-colors px-1 py-1">
-            Preguntas Frecuentes
-          </Link>
-          <Link href="/#garantia" className="hover:text-black transition-colors px-1 py-1">
-            Garantía Total
-          </Link>
-        </nav>
+          {/* Menú de Navegación */}
+          <nav className="hidden md:flex items-center text-sm font-bold text-neutral-800">
+            <Link
+              href="/#catalogo"
+              className="text-neutral-800 hover:text-black transition-colors px-2.5 py-1 rounded-lg hover:bg-neutral-100"
+            >
+              Catálogo
+            </Link>
+          </nav>
+        </div>
 
         {/* Right Actions: Social Media + Favorites + Cart (A la derecha con separación limpia) */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
