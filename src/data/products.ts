@@ -13,6 +13,11 @@ export const STORE_SETTINGS = {
   shippingCost: 12.0,
   guaranteeMonths: 12,
   deliveryTime: "Entrega el mismo día",
+  social: {
+    instagram: "https://www.instagram.com/lionel_a5/",
+    tiktok: "https://www.tiktok.com/@lionel_a5",
+    facebook: "https://www.facebook.com/Lionel.a6?locale=es_LA",
+  },
 };
 
 export const TECH_CATEGORIES = [

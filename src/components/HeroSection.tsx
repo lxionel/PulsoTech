@@ -42,7 +42,7 @@ export default function HeroSection() {
 
             {/* Essential Subtitle */}
             <p className="text-xs sm:text-sm lg:text-base leading-relaxed font-normal max-w-lg text-neutral-300">
-              Caja sellada de fábrica, garantía oficial y pago contra entrega.
+              Caja sellada de fábrica, garantía total y pago contra entrega.
             </p>
 
             {/* Action CTA Button: Verde solicitado con enlace al catálogo */}

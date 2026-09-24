@@ -316,7 +316,7 @@ export default function CartDrawer() {
 
               <div className="flex items-center justify-center gap-2 text-[11px] text-neutral-500 text-center">
                 <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-                <span>Garantía Oficial 12 Meses • Pago Seguro</span>
+                <span>Garantía Total 12 Meses • Pago Seguro</span>
               </div>
             </div>
           )}
