@@ -30,17 +30,17 @@ export default function ProductCatalog() {
     return products.filter((product) => {
       // Category filter
       if (selectedCategory !== "todos" && selectedCategory !== "audifonos") {
-        return false;
+        if (product.category?.toLowerCase() !== selectedCategory.toLowerCase()) {
+          return false;
+        }
       }
 
       // Brand filter
       if (selectedBrand !== "todas") {
         const prodName = product.name.toLowerCase();
-        const prodBrand = product.brand.toLowerCase();
-        if (selectedBrand === "xiaomi" && !prodBrand.includes("xiaomi") && !prodName.includes("xiaomi")) {
-          return false;
-        }
-        if (selectedBrand === "redmi" && !prodBrand.includes("redmi") && !prodName.includes("redmi")) {
+        const prodBrand = (product.brand || "").toLowerCase();
+        const queryBrand = selectedBrand.toLowerCase();
+        if (!prodBrand.includes(queryBrand) && !prodName.includes(queryBrand)) {
           return false;
         }
       }

@@ -2,11 +2,12 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { useProducts } from "@/context/ProductsContext";
 import { STORE_SETTINGS } from "@/data/products";
+import { getAssetUrl } from "@/utils/paths";
 import { Product, ProductColor } from "@/types";
+import Logo from "@/components/Logo";
 import {
   TrendingUp,
   Package,
@@ -108,18 +109,20 @@ export default function AdminPage() {
   const [formName, setFormName] = useState("");
   const [formBrand, setFormBrand] = useState("Xiaomi");
   const [formCategory, setFormCategory] = useState<"in-ear" | "over-ear" | "deportivos" | "estudio">("in-ear");
-  const [formPrice, setFormPrice] = useState<number>(59.0);
+  const [formPrice, setFormPrice] = useState<number>(49.0);
   const [formHasPromo, setFormHasPromo] = useState(false);
-  const [formOriginalPrice, setFormOriginalPrice] = useState<number>(79.0);
+  const [formOriginalPrice, setFormOriginalPrice] = useState<number>(69.0);
   const [formPromoTag, setFormPromoTag] = useState("OFERTA FLASH");
-  const [formStock, setFormStock] = useState<number>(20);
-  const [formSubtitle, setFormSubtitle] = useState("Cancelación de ruido · 36h de batería · Resistencia IPX4");
+  const [formStock, setFormStock] = useState<number>(15);
+  const [formSubtitle, setFormSubtitle] = useState("36h de batería con estuche · Resistencia IPX4");
   const [formDescription, setFormDescription] = useState(
     "Audífonos True Wireless originales con sonido de alta fidelidad, conexión instantánea y batería de larga duración con estuche de carga."
   );
-  const [formImage, setFormImage] = useState("/products/buds-6-black.jpg");
-  const [formColorName, setFormColorName] = useState("Negro");
-  const [formColorHex, setFormColorHex] = useState("#111111");
+  
+  // Por defecto color Blanco como solicitó el usuario
+  const [formImage, setFormImage] = useState(getAssetUrl("/images/products/redmi-buds-6-play.png"));
+  const [formColorName, setFormColorName] = useState("Blanco");
+  const [formColorHex, setFormColorHex] = useState("#FFFFFF");
 
   // Specs
   const [formSpecBattery, setFormSpecBattery] = useState("36 horas");
@@ -167,7 +170,7 @@ export default function AdminPage() {
     setTimeout(() => setSuccessNotice(""), 4000);
   };
 
-  // Manejador para subir foto desde archivo local
+  // Manejador para subir foto desde archivo local (computadora o celular)
   const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -193,9 +196,9 @@ export default function AdminPage() {
     setFormStock(product.stockCount);
     setFormSubtitle(product.subtitle || "");
     setFormDescription(product.description || "");
-    setFormImage(product.colors[0]?.image || "/products/buds-6-black.jpg");
-    setFormColorName(product.colors[0]?.name || "Negro");
-    setFormColorHex(product.colors[0]?.hex || "#111111");
+    setFormImage(product.colors[0]?.image || getAssetUrl("/images/products/redmi-buds-6-play.png"));
+    setFormColorName(product.colors[0]?.name || "Blanco");
+    setFormColorHex(product.colors[0]?.hex || "#FFFFFF");
     setFormSpecBattery(product.specs?.battery || "30h");
     setFormSpecAnc(product.specs?.anc || "Sin ANC");
     setFormSpecConnectivity(product.specs?.connectivity || "Bluetooth 5.3");
@@ -213,10 +216,10 @@ export default function AdminPage() {
     setFormOriginalPrice(69.0);
     setFormStock(15);
     setFormSubtitle("36h de batería con estuche · Resistencia IPX4");
-    setFormDescription("Audífonos True Wireless originales con alta fidelidad y garantía.");
-    setFormImage("/products/buds-6-black.jpg");
-    setFormColorName("Negro");
-    setFormColorHex("#111111");
+    setFormDescription("Audífonos True Wireless originales con sonido de alta fidelidad y garantía.");
+    setFormImage(getAssetUrl("/images/products/redmi-buds-6-play.png"));
+    setFormColorName("Blanco");
+    setFormColorHex("#FFFFFF");
     setFormSpecBattery("36 horas");
     setFormSpecAnc("Sin ANC");
     setFormSpecConnectivity("Bluetooth 5.4");
@@ -240,8 +243,8 @@ export default function AdminPage() {
 
     const newColors: ProductColor[] = [
       {
-        name: formColorName,
-        hex: formColorHex,
+        name: formColorName || "Blanco",
+        hex: formColorHex || "#FFFFFF",
         image: formImage,
       },
     ];
@@ -291,7 +294,7 @@ export default function AdminPage() {
       setSuccessNotice(`¡Producto "${productPayload.name}" actualizado exitosamente!`);
     } else {
       addProduct(productPayload);
-      setSuccessNotice(`¡Producto "${productPayload.name}" agregado y publicado en el catálogo!`);
+      setSuccessNotice(`¡Producto "${productPayload.name}" guardado y publicado en la tienda!`);
     }
 
     setTimeout(() => setSuccessNotice(""), 5000);
@@ -310,63 +313,65 @@ export default function AdminPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-[#f4f4f5] antialiased">
-      {/* Top Admin Header */}
-      <header className="border-b border-neutral-800 bg-neutral-950 sticky top-0 z-30">
+    <div className="min-h-screen bg-[#f8fafc] text-neutral-900 antialiased font-sans">
+      {/* Top Admin Header - Blanco Puro y Elegante */}
+      <header className="border-b border-neutral-200 bg-white sticky top-0 z-30 shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white px-2.5 py-1.5 rounded-lg border border-neutral-800 hover:border-neutral-700 transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs text-neutral-600 hover:text-black px-3 py-1.5 rounded-xl border border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 transition-colors font-semibold"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Volver a la Tienda Comercial</span>
             </Link>
 
-            <div className="h-4 w-px bg-neutral-800 hidden sm:block" />
+            <div className="h-4 w-px bg-neutral-200 hidden sm:block" />
 
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-sm font-bold text-white tracking-tight">
-                PulsoTech Admin &amp; Gestor de Productos
-              </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-800 text-neutral-400 hidden md:inline">
-                v2.0
-              </span>
+            <div className="flex items-center gap-2.5">
+              <Logo size="sm" showText={false} />
+              <div>
+                <span className="text-sm font-black text-neutral-950 tracking-tight">
+                  PulsoTech Panel
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 ml-2 hidden sm:inline">
+                  En Vivo
+                </span>
+              </div>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={handleNewProductClick}
-              className="px-3.5 py-1.5 rounded-xl bg-white text-black font-bold text-xs hover:bg-neutral-200 transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
             >
-              <PlusCircle className="w-3.5 h-3.5 text-neutral-900" />
+              <PlusCircle className="w-4 h-4 text-white" />
               <span>＋ Agregar Producto</span>
             </button>
 
             <Link
               href="/"
               target="_blank"
-              className="hidden sm:inline-flex items-center gap-1.5 text-xs text-neutral-300 hover:text-white font-medium"
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs text-neutral-600 hover:text-black font-semibold"
             >
-              <span>Ver Tienda en Vivo</span>
-              <ExternalLink className="w-3.5 h-3.5 text-neutral-500" />
+              <span>Ver Tienda</span>
+              <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
             </Link>
           </div>
         </div>
 
         {/* Sub-nav Tabs */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 border-t border-neutral-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 border-t border-neutral-100">
           <button
             onClick={() => setActiveTab("inventory")}
             className={`px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-2 cursor-pointer ${
               activeTab === "inventory"
-                ? "border-white text-white"
-                : "border-transparent text-neutral-400 hover:text-white"
+                ? "border-neutral-950 text-neutral-950"
+                : "border-transparent text-neutral-500 hover:text-neutral-900"
             }`}
           >
-            <Package className="w-3.5 h-3.5" />
+            <Package className="w-4 h-4" />
             <span>Inventario &amp; Catálogo ({products.length})</span>
           </button>
 
@@ -374,11 +379,11 @@ export default function AdminPage() {
             onClick={() => setActiveTab("add_product")}
             className={`px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-2 cursor-pointer ${
               activeTab === "add_product"
-                ? "border-white text-white"
-                : "border-transparent text-neutral-400 hover:text-white"
+                ? "border-neutral-950 text-neutral-950"
+                : "border-transparent text-neutral-500 hover:text-neutral-900"
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <Sparkles className="w-4 h-4 text-amber-500" />
             <span>{editingProductId ? "Editar Producto" : "＋ Agregar Nuevo Producto"}</span>
           </button>
 
@@ -386,11 +391,11 @@ export default function AdminPage() {
             onClick={() => setActiveTab("sales")}
             className={`px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-2 cursor-pointer ${
               activeTab === "sales"
-                ? "border-white text-white"
-                : "border-transparent text-neutral-400 hover:text-white"
+                ? "border-neutral-950 text-neutral-950"
+                : "border-transparent text-neutral-500 hover:text-neutral-900"
             }`}
           >
-            <ShoppingBag className="w-3.5 h-3.5" />
+            <ShoppingBag className="w-4 h-4" />
             <span>Ventas &amp; Pedidos</span>
           </button>
 
@@ -398,11 +403,11 @@ export default function AdminPage() {
             onClick={() => setActiveTab("settings")}
             className={`px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-2 cursor-pointer ${
               activeTab === "settings"
-                ? "border-white text-white"
-                : "border-transparent text-neutral-400 hover:text-white"
+                ? "border-neutral-950 text-neutral-950"
+                : "border-transparent text-neutral-500 hover:text-neutral-900"
             }`}
           >
-            <Phone className="w-3.5 h-3.5 text-emerald-400" />
+            <Phone className="w-4 h-4 text-emerald-600" />
             <span>WhatsApp &amp; Exportar</span>
           </button>
         </div>
@@ -412,17 +417,17 @@ export default function AdminPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Banner de Notificación de Éxito */}
         {successNotice && (
-          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm font-medium flex items-center justify-between gap-3 animate-in fade-in">
+          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm font-medium flex items-center justify-between gap-3 shadow-xs animate-in fade-in">
             <div className="flex items-center gap-2.5">
-              <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
-              <span>{successNotice}</span>
+              <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+              <span className="font-semibold">{successNotice}</span>
             </div>
             <Link
               href="/#catalogo"
               target="_blank"
-              className="px-3 py-1 rounded-lg bg-emerald-500 text-black text-xs font-bold hover:bg-emerald-400 transition-colors shrink-0"
+              className="px-4 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors shrink-0 shadow-xs"
             >
-              Ver en la Tienda →
+              Ver en la Tienda Comercial →
             </Link>
           </div>
         )}
@@ -432,41 +437,41 @@ export default function AdminPage() {
           <div className="space-y-6">
             {/* KPIs */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-5 rounded-2xl border border-neutral-800/80 bg-neutral-900/40">
-                <div className="flex items-center justify-between text-neutral-400 text-xs font-mono mb-2">
+              <div className="p-5 rounded-2xl border border-neutral-200/90 bg-white shadow-2xs">
+                <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
                   <span>INGRESOS REGISTRADOS</span>
-                  <DollarSign className="w-4 h-4 text-emerald-400" />
+                  <DollarSign className="w-4 h-4 text-emerald-600" />
                 </div>
-                <div className="text-3xl font-bold font-mono text-white">
+                <div className="text-3xl font-extrabold text-neutral-950">
                   {STORE_SETTINGS.currencySymbol}{totalRevenue.toFixed(2)}
                 </div>
-                <span className="text-[11px] text-neutral-500 mt-1 block">
+                <span className="text-[11px] text-neutral-400 mt-1 block">
                   Ventas acumuladas por WhatsApp y Presencial
                 </span>
               </div>
 
-              <div className="p-5 rounded-2xl border border-neutral-800/80 bg-neutral-900/40">
-                <div className="flex items-center justify-between text-neutral-400 text-xs font-mono mb-2">
+              <div className="p-5 rounded-2xl border border-neutral-200/90 bg-white shadow-2xs">
+                <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
                   <span>TOTAL REFERENCIAS ACTIVAS</span>
-                  <Package className="w-4 h-4 text-blue-400" />
+                  <Package className="w-4 h-4 text-blue-600" />
                 </div>
-                <div className="text-3xl font-bold font-mono text-white">
-                  {products.length} <span className="text-sm font-normal text-neutral-400">modelos</span>
+                <div className="text-3xl font-extrabold text-neutral-950">
+                  {products.length} <span className="text-sm font-semibold text-neutral-500">modelos</span>
                 </div>
-                <span className="text-[11px] text-neutral-500 mt-1 block">
+                <span className="text-[11px] text-neutral-400 mt-1 block">
                   Disponibles en el catálogo público
                 </span>
               </div>
 
-              <div className="p-5 rounded-2xl border border-neutral-800/80 bg-neutral-900/40">
-                <div className="flex items-center justify-between text-neutral-400 text-xs font-mono mb-2">
+              <div className="p-5 rounded-2xl border border-neutral-200/90 bg-white shadow-2xs">
+                <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
                   <span>ALERTAS DE STOCK</span>
-                  <AlertCircle className="w-4 h-4 text-amber-400" />
+                  <AlertCircle className="w-4 h-4 text-amber-600" />
                 </div>
-                <div className="text-3xl font-bold font-mono text-amber-400">
-                  {lowStockCount} <span className="text-sm font-normal text-neutral-400">productos</span>
+                <div className="text-3xl font-extrabold text-amber-600">
+                  {lowStockCount} <span className="text-sm font-semibold text-neutral-500">productos</span>
                 </div>
-                <span className="text-[11px] text-neutral-500 mt-1 block">
+                <span className="text-[11px] text-neutral-400 mt-1 block">
                   Con 5 o menos unidades en bodega
                 </span>
               </div>
@@ -476,30 +481,30 @@ export default function AdminPage() {
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                    <Package className="w-5 h-5 text-neutral-400" />
+                  <h2 className="text-lg font-black text-neutral-950 flex items-center gap-2">
+                    <Package className="w-5 h-5 text-neutral-700" />
                     <span>Catálogo de Productos en Vivo</span>
                   </h2>
-                  <p className="text-xs text-neutral-400 mt-0.5">
-                    Modifica precios, añade promociones, ajusta el stock o edita cualquier detalle.
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    Modifica precios, promociones, stock o edita cualquier producto en tiempo real.
                   </p>
                 </div>
 
                 <div className="flex items-center gap-3 w-full sm:w-auto">
                   <div className="relative flex-1 sm:w-64">
-                    <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       placeholder="Buscar por modelo o marca..."
                       value={searchFilter}
                       onChange={(e) => setSearchFilter(e.target.value)}
-                      className="w-full pl-8 pr-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-xs text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-neutral-600"
+                      className="w-full pl-8 pr-3 py-2 rounded-xl bg-white border border-neutral-200 text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-400 shadow-2xs"
                     />
                   </div>
 
                   <button
                     onClick={handleNewProductClick}
-                    className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs shrink-0 flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs shrink-0 flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                   >
                     <PlusCircle className="w-3.5 h-3.5" />
                     <span>Nuevo</span>
@@ -507,9 +512,9 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-neutral-800 overflow-hidden bg-neutral-950/60 shadow-lg">
+              <div className="rounded-2xl border border-neutral-200/90 overflow-hidden bg-white shadow-sm">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-neutral-900/80 text-neutral-400 border-b border-neutral-800 uppercase text-[10px] font-mono tracking-wider">
+                  <thead className="bg-neutral-50 text-neutral-600 border-b border-neutral-200 uppercase text-[10px] font-bold tracking-wider">
                     <tr>
                       <th className="py-3.5 px-4">Producto</th>
                       <th className="py-3.5 px-3">Marca</th>
@@ -519,14 +524,14 @@ export default function AdminPage() {
                       <th className="py-3.5 px-4 text-right">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-900 text-neutral-300">
+                  <tbody className="divide-y divide-neutral-100 text-neutral-700">
                     {filteredInventory.map((item) => {
                       const hasDiscount = item.originalPrice && item.originalPrice > item.price;
                       return (
-                        <tr key={item.id} className="hover:bg-neutral-900/30 transition-colors">
+                        <tr key={item.id} className="hover:bg-neutral-50/60 transition-colors">
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-neutral-900 border border-neutral-800 p-1 shrink-0 flex items-center justify-center overflow-hidden">
+                              <div className="w-11 h-11 rounded-xl bg-neutral-50 border border-neutral-200 p-1 shrink-0 flex items-center justify-center overflow-hidden">
                                 {item.colors[0]?.image ? (
                                   <img
                                     src={item.colors[0].image}
@@ -534,26 +539,26 @@ export default function AdminPage() {
                                     className="w-full h-full object-contain"
                                   />
                                 ) : (
-                                  <ImageIcon className="w-4 h-4 text-neutral-600" />
+                                  <ImageIcon className="w-5 h-5 text-neutral-400" />
                                 )}
                               </div>
                               <div>
-                                <div className="font-bold text-white text-sm">{item.name}</div>
+                                <div className="font-extrabold text-neutral-950 text-sm">{item.name}</div>
                                 <div className="text-[11px] text-neutral-500 truncate max-w-xs">{item.subtitle}</div>
                               </div>
                             </div>
                           </td>
 
-                          <td className="py-3.5 px-3 font-semibold text-neutral-300">
+                          <td className="py-3.5 px-3 font-bold text-neutral-800">
                             {item.brand}
                           </td>
 
-                          <td className="py-3.5 px-3 font-mono">
-                            <div className="font-bold text-white text-sm">
+                          <td className="py-3.5 px-3">
+                            <div className="font-extrabold text-neutral-950 text-sm">
                               {STORE_SETTINGS.currencySymbol}{item.price.toFixed(2)}
                             </div>
                             {hasDiscount && (
-                              <div className="text-[10px] text-neutral-500 line-through">
+                              <div className="text-[10px] text-neutral-400 line-through">
                                 {STORE_SETTINGS.currencySymbol}{item.originalPrice?.toFixed(2)}
                               </div>
                             )}
@@ -561,37 +566,37 @@ export default function AdminPage() {
 
                           <td className="py-3.5 px-3">
                             {hasDiscount ? (
-                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/30">
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-50 text-red-600 border border-red-200">
                                 -{Math.round(((item.originalPrice! - item.price) / item.originalPrice!) * 100)}% OFF
                               </span>
                             ) : (
-                              <span className="text-[11px] text-neutral-600">Precio Regular</span>
+                              <span className="text-[11px] text-neutral-400">Regular</span>
                             )}
                           </td>
 
                           <td className="py-3.5 px-3">
                             <div className="flex items-center gap-2">
                               <span
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
+                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                                   item.stockCount <= 5
-                                    ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                                    : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                    ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                    : "bg-emerald-50 text-emerald-700 border border-emerald-200"
                                 }`}
                               >
                                 {item.stockCount} uds
                               </span>
 
-                              <div className="inline-flex items-center border border-neutral-800 rounded-lg p-0.5 bg-neutral-900">
+                              <div className="inline-flex items-center border border-neutral-200 rounded-lg p-0.5 bg-neutral-50">
                                 <button
                                   onClick={() => updateStock(item.id, -1, true)}
-                                  className="w-5 h-5 rounded flex items-center justify-center hover:bg-neutral-800 text-neutral-400 hover:text-white"
+                                  className="w-5 h-5 rounded flex items-center justify-center hover:bg-neutral-200 text-neutral-600 font-bold"
                                   title="Restar 1 unidad"
                                 >
                                   -
                                 </button>
                                 <button
                                   onClick={() => updateStock(item.id, 1, true)}
-                                  className="w-5 h-5 rounded flex items-center justify-center hover:bg-neutral-800 text-neutral-400 hover:text-white"
+                                  className="w-5 h-5 rounded flex items-center justify-center hover:bg-neutral-200 text-neutral-600 font-bold"
                                   title="Sumar 1 unidad"
                                 >
                                   +
@@ -605,17 +610,17 @@ export default function AdminPage() {
                               <Link
                                 href={`/producto/${item.slug}`}
                                 target="_blank"
-                                className="p-1.5 rounded-lg border border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
+                                className="p-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:text-black hover:bg-neutral-100 transition-colors"
                                 title="Ver página de detalle"
                               >
-                                <Eye className="w-3.5 h-3.5" />
+                                <Eye className="w-4 h-4" />
                               </Link>
                               <button
                                 onClick={() => handleEditClick(item)}
-                                className="p-1.5 rounded-lg border border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer"
+                                className="p-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:text-black hover:bg-neutral-100 transition-colors cursor-pointer"
                                 title="Editar producto"
                               >
-                                <Edit3 className="w-3.5 h-3.5" />
+                                <Edit3 className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => {
@@ -623,10 +628,10 @@ export default function AdminPage() {
                                     deleteProduct(item.id);
                                   }
                                 }}
-                                className="p-1.5 rounded-lg border border-neutral-800 text-neutral-500 hover:text-red-400 hover:bg-red-950/20 hover:border-red-900 transition-colors cursor-pointer"
+                                className="p-1.5 rounded-lg border border-neutral-200 text-neutral-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors cursor-pointer"
                                 title="Eliminar producto"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
                           </td>
@@ -643,13 +648,13 @@ export default function AdminPage() {
         {/* ================= PESTAÑA 2: AGREGAR / EDITAR PRODUCTO ================= */}
         {activeTab === "add_product" && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
+            <div className="flex items-center justify-between border-b border-neutral-200 pb-4">
               <div>
-                <h2 className="text-xl font-black text-white flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-amber-400" />
+                <h2 className="text-xl font-black text-neutral-950 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-amber-500" />
                   <span>{editingProductId ? "Editar Información del Producto" : "Publicar Nuevo Producto"}</span>
                 </h2>
-                <p className="text-xs text-neutral-400 mt-1">
+                <p className="text-xs text-neutral-500 mt-1">
                   Completa los datos técnicos, define el precio de venta y mira la vista previa en vivo a la derecha.
                 </p>
               </div>
@@ -657,7 +662,7 @@ export default function AdminPage() {
               {editingProductId && (
                 <button
                   onClick={handleNewProductClick}
-                  className="text-xs text-neutral-400 hover:text-white px-3 py-1.5 rounded-lg border border-neutral-800"
+                  className="text-xs text-neutral-600 hover:text-black px-3 py-1.5 rounded-xl border border-neutral-200 bg-white"
                 >
                   Cancelar edición y crear nuevo
                 </button>
@@ -667,15 +672,15 @@ export default function AdminPage() {
             {/* Split Formulario + Live Preview */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               {/* Formulario (7 Cols) */}
-              <form onSubmit={handleSaveProduct} className="lg:col-span-7 space-y-6 bg-neutral-950/80 p-6 rounded-2xl border border-neutral-800">
+              <form onSubmit={handleSaveProduct} className="lg:col-span-7 space-y-6 bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm">
                 {/* 1. Datos Principales */}
                 <div className="space-y-4">
-                  <h3 className="text-xs font-mono uppercase tracking-wider text-neutral-400 border-b border-neutral-900 pb-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 border-b border-neutral-100 pb-2">
                     1. Información Básica
                   </h3>
 
                   <div>
-                    <label className="text-xs font-semibold text-neutral-300 block mb-1">
+                    <label className="text-xs font-bold text-neutral-900 block mb-1">
                       Nombre del Producto *
                     </label>
                     <input
@@ -684,19 +689,19 @@ export default function AdminPage() {
                       placeholder="Ej: Redmi Buds 6 Active ANC"
                       value={formName}
                       onChange={(e) => setFormName(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-sm text-white focus:outline-none focus:border-white font-medium"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-sm text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 font-semibold"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-semibold text-neutral-300 block mb-1">
+                      <label className="text-xs font-bold text-neutral-900 block mb-1">
                         Marca
                       </label>
                       <select
                         value={formBrand}
                         onChange={(e) => setFormBrand(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-sm text-white focus:outline-none"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-sm text-neutral-900 focus:outline-none focus:bg-white"
                       >
                         <option value="Xiaomi">Xiaomi</option>
                         <option value="Redmi">Redmi</option>
@@ -708,13 +713,13 @@ export default function AdminPage() {
                     </div>
 
                     <div>
-                      <label className="text-xs font-semibold text-neutral-300 block mb-1">
+                      <label className="text-xs font-bold text-neutral-900 block mb-1">
                         Categoría
                       </label>
                       <select
                         value={formCategory}
                         onChange={(e) => setFormCategory(e.target.value as any)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-sm text-white focus:outline-none"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-sm text-neutral-900 focus:outline-none focus:bg-white"
                       >
                         <option value="in-ear">In-Ear (Intraurales / Botón)</option>
                         <option value="over-ear">Over-Ear (Diadema / Vincha)</option>
@@ -725,29 +730,29 @@ export default function AdminPage() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-neutral-300 block mb-1">
-                      Subtítulo o Resumen Rápido
+                    <label className="text-xs font-bold text-neutral-900 block mb-1">
+                      Subtítulo o Resumen Breve
                     </label>
                     <input
                       type="text"
                       placeholder="Ej: Sin cancelación de ruido · 36h de batería · Resistencia IPX4"
                       value={formSubtitle}
                       onChange={(e) => setFormSubtitle(e.target.value)}
-                      className="w-full px-3.5 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-xs text-white focus:outline-none"
+                      className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none focus:bg-white"
                     />
                   </div>
                 </div>
 
                 {/* 2. Precios & Promociones */}
                 <div className="space-y-4 pt-2">
-                  <h3 className="text-xs font-mono uppercase tracking-wider text-neutral-400 border-b border-neutral-900 pb-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 border-b border-neutral-100 pb-2">
                     2. Precios, Descuentos &amp; Stock
                   </h3>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-semibold text-neutral-300 block mb-1">
-                        Precio de Venta Actual ({STORE_SETTINGS.currencySymbol}) *
+                      <label className="text-xs font-bold text-neutral-900 block mb-1">
+                        Precio de Venta ({STORE_SETTINGS.currencySymbol}) *
                       </label>
                       <input
                         type="number"
@@ -756,62 +761,62 @@ export default function AdminPage() {
                         min={1}
                         value={formPrice}
                         onChange={(e) => setFormPrice(parseFloat(e.target.value) || 0)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-base font-bold text-white focus:outline-none focus:border-emerald-500 font-mono"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-base font-extrabold text-neutral-950 focus:outline-none focus:bg-white focus:border-emerald-600 font-mono"
                       />
                     </div>
 
                     <div>
-                      <label className="text-xs font-semibold text-neutral-300 block mb-1">
-                        Stock Inicial Disponible (unidades)
+                      <label className="text-xs font-bold text-neutral-900 block mb-1">
+                        Stock Inicial (unidades)
                       </label>
                       <input
                         type="number"
                         min={0}
                         value={formStock}
                         onChange={(e) => setFormStock(parseInt(e.target.value) || 0)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-base font-bold text-white focus:outline-none font-mono"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-base font-extrabold text-neutral-950 focus:outline-none focus:bg-white font-mono"
                       />
                     </div>
                   </div>
 
                   {/* Switch Promoción */}
-                  <div className="p-4 rounded-xl border border-neutral-800 bg-neutral-900/50 space-y-3">
+                  <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/70 space-y-3">
                     <label className="flex items-center gap-3 cursor-pointer select-none">
                       <input
                         type="checkbox"
                         checked={formHasPromo}
                         onChange={(e) => setFormHasPromo(e.target.checked)}
-                        className="w-4 h-4 rounded text-red-600 focus:ring-0 bg-neutral-950 border-neutral-700"
+                        className="w-4 h-4 rounded text-red-600 focus:ring-0 bg-white border-neutral-300"
                       />
-                      <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                        <Tag className="w-3.5 h-3.5 text-red-400" />
+                      <span className="text-xs font-extrabold text-neutral-900 flex items-center gap-1.5">
+                        <Tag className="w-3.5 h-3.5 text-red-600" />
                         <span>Activar Precio de Oferta / Promoción Especial</span>
                       </span>
                     </label>
 
                     {formHasPromo && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-neutral-800">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-neutral-200">
                         <div>
-                          <label className="text-[11px] text-neutral-400 block mb-1">
-                            Precio Anterior / Tachado ({STORE_SETTINGS.currencySymbol})
+                          <label className="text-[11px] font-bold text-neutral-600 block mb-1">
+                            Precio Original Tachado ({STORE_SETTINGS.currencySymbol})
                           </label>
                           <input
                             type="number"
                             step="0.5"
                             value={formOriginalPrice}
                             onChange={(e) => setFormOriginalPrice(parseFloat(e.target.value) || 0)}
-                            className="w-full px-3.5 py-2 rounded-xl bg-neutral-950 border border-neutral-800 text-xs font-bold text-neutral-300 font-mono"
+                            className="w-full px-3.5 py-2 rounded-xl bg-white border border-neutral-200 text-xs font-bold text-neutral-900 font-mono"
                           />
                         </div>
 
                         <div>
-                          <label className="text-[11px] text-neutral-400 block mb-1">
+                          <label className="text-[11px] font-bold text-neutral-600 block mb-1">
                             Etiqueta en Tarjeta
                           </label>
                           <select
                             value={formPromoTag}
                             onChange={(e) => setFormPromoTag(e.target.value)}
-                            className="w-full px-3.5 py-2 rounded-xl bg-neutral-950 border border-neutral-800 text-xs text-white"
+                            className="w-full px-3.5 py-2 rounded-xl bg-white border border-neutral-200 text-xs text-neutral-900 font-semibold"
                           >
                             <option value="OFERTA FLASH">OFERTA FLASH</option>
                             <option value="MÁS VENDIDO">MÁS VENDIDO</option>
@@ -821,7 +826,7 @@ export default function AdminPage() {
                         </div>
 
                         {formOriginalPrice > formPrice && (
-                          <div className="sm:col-span-2 text-xs font-mono text-emerald-400 bg-emerald-950/20 p-2 rounded-lg border border-emerald-500/20">
+                          <div className="sm:col-span-2 text-xs font-bold text-emerald-800 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
                             ✓ Descuento del {Math.round(((formOriginalPrice - formPrice) / formOriginalPrice) * 100)}% (Ahorro de {STORE_SETTINGS.currencySymbol}{(formOriginalPrice - formPrice).toFixed(2)})
                           </div>
                         )}
@@ -830,21 +835,21 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* 3. Fotos & Color */}
+                {/* 3. Fotos & Color (Por defecto Blanco como solicitaste) */}
                 <div className="space-y-4 pt-2">
-                  <h3 className="text-xs font-mono uppercase tracking-wider text-neutral-400 border-b border-neutral-900 pb-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 border-b border-neutral-100 pb-2">
                     3. Fotografía &amp; Color
                   </h3>
 
                   <div className="space-y-3">
-                    <label className="text-xs font-semibold text-neutral-300 block">
-                      Subir Imagen del Producto
+                    <label className="text-xs font-bold text-neutral-900 block">
+                      Imagen del Producto
                     </label>
 
                     <div className="flex flex-col sm:flex-row items-center gap-3">
-                      <label className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-neutral-600 text-xs font-semibold text-white flex items-center justify-center gap-2 cursor-pointer transition-colors">
-                        <Upload className="w-4 h-4 text-neutral-400" />
-                        <span>Subir desde mi computadora o celular</span>
+                      <label className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-xs font-bold text-white flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-xs">
+                        <Upload className="w-4 h-4 text-white" />
+                        <span>Subir foto desde mi computadora o celular</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -853,49 +858,111 @@ export default function AdminPage() {
                         />
                       </label>
 
-                      <span className="text-xs text-neutral-500">o usar ruta / URL:</span>
+                      <span className="text-xs text-neutral-400">o ruta de imagen:</span>
 
                       <input
                         type="text"
                         value={formImage}
                         onChange={(e) => setFormImage(e.target.value)}
-                        placeholder="/products/buds-6-black.jpg"
-                        className="flex-1 w-full px-3.5 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-xs text-white font-mono"
+                        className="flex-1 w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-800 font-mono"
                       />
+                    </div>
+
+                    {/* Galería de Fotos Rápidas */}
+                    <div className="pt-2">
+                      <span className="text-[11px] font-bold text-neutral-500 block mb-1.5">
+                        O selecciona una de nuestras fotos de catálogo:
+                      </span>
+                      <div className="flex items-center gap-3">
+                        {[
+                          { name: "Buds 6 Play", path: getAssetUrl("/images/products/redmi-buds-6-play.png") },
+                          { name: "Buds 8 Lite", path: getAssetUrl("/images/products/redmi-buds-8-lite.png") },
+                          { name: "Buds 7S", path: getAssetUrl("/images/products/redmi-buds-7s.png") },
+                        ].map((sample) => (
+                          <button
+                            type="button"
+                            key={sample.name}
+                            onClick={() => setFormImage(sample.path)}
+                            className={`p-1.5 rounded-xl border flex items-center gap-2 bg-neutral-50 hover:bg-white text-[11px] font-semibold transition-all ${
+                              formImage === sample.path ? "border-black shadow-xs bg-white" : "border-neutral-200"
+                            }`}
+                          >
+                            <img src={sample.path} alt={sample.name} className="w-7 h-7 object-contain" />
+                            <span>{sample.name}</span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-semibold text-neutral-300 block mb-1">
-                        Nombre del Color
-                      </label>
-                      <input
-                        type="text"
-                        value={formColorName}
-                        onChange={(e) => setFormColorName(e.target.value)}
-                        placeholder="Negro Titanio"
-                        className="w-full px-3.5 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-xs text-white"
-                      />
+                  {/* Selector de Color con chips rápidos (Blanco por defecto) */}
+                  <div className="space-y-3 pt-2">
+                    <label className="text-xs font-bold text-neutral-900 block">
+                      Color del Producto
+                    </label>
+
+                    {/* Chips de Colores Rápidos */}
+                    <div className="flex items-center gap-2">
+                      {[
+                        { name: "Blanco", hex: "#FFFFFF" },
+                        { name: "Negro", hex: "#111111" },
+                        { name: "Azul", hex: "#1d4ed8" },
+                        { name: "Titanio", hex: "#64748b" },
+                      ].map((c) => (
+                        <button
+                          type="button"
+                          key={c.name}
+                          onClick={() => {
+                            setFormColorName(c.name);
+                            setFormColorHex(c.hex);
+                          }}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${
+                            formColorHex === c.hex
+                              ? "border-black bg-neutral-900 text-white shadow-xs"
+                              : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-400"
+                          }`}
+                        >
+                          <span
+                            className="w-3.5 h-3.5 rounded-full border border-neutral-300"
+                            style={{ backgroundColor: c.hex }}
+                          />
+                          <span>{c.name}</span>
+                        </button>
+                      ))}
                     </div>
 
-                    <div>
-                      <label className="text-xs font-semibold text-neutral-300 block mb-1">
-                        Color en Selector (Hex)
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="color"
-                          value={formColorHex}
-                          onChange={(e) => setFormColorHex(e.target.value)}
-                          className="w-9 h-9 rounded-lg bg-neutral-900 border border-neutral-800 p-0.5 cursor-pointer"
-                        />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[11px] font-bold text-neutral-600 block mb-1">
+                          Nombre del Color
+                        </label>
                         <input
                           type="text"
-                          value={formColorHex}
-                          onChange={(e) => setFormColorHex(e.target.value)}
-                          className="flex-1 px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-xs text-white font-mono"
+                          value={formColorName}
+                          onChange={(e) => setFormColorName(e.target.value)}
+                          placeholder="Blanco Glaciar"
+                          className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900"
                         />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-neutral-600 block mb-1">
+                          Personalizar Hex
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={formColorHex}
+                            onChange={(e) => setFormColorHex(e.target.value)}
+                            className="w-9 h-9 rounded-lg border border-neutral-200 p-0.5 cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={formColorHex}
+                            onChange={(e) => setFormColorHex(e.target.value)}
+                            className="flex-1 px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 font-mono"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -903,71 +970,71 @@ export default function AdminPage() {
 
                 {/* 4. Especificaciones Técnicas */}
                 <div className="space-y-4 pt-2">
-                  <h3 className="text-xs font-mono uppercase tracking-wider text-neutral-400 border-b border-neutral-900 pb-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 border-b border-neutral-100 pb-2">
                     4. Especificaciones Rápidas
                   </h3>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="text-[11px] text-neutral-400 block mb-1">Autonomía / Batería</label>
+                      <label className="text-[11px] font-bold text-neutral-600 block mb-1">Autonomía / Batería</label>
                       <input
                         type="text"
                         value={formSpecBattery}
                         onChange={(e) => setFormSpecBattery(e.target.value)}
                         placeholder="36 horas"
-                        className="w-full px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-xs text-white"
+                        className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900"
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] text-neutral-400 block mb-1">Cancelación de Ruido</label>
+                      <label className="text-[11px] font-bold text-neutral-600 block mb-1">Cancelación de Ruido</label>
                       <input
                         type="text"
                         value={formSpecAnc}
                         onChange={(e) => setFormSpecAnc(e.target.value)}
                         placeholder="Sin ANC / ANC 42dB"
-                        className="w-full px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-xs text-white"
+                        className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900"
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] text-neutral-400 block mb-1">Bluetooth</label>
+                      <label className="text-[11px] font-bold text-neutral-600 block mb-1">Bluetooth</label>
                       <input
                         type="text"
                         value={formSpecConnectivity}
                         onChange={(e) => setFormSpecConnectivity(e.target.value)}
                         placeholder="Bluetooth 5.4"
-                        className="w-full px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-xs text-white"
+                        className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-neutral-300 block mb-1">
+                    <label className="text-xs font-bold text-neutral-900 block mb-1">
                       Descripción Comercial (1 o 2 oraciones)
                     </label>
                     <textarea
                       rows={3}
                       value={formDescription}
                       onChange={(e) => setFormDescription(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-xs text-white focus:outline-none leading-relaxed"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none focus:bg-white leading-relaxed"
                     />
                   </div>
                 </div>
 
                 {/* Botón de Guardar */}
-                <div className="pt-4 border-t border-neutral-900 flex items-center justify-between gap-4">
+                <div className="pt-4 border-t border-neutral-200 flex items-center justify-between gap-4">
                   <button
                     type="button"
                     onClick={() => setActiveTab("inventory")}
-                    className="px-4 py-2.5 rounded-xl border border-neutral-800 text-neutral-400 hover:text-white text-xs transition-colors cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl border border-neutral-200 text-neutral-600 hover:text-black text-xs font-semibold transition-colors cursor-pointer"
                   >
                     Cancelar
                   </button>
 
                   <button
                     type="submit"
-                    className="px-6 py-3 rounded-xl bg-white text-black font-extrabold text-xs hover:bg-neutral-200 transition-all flex items-center gap-2 shadow-lg active:scale-95 cursor-pointer"
+                    className="px-6 py-3 rounded-xl bg-neutral-950 text-white font-extrabold text-xs hover:bg-neutral-800 transition-all flex items-center gap-2 shadow-md active:scale-95 cursor-pointer"
                   >
-                    <Save className="w-4 h-4 text-black" />
+                    <Save className="w-4 h-4 text-white" />
                     <span>{editingProductId ? "Actualizar y Guardar Cambios" : "Guardar y Publicar en Tienda"}</span>
                   </button>
                 </div>
@@ -975,8 +1042,8 @@ export default function AdminPage() {
 
               {/* Live Preview de la Tarjeta en la Tienda (5 Cols) */}
               <div className="lg:col-span-5 space-y-3 sticky top-24">
-                <div className="flex items-center justify-between text-xs text-neutral-400 font-mono">
-                  <span className="flex items-center gap-1.5 uppercase font-bold text-amber-400">
+                <div className="flex items-center justify-between text-xs text-neutral-500 font-bold">
+                  <span className="flex items-center gap-1.5 uppercase text-neutral-900">
                     <Eye className="w-3.5 h-3.5" />
                     <span>Vista Previa en Tiempo Real</span>
                   </span>
@@ -984,7 +1051,7 @@ export default function AdminPage() {
                 </div>
 
                 {/* Tarjeta idéntica a la tienda */}
-                <div className="rounded-2xl bg-white text-neutral-900 border border-neutral-200/90 shadow-2xl p-5 overflow-hidden flex flex-col justify-between">
+                <div className="rounded-2xl bg-white text-neutral-900 border border-neutral-200/90 shadow-xl p-5 overflow-hidden flex flex-col justify-between">
                   {/* Encabezado */}
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <div className="flex items-center gap-2">
@@ -1033,7 +1100,7 @@ export default function AdminPage() {
                   </div>
 
                   {/* Badges de specs */}
-                  <div className="flex flex-wrap gap-1.5 mb-4 text-[11px] font-medium text-neutral-600">
+                  <div className="flex flex-wrap gap-1.5 mb-4 text-[11px] font-semibold text-neutral-600">
                     <span className="px-2 py-0.5 rounded-md bg-neutral-100 border border-neutral-200/50">
                       {formSpecBattery}
                     </span>
@@ -1073,24 +1140,24 @@ export default function AdminPage() {
         {activeTab === "sales" && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-5 space-y-6">
-              <div className="p-6 rounded-2xl border border-neutral-800 bg-neutral-900/40 space-y-4">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <PlusCircle className="w-4 h-4 text-emerald-400" />
+              <div className="p-6 rounded-2xl border border-neutral-200 bg-white shadow-xs space-y-4">
+                <h3 className="text-sm font-bold text-neutral-950 flex items-center gap-2">
+                  <PlusCircle className="w-4 h-4 text-emerald-600" />
                   <span>Registrar Venta Manual (WhatsApp o Presencial)</span>
                 </h3>
-                <p className="text-xs text-neutral-400">
+                <p className="text-xs text-neutral-500">
                   Registra pedidos cerrados fuera de la web para descontar las unidades del stock automáticamente.
                 </p>
 
                 <form onSubmit={handleRecordManualSale} className="space-y-3.5">
                   <div>
-                    <label className="text-[11px] font-mono text-neutral-400 uppercase block mb-1">
+                    <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
                       Producto vendido:
                     </label>
                     <select
                       value={newSaleProduct}
                       onChange={(e) => setNewSaleProduct(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-950 border border-neutral-800 text-xs text-white focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none"
                     >
                       {products.map((item) => (
                         <option key={item.id} value={item.id}>
@@ -1102,7 +1169,7 @@ export default function AdminPage() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[11px] font-mono text-neutral-400 uppercase block mb-1">
+                      <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
                         Cantidad:
                       </label>
                       <input
@@ -1110,11 +1177,11 @@ export default function AdminPage() {
                         min={1}
                         value={newSaleQty}
                         onChange={(e) => setNewSaleQty(parseInt(e.target.value) || 1)}
-                        className="w-full px-3.5 py-2 rounded-xl bg-neutral-950 border border-neutral-800 text-xs font-mono text-white focus:outline-none"
+                        className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono text-neutral-900 focus:outline-none font-bold"
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] font-mono text-neutral-400 uppercase block mb-1">
+                      <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
                         Canal:
                       </label>
                       <select
@@ -1122,7 +1189,7 @@ export default function AdminPage() {
                         onChange={(e) =>
                           setNewSaleChannel(e.target.value as "WhatsApp" | "Presencial")
                         }
-                        className="w-full px-3.5 py-2 rounded-xl bg-neutral-950 border border-neutral-800 text-xs text-white focus:outline-none"
+                        className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none font-semibold"
                       >
                         <option value="WhatsApp">WhatsApp</option>
                         <option value="Presencial">Presencial</option>
@@ -1131,7 +1198,7 @@ export default function AdminPage() {
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-mono text-neutral-400 uppercase block mb-1">
+                    <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
                       Nombre o Teléfono del Cliente:
                     </label>
                     <input
@@ -1139,13 +1206,13 @@ export default function AdminPage() {
                       placeholder="Ej: Sofia Martínez"
                       value={newSaleCustomer}
                       onChange={(e) => setNewSaleCustomer(e.target.value)}
-                      className="w-full px-3.5 py-2 rounded-xl bg-neutral-950 border border-neutral-800 text-xs text-white focus:outline-none placeholder-neutral-600"
+                      className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none placeholder-neutral-400"
                     />
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full py-3 rounded-xl bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition-colors flex items-center justify-center gap-2 shadow-md active:scale-95 cursor-pointer"
+                    className="w-full py-3 rounded-xl bg-neutral-950 text-white font-bold text-xs hover:bg-neutral-800 transition-colors flex items-center justify-center gap-2 shadow-md active:scale-95 cursor-pointer"
                   >
                     <ShoppingBag className="w-3.5 h-3.5" />
                     <span>Procesar Venta y Descontar Stock</span>
@@ -1156,27 +1223,27 @@ export default function AdminPage() {
 
             {/* Sales History */}
             <div className="lg:col-span-7 space-y-3">
-              <span className="text-xs font-mono uppercase text-neutral-400 block font-bold">
+              <span className="text-xs uppercase text-neutral-500 block font-bold tracking-wider">
                 Historial de Órdenes Recientes ({sales.length}):
               </span>
               <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
                 {sales.map((s) => (
                   <div
                     key={s.id}
-                    className="p-4 rounded-xl border border-neutral-900 bg-neutral-900/40 flex items-center justify-between text-xs"
+                    className="p-4 rounded-xl border border-neutral-200/90 bg-white shadow-2xs flex items-center justify-between text-xs"
                   >
                     <div>
-                      <div className="font-bold text-white text-sm">{s.productName}</div>
-                      <div className="text-[11px] text-neutral-400 mt-0.5">
+                      <div className="font-extrabold text-neutral-950 text-sm">{s.productName}</div>
+                      <div className="text-[11px] text-neutral-500 mt-0.5">
                         {s.customerName} • Cantidad: {s.quantity} •{" "}
-                        <span className="text-emerald-400 font-semibold">{s.channel}</span>
+                        <span className="text-emerald-700 font-bold">{s.channel}</span>
                       </div>
                     </div>
-                    <div className="text-right font-mono">
-                      <div className="font-bold text-white text-sm">
+                    <div className="text-right">
+                      <div className="font-extrabold text-neutral-950 text-sm">
                         {STORE_SETTINGS.currencySymbol}{s.total.toFixed(2)}
                       </div>
-                      <div className="text-[10px] text-neutral-500">{s.date}</div>
+                      <div className="text-[10px] text-neutral-400">{s.date}</div>
                     </div>
                   </div>
                 ))}
@@ -1191,17 +1258,17 @@ export default function AdminPage() {
             {/* WhatsApp Card */}
             <form
               onSubmit={handleSavePhone}
-              className="p-6 rounded-2xl border border-emerald-500/30 bg-emerald-950/10 space-y-4"
+              className="p-6 rounded-2xl border border-emerald-200 bg-emerald-50/60 space-y-4"
             >
               <div className="flex items-center gap-3.5">
-                <div className="p-3 rounded-xl bg-emerald-500/20 text-emerald-400">
+                <div className="p-3 rounded-xl bg-emerald-100 text-emerald-700">
                   <Phone className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-white">
+                  <h3 className="text-sm font-bold text-emerald-950">
                     Número de WhatsApp Receptor de Pedidos
                   </h3>
-                  <p className="text-xs text-neutral-400 mt-0.5">
+                  <p className="text-xs text-emerald-800/80 mt-0.5">
                     Todos los botones de compra de la web abrirán WhatsApp enviando el mensaje a este número.
                   </p>
                 </div>
@@ -1213,11 +1280,11 @@ export default function AdminPage() {
                   value={phoneInput}
                   onChange={(e) => setPhoneInput(e.target.value)}
                   placeholder="Código de país + número (ej: 51902377567)"
-                  className="px-3.5 py-2.5 rounded-xl bg-neutral-950 border border-neutral-800 text-xs font-mono text-white focus:outline-none focus:border-emerald-500 flex-1"
+                  className="px-3.5 py-2.5 rounded-xl bg-white border border-emerald-300 text-xs font-mono text-neutral-900 focus:outline-none focus:border-emerald-600 flex-1 shadow-2xs"
                 />
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-xs flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer shadow-xs"
                 >
                   <Save className="w-3.5 h-3.5" />
                   <span>Guardar Teléfono</span>
@@ -1225,29 +1292,29 @@ export default function AdminPage() {
               </div>
 
               {phoneSaved && (
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                <div className="p-3 rounded-xl bg-emerald-100/90 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-600" />
                   <span>¡Número actualizado con éxito!</span>
                 </div>
               )}
             </form>
 
             {/* Exportar Catálogo JSON */}
-            <div className="p-6 rounded-2xl border border-neutral-800 bg-neutral-900/40 space-y-4">
+            <div className="p-6 rounded-2xl border border-neutral-200 bg-white shadow-xs space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Copy className="w-4 h-4 text-blue-400" />
+                  <h3 className="text-sm font-bold text-neutral-950 flex items-center gap-2">
+                    <Copy className="w-4 h-4 text-blue-600" />
                     <span>Exportar Catálogo para Producción Permanente</span>
                   </h3>
-                  <p className="text-xs text-neutral-400 mt-0.5">
+                  <p className="text-xs text-neutral-500 mt-0.5">
                     Puedes copiar los productos actuales en formato JSON para respaldarlos o pasármelos para dejarlos grabados en el código estático.
                   </p>
                 </div>
 
                 <button
                   onClick={handleCopyJson}
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                  className="px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-xs"
                 >
                   {copiedJson ? (
                     <>
@@ -1263,7 +1330,7 @@ export default function AdminPage() {
                 </button>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-2 border-t border-neutral-100">
                 <button
                   onClick={() => {
                     if (confirm("¿Deseas restablecer los productos a los valores predeterminados de fábrica?")) {
@@ -1271,9 +1338,9 @@ export default function AdminPage() {
                       alert("Productos restablecidos.");
                     }
                   }}
-                  className="text-xs text-neutral-500 hover:text-red-400 transition-colors flex items-center gap-1.5"
+                  className="text-xs text-neutral-500 hover:text-red-600 transition-colors flex items-center gap-1.5 cursor-pointer font-medium"
                 >
-                  <RefreshCw className="w-3 h-3" />
+                  <RefreshCw className="w-3.5 h-3.5" />
                   <span>Restablecer productos originales de fábrica</span>
                 </button>
               </div>

@@ -63,15 +63,25 @@ export default function ProductCard({ product }: { product: Product }) {
 
         {/* Large Product Image Frame */}
         <div className="relative w-full aspect-square rounded-xl bg-white flex items-center justify-center p-1.5 overflow-hidden border border-neutral-100">
-          <div className="relative w-full h-full transition-transform duration-300 group-hover:scale-105">
-            <Image
-              src={currentColor.image}
-              alt={product.name}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="object-contain p-1"
-              priority
-            />
+          <div className="relative w-full h-full transition-transform duration-300 group-hover:scale-105 flex items-center justify-center">
+            {currentColor?.image?.startsWith("data:") ||
+            currentColor?.image?.startsWith("blob:") ||
+            currentColor?.image?.startsWith("http") ? (
+              <img
+                src={currentColor.image}
+                alt={product.name}
+                className="w-full h-full object-contain p-1"
+              />
+            ) : (
+              <Image
+                src={currentColor?.image || "/products/buds-6-black.jpg"}
+                alt={product.name}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-contain p-1"
+                priority
+              />
+            )}
           </div>
         </div>
 
