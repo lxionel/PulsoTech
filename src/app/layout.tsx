@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
+import { ProductsProvider } from "@/context/ProductsContext";
 import FloatingWidgets from "@/components/FloatingWidgets";
 import CartDrawer from "@/components/CartDrawer";
 import FavoritesDrawer from "@/components/FavoritesDrawer";
@@ -37,12 +38,14 @@ export default function RootLayout({
       className={`${plusJakarta.variable} ${spaceGrotesk.variable} h-full antialiased scroll-smooth`}
     >
       <body className="min-h-full flex flex-col font-sans bg-[#fbfbfd] text-[#111113] selection:bg-neutral-900 selection:text-white">
-        <CartProvider>
-          {children}
-          <CartDrawer />
-          <FavoritesDrawer />
-          <FloatingWidgets />
-        </CartProvider>
+        <ProductsProvider>
+          <CartProvider>
+            {children}
+            <CartDrawer />
+            <FavoritesDrawer />
+            <FloatingWidgets />
+          </CartProvider>
+        </ProductsProvider>
       </body>
     </html>
   );

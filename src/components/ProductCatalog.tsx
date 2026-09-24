@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { PRODUCTS } from "@/data/products";
+import { useProducts } from "@/context/ProductsContext";
 import ProductCard from "./ProductCard";
 import {
   Search,
@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 export default function ProductCatalog() {
+  const { products } = useProducts();
   const [selectedCategory, setSelectedCategory] = useState<string>("todos");
   const [selectedBrand, setSelectedBrand] = useState<string>("todas");
   const [priceRange, setPriceRange] = useState<"all" | "under50" | "50to100" | "over100" | "custom">("all");
@@ -26,7 +27,7 @@ export default function ProductCatalog() {
 
   // Filter products logic
   const filteredProducts = useMemo(() => {
-    return PRODUCTS.filter((product) => {
+    return products.filter((product) => {
       // Category filter
       if (selectedCategory !== "todos" && selectedCategory !== "audifonos") {
         return false;
