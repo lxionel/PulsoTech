@@ -16,48 +16,33 @@ export default function Logo({ className = "", showText = true, size = "md" }: L
 
   return (
     <Link href="/" className={`flex items-center gap-2.5 group select-none ${className}`}>
-      {/* Isotipo PulsoTech SVG Vectorial */}
+      {/* Isotipo PulsoTech SVG Vectorial de Alta Fidelidad */}
       <div 
-        className="relative shrink-0 flex items-center justify-center rounded-xl bg-neutral-950 text-white shadow-xs group-hover:bg-neutral-800 transition-all duration-200"
+        className="relative shrink-0 flex items-center justify-center rounded-xl bg-neutral-950 border border-neutral-900 shadow-2xs group-hover:bg-neutral-900 transition-all duration-200"
         style={{ width: iconSize, height: iconSize }}
       >
         <svg
           viewBox="0 0 44 44"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className="w-4/5 h-4/5"
+          className="w-3/5 h-3/5"
         >
-          {/* Base geométrica de la letra 'P' */}
-          <path
-            d="M 14 34 V 10 H 24 C 29.5 10 34 14.5 34 20 C 34 25.5 29.5 30 24 30 H 14"
-            stroke="#FFFFFF"
-            strokeWidth="3.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-
-          {/* Línea de Pulso Tecnológico / Onda Sonora Dinámica */}
-          <path
-            d="M 7 21 H 11 L 14 15 L 18 27 L 22 17 L 25 21 H 37"
-            stroke="#FFFFFF"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            opacity="0.85"
-          />
-
-          {/* Punto de energía del pulso */}
-          <circle cx="24" cy="20" r="1.6" fill="#FFFFFF" />
+          {/* Barra vertical principal (Tronco P) */}
+          <rect x="11" y="9" width="4" height="26" rx="2" fill="#FFFFFF"/>
+          {/* Barras acústicas de pulso y ecualizador que configuran el bucle dinámico de la P */}
+          <rect x="18" y="9" width="4" height="15" rx="2" fill="#FFFFFF"/>
+          <rect x="25" y="11.5" width="4" height="10" rx="2" fill="#FFFFFF"/>
+          <rect x="32" y="14" width="4" height="5" rx="2" fill="#FFFFFF"/>
         </svg>
       </div>
 
-      {/* Tipografía PulsoTech */}
+      {/* Tipografía PulsoTech Unificada de Alta Gama */}
       {showText && (
-        <div className="flex flex-col">
+        <div className="flex flex-col justify-center">
           <div className={`font-black tracking-tight leading-none ${textSize} text-neutral-950 transition-colors`}>
-            Pulso<span className="text-blue-700">Tech</span>
+            PulsoTech
           </div>
-          <span className={`font-extrabold tracking-[0.22em] text-neutral-400 uppercase leading-tight mt-0.5 ${subSize}`}>
+          <span className={`font-bold tracking-[0.18em] text-neutral-500 uppercase leading-none mt-1 ${subSize}`}>
             Tecnología &amp; Audio
           </span>
         </div>
