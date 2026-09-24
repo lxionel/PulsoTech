@@ -3,7 +3,6 @@
 import React from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
-import TrustBar from "@/components/TrustBar";
 import ProductCatalog from "@/components/ProductCatalog";
 import HowToBuy from "@/components/HowToBuy";
 import FaqSection from "@/components/FaqSection";
@@ -17,19 +16,16 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="flex-1">
-        {/* 1. Commercial Hero Showcase (Despegatec style) */}
+        {/* 1. Commercial Hero Showcase (Fixed single image, green button) */}
         <HeroSection />
 
-        {/* 2. Retail Value / Trust Bar */}
-        <TrustBar />
-
-        {/* 3. Real E-Commerce Product Catalog with Filters and Sorting */}
+        {/* 2. Real E-Commerce Product Catalog with Vertical Filters & Grid */}
         <ProductCatalog />
 
-        {/* 4. Simple 3-Step Buying Guide */}
+        {/* 3. Simple 3-Step Buying Guide */}
         <HowToBuy />
 
-        {/* 5. Frequently Asked Questions */}
+        {/* 4. Frequently Asked Questions */}
         <FaqSection />
       </main>
 

@@ -23,24 +23,24 @@ export default function Navbar() {
         <Logo size="md" />
 
         {/* Navigation Categories */}
-        <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-neutral-700">
-          <Link href="/" className="hover:text-blue-600 transition-colors">
+        <nav className="hidden md:flex items-center gap-7 text-sm lg:text-[15px] font-bold text-neutral-800">
+          <Link href="/" className="hover:text-black transition-colors">
             Inicio
           </Link>
           <Link
             href="/#catalogo"
-            className="hover:text-blue-600 transition-colors flex items-center gap-1.5"
+            className="hover:text-black transition-colors flex items-center gap-1.5"
           >
-            <Headphones className="w-3.5 h-3.5 text-blue-600" />
+            <Headphones className="w-4 h-4 text-neutral-800" />
             <span>Catálogo</span>
           </Link>
-          <Link href="/#como-comprar" className="hover:text-blue-600 transition-colors">
+          <Link href="/#como-comprar" className="hover:text-black transition-colors">
             Métodos de Pago
           </Link>
-          <Link href="/#faq" className="hover:text-blue-600 transition-colors">
+          <Link href="/#faq" className="hover:text-black transition-colors">
             Preguntas Frecuentes
           </Link>
-          <Link href="/#garantia" className="hover:text-blue-600 transition-colors">
+          <Link href="/#garantia" className="hover:text-black transition-colors">
             Garantía Oficial
           </Link>
         </nav>
