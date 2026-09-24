@@ -18,12 +18,14 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-neutral-200 shadow-2xs transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div className="w-full max-w-[1650px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 h-16 flex items-center justify-between gap-6">
         {/* Brand Logo PulsoTech */}
-        <Logo size="md" />
+        <div className="shrink-0">
+          <Logo size="md" />
+        </div>
 
         {/* Navigation Categories */}
-        <nav className="hidden md:flex items-center gap-7 text-sm lg:text-[15px] font-bold text-neutral-800">
+        <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-bold text-neutral-800">
           <Link href="/" className="hover:text-black transition-colors">
             Inicio
           </Link>
@@ -45,8 +47,8 @@ export default function Navbar() {
           </Link>
         </nav>
 
-        {/* Right Actions: Social Media + Favorites + Cart with Total */}
-        <div className="flex items-center gap-2 sm:gap-2.5">
+        {/* Right Actions: Social Media + Favorites + Cart (Pushed to the far right) */}
+        <div className="flex items-center gap-2 sm:gap-3 ml-auto shrink-0">
           {/* Social Media Links (Modern Minimalist Pill) */}
           <div className="flex items-center gap-0.5 sm:gap-1 bg-neutral-100/90 p-1 rounded-xl border border-neutral-200/70 shadow-2xs">
             {/* Instagram */}
