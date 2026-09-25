@@ -7,7 +7,6 @@ import { useProducts } from "@/context/ProductsContext";
 import { STORE_SETTINGS } from "@/data/products";
 import { getAssetUrl } from "@/utils/paths";
 import { Product, ProductColor } from "@/types";
-import { getSupabaseConfig } from "@/lib/supabase";
 import Logo from "@/components/Logo";
 import {
   TrendingUp,
@@ -174,163 +173,19 @@ export default function AdminPage() {
   // Estados de WhatsApp
   const [phoneInput, setPhoneInput] = useState(whatsappNumber);
   const [phoneSaved, setPhoneSaved] = useState(false);
+  const [isRefreshingCloud, setIsRefreshingCloud] = useState(false);
+  const [refreshNotice, setRefreshNotice] = useState(false);
 
-  // Estados de Supabase Cloud
-  const [supabaseUrlInput, setSupabaseUrlInput] = useState("");
-  const [supabaseAnonKeyInput, setSupabaseAnonKeyInput] = useState("");
-  const [isConnectingCloud, setIsConnectingCloud] = useState(false);
-  const [isSyncingCloud, setIsSyncingCloud] = useState(false);
-  const [cloudNotice, setCloudNotice] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
-  const [showSqlViewer, setShowSqlViewer] = useState(false);
-  const [copiedSql, setCopiedSql] = useState(false);
-
-  useEffect(() => {
-    const cfg = getSupabaseConfig();
-    if (cfg.url) setSupabaseUrlInput(cfg.url);
-    if (cfg.anonKey) setSupabaseAnonKeyInput(cfg.anonKey);
-  }, []);
-
-  const handleConnectSupabase = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!supabaseUrlInput.trim() || !supabaseAnonKeyInput.trim()) {
-      setCloudNotice({
-        type: "error",
-        text: "Por favor ingresa tanto la URL de Supabase como la clave anónima (anon public key).",
-      });
-      return;
-    }
-    setIsConnectingCloud(true);
-    setCloudNotice(null);
-    const res = await connectSupabase(supabaseUrlInput.trim(), supabaseAnonKeyInput.trim());
-    setIsConnectingCloud(false);
-    if (res.success) {
-      setCloudNotice({ type: "success", text: res.message });
-    } else {
-      setCloudNotice({ type: "error", text: res.message });
-    }
-  };
-
-  const handleSyncToCloud = async () => {
-    if (!isCloudConfigured) {
-      alert("Primero conecta tu proyecto de Supabase ingresando la URL y el Anon Key.");
-      return;
-    }
-    if (
-      !confirm(
-        `¿Deseas sincronizar los ${products.length} productos de tu catálogo a Supabase en la nube?\n\nEsto actualizará la base de datos PostgreSQL remota y los productos serán visibles en cualquier dispositivo del mundo al instante.`
-      )
-    ) {
-      return;
-    }
-    setIsSyncingCloud(true);
-    setCloudNotice(null);
-    const res = await syncLocalToCloud();
-    setIsSyncingCloud(false);
-    if (res.success) {
-      setCloudNotice({
-        type: "success",
-        text: `¡Catálogo sincronizado exitosamente! Se subieron ${res.count} productos a Supabase en la nube.`,
-      });
-    } else {
-      setCloudNotice({ type: "error", text: `Error al sincronizar con la nube: ${res.message}` });
-    }
-  };
-
-  const handleDisconnectCloud = () => {
-    if (
-      confirm(
-        "¿Estás seguro de desconectar Supabase? El panel volverá a operar en almacenamiento local únicamente en este navegador."
-      )
-    ) {
-      disconnectSupabase();
-      setSupabaseUrlInput("");
-      setSupabaseAnonKeyInput("");
-      setCloudNotice({
-        type: "info",
-        text: "Supabase desconectado. El panel ahora funciona en modo de almacenamiento local.",
-      });
-    }
-  };
-
-  const SQL_SCHEMA_TEXT = `-- ==============================================================================
--- PULSOTECH - ESQUEMA DE BASE DE DATOS SUPABASE (POSTGRESQL)
--- ==============================================================================
--- 1. Crear tabla de productos
-create table if not exists public.products (
-  id text primary key,
-  name text not null,
-  slug text not null,
-  subtitle text default '',
-  description text default '',
-  price numeric not null default 0,
-  original_price numeric,
-  brand text not null default 'Xiaomi',
-  category text not null default 'Audífonos Inalámbricos',
-  in_stock boolean default true,
-  stock_count integer default 10,
-  is_featured boolean default true,
-  is_new boolean default false,
-  rating numeric default 5.0,
-  reviews_count integer default 1,
-  video_url text,
-  colors jsonb default '[]'::jsonb,
-  images jsonb default '[]'::jsonb,
-  custom_specs jsonb default '[]'::jsonb,
-  specs jsonb default '{}'::jsonb,
-  sound_profile jsonb default '{"type": "Equilibrado", "description": "Audio de alta fidelidad", "bass": 80, "mid": 80, "treble": 80}'::jsonb,
-  features jsonb default '[]'::jsonb,
-  tags jsonb default '[]'::jsonb,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- 2. Crear tabla de configuraciones de tienda
-create table if not exists public.store_settings (
-  key text primary key,
-  value jsonb not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- 3. Habilitar seguridad a nivel de filas (Row Level Security)
-alter table public.products enable row level security;
-alter table public.store_settings enable row level security;
-
--- 4. Políticas para la tabla 'products'
-drop policy if exists "Permitir lectura publica de productos" on public.products;
-create policy "Permitir lectura publica de productos" on public.products for select using (true);
-
-drop policy if exists "Permitir insercion de productos" on public.products;
-create policy "Permitir insercion de productos" on public.products for insert with check (true);
-
-drop policy if exists "Permitir actualizacion de productos" on public.products;
-create policy "Permitir actualizacion de productos" on public.products for update using (true);
-
-drop policy if exists "Permitir eliminacion de productos" on public.products;
-create policy "Permitir eliminacion de productos" on public.products for delete using (true);
-
--- 5. Políticas para la tabla 'store_settings'
-drop policy if exists "Permitir lectura publica de configuraciones" on public.store_settings;
-create policy "Permitir lectura publica de configuraciones" on public.store_settings for select using (true);
-
-drop policy if exists "Permitir insercion de configuraciones" on public.store_settings;
-create policy "Permitir insercion de configuraciones" on public.store_settings for insert with check (true);
-
-drop policy if exists "Permitir actualizacion de configuraciones" on public.store_settings;
-create policy "Permitir actualizacion de configuraciones" on public.store_settings for update using (true);
-
--- 6. Habilitar suscripción a cambios en tiempo real
-alter publication supabase_realtime add table public.products;
-alter publication supabase_realtime add table public.store_settings;`;
-
-  const handleCopySql = () => {
-    navigator.clipboard.writeText(SQL_SCHEMA_TEXT);
-    setCopiedSql(true);
-    setTimeout(() => setCopiedSql(false), 3000);
+  const handleRefreshData = async () => {
+    setIsRefreshingCloud(true);
+    await refreshFromCloud();
+    setIsRefreshingCloud(false);
+    setRefreshNotice(true);
+    setTimeout(() => setRefreshNotice(false), 3000);
   };
 
   // Filtros de búsqueda en inventario
   const [searchFilter, setSearchFilter] = useState("");
-  const [copiedJson, setCopiedJson] = useState(false);
 
   // Estados para gestión de filtros (marcas y categorías)
   const [newBrandInput, setNewBrandInput] = useState("");
@@ -752,12 +607,6 @@ alter publication supabase_realtime add table public.store_settings;`;
 
     setTimeout(() => setSuccessNotice(""), 5000);
     setActiveTab("inventory");
-  };
-
-  const handleCopyJson = () => {
-    navigator.clipboard.writeText(exportProductsJson());
-    setCopiedJson(true);
-    setTimeout(() => setCopiedJson(false), 3000);
   };
 
   const filteredInventory = products.filter((item) =>
@@ -2242,261 +2091,24 @@ alter publication supabase_realtime add table public.store_settings;`;
           </div>
         )}
 
-        {/* ================= PESTAÑA 4: CONFIGURACIÓN & EXPORTAR ================= */}
+        {/* ================= PESTAÑA: AJUSTES & WHATSAPP ================= */}
         {activeTab === "settings" && (
           <div className="space-y-6 max-w-3xl">
-            {/* Tarjeta de Conexión a Base de Datos en la Nube (Supabase) */}
-            <div className="p-6 rounded-2xl border border-neutral-200 bg-white shadow-xs space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-100">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 shrink-0">
-                    <Database className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-sm font-black text-neutral-950">
-                        Base de Datos Global en la Nube (Supabase)
-                      </h3>
-                      {isCloudConfigured ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-bold text-emerald-700">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          Conectado en Tiempo Real
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-[10px] font-bold text-amber-700">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                          Modo Local (Tu Navegador)
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-neutral-500 mt-0.5">
-                      Conecta Supabase (PostgreSQL) para que los productos que agregues, edites o elimines se sincronicen al instante para todos tus clientes en cualquier parte del mundo.
-                    </p>
-                  </div>
-                </div>
-
-                {isCloudConfigured && (
-                  <button
-                    type="button"
-                    onClick={handleDisconnectCloud}
-                    className="text-xs text-neutral-400 hover:text-red-600 font-semibold transition-colors self-start sm:self-auto cursor-pointer flex items-center gap-1"
-                  >
-                    <CloudOff className="w-3.5 h-3.5" />
-                    <span>Desconectar</span>
-                  </button>
-                )}
-              </div>
-
-              {/* Mensajes de Estado */}
-              {cloudNotice && (
-                <div
-                  className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center justify-between gap-2 animate-in fade-in ${
-                    cloudNotice.type === "success"
-                      ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                      : cloudNotice.type === "error"
-                      ? "bg-red-50 border-red-200 text-red-800"
-                      : "bg-blue-50 border-blue-200 text-blue-800"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    {cloudNotice.type === "success" ? (
-                      <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                    ) : (
-                      <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-                    )}
-                    <span>{cloudNotice.text}</span>
-                  </div>
-                  <button
-                    onClick={() => setCloudNotice(null)}
-                    className="text-neutral-400 hover:text-neutral-600 text-xs px-1 cursor-pointer"
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
-
-              {/* Formulario de Credenciales de Supabase */}
-              <form onSubmit={handleConnectSupabase} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-neutral-700 flex items-center gap-1.5">
-                      <Globe className="w-3.5 h-3.5 text-blue-600" />
-                      <span>URL del Proyecto Supabase</span>
-                    </label>
-                    <input
-                      type="url"
-                      placeholder="https://xyzabcdefghijklm.supabase.co"
-                      value={supabaseUrlInput}
-                      onChange={(e) => setSupabaseUrlInput(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono text-neutral-900 focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-2xs"
-                    />
-                    <span className="text-[10px] text-neutral-400 block">
-                      En Supabase: Project Settings → API → Project URL
-                    </span>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-neutral-700 flex items-center gap-1.5">
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Clave Anónima Pública (Anon Key)</span>
-                    </label>
-                    <input
-                      type="password"
-                      placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                      value={supabaseAnonKeyInput}
-                      onChange={(e) => setSupabaseAnonKeyInput(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono text-neutral-900 focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-2xs"
-                    />
-                    <span className="text-[10px] text-neutral-400 block">
-                      En Supabase: Project Settings → API → Project API keys (anon public)
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3 pt-2">
-                  <button
-                    type="submit"
-                    disabled={isConnectingCloud}
-                    className="px-5 py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
-                  >
-                    {isConnectingCloud ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Verificando conexión...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Cloud className="w-3.5 h-3.5" />
-                        <span>{isCloudConfigured ? "Actualizar Conexión Supabase" : "Conectar con Supabase"}</span>
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleSyncToCloud}
-                    disabled={!isCloudConfigured || isSyncingCloud}
-                    className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
-                  >
-                    {isSyncingCloud ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Subiendo catálogo a la nube...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>🚀 Subir Todo el Catálogo Actual a Supabase ({products.length} productos)</span>
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => refreshFromCloud()}
-                    disabled={!isCloudConfigured}
-                    className="px-4 py-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed text-neutral-700 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Recargar desde Nube</span>
-                  </button>
-                </div>
-              </form>
-
-              {/* Guía Rápida & Esquema SQL Desplegable */}
-              <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-200/80 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Code className="w-4 h-4 text-neutral-700" />
-                    <span className="text-xs font-bold text-neutral-900">
-                      ¿Primera vez configurando Supabase? Guía rápida (2 minutos):
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowSqlViewer(!showSqlViewer)}
-                    className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>{showSqlViewer ? "Ocultar Código SQL" : "Ver Código SQL de Tablas"}</span>
-                    {showSqlViewer ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-
-                <ol className="text-xs text-neutral-600 space-y-1.5 pl-4 list-decimal">
-                  <li>
-                    Crea una cuenta y un proyecto gratuito en{" "}
-                    <a
-                      href="https://supabase.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 underline font-semibold"
-                    >
-                      supabase.com
-                    </a>
-                    .
-                  </li>
-                  <li>
-                    En el menú lateral de tu proyecto Supabase, entra a <strong>SQL Editor</strong>, haz clic en{" "}
-                    <strong>New query</strong>, pega el código SQL de abajo y pulsa <strong>Run</strong>.
-                  </li>
-                  <li>
-                    Ve a <strong>Project Settings → API</strong>, copia tu <strong>Project URL</strong> y tu{" "}
-                    <strong>anon public key</strong>, pégalos aquí arriba y haz clic en <strong>Conectar con Supabase</strong>.
-                  </li>
-                  <li>
-                    Una vez conectado, haz clic en el botón azul <strong>🚀 Subir Todo el Catálogo Actual a Supabase</strong> para migrar todos tus productos a la nube.
-                  </li>
-                </ol>
-
-                {showSqlViewer && (
-                  <div className="pt-3 border-t border-neutral-200 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-mono font-bold text-neutral-500 uppercase tracking-wider">
-                        Script PostgreSQL para Supabase SQL Editor:
-                      </span>
-                      <button
-                        type="button"
-                        onClick={handleCopySql}
-                        className="px-3 py-1 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-[11px] flex items-center gap-1.5 transition-colors cursor-pointer"
-                      >
-                        {copiedSql ? (
-                          <>
-                            <Check className="w-3 h-3 text-emerald-400" />
-                            <span>¡Copiado!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3 h-3" />
-                            <span>Copiar Script SQL</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-
-                    <pre className="p-3.5 rounded-xl bg-neutral-900 text-neutral-100 font-mono text-[11px] leading-relaxed overflow-x-auto max-h-64 border border-neutral-800">
-                      <code>{SQL_SCHEMA_TEXT}</code>
-                    </pre>
-                  </div>
-                )}
-              </div>
-            </div>
-
             {/* WhatsApp Card */}
             <form
               onSubmit={handleSavePhone}
-              className="p-6 rounded-2xl border border-emerald-200 bg-emerald-50/60 space-y-4"
+              className="p-6 rounded-2xl border border-emerald-200 bg-white shadow-xs space-y-4"
             >
               <div className="flex items-center gap-3.5">
-                <div className="p-3 rounded-xl bg-emerald-100 text-emerald-700">
+                <div className="p-3 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 shrink-0">
                   <Phone className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-emerald-950">
+                  <h3 className="text-sm font-bold text-neutral-950">
                     Número de WhatsApp Receptor de Pedidos
                   </h3>
-                  <p className="text-xs text-emerald-800/80 mt-0.5">
-                    Todos los botones de compra de la web abrirán WhatsApp enviando el mensaje a este número.
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    Todos los botones de compra de la tienda abrirán WhatsApp enviando el mensaje a este número.
                   </p>
                 </div>
               </div>
@@ -2507,7 +2119,7 @@ alter publication supabase_realtime add table public.store_settings;`;
                   value={phoneInput}
                   onChange={(e) => setPhoneInput(e.target.value)}
                   placeholder="Código de país + número (ej: 51902377567)"
-                  className="px-3.5 py-2.5 rounded-xl bg-white border border-emerald-300 text-xs font-mono text-neutral-900 focus:outline-none focus:border-emerald-600 flex-1 shadow-2xs"
+                  className="px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono text-neutral-900 focus:outline-none focus:border-emerald-600 focus:bg-white flex-1 shadow-2xs"
                 />
                 <button
                   type="submit"
@@ -2519,58 +2131,53 @@ alter publication supabase_realtime add table public.store_settings;`;
               </div>
 
               {phoneSaved && (
-                <div className="p-3 rounded-xl bg-emerald-100/90 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-2">
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-emerald-600" />
                   <span>¡Número actualizado con éxito!</span>
                 </div>
               )}
             </form>
 
-            {/* Exportar Catálogo JSON */}
+            {/* Tarjeta de Estado del Sistema & Nube */}
             <div className="p-6 rounded-2xl border border-neutral-200 bg-white shadow-xs space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-bold text-neutral-950 flex items-center gap-2">
-                    <Copy className="w-4 h-4 text-blue-600" />
-                    <span>Exportar Catálogo para Producción Permanente</span>
-                  </h3>
-                  <p className="text-xs text-neutral-500 mt-0.5">
-                    Puedes copiar los productos actuales en formato JSON para respaldarlos o pasármelos para dejarlos grabados en el código estático.
-                  </p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="p-3 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 shrink-0">
+                    <Database className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-neutral-950">
+                        Base de Datos en la Nube
+                      </h3>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-bold text-emerald-700">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Sincronización en Tiempo Real Activa
+                      </span>
+                    </div>
+                    <p className="text-xs text-neutral-500 mt-0.5">
+                      Tus productos, precios, fotos y stock se sincronizan automáticamente con Supabase y son visibles en tiempo real para todos tus clientes.
+                    </p>
+                  </div>
                 </div>
 
                 <button
-                  onClick={handleCopyJson}
-                  className="px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-xs"
+                  type="button"
+                  onClick={handleRefreshData}
+                  disabled={isRefreshingCloud}
+                  className="px-4 py-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 disabled:opacity-50 text-neutral-800 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 self-start sm:self-auto"
                 >
-                  {copiedJson ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-white" />
-                      <span>¡Copiado al portapapeles!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>Copiar JSON</span>
-                    </>
-                  )}
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingCloud ? "animate-spin text-emerald-600" : ""}`} />
+                  <span>{isRefreshingCloud ? "Comprobando..." : "Comprobar Sincronización"}</span>
                 </button>
               </div>
 
-              <div className="pt-2 border-t border-neutral-100">
-                <button
-                  onClick={() => {
-                    if (confirm("¿Deseas restablecer los productos a los valores predeterminados de fábrica?")) {
-                      resetToDefault();
-                      alert("Productos restablecidos.");
-                    }
-                  }}
-                  className="text-xs text-neutral-500 hover:text-red-600 transition-colors flex items-center gap-1.5 cursor-pointer font-medium"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Restablecer productos originales de fábrica</span>
-                </button>
-              </div>
+              {refreshNotice && (
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+                  <CheckCircle className="w-4 h-4 text-emerald-600" />
+                  <span>¡Datos verificados y sincronizados correctamente con la nube!</span>
+                </div>
+              )}
             </div>
           </div>
         )}
