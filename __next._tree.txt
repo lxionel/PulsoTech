@@ -1,4 +1,4 @@
-:HL["/PulsoTech/_next/static/chunks/3q2i810j6qx4u.css","style"]
+:HL["/PulsoTech/_next/static/chunks/2029o8cm8vn-n.css","style"]
 :HL["/PulsoTech/_next/static/media/0c89a48fa5027cee-s.p.2cyn07wtgehh0.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/PulsoTech/_next/static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
-0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}},"staleTime":300,"buildId":"DODP-ODEfjl01Ms_0a_7f"}
+0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}},"staleTime":300,"buildId":"nrz3F-Z1BW0hQSohl05ek"}
