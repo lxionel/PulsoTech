@@ -1197,48 +1197,15 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* 4. Especificaciones Técnicas */}
+                {/* 4. Descripción Comercial */}
                 <div className="space-y-4 pt-2">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 border-b border-neutral-100 pb-2">
-                    4. Especificaciones Rápidas
+                    4. Descripción Comercial
                   </h3>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="text-[11px] font-bold text-neutral-600 block mb-1">Autonomía / Batería</label>
-                      <input
-                        type="text"
-                        value={formSpecBattery}
-                        onChange={(e) => setFormSpecBattery(e.target.value)}
-                        placeholder="36 horas"
-                        className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-bold text-neutral-600 block mb-1">Cancelación de Ruido</label>
-                      <input
-                        type="text"
-                        value={formSpecAnc}
-                        onChange={(e) => setFormSpecAnc(e.target.value)}
-                        placeholder="Sin ANC / ANC 42dB"
-                        className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-bold text-neutral-600 block mb-1">Bluetooth</label>
-                      <input
-                        type="text"
-                        value={formSpecConnectivity}
-                        onChange={(e) => setFormSpecConnectivity(e.target.value)}
-                        placeholder="Bluetooth 5.4"
-                        className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900"
-                      />
-                    </div>
-                  </div>
 
                   <div>
                     <label className="text-xs font-bold text-neutral-900 block mb-1">
-                      Descripción Comercial (1 o 2 oraciones)
+                      Descripción del Producto
                     </label>
                     <textarea
                       rows={3}
@@ -1302,23 +1269,23 @@ export default function AdminPage() {
                     </span>
                   </div>
 
-                  {/* Imagen con Transición en Hover */}
-                  <div className="relative w-full aspect-square rounded-xl bg-white flex items-center justify-center p-2 overflow-hidden border border-neutral-100 mb-3 group">
+                  {/* Imagen con Transición en Hover (solo al pasar el cursor sobre la imagen) */}
+                  <div className="relative w-full aspect-square rounded-xl bg-white flex items-center justify-center p-2 overflow-hidden border border-neutral-100 mb-3 group/preview-image">
                     <div className="relative w-full h-full flex items-center justify-center">
                       <img
                         src={formColors[previewColorIndex]?.image || formColors[0]?.image || getAssetUrl("/images/products/redmi-buds-6-play.png")}
                         alt="Preview"
                         className={`absolute inset-0 w-full h-full object-contain p-1 transition-all duration-500 ease-out ${
                           formSecondaryImage
-                            ? "opacity-100 group-hover:opacity-0 group-hover:scale-95"
-                            : "group-hover:scale-105"
+                            ? "opacity-100 group-hover/preview-image:opacity-0 group-hover/preview-image:scale-95"
+                            : "group-hover/preview-image:scale-105"
                         }`}
                       />
                       {formSecondaryImage && (
                         <img
                           src={formSecondaryImage}
                           alt="Hover Preview"
-                          className="absolute inset-0 w-full h-full object-contain p-1 transition-all duration-500 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 pointer-events-none"
+                          className="absolute inset-0 w-full h-full object-contain p-1 transition-all duration-500 ease-out opacity-0 group-hover/preview-image:opacity-100 scale-95 group-hover/preview-image:scale-100 pointer-events-none"
                         />
                       )}
                     </div>
@@ -1352,23 +1319,13 @@ export default function AdminPage() {
                   </div>
 
                   {/* Textos */}
-                  <div className="space-y-1 mb-2">
+                  <div className="space-y-1 mb-3">
                     <h3 className="text-base font-extrabold text-neutral-950 leading-snug">
                       {formName || "Nombre del Producto"}
                     </h3>
                     <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed">
                       {formSubtitle || "Especificaciones breves..."}
                     </p>
-                  </div>
-
-                  {/* Badges de specs */}
-                  <div className="flex flex-wrap gap-1.5 mb-3 text-[10px] font-semibold text-neutral-600">
-                    <span className="px-2 py-0.5 rounded-md bg-neutral-100 border border-neutral-200/50">
-                      {formSpecBattery} batería
-                    </span>
-                    <span className="px-2 py-0.5 rounded-md bg-neutral-100 border border-neutral-200/50">
-                      {formSpecAnc}
-                    </span>
                   </div>
 
                   {/* Precio y Botones 50/50 */}

@@ -74,8 +74,8 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
         </div>
 
-        {/* Large Product Image Frame with Hover Transition */}
-        <div className="relative w-full aspect-square rounded-xl bg-white flex items-center justify-center p-2 overflow-hidden border border-neutral-100">
+        {/* Large Product Image Frame with Hover Transition (only on image hover) */}
+        <div className="relative w-full aspect-square rounded-xl bg-white flex items-center justify-center p-2 overflow-hidden border border-neutral-100 group/image">
           <div className="relative w-full h-full flex items-center justify-center">
             {/* Imagen Principal (Color seleccionado) */}
             <img
@@ -83,17 +83,17 @@ export default function ProductCard({ product }: { product: Product }) {
               alt={product.name}
               className={`absolute inset-0 w-full h-full object-contain p-1 transition-all duration-500 ease-out ${
                 secondaryImage
-                  ? "opacity-100 group-hover:opacity-0 group-hover:scale-95"
-                  : "group-hover:scale-105"
+                  ? "opacity-100 group-hover/image:opacity-0 group-hover/image:scale-95"
+                  : "group-hover/image:scale-105"
               }`}
             />
 
-            {/* Imagen Secundaria (Aparece en hover) */}
+            {/* Imagen Secundaria (Aparece en hover SOLO al pasar el cursor sobre la imagen) */}
             {secondaryImage && (
               <img
                 src={secondaryImage}
                 alt={`${product.name} detalle`}
-                className="absolute inset-0 w-full h-full object-contain p-1 transition-all duration-500 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 pointer-events-none"
+                className="absolute inset-0 w-full h-full object-contain p-1 transition-all duration-500 ease-out opacity-0 group-hover/image:opacity-100 scale-95 group-hover/image:scale-100 pointer-events-none"
               />
             )}
           </div>
@@ -139,27 +139,14 @@ export default function ProductCard({ product }: { product: Product }) {
           )}
         </div>
 
-        {/* Title & Subtitle with fixed minimum heights so they align across cards */}
-        <div className="pt-1">
+        {/* Title & Subtitle */}
+        <div className="pt-1 pb-3">
           <h3 className="text-base sm:text-lg font-extrabold text-neutral-950 group-hover:text-blue-600 transition-colors leading-snug line-clamp-1 min-h-[1.75rem]">
             {product.name}
           </h3>
           <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed min-h-[2.5rem] mt-1">
             {product.subtitle}
           </p>
-        </div>
-
-        {/* Specs Highlights with minimum height to guarantee perfect alignment */}
-        <div className="flex flex-wrap content-start gap-1.5 pt-2.5 pb-3 text-[10px] sm:text-[11px] font-medium text-neutral-600 min-h-[50px]">
-          <span className="px-2.5 py-1 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200/60">
-            {product.specs.battery} batería
-          </span>
-          <span className="px-2.5 py-1 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200/60">
-            {product.specs.anc}
-          </span>
-          <span className="px-2.5 py-1 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200/60">
-            {product.specs.connectivity}
-          </span>
         </div>
       </Link>
 
