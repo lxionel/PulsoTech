@@ -109,42 +109,29 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
       </Link>
 
-      {/* Card Bottom: Price and Actions - Clean full-width stacked design */}
-      <div className="p-3.5 sm:p-5 pt-3.5 sm:pt-4 border-t border-neutral-100 mt-auto bg-neutral-50/60 flex flex-col gap-3">
-        {/* Row 1: Full-width price + Contra Entrega badge */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <span className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider block leading-none mb-1">
-              Precio Directo
-            </span>
-            <div className="flex items-baseline">
-              <span className="text-xl sm:text-2xl font-black text-neutral-950 tracking-tight whitespace-nowrap">
-                {STORE_SETTINGS.currencySymbol}{product.price.toFixed(2)}
-              </span>
-            </div>
-          </div>
-
-          <div className="shrink-0 text-right">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-1 rounded-lg whitespace-nowrap">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              Contra Entrega
-            </span>
-          </div>
+      {/* Card Bottom: Price and Actions - Limpio sin etiquetas inventadas */}
+      <div className="p-3.5 sm:p-5 pt-3.5 sm:pt-4 border-t border-neutral-100 mt-auto bg-neutral-50/50 flex items-center justify-between gap-2 sm:gap-3">
+        <div className="shrink-0">
+          <span className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider block leading-none mb-1">
+            Precio Directo
+          </span>
+          <span className="text-lg sm:text-xl font-black text-neutral-950 tracking-tight whitespace-nowrap">
+            {STORE_SETTINGS.currencySymbol.trim()} {product.price.toFixed(2)}
+          </span>
         </div>
 
-        {/* Row 2: Symmetric 50/50 action buttons */}
-        <div className="grid grid-cols-2 gap-2 w-full">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <Link
             href={`/producto/${product.slug}`}
-            className="w-full py-2.5 px-3 rounded-xl border border-neutral-200 hover:border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-800 hover:text-black font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-2xs active:scale-[0.98]"
+            className="px-2.5 sm:px-3 py-2 rounded-xl border border-neutral-200 hover:border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-800 hover:text-black font-bold text-xs transition-all flex items-center gap-1 shadow-2xs active:scale-95 whitespace-nowrap"
           >
             <span>Ver Ficha</span>
-            <ArrowRight className="w-3.5 h-3.5 text-neutral-400 group-hover:translate-x-0.5 transition-transform" />
+            <ArrowRight className="w-3.5 h-3.5 text-neutral-400" />
           </Link>
 
           <button
             onClick={handleAddToCart}
-            className="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-blue-500/20 active:scale-[0.98] transition-all cursor-pointer"
+            className="px-3 sm:px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer whitespace-nowrap"
           >
             <ShoppingBag className="w-3.5 h-3.5" />
             <span>Añadir</span>
