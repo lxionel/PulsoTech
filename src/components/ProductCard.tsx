@@ -86,26 +86,13 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
 
         {/* Title & Subtitle with fixed minimum heights so they align across cards */}
-        <div className="pt-3.5 sm:pt-4">
+        <div className="pt-3.5 sm:pt-4 pb-4">
           <h3 className="text-base sm:text-lg font-extrabold text-neutral-950 group-hover:text-blue-600 transition-colors leading-snug line-clamp-1 min-h-[1.75rem]">
             {product.name}
           </h3>
           <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed min-h-[2.5rem] mt-1">
             {product.subtitle}
           </p>
-        </div>
-
-        {/* Specs Highlights with minimum height to guarantee alignment */}
-        <div className="flex flex-wrap content-start gap-1.5 pt-3 pb-3 text-[10px] sm:text-[11px] font-medium text-neutral-600 min-h-[54px]">
-          <span className="px-2.5 py-1 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200/60">
-            {product.specs.battery} batería
-          </span>
-          <span className="px-2.5 py-1 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200/60">
-            {product.specs.anc}
-          </span>
-          <span className="px-2.5 py-1 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200/60">
-            {product.specs.connectivity}
-          </span>
         </div>
       </Link>
 
