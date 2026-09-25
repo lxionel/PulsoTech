@@ -26,9 +26,9 @@ export default function ProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <div className="group relative rounded-2xl bg-white border border-neutral-200/90 hover:border-blue-500/40 hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden">
+    <div className="group relative rounded-2xl bg-white border border-neutral-200/90 hover:border-blue-500/40 hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden h-full">
       {/* Top Card Image Link */}
-      <Link href={`/producto/${product.slug}`} className="block p-3.5 sm:p-5 pb-0">
+      <Link href={`/producto/${product.slug}`} className="block p-4 sm:p-5 pb-0 flex-1">
         {/* Top Header: Brand, New Tag & Favorite */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
@@ -62,7 +62,7 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
 
         {/* Large Product Image Frame */}
-        <div className="relative w-full aspect-square rounded-xl bg-white flex items-center justify-center p-1.5 overflow-hidden border border-neutral-100">
+        <div className="relative w-full aspect-square rounded-xl bg-white flex items-center justify-center p-2 overflow-hidden border border-neutral-100">
           <div className="relative w-full h-full transition-transform duration-300 group-hover:scale-105 flex items-center justify-center">
             {currentColor?.image?.startsWith("data:") ||
             currentColor?.image?.startsWith("blob:") ||
@@ -85,57 +85,69 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
         </div>
 
-        {/* Title & Subtitle */}
-        <div className="space-y-1.5 pt-3.5 sm:pt-4">
-          <h3 className="text-base sm:text-lg font-extrabold text-neutral-950 group-hover:text-blue-600 transition-colors leading-snug">
+        {/* Title & Subtitle with fixed minimum heights so they align across cards */}
+        <div className="pt-3.5 sm:pt-4">
+          <h3 className="text-base sm:text-lg font-extrabold text-neutral-950 group-hover:text-blue-600 transition-colors leading-snug line-clamp-1 min-h-[1.75rem]">
             {product.name}
           </h3>
-          <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed">
+          <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed min-h-[2.5rem] mt-1">
             {product.subtitle}
           </p>
         </div>
 
-        {/* Specs Highlights */}
-        <div className="flex flex-wrap gap-1.5 pt-2.5 sm:pt-3 text-[10px] sm:text-[11px] font-medium text-neutral-600">
-          <span className="px-2 sm:px-2.5 py-1 rounded-md bg-neutral-100/90 border border-neutral-200/40">
+        {/* Specs Highlights with minimum height to guarantee alignment */}
+        <div className="flex flex-wrap content-start gap-1.5 pt-3 pb-3 text-[10px] sm:text-[11px] font-medium text-neutral-600 min-h-[54px]">
+          <span className="px-2.5 py-1 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200/60">
             {product.specs.battery} batería
           </span>
-          <span className="px-2 sm:px-2.5 py-1 rounded-md bg-neutral-100/90 border border-neutral-200/40">
+          <span className="px-2.5 py-1 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200/60">
             {product.specs.anc}
           </span>
-          <span className="px-2 sm:px-2.5 py-1 rounded-md bg-neutral-100/90 border border-neutral-200/40">
+          <span className="px-2.5 py-1 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200/60">
             {product.specs.connectivity}
           </span>
         </div>
       </Link>
 
-      {/* Card Bottom: Price and Actions */}
-      <div className="p-3.5 sm:p-5 pt-3.5 sm:pt-4 border-t border-neutral-100 mt-4 flex items-center justify-between gap-2 sm:gap-3 bg-neutral-50/50">
-        <div className="min-w-0">
-          <span className="text-[10px] text-neutral-400 uppercase font-semibold block leading-tight">
-            Precio Directo
-          </span>
-          <span className="text-lg sm:text-xl font-extrabold text-neutral-950 tracking-tight">
-            {STORE_SETTINGS.currencySymbol}
-            {product.price.toFixed(2)}
-          </span>
+      {/* Card Bottom: Price and Actions - Clean full-width stacked design */}
+      <div className="p-3.5 sm:p-5 pt-3.5 sm:pt-4 border-t border-neutral-100 mt-auto bg-neutral-50/60 flex flex-col gap-3">
+        {/* Row 1: Full-width price + Contra Entrega badge */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <span className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider block leading-none mb-1">
+              Precio Directo
+            </span>
+            <div className="flex items-baseline">
+              <span className="text-xl sm:text-2xl font-black text-neutral-950 tracking-tight whitespace-nowrap">
+                {STORE_SETTINGS.currencySymbol}{product.price.toFixed(2)}
+              </span>
+            </div>
+          </div>
+
+          <div className="shrink-0 text-right">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-1 rounded-lg whitespace-nowrap">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Contra Entrega
+            </span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        {/* Row 2: Symmetric 50/50 action buttons */}
+        <div className="grid grid-cols-2 gap-2 w-full">
           <Link
             href={`/producto/${product.slug}`}
-            className="px-2.5 sm:px-3 py-2 rounded-xl border border-neutral-200 hover:border-neutral-300 bg-white text-neutral-800 hover:text-black font-semibold text-xs transition-colors flex items-center gap-1 shadow-2xs active:scale-95"
+            className="w-full py-2.5 px-3 rounded-xl border border-neutral-200 hover:border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-800 hover:text-black font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-2xs active:scale-[0.98]"
           >
             <span>Ver Ficha</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <ArrowRight className="w-3.5 h-3.5 text-neutral-400 group-hover:translate-x-0.5 transition-transform" />
           </Link>
 
           <button
             onClick={handleAddToCart}
-            className="px-3 sm:px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-colors cursor-pointer"
+            className="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-blue-500/20 active:scale-[0.98] transition-all cursor-pointer"
           >
             <ShoppingBag className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Añadir</span>
+            <span>Añadir</span>
           </button>
         </div>
       </div>
