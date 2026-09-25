@@ -42,12 +42,8 @@ import {
   BarChart3,
   TrendingUp,
   Calendar,
-  CreditCard,
-  ArrowUpRight,
   PieChart,
   Clock,
-  UserCheck,
-  SlidersHorizontal,
 } from "lucide-react";
 
 export interface SaleRecord {
@@ -420,7 +416,7 @@ export default function AdminPage() {
     { label: string; sublabel: string; revenue: number; orders: number; ts: number }
   >();
   periodSales.forEach((s) => {
-    const d = new Date(s.timestamp || Date.now());
+    const d = new Date(s.timestamp || 0);
     const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     const dayLabel = `${d.getDate()} ${monthNames[d.getMonth()].slice(0, 3)}`;
     const dayName = d.toLocaleDateString("es-PE", { weekday: "short" });
@@ -1189,7 +1185,142 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-neutral-200/90 overflow-x-auto bg-white shadow-sm">
+              {/* Vista Móvil: Tarjetas Nativas para Celulares (sm:hidden) */}
+              <div className="block sm:hidden space-y-3">
+                {filteredInventory.map((item) => {
+                  const hasDiscount = item.originalPrice && item.originalPrice > item.price;
+                  return (
+                    <div
+                      key={item.id}
+                      className="p-4 rounded-2xl bg-white border border-neutral-200/90 shadow-2xs space-y-3"
+                    >
+                      {/* Top: Foto + Info básica */}
+                      <div className="flex gap-3 items-start">
+                        <div className="w-14 h-14 rounded-xl bg-neutral-50 border border-neutral-200 p-1 shrink-0 flex items-center justify-center overflow-hidden">
+                          {item.colors[0]?.image ? (
+                            <img
+                              src={item.colors[0].image}
+                              alt={item.name}
+                              className="w-full h-full object-contain"
+                            />
+                          ) : (
+                            <ImageIcon className="w-6 h-6 text-neutral-400" />
+                          )}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                            <span className="font-mono text-[10px] font-black text-neutral-800 bg-neutral-100 border border-neutral-200 px-1.5 py-0.5 rounded">
+                              #{item.id}
+                            </span>
+                            <span className="text-[10px] font-bold text-neutral-500 uppercase">
+                              {item.brand}
+                            </span>
+                            <span className="text-[10px] font-medium text-neutral-600 bg-neutral-50 border border-neutral-200 px-1.5 py-0.2 rounded truncate max-w-[120px]">
+                              {item.category}
+                            </span>
+                          </div>
+                          <h3 className="font-extrabold text-neutral-950 text-sm leading-snug truncate">
+                            {item.name}
+                          </h3>
+                          <div className="flex items-baseline gap-2 mt-1">
+                            <span className="font-black text-neutral-950 text-sm font-mono">
+                              {STORE_SETTINGS.currencySymbol}{item.price.toFixed(2)}
+                            </span>
+                            {hasDiscount && (
+                              <span className="text-[10px] text-neutral-400 line-through font-mono">
+                                {STORE_SETTINGS.currencySymbol}{item.originalPrice?.toFixed(2)}
+                              </span>
+                            )}
+                            {hasDiscount && (
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-red-50 text-red-600 border border-red-200">
+                                -{Math.round(((item.originalPrice! - item.price) / item.originalPrice!) * 100)}%
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Bottom Bar: Control de Stock + Botones de Acción */}
+                      <div className="flex items-center justify-between pt-2.5 border-t border-neutral-100 gap-2">
+                        {/* Control de Stock con botones táctiles grandes */}
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              item.stockCount <= 5
+                                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            }`}
+                          >
+                            {item.stockCount} uds
+                          </span>
+                          <div className="inline-flex items-center border border-neutral-200 rounded-lg p-0.5 bg-neutral-50">
+                            <button
+                              type="button"
+                              onClick={() => updateStock(item.id, -1, true)}
+                              className="w-7 h-7 rounded flex items-center justify-center hover:bg-neutral-200 text-neutral-700 font-black text-sm active:scale-95 cursor-pointer"
+                              title="Restar 1 unidad"
+                            >
+                              -
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => updateStock(item.id, 1, true)}
+                              className="w-7 h-7 rounded flex items-center justify-center hover:bg-neutral-200 text-neutral-700 font-black text-sm active:scale-95 cursor-pointer"
+                              title="Sumar 1 unidad"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Botones de Acción */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setQrModalProduct(item)}
+                            className="p-2 rounded-xl border border-neutral-200 text-neutral-600 hover:text-purple-600 hover:bg-purple-50 transition-colors cursor-pointer"
+                            title="Código QR"
+                          >
+                            <QrCode className="w-4 h-4" />
+                          </button>
+                          <Link
+                            href={`/producto/?id=${item.id}&slug=${item.slug}`}
+                            target="_blank"
+                            className="p-2 rounded-xl border border-neutral-200 text-neutral-600 hover:text-black hover:bg-neutral-100 transition-colors"
+                            title="Ver en tienda"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => handleEditClick(item)}
+                            className="p-2 rounded-xl border border-neutral-200 text-neutral-600 hover:text-black hover:bg-neutral-100 transition-colors cursor-pointer"
+                            title="Editar producto"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (confirm(`¿Estás seguro de eliminar "${item.name}" del catálogo?`)) {
+                                deleteProduct(item.id);
+                              }
+                            }}
+                            className="p-2 rounded-xl border border-neutral-200 text-neutral-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors cursor-pointer"
+                            title="Eliminar producto"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Vista Desktop: Tabla Tradicional (hidden sm:block) */}
+              <div className="hidden sm:block rounded-2xl border border-neutral-200/90 overflow-x-auto bg-white shadow-sm">
                 <table className="w-full text-left text-xs min-w-[700px]">
                   <thead className="bg-neutral-50 text-neutral-600 border-b border-neutral-200 uppercase text-[10px] font-bold tracking-wider">
                     <tr>
@@ -2644,195 +2775,165 @@ export default function AdminPage() {
         {/* ================= PESTAÑA: VENTAS & ANALÍTICAS ================= */}
         {activeTab === "sales" && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            {/* 1. BARRA SUPERIOR DE CONTROL: FILTRO DE PERÍODO TEMPORAL Y ACCIONES */}
-            <div className="p-4 sm:p-5 rounded-2xl border border-neutral-200 bg-white shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-emerald-600" />
-                  <h3 className="text-sm font-black text-neutral-950 uppercase tracking-wide">
-                    Panel de Ventas &amp; Analíticas
-                  </h3>
+            {/* 1. BARRA SUPERIOR DE CONTROL: FILTRO DE PERÍODO TEMPORAL Y ACCIONES (INMÓVIL, NUNCA SALTA) */}
+            <div className="p-4 sm:p-5 rounded-2xl border border-neutral-200 bg-white shadow-2xs space-y-4">
+              {/* Fila 1: Título del Panel + Acciones Principales */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-100">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-emerald-600 shrink-0" />
+                    <h3 className="text-sm sm:text-base font-black text-neutral-950 uppercase tracking-wide">
+                      Panel de Ventas &amp; Analíticas
+                    </h3>
+                  </div>
+                  <p className="text-xs text-neutral-500">
+                    Período activo: <strong className="text-neutral-900">{periodLabel}</strong> • Mostrando {displayedSales.length} de {sales.length} órdenes registradas
+                  </p>
                 </div>
-                <p className="text-xs text-neutral-500">
-                  Período: <strong className="text-neutral-900">{periodLabel}</strong> • Mostrando {displayedSales.length} de {sales.length} órdenes registradas
-                </p>
-              </div>
 
-              {/* Botones de Selección de Período Temporal */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => setSalesPeriod("all")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    salesPeriod === "all"
-                      ? "bg-neutral-950 text-white shadow-sm"
-                      : "bg-neutral-100 hover:bg-neutral-200 text-neutral-700"
-                  }`}
-                >
-                  <span>Todo</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${salesPeriod === "all" ? "bg-neutral-800 text-neutral-200" : "bg-white text-neutral-600"}`}>
-                    {countAll}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setSalesPeriod("this_month")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    salesPeriod === "this_month"
-                      ? "bg-neutral-950 text-white shadow-sm"
-                      : "bg-neutral-100 hover:bg-neutral-200 text-neutral-700"
-                  }`}
-                >
-                  <Calendar className="w-3.5 h-3.5 text-blue-500" />
-                  <span>Este Mes ({thisMonthName.slice(0, 3)})</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${salesPeriod === "this_month" ? "bg-neutral-800 text-neutral-200" : "bg-white text-neutral-600"}`}>
-                    {countThisMonth}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setSalesPeriod("last_month")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    salesPeriod === "last_month"
-                      ? "bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-500/20"
-                      : "bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/80"
-                  }`}
-                  title="Ver cuántos pedidos se hicieron el mes pasado"
-                >
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>Mes Pasado ({lastMonthName.slice(0, 3)})</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${salesPeriod === "last_month" ? "bg-emerald-700 text-white" : "bg-emerald-200/80 text-emerald-900"}`}>
-                    {countLastMonth}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setSalesPeriod("this_week")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    salesPeriod === "this_week"
-                      ? "bg-neutral-950 text-white shadow-sm"
-                      : "bg-neutral-100 hover:bg-neutral-200 text-neutral-700"
-                  }`}
-                >
-                  <span>Esta Semana</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${salesPeriod === "this_week" ? "bg-neutral-800 text-neutral-200" : "bg-white text-neutral-600"}`}>
-                    {countThisWeek}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setSalesPeriod("today")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    salesPeriod === "today"
-                      ? "bg-neutral-950 text-white shadow-sm"
-                      : "bg-neutral-100 hover:bg-neutral-200 text-neutral-700"
-                  }`}
-                >
-                  <span>Hoy</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${salesPeriod === "today" ? "bg-neutral-800 text-neutral-200" : "bg-white text-neutral-600"}`}>
-                    {countToday}
-                  </span>
-                </button>
-              </div>
-
-              {/* Botones de Acción Rápida */}
-              <div className="flex items-center gap-2 self-end md:self-auto shrink-0">
-                <button
-                  type="button"
-                  onClick={handleExportSalesCSV}
-                  className="px-3 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-neutral-200 shadow-2xs"
-                  title="Exportar ventas del período actual en formato CSV para Excel"
-                >
-                  <Download className="w-3.5 h-3.5 text-neutral-600" />
-                  <span>Exportar CSV</span>
-                </button>
-
-                {sales.length > 0 && (
+                {/* Acciones de Exportación y Vaciado */}
+                <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
                   <button
                     type="button"
-                    onClick={handleClearAllSales}
-                    className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer border border-red-200"
-                    title="Vaciar todo el historial"
+                    onClick={handleExportSalesCSV}
+                    className="px-3.5 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-neutral-200 shadow-2xs active:scale-95"
+                    title="Exportar ventas del período actual en formato CSV para Excel"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Download className="w-3.5 h-3.5 text-neutral-600 shrink-0" />
+                    <span>Exportar CSV</span>
                   </button>
-                )}
+
+                  {sales.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleClearAllSales}
+                      className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold flex items-center justify-center transition-colors cursor-pointer border border-red-200 active:scale-95 shrink-0"
+                      title="Vaciar todo el historial"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Fila 2: Barra de Pestañas Segmentadas de Período (INMÓVIL, NUNCA SALTA NI CAMBIA DE POSICIÓN) */}
+              <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none touch-pan-x">
+                {[
+                  { id: "all", label: "Todo", count: countAll, icon: null },
+                  { id: "this_month", label: `Este Mes (${thisMonthName.slice(0, 3)})`, count: countThisMonth, icon: Calendar },
+                  { id: "last_month", label: `Mes Pasado (${lastMonthName.slice(0, 3)})`, count: countLastMonth, icon: Clock },
+                  { id: "this_week", label: "Esta Semana", count: countThisWeek, icon: null },
+                  { id: "today", label: "Hoy", count: countToday, icon: null },
+                ].map((tab) => {
+                  const isActive = salesPeriod === tab.id;
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setSalesPeriod(tab.id as SalesPeriod)}
+                      className={`h-9 px-3.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 whitespace-nowrap border select-none ${
+                        isActive
+                          ? tab.id === "last_month"
+                            ? "bg-emerald-600 border-emerald-600 text-white shadow-xs"
+                            : "bg-neutral-950 border-neutral-950 text-white shadow-xs"
+                          : "bg-neutral-50 hover:bg-neutral-100 border-neutral-200/90 text-neutral-700"
+                      }`}
+                    >
+                      {Icon && <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : "text-neutral-500"}`} />}
+                      <span>{tab.label}</span>
+                      <span
+                        className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md min-w-[18px] text-center ${
+                          isActive
+                            ? "bg-white/20 text-white"
+                            : "bg-white text-neutral-600 border border-neutral-200"
+                        }`}
+                      >
+                        {tab.count}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* 2. TARJETAS KPIS DEL PERÍODO SELECCIONADO */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* 2. TARJETAS KPIS DEL PERÍODO SELECCIONADO (2 COLUMNAS EN MÓVIL, 4 EN DESKTOP) */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
               {/* KPI 1: Ingresos del Período */}
-              <div className="p-5 rounded-2xl border border-neutral-200 bg-white shadow-2xs relative overflow-hidden">
-                <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
-                  <span>INGRESOS DEL PERÍODO</span>
-                  <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                    <DollarSign className="w-4 h-4" />
+              <div className="p-4 sm:p-5 rounded-2xl border border-neutral-200 bg-white shadow-2xs relative overflow-hidden flex flex-col justify-between">
+                <div className="flex items-center justify-between text-neutral-500 text-[10px] sm:text-xs font-bold mb-2">
+                  <span className="truncate">INGRESOS PERÍODO</span>
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                    <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </div>
                 </div>
-                <div className="text-3xl font-extrabold text-neutral-950 tracking-tight">
-                  {STORE_SETTINGS.currencySymbol}{periodRevenue.toFixed(2)}
-                </div>
-                <div className="text-[11px] text-neutral-400 mt-1 flex items-center justify-between">
-                  <span>{periodLabel}</span>
-                  <span className="font-semibold text-emerald-600">Facturación Neta</span>
+                <div>
+                  <div className="text-xl sm:text-3xl font-extrabold text-neutral-950 tracking-tight font-mono">
+                    {STORE_SETTINGS.currencySymbol}{periodRevenue.toFixed(2)}
+                  </div>
+                  <div className="text-[10px] sm:text-[11px] text-neutral-400 mt-1 flex items-center justify-between">
+                    <span className="truncate">{periodLabel}</span>
+                    <span className="font-semibold text-emerald-600 hidden sm:inline">Facturación Neta</span>
+                  </div>
                 </div>
               </div>
 
               {/* KPI 2: Pedidos Realizados */}
-              <div className="p-5 rounded-2xl border border-neutral-200 bg-white shadow-2xs relative overflow-hidden">
-                <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
-                  <span>TOTAL PEDIDOS</span>
-                  <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                    <ShoppingBag className="w-4 h-4" />
+              <div className="p-4 sm:p-5 rounded-2xl border border-neutral-200 bg-white shadow-2xs relative overflow-hidden flex flex-col justify-between">
+                <div className="flex items-center justify-between text-neutral-500 text-[10px] sm:text-xs font-bold mb-2">
+                  <span className="truncate">TOTAL PEDIDOS</span>
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                    <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </div>
                 </div>
-                <div className="text-3xl font-extrabold text-neutral-950 tracking-tight">
-                  {periodOrdersCount} <span className="text-sm font-semibold text-neutral-500">pedidos</span>
-                </div>
-                <div className="text-[11px] text-neutral-400 mt-1 flex items-center justify-between">
-                  <span>Registrados con éxito</span>
-                  <span className="font-semibold text-blue-600">
-                    {periodOrdersCount > 0 ? "Actividad activa" : "Sin pedidos"}
-                  </span>
+                <div>
+                  <div className="text-xl sm:text-3xl font-extrabold text-neutral-950 tracking-tight font-mono">
+                    {periodOrdersCount} <span className="text-xs sm:text-sm font-semibold text-neutral-500 font-sans">pedidos</span>
+                  </div>
+                  <div className="text-[10px] sm:text-[11px] text-neutral-400 mt-1 flex items-center justify-between">
+                    <span className="truncate">Registrados</span>
+                    <span className="font-semibold text-blue-600 hidden sm:inline">
+                      {periodOrdersCount > 0 ? "Activo" : "Sin pedidos"}
+                    </span>
+                  </div>
                 </div>
               </div>
 
               {/* KPI 3: Ticket Promedio */}
-              <div className="p-5 rounded-2xl border border-neutral-200 bg-white shadow-2xs relative overflow-hidden">
-                <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
-                  <span>TICKET PROMEDIO</span>
-                  <div className="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4" />
+              <div className="p-4 sm:p-5 rounded-2xl border border-neutral-200 bg-white shadow-2xs relative overflow-hidden flex flex-col justify-between">
+                <div className="flex items-center justify-between text-neutral-500 text-[10px] sm:text-xs font-bold mb-2">
+                  <span className="truncate">TICKET PROMEDIO</span>
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                    <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </div>
                 </div>
-                <div className="text-3xl font-extrabold text-neutral-950 tracking-tight">
-                  {STORE_SETTINGS.currencySymbol}{periodAvgTicket.toFixed(2)}
-                </div>
-                <div className="text-[11px] text-neutral-400 mt-1 flex items-center justify-between">
-                  <span>Promedio por orden</span>
-                  <span className="font-semibold text-purple-600">Rentabilidad</span>
+                <div>
+                  <div className="text-xl sm:text-3xl font-extrabold text-neutral-950 tracking-tight font-mono">
+                    {STORE_SETTINGS.currencySymbol}{periodAvgTicket.toFixed(2)}
+                  </div>
+                  <div className="text-[10px] sm:text-[11px] text-neutral-400 mt-1 flex items-center justify-between">
+                    <span className="truncate">Por orden</span>
+                    <span className="font-semibold text-purple-600 hidden sm:inline">Rentabilidad</span>
+                  </div>
                 </div>
               </div>
 
               {/* KPI 4: Unidades Vendidas */}
-              <div className="p-5 rounded-2xl border border-neutral-200 bg-white shadow-2xs relative overflow-hidden">
-                <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
-                  <span>UNIDADES DESPACHADAS</span>
-                  <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-                    <Package className="w-4 h-4" />
+              <div className="p-4 sm:p-5 rounded-2xl border border-neutral-200 bg-white shadow-2xs relative overflow-hidden flex flex-col justify-between">
+                <div className="flex items-center justify-between text-neutral-500 text-[10px] sm:text-xs font-bold mb-2">
+                  <span className="truncate">UNIDADES VENDIDAS</span>
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                    <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </div>
                 </div>
-                <div className="text-3xl font-extrabold text-neutral-950 tracking-tight">
-                  {periodUnitsCount} <span className="text-sm font-semibold text-neutral-500">unidades</span>
-                </div>
-                <div className="text-[11px] text-neutral-400 mt-1 flex items-center justify-between">
-                  <span>Descontadas del stock</span>
-                  <span className="font-semibold text-amber-600">Volumen físico</span>
+                <div>
+                  <div className="text-xl sm:text-3xl font-extrabold text-neutral-950 tracking-tight font-mono">
+                    {periodUnitsCount} <span className="text-xs sm:text-sm font-semibold text-neutral-500 font-sans">uds</span>
+                  </div>
+                  <div className="text-[10px] sm:text-[11px] text-neutral-400 mt-1 flex items-center justify-between">
+                    <span className="truncate">Stock restado</span>
+                    <span className="font-semibold text-amber-600 hidden sm:inline">Físico</span>
+                  </div>
                 </div>
               </div>
             </div>

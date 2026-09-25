@@ -186,7 +186,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
     <div className="min-h-screen flex flex-col bg-[#fbfbfd] text-[#111113]">
       <Navbar />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 w-full">
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 w-full pb-24 sm:pb-10">
         {/* Breadcrumb Navigation (Más grande y legible) */}
         <nav className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base text-neutral-500 mb-6 sm:mb-8 font-medium overflow-x-auto whitespace-nowrap py-1.5">
           <Link
@@ -611,6 +611,43 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
           </div>
         )}
       </main>
+
+      {/* Barra Flotante Inferior para Móviles (sm:hidden): Comprar y Añadir al Carrito siempre a mano */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-neutral-200/90 p-3 px-4 shadow-[0_-4px_25px_rgba(0,0,0,0.08)] flex items-center justify-between gap-3 animate-in slide-in-from-bottom duration-200">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span
+              className="w-2.5 h-2.5 rounded-full border border-neutral-300 inline-block shrink-0"
+              style={{ backgroundColor: currentColor?.hex || "#18181b" }}
+            />
+            <span className="text-[11px] font-bold text-neutral-500 truncate max-w-[120px]">
+              {currentColor?.name || "Original"}
+            </span>
+          </div>
+          <div className="text-lg font-black text-neutral-950 font-mono tracking-tight leading-none mt-0.5">
+            {STORE_SETTINGS.currencySymbol}{product.price.toFixed(2)}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className="p-2.5 rounded-xl border border-neutral-300 bg-white text-neutral-900 font-bold hover:bg-neutral-50 active:scale-95 transition-all shadow-xs cursor-pointer"
+            title="Añadir a la bolsa"
+            aria-label="Añadir a la bolsa"
+          >
+            <ShoppingBag className="w-4 h-4 text-neutral-900" />
+          </button>
+          <button
+            type="button"
+            onClick={handleBuyNow}
+            className="px-5 py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-extrabold text-xs tracking-wider uppercase active:scale-95 transition-all shadow-sm cursor-pointer"
+          >
+            Comprar Ahora
+          </button>
+        </div>
+      </div>
 
       <Footer />
     </div>

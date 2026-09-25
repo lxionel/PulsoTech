@@ -393,7 +393,62 @@ export default function ProductCatalog() {
         </aside>
 
         {/* Right Column: Main Products Area */}
-        <div className="flex-1 w-full space-y-6">
+        <div className="flex-1 w-full space-y-4 sm:space-y-6">
+          {/* Mobile Quick Category Rail */}
+          {allCategories.length > 0 && (
+            <div className="flex lg:hidden items-center gap-2 overflow-x-auto pb-1 scrollbar-none touch-pan-x -mx-1 px-1">
+              <button
+                type="button"
+                onClick={() => setSelectedCategory("todos")}
+                className={`h-8 px-3.5 rounded-full text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 ${
+                  selectedCategory === "todos"
+                    ? "bg-neutral-950 text-white shadow-xs"
+                    : "bg-white text-neutral-700 border border-neutral-200/90 hover:bg-neutral-50 shadow-2xs"
+                }`}
+              >
+                <span>Todos</span>
+                <span
+                  className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
+                    selectedCategory === "todos"
+                      ? "bg-white/20 text-white"
+                      : "bg-neutral-100 text-neutral-600"
+                  }`}
+                >
+                  {products.length}
+                </span>
+              </button>
+              {allCategories.map((catName) => {
+                const isSelected = selectedCategory.toLowerCase() === catName.toLowerCase();
+                const count = products.filter(
+                  (p) => (p.category || "").toLowerCase() === catName.toLowerCase()
+                ).length;
+                return (
+                  <button
+                    key={catName}
+                    type="button"
+                    onClick={() => setSelectedCategory(catName.toLowerCase())}
+                    className={`h-8 px-3.5 rounded-full text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 ${
+                      isSelected
+                        ? "bg-neutral-950 text-white shadow-xs"
+                        : "bg-white text-neutral-700 border border-neutral-200/90 hover:bg-neutral-50 shadow-2xs"
+                    }`}
+                  >
+                    <span>{catName}</span>
+                    <span
+                      className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
+                        isSelected
+                          ? "bg-white/20 text-white"
+                          : "bg-neutral-100 text-neutral-600"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {/* Top Sort and Active Summary Bar */}
           <div className="flex flex-col gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-neutral-200/80 shadow-2xs">
             <div className="flex items-center justify-between gap-3">
