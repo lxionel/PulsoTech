@@ -38,7 +38,6 @@ import {
   FileText,
   QrCode,
   Copy,
-  Megaphone,
   X,
 } from "lucide-react";
 
@@ -145,8 +144,6 @@ export default function AdminPage() {
     addCoupon,
     deleteCoupon,
     toggleCoupon,
-    storeBanner,
-    setStoreBanner,
   } = useCart();
   const {
     products,
@@ -170,13 +167,6 @@ export default function AdminPage() {
   // Estados de WhatsApp
   const [phoneInput, setPhoneInput] = useState(whatsappNumber);
   const [phoneSaved, setPhoneSaved] = useState(false);
-
-  // Estados de Banner Superior
-  const [bannerEnabled, setBannerEnabled] = useState(storeBanner.enabled);
-  const [bannerText, setBannerText] = useState(storeBanner.text);
-  const [bannerBadge, setBannerBadge] = useState(storeBanner.badge);
-  const [bannerTheme, setBannerTheme] = useState(storeBanner.theme);
-  const [bannerSavedNotice, setBannerSavedNotice] = useState(false);
 
   // Estados de Cupones
   const [newCouponCode, setNewCouponCode] = useState("");
@@ -411,18 +401,6 @@ export default function AdminPage() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  };
-
-  const handleSaveBanner = (e: React.FormEvent) => {
-    e.preventDefault();
-    setStoreBanner({
-      enabled: bannerEnabled,
-      text: bannerText.trim(),
-      badge: bannerBadge.trim(),
-      theme: bannerTheme,
-    });
-    setBannerSavedNotice(true);
-    setTimeout(() => setBannerSavedNotice(false), 3000);
   };
 
   const handleCreateCoupon = (e: React.FormEvent) => {
@@ -869,7 +847,7 @@ export default function AdminPage() {
             }`}
           >
             <Phone className="w-4 h-4 text-emerald-600" />
-            <span>⚙️ Ajustes &amp; Banner</span>
+            <span>⚙️ Ajustes &amp; WhatsApp</span>
           </button>
         </div>
       </header>
@@ -2664,140 +2642,6 @@ export default function AdminPage() {
                 <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-emerald-600" />
                   <span>¡Número actualizado con éxito!</span>
-                </div>
-              )}
-            </form>
-
-            {/* Announcement Banner Editor Card */}
-            <form
-              onSubmit={handleSaveBanner}
-              className="p-6 rounded-2xl border border-neutral-200 bg-white shadow-xs space-y-4"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3.5">
-                  <div className="p-3 rounded-xl bg-purple-50 text-purple-700 border border-purple-100 shrink-0">
-                    <Megaphone className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-neutral-950">
-                      Banner de Anuncios Superior (Top Bar)
-                    </h3>
-                    <p className="text-xs text-neutral-500 mt-0.5">
-                      Muestra un mensaje importante, ofertas o avisos de envíos en la parte superior de toda la tienda.
-                    </p>
-                  </div>
-                </div>
-
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={bannerEnabled}
-                    onChange={(e) => setBannerEnabled(e.target.checked)}
-                    className="w-4 h-4 rounded text-neutral-900 focus:ring-0 bg-neutral-100 border-neutral-300"
-                  />
-                  <span className="text-xs font-bold text-neutral-800">
-                    {bannerEnabled ? "Visible" : "Oculto"}
-                  </span>
-                </label>
-              </div>
-
-              {bannerEnabled && (
-                <div className="space-y-3.5 pt-3 border-t border-neutral-100">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="sm:col-span-2">
-                      <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
-                        Texto del Anuncio:
-                      </label>
-                      <input
-                        type="text"
-                        value={bannerText}
-                        onChange={(e) => setBannerText(e.target.value)}
-                        placeholder="Ej: 🚚 ¡Envíos gratis a todo el Perú por compras mayores a S/ 100!"
-                        className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none focus:bg-white"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
-                        Etiqueta / Badge:
-                      </label>
-                      <input
-                        type="text"
-                        value={bannerBadge}
-                        onChange={(e) => setBannerBadge(e.target.value.toUpperCase())}
-                        placeholder="Ej: OFERTA, ENVÍOS"
-                        className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-bold uppercase text-neutral-900 focus:outline-none focus:bg-white"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
-                      Color / Tema del Banner:
-                    </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {[
-                        { id: "emerald", label: "Verde Esmeralda", bg: "bg-emerald-600" },
-                        { id: "dark", label: "Negro Elegante", bg: "bg-neutral-950" },
-                        { id: "blue", label: "Azul Eléctrico", bg: "bg-blue-600" },
-                        { id: "rose", label: "Rojo / Rosa", bg: "bg-rose-600" },
-                      ].map((t) => (
-                        <button
-                          key={t.id}
-                          type="button"
-                          onClick={() => setBannerTheme(t.id as "emerald" | "dark" | "blue" | "rose")}
-                          className={`p-2 rounded-xl border text-xs font-bold flex items-center gap-2 cursor-pointer transition-all ${
-                            bannerTheme === t.id
-                              ? "border-neutral-950 bg-neutral-50 ring-2 ring-neutral-900/10"
-                              : "border-neutral-200 hover:border-neutral-300"
-                          }`}
-                        >
-                          <span className={`w-3.5 h-3.5 rounded-full ${t.bg} shrink-0`} />
-                          <span className="truncate">{t.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Vista Previa en Vivo del Banner */}
-                  <div className="pt-2">
-                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1.5">
-                      Vista previa de cómo se verá en la tienda:
-                    </span>
-                    <div
-                      className={`p-2 rounded-xl text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-xs ${
-                        {
-                          emerald: "bg-emerald-600",
-                          dark: "bg-neutral-950",
-                          blue: "bg-blue-600",
-                          rose: "bg-rose-600",
-                        }[bannerTheme] || "bg-emerald-600"
-                      }`}
-                    >
-                      {bannerBadge && (
-                        <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-black uppercase">
-                          {bannerBadge}
-                        </span>
-                      )}
-                      <span>{bannerText || "Texto de ejemplo"}</span>
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
-                  >
-                    <Save className="w-3.5 h-3.5" />
-                    <span>Guardar Cambios del Banner</span>
-                  </button>
-                </div>
-              )}
-
-              {bannerSavedNotice && (
-                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-emerald-600" />
-                  <span>¡Banner actualizado en la tienda comercial!</span>
                 </div>
               )}
             </form>

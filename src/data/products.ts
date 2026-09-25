@@ -9,8 +9,8 @@ export const STORE_SETTINGS = {
   whatsappDisplay: "+51 902 377 567",
   currencySymbol: "S/ ",
   currencyCode: "PEN",
-  freeShippingThreshold: 150,
-  shippingCost: 12.0,
+  freeShippingThreshold: 0,
+  shippingCost: 0,
   guaranteeMonths: 12,
   deliveryTime: "Entrega el mismo día",
   social: {

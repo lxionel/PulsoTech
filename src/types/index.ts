@@ -88,10 +88,3 @@ export interface Coupon {
   minPurchase: number;
   isActive: boolean;
 }
-
-export interface StoreBanner {
-  enabled: boolean;
-  text: string;
-  badge: string;
-  theme: "dark" | "emerald" | "blue" | "rose";
-}

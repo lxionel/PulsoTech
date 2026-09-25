@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { Product, ProductColor, CartItem, Coupon, StoreBanner } from "@/types";
+import { Product, ProductColor, CartItem, Coupon } from "@/types";
 import { STORE_SETTINGS } from "@/data/products";
 import { getAssetUrl } from "@/utils/paths";
 
@@ -23,13 +23,6 @@ export const DEFAULT_COUPONS: Coupon[] = [
     isActive: true,
   },
 ];
-
-export const DEFAULT_BANNER: StoreBanner = {
-  enabled: true,
-  text: "🚚 ¡Envíos gratis a todo el Perú por compras mayores a S/ 100!",
-  badge: "OFERTA",
-  theme: "emerald",
-};
 
 interface CartContextType {
   items: CartItem[];
@@ -64,9 +57,6 @@ interface CartContextType {
   addCoupon: (coupon: Omit<Coupon, "id">) => void;
   deleteCoupon: (id: string) => void;
   toggleCoupon: (id: string) => void;
-  // Banner de la Tienda
-  storeBanner: StoreBanner;
-  setStoreBanner: (banner: StoreBanner) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -80,10 +70,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [whatsappNumber, setWhatsappNumber] = useState<string>(STORE_SETTINGS.whatsappNumber);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Cupones y Banner
+  // Cupones
   const [coupons, setCoupons] = useState<Coupon[]>(DEFAULT_COUPONS);
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
-  const [storeBanner, setStoreBanner] = useState<StoreBanner>(DEFAULT_BANNER);
 
   // Cargar datos de localStorage una sola vez tras montar en el cliente (evita Hydration Mismatch)
   useEffect(() => {
@@ -111,12 +100,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           const parsedCoupons = JSON.parse(savedCoupons);
           if (Array.isArray(parsedCoupons)) setCoupons(parsedCoupons);
         }
-
-        const savedBanner = localStorage.getItem("pulsotech_banner");
-        if (savedBanner) {
-          const parsedBanner = JSON.parse(savedBanner);
-          if (parsedBanner && typeof parsedBanner === "object") setStoreBanner(parsedBanner);
-        }
       } catch {
         // Ignorar error de parsing
       } finally {
@@ -135,11 +118,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem("pulsotech_favorites", JSON.stringify(favorites));
       localStorage.setItem("pulsotech_phone", whatsappNumber);
       localStorage.setItem("pulsotech_coupons", JSON.stringify(coupons));
-      localStorage.setItem("pulsotech_banner", JSON.stringify(storeBanner));
     } catch {
       // Ignorar error de almacenamiento
     }
-  }, [items, favorites, whatsappNumber, coupons, storeBanner, isLoaded]);
+  }, [items, favorites, whatsappNumber, coupons, isLoaded]);
 
   const addItem = (product: Product, color?: ProductColor, quantity = 1) => {
     const validColor: ProductColor = color || (product.colors && product.colors[0]) || {
@@ -254,7 +236,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
-  // Cálculos de Totales
+  // Cálculos de Totales - El total es exactamente subtotal menos descuento (sin cargos ocultos de envío)
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
   let discountAmount = 0;
@@ -268,13 +250,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const shipping =
-    subtotal >= STORE_SETTINGS.freeShippingThreshold || subtotal === 0
-      ? 0
-      : STORE_SETTINGS.shippingCost;
-  const total = Math.max(0, subtotal - discountAmount + shipping);
+  // Costo de envío es 0 ya que se coordina vía WhatsApp
+  const shipping = 0;
+  const total = Math.max(0, subtotal - discountAmount);
   const itemsCount = items.reduce((sum, item) => sum + item.quantity, 0);
-  const freeShippingRemaining = Math.max(0, STORE_SETTINGS.freeShippingThreshold - subtotal);
+  const freeShippingRemaining = 0;
   const favoritesCount = favorites.length;
 
   return (
@@ -310,8 +290,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         addCoupon,
         deleteCoupon,
         toggleCoupon,
-        storeBanner,
-        setStoreBanner,
       }}
     >
       {children}
