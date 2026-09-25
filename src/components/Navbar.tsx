@@ -18,9 +18,9 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-neutral-200 shadow-2xs transition-all">
-      <div className="w-full max-w-[1650px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 h-16 flex items-center justify-between gap-4 lg:gap-8">
+      <div className="w-full max-w-[1650px] mx-auto px-3 sm:px-6 lg:px-10 xl:px-14 h-16 flex items-center justify-between gap-2 sm:gap-4 lg:gap-8">
         {/* Brand Logo PulsoTech + Nav */}
-        <div className="flex items-center gap-6 lg:gap-8 shrink-0">
+        <div className="flex items-center gap-4 sm:gap-6 lg:gap-8 shrink-0 min-w-0">
           <Logo size="md" />
 
           {/* Menú de Navegación */}
@@ -34,10 +34,10 @@ export default function Navbar() {
           </nav>
         </div>
 
-        {/* Right Actions: Social Media + Favorites + Cart (A la derecha con separación limpia) */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Social Media Links (Modern Minimalist Pill con redes del usuario) */}
-          <div className="flex items-center gap-0.5 sm:gap-1 bg-neutral-100/90 p-1 rounded-xl border border-neutral-200/70 shadow-2xs">
+        {/* Right Actions: Social Media (Desktop) + Favorites + Cart */}
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          {/* Social Media Links (Visible on tablets and desktop, clean in footer for mobile) */}
+          <div className="hidden sm:flex items-center gap-0.5 sm:gap-1 bg-neutral-100/90 p-1 rounded-xl border border-neutral-200/70 shadow-2xs">
             {/* Instagram */}
             <a
               href={STORE_SETTINGS.social.instagram}
@@ -83,11 +83,11 @@ export default function Navbar() {
             </a>
           </div>
 
-          {/* Favorites Button (Despegatec Style) */}
+          {/* Favorites Button */}
           <button
             onClick={() => setIsFavoritesOpen(true)}
             aria-label="Ver favoritos guardados"
-            className="relative flex items-center justify-center p-2.5 rounded-xl border border-neutral-200 hover:border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-red-500 transition-all shadow-2xs active:scale-95 cursor-pointer"
+            className="relative flex items-center justify-center p-2 sm:p-2.5 rounded-xl border border-neutral-200 hover:border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-red-500 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0"
             title="Mis Favoritos"
           >
             <Heart
@@ -106,7 +106,7 @@ export default function Navbar() {
           <button
             onClick={() => setIsCartOpen(true)}
             aria-label="Abrir bolsa de compra"
-            className="relative flex items-center justify-center px-4 py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white transition-all font-bold text-xs gap-2.5 shadow-sm active:scale-95 cursor-pointer"
+            className="relative flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white transition-all font-bold text-xs gap-2 sm:gap-2.5 shadow-sm active:scale-95 cursor-pointer shrink-0"
           >
             <div className="relative">
               <ShoppingBag className="w-4 h-4 text-white" />
@@ -117,7 +117,7 @@ export default function Navbar() {
               )}
             </div>
             <span className="hidden sm:inline">Bolsa</span>
-            <span className="text-white font-extrabold border-l border-neutral-700 pl-2">
+            <span className="text-white font-extrabold border-l border-neutral-700 pl-1.5 sm:pl-2">
               {STORE_SETTINGS.currencySymbol}
               {subtotal.toFixed(2)}
             </span>

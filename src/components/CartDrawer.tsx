@@ -37,6 +37,18 @@ export default function CartDrawer() {
   const [paymentMethod, setPaymentMethod] = useState<"contra_entrega" | "transferencia">("contra_entrega");
   const [errorMsg, setErrorMsg] = useState("");
 
+  // Lock body scroll when cart is open
+  React.useEffect(() => {
+    if (isCartOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isCartOpen]);
+
   if (!isCartOpen) return null;
 
   const handleWhatsAppCheckout = () => {
@@ -94,11 +106,11 @@ export default function CartDrawer() {
     <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="absolute inset-0" onClick={() => setIsCartOpen(false)} />
 
-      <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-white border-l border-neutral-200 p-6 flex flex-col justify-between shadow-2xl relative text-neutral-900">
+      <div className="absolute inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10">
+        <div className="w-screen max-w-full sm:max-w-md bg-white sm:border-l border-neutral-200 p-4 sm:p-6 flex flex-col justify-between shadow-2xl relative text-neutral-900 h-full">
           {/* Header */}
           <div>
-            <div className="flex items-center justify-between pb-4 border-b border-neutral-200">
+            <div className="flex items-center justify-between pb-3.5 sm:pb-4 border-b border-neutral-200">
               <div className="flex items-center gap-2">
                 <ShoppingBag className="w-5 h-5 text-neutral-950" />
                 <h2 className="text-base font-bold tracking-tight text-neutral-950">Bolsa de Compra</h2>
@@ -108,7 +120,8 @@ export default function CartDrawer() {
               </div>
               <button
                 onClick={() => setIsCartOpen(false)}
-                className="p-1.5 rounded-full text-neutral-400 hover:text-black hover:bg-neutral-100 transition-colors cursor-pointer"
+                className="p-2 rounded-xl text-neutral-400 hover:text-black hover:bg-neutral-100 transition-colors cursor-pointer"
+                aria-label="Cerrar bolsa"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -164,13 +177,23 @@ export default function CartDrawer() {
                   key={`${item.product.id}-${item.selectedColor.name}`}
                   className="flex gap-3.5 p-3 rounded-2xl bg-white border border-neutral-200/80 shadow-2xs"
                 >
-                  <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-neutral-50 border border-neutral-100 shrink-0">
-                    <Image
-                      src={item.selectedColor.image}
-                      alt={item.product.name}
-                      fill
-                      className="object-cover"
-                    />
+                  <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-neutral-50 border border-neutral-100 shrink-0 flex items-center justify-center p-1">
+                    {item.selectedColor.image?.startsWith("data:") ||
+                    item.selectedColor.image?.startsWith("blob:") ||
+                    item.selectedColor.image?.startsWith("http") ? (
+                      <img
+                        src={item.selectedColor.image}
+                        alt={item.product.name}
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <Image
+                        src={item.selectedColor.image}
+                        alt={item.product.name}
+                        fill
+                        className="object-contain"
+                      />
+                    )}
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -304,7 +327,7 @@ export default function CartDrawer() {
               {/* WhatsApp Checkout Button */}
               <button
                 onClick={handleWhatsAppCheckout}
-                className="w-full py-4 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
+                className="w-full py-3.5 sm:py-4 rounded-xl bg-[#15803d] hover:bg-[#166534] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
               >
                 <MessageSquare className="w-4 h-4 fill-white text-white" />
                 <span>

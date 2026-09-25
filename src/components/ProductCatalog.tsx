@@ -25,6 +25,18 @@ export default function ProductCatalog() {
   const [onlyNew, setOnlyNew] = useState(false);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
+  // Lock body scroll when mobile filters drawer is open
+  React.useEffect(() => {
+    if (isMobileFiltersOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMobileFiltersOpen]);
+
   // Filter products logic
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -97,6 +109,17 @@ export default function ProductCatalog() {
     onlyNew ||
     searchQuery !== "";
 
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (selectedCategory !== "todos") count++;
+    if (selectedBrand !== "todas") count++;
+    if (priceRange !== "all") count++;
+    if (onlyInStock) count++;
+    if (onlyNew) count++;
+    if (searchQuery.trim() !== "") count++;
+    return count;
+  }, [selectedCategory, selectedBrand, priceRange, onlyInStock, onlyNew, searchQuery]);
+
   const clearAllFilters = () => {
     setSelectedCategory("todos");
     setSelectedBrand("todas");
@@ -109,19 +132,19 @@ export default function ProductCatalog() {
   };
 
   return (
-    <section id="catalogo" className="pt-10 pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="catalogo" className="pt-8 pb-14 sm:pt-10 sm:pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Catalog Title Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 pb-6 border-b border-neutral-200">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6 mb-6 sm:mb-8 pb-5 sm:pb-6 border-b border-neutral-200">
+        <div className="space-y-1.5 sm:space-y-2">
+          <div className="flex items-center gap-2 text-[11px] sm:text-xs font-semibold text-neutral-500 uppercase tracking-wider">
             <span>Inicio</span>
             <span className="text-neutral-300">/</span>
             <span className="text-neutral-900 font-bold">Catálogo de Productos</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-neutral-950">
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-neutral-950">
             Catálogo Disponible
           </h2>
-          <p className="text-sm sm:text-base text-neutral-600 max-w-2xl leading-relaxed">
+          <p className="text-xs sm:text-base text-neutral-600 max-w-2xl leading-relaxed">
             Modelos originales en caja sellada con entrega el mismo día y pago contra entrega.
           </p>
         </div>
@@ -149,25 +172,7 @@ export default function ProductCatalog() {
       </div>
 
       {/* Main Two-Column E-Commerce Layout: Vertical Filters (Left) + Grid (Right) */}
-      <div className="flex flex-col lg:flex-row gap-8 items-start">
-        {/* Mobile Filter Toggle Button */}
-        <div className="w-full lg:hidden flex items-center justify-between pb-3">
-          <button
-            onClick={() => setIsMobileFiltersOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-neutral-950 text-white font-bold text-xs uppercase tracking-wider shadow-xs cursor-pointer"
-          >
-            <Filter className="w-4 h-4" />
-            <span>Filtros y Precios</span>
-            {hasActiveFilters && (
-              <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
-            )}
-          </button>
-
-          <span className="text-xs text-neutral-500 font-semibold">
-            {sortedProducts.length} productos
-          </span>
-        </div>
-
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
         {/* Left Column: Vertical Sidebar Filters (Desktop) */}
         <aside className="hidden lg:block w-64 lg:w-72 shrink-0 bg-white p-6 rounded-2xl border border-neutral-200/80 shadow-2xs space-y-6 sticky top-24">
           {/* Header of filters sidebar */}
@@ -339,75 +344,106 @@ export default function ProductCatalog() {
         {/* Right Column: Main Products Area */}
         <div className="flex-1 w-full space-y-6">
           {/* Top Sort and Active Summary Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-neutral-200/80 shadow-2xs">
-            <div className="flex items-center gap-2 flex-wrap text-xs">
-              <span className="font-extrabold text-neutral-900">
-                {sortedProducts.length}{" "}
-                {sortedProducts.length === 1 ? "producto" : "productos"}
-              </span>
-
-              {hasActiveFilters && (
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-neutral-400">· Filtros:</span>
-                  {selectedBrand !== "todas" && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-800 text-[11px] font-bold">
-                      {selectedBrand}
-                      <X
-                        className="w-3 h-3 cursor-pointer"
-                        onClick={() => setSelectedBrand("todas")}
-                      />
-                    </span>
-                  )}
-                  {priceRange !== "all" && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-800 text-[11px] font-bold">
-                      {priceRange === "under50" && "Hasta S/ 50"}
-                      {priceRange === "50to100" && "S/ 50 - S/ 100"}
-                      {priceRange === "over100" && "Más de S/ 100"}
-                      {priceRange === "custom" && `Hasta S/ ${maxPrice}`}
-                      <X
-                        className="w-3 h-3 cursor-pointer"
-                        onClick={() => setPriceRange("all")}
-                      />
-                    </span>
-                  )}
-                  {onlyNew && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-800 text-[11px] font-bold">
-                      Nuevos
-                      <X
-                        className="w-3 h-3 cursor-pointer"
-                        onClick={() => setOnlyNew(false)}
-                      />
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Sort Dropdown */}
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-neutral-500 font-medium">Ordenar:</span>
-              <div className="flex items-center gap-1.5 border border-neutral-200 rounded-xl px-3 py-1.5 bg-neutral-50">
-                <ArrowUpDown className="w-3.5 h-3.5 text-neutral-500" />
-                <select
-                  value={sortBy}
-                  onChange={(e) =>
-                    setSortBy(
-                      e.target.value as "featured" | "price-asc" | "price-desc"
-                    )
-                  }
-                  className="bg-transparent text-xs font-bold text-neutral-800 focus:outline-none cursor-pointer"
+          <div className="flex flex-col gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-neutral-200/80 shadow-2xs">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                {/* Mobile Filter Button */}
+                <button
+                  onClick={() => setIsMobileFiltersOpen(true)}
+                  className="lg:hidden inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-neutral-950 text-white font-bold text-xs uppercase tracking-wider shadow-xs active:scale-95 transition-all cursor-pointer"
                 >
-                  <option value="featured">Destacados</option>
-                  <option value="price-asc">Precio: Menor a mayor</option>
-                  <option value="price-desc">Precio: Mayor a menor</option>
-                </select>
+                  <Filter className="w-3.5 h-3.5" />
+                  <span>Filtros</span>
+                  {activeFiltersCount > 0 && (
+                    <span className="w-4 h-4 rounded-full bg-emerald-400 text-neutral-950 text-[10px] font-black inline-flex items-center justify-center">
+                      {activeFiltersCount}
+                    </span>
+                  )}
+                </button>
+
+                <span className="font-extrabold text-neutral-900 text-xs sm:text-sm">
+                  {sortedProducts.length}{" "}
+                  {sortedProducts.length === 1 ? "producto" : "productos"}
+                </span>
+              </div>
+
+              {/* Sort Dropdown */}
+              <div className="flex items-center gap-1.5 sm:gap-2 text-xs">
+                <span className="text-neutral-500 font-medium hidden sm:inline">Ordenar:</span>
+                <div className="flex items-center gap-1.5 border border-neutral-200 rounded-xl px-2.5 sm:px-3 py-1.5 bg-neutral-50">
+                  <ArrowUpDown className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) =>
+                      setSortBy(
+                        e.target.value as "featured" | "price-asc" | "price-desc"
+                      )
+                    }
+                    className="bg-transparent text-xs font-bold text-neutral-800 focus:outline-none cursor-pointer"
+                  >
+                    <option value="featured">Destacados</option>
+                    <option value="price-asc">Precio: Menor a mayor</option>
+                    <option value="price-desc">Precio: Mayor a menor</option>
+                  </select>
+                </div>
               </div>
             </div>
+
+            {hasActiveFilters && (
+              <div className="flex items-center gap-1.5 flex-wrap pt-2.5 border-t border-neutral-100 text-xs">
+                <span className="text-neutral-400 text-[11px] font-medium">Activos:</span>
+                {selectedBrand !== "todas" && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-100 text-neutral-800 text-[11px] font-bold">
+                    {selectedBrand}
+                    <X
+                      className="w-3 h-3 cursor-pointer hover:text-black"
+                      onClick={() => setSelectedBrand("todas")}
+                    />
+                  </span>
+                )}
+                {priceRange !== "all" && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-100 text-neutral-800 text-[11px] font-bold">
+                    {priceRange === "under50" && "Hasta S/ 50"}
+                    {priceRange === "50to100" && "S/ 50 - S/ 100"}
+                    {priceRange === "over100" && "Más de S/ 100"}
+                    {priceRange === "custom" && `Hasta S/ ${maxPrice}`}
+                    <X
+                      className="w-3 h-3 cursor-pointer hover:text-black"
+                      onClick={() => setPriceRange("all")}
+                    />
+                  </span>
+                )}
+                {onlyInStock && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-100 text-neutral-800 text-[11px] font-bold">
+                    En Stock
+                    <X
+                      className="w-3 h-3 cursor-pointer hover:text-black"
+                      onClick={() => setOnlyInStock(false)}
+                    />
+                  </span>
+                )}
+                {onlyNew && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-100 text-neutral-800 text-[11px] font-bold">
+                    Nuevos
+                    <X
+                      className="w-3 h-3 cursor-pointer hover:text-black"
+                      onClick={() => setOnlyNew(false)}
+                    />
+                  </span>
+                )}
+                <button
+                  onClick={clearAllFilters}
+                  className="text-[11px] font-bold text-neutral-500 hover:text-black underline ml-auto cursor-pointer"
+                >
+                  Limpiar todo
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Products Grid */}
           {sortedProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
               {sortedProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
@@ -435,10 +471,10 @@ export default function ProductCatalog() {
       {isMobileFiltersOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex justify-end">
           <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-xs"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in"
             onClick={() => setIsMobileFiltersOpen(false)}
           />
-          <div className="relative w-full max-w-xs bg-white h-full p-6 overflow-y-auto space-y-6 shadow-2xl flex flex-col justify-between">
+          <div className="relative w-full max-w-[85vw] sm:max-w-xs bg-white h-full p-5 sm:p-6 overflow-y-auto space-y-6 shadow-2xl flex flex-col justify-between z-10 animate-in slide-in-from-right duration-200">
             <div className="space-y-6">
               <div className="flex items-center justify-between pb-4 border-b border-neutral-200">
                 <div className="flex items-center gap-2">
@@ -449,7 +485,8 @@ export default function ProductCatalog() {
                 </div>
                 <button
                   onClick={() => setIsMobileFiltersOpen(false)}
-                  className="p-1.5 rounded-lg text-neutral-500 hover:text-black cursor-pointer"
+                  className="p-2 rounded-xl text-neutral-500 hover:text-black hover:bg-neutral-100 transition-colors cursor-pointer"
+                  aria-label="Cerrar filtros"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -470,7 +507,7 @@ export default function ProductCatalog() {
                     <button
                       key={range.id}
                       onClick={() => setPriceRange(range.id as typeof priceRange)}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
+                      className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
                         priceRange === range.id
                           ? "bg-neutral-950 text-white font-bold"
                           : "text-neutral-700 hover:bg-neutral-50"
@@ -499,17 +536,17 @@ export default function ProductCatalog() {
                       setPriceRange("custom");
                       setMaxPrice(Number(e.target.value));
                     }}
-                    className="w-full accent-neutral-950 cursor-pointer h-1.5 bg-neutral-200 rounded-lg appearance-none"
+                    className="w-full accent-neutral-950 cursor-pointer h-2 bg-neutral-200 rounded-lg appearance-none"
                   />
                 </div>
               </div>
 
               {/* Brand Filter Mobile */}
-              <div className="space-y-2 pt-2 border-t border-neutral-100">
+              <div className="space-y-2.5 pt-2 border-t border-neutral-100">
                 <h4 className="text-xs font-black text-neutral-950 uppercase tracking-wider">
                   Marca
                 </h4>
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   {[
                     { id: "todas", label: "Todas las marcas" },
                     { id: "xiaomi", label: "Xiaomi" },
@@ -518,10 +555,10 @@ export default function ProductCatalog() {
                     <button
                       key={brand.id}
                       onClick={() => setSelectedBrand(brand.id)}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between ${
+                      className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between cursor-pointer ${
                         selectedBrand === brand.id
                           ? "bg-neutral-950 text-white font-bold"
-                          : "text-neutral-700"
+                          : "text-neutral-700 hover:bg-neutral-50"
                       }`}
                     >
                       <span>{brand.label}</span>
@@ -530,19 +567,44 @@ export default function ProductCatalog() {
                   ))}
                 </div>
               </div>
+
+              {/* Availability Filter Mobile */}
+              <div className="space-y-2.5 pt-2 border-t border-neutral-100">
+                <h4 className="text-xs font-black text-neutral-950 uppercase tracking-wider">
+                  Estado
+                </h4>
+                <label className="flex items-center gap-2.5 text-xs font-medium text-neutral-700 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={onlyInStock}
+                    onChange={(e) => setOnlyInStock(e.target.checked)}
+                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-950"
+                  />
+                  <span>Solo en stock inmediato</span>
+                </label>
+                <label className="flex items-center gap-2.5 text-xs font-medium text-neutral-700 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={onlyNew}
+                    onChange={(e) => setOnlyNew(e.target.checked)}
+                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-950"
+                  />
+                  <span>Nuevos lanzamientos</span>
+                </label>
+              </div>
             </div>
 
-            <div className="pt-4 border-t border-neutral-200 space-y-2">
+            <div className="pt-4 border-t border-neutral-200 space-y-2 shrink-0">
               <button
                 onClick={() => setIsMobileFiltersOpen(false)}
-                className="w-full py-3 rounded-xl bg-neutral-950 text-white font-black text-xs uppercase tracking-wider shadow-sm cursor-pointer"
+                className="w-full py-3.5 rounded-xl bg-neutral-950 text-white font-black text-xs uppercase tracking-wider shadow-sm active:scale-98 transition-all cursor-pointer"
               >
                 Ver resultados ({sortedProducts.length})
               </button>
               {hasActiveFilters && (
                 <button
                   onClick={clearAllFilters}
-                  className="w-full py-2.5 rounded-xl border border-neutral-200 text-neutral-700 font-bold text-xs cursor-pointer"
+                  className="w-full py-2.5 rounded-xl border border-neutral-200 text-neutral-700 font-bold text-xs hover:bg-neutral-50 active:scale-98 transition-all cursor-pointer"
                 >
                   Limpiar filtros
                 </button>

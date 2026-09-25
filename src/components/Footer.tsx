@@ -62,24 +62,21 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-6 text-xs font-medium text-neutral-600">
-          <a href="#catalogo" className="hover:text-black transition-colors">
-            Catálogo de Productos
-          </a>
-          <a href="#como-comprar" className="hover:text-black transition-colors">
-            Cómo Comprar
-          </a>
-          <a href="#garantia" className="hover:text-black transition-colors">
-            Garantía Total
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs font-semibold text-neutral-600">
+          <a href="/#catalogo" className="hover:text-black transition-colors">
+            Catálogo
           </a>
           <a
             href={`https://wa.me/${whatsappNumber}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-emerald-700 transition-colors flex items-center gap-1 font-semibold text-emerald-600"
+            className="hover:text-emerald-700 transition-colors flex items-center gap-1 text-emerald-700 font-bold"
           >
             <span>WhatsApp Directo</span>
             <ArrowUpRight className="w-3 h-3" />
+          </a>
+          <a href="/admin/" className="hover:text-black transition-colors text-neutral-400 hover:text-neutral-700">
+            Panel Admin
           </a>
         </div>
       </div>

@@ -4,8 +4,9 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Product } from "@/types";
-import { PRODUCTS, STORE_SETTINGS } from "@/data/products";
+import { STORE_SETTINGS } from "@/data/products";
 import { useCart } from "@/context/CartContext";
+import { useProducts } from "@/context/ProductsContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -29,6 +30,7 @@ import {
 
 export default function ProductDetailClient({ product }: { product: Product }) {
   const { addItem, setIsCartOpen, whatsappNumber, toggleFavorite, isFavorite } = useCart();
+  const { products } = useProducts();
 
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -58,7 +60,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     setIsCartOpen(true);
   };
 
-  const relatedProducts = PRODUCTS.filter((p) => p.id !== product.id);
+  const relatedProducts = products.filter((p) => p.id !== product.id);
 
   const waMessage = `¡Hola PulsoTech! Deseo comprar el modelo *${product.name}* (Precio: ${STORE_SETTINGS.currencySymbol}${product.price.toFixed(2)}). ¿Tienen stock disponible para entrega hoy?`;
 
@@ -68,17 +70,17 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 w-full">
         {/* Breadcrumb Navigation */}
-        <nav className="flex items-center gap-2 text-xs text-neutral-500 mb-8 font-medium">
-          <Link href="/" className="hover:text-blue-600 transition-colors flex items-center gap-1">
+        <nav className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-neutral-500 mb-6 sm:mb-8 font-medium overflow-x-auto whitespace-nowrap py-1">
+          <Link href="/" className="hover:text-blue-600 transition-colors flex items-center gap-1 shrink-0">
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Inicio</span>
           </Link>
-          <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
-          <Link href="/#catalogo" className="hover:text-blue-600 transition-colors">
-            Audífonos Inalámbricos
+          <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+          <Link href="/#catalogo" className="hover:text-blue-600 transition-colors shrink-0">
+            Catálogo
           </Link>
-          <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
-          <span className="text-neutral-900 font-bold truncate max-w-xs">{product.name}</span>
+          <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+          <span className="text-neutral-900 font-bold truncate max-w-[130px] sm:max-w-xs shrink-0">{product.name}</span>
         </nav>
 
         {/* Full Product Grid (Despegatec & Miccell Inspired) */}
@@ -86,16 +88,26 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           {/* Left Column: Stage Image Gallery + Lab Tech Specs Grid */}
           <div className="lg:col-span-7 space-y-6">
             {/* Main Stage Image Frame */}
-            <div className="relative aspect-square w-full rounded-3xl bg-white border border-neutral-200/90 p-4 sm:p-8 flex items-center justify-center shadow-xs overflow-hidden group">
-              <div className="relative w-full h-full">
-                <Image
-                  src={activeImage}
-                  alt={product.name}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 700px"
-                  className="object-contain p-2 transition-transform duration-300 group-hover:scale-105"
-                  priority
-                />
+            <div className="relative aspect-square w-full rounded-2xl sm:rounded-3xl bg-white border border-neutral-200/90 p-4 sm:p-8 flex items-center justify-center shadow-xs overflow-hidden group">
+              <div className="relative w-full h-full flex items-center justify-center">
+                {activeImage?.startsWith("data:") ||
+                activeImage?.startsWith("blob:") ||
+                activeImage?.startsWith("http") ? (
+                  <img
+                    src={activeImage}
+                    alt={product.name}
+                    className="w-full h-full object-contain p-2"
+                  />
+                ) : (
+                  <Image
+                    src={activeImage}
+                    alt={product.name}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 700px"
+                    className="object-contain p-2 transition-transform duration-300 group-hover:scale-105"
+                    priority
+                  />
+                )}
               </div>
 
               {/* Prev/Next arrows if multiple images */}
@@ -105,7 +117,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                     type="button"
                     onClick={handlePrevImage}
                     aria-label="Foto anterior"
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-neutral-800 shadow-md border border-neutral-200 flex items-center justify-center transition-all opacity-80 hover:opacity-100 cursor-pointer"
+                    className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 hover:bg-white text-neutral-800 shadow-md border border-neutral-200 flex items-center justify-center transition-all opacity-80 hover:opacity-100 cursor-pointer"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
@@ -113,7 +125,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                     type="button"
                     onClick={handleNextImage}
                     aria-label="Siguiente foto"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-neutral-800 shadow-md border border-neutral-200 flex items-center justify-center transition-all opacity-80 hover:opacity-100 cursor-pointer"
+                    className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 hover:bg-white text-neutral-800 shadow-md border border-neutral-200 flex items-center justify-center transition-all opacity-80 hover:opacity-100 cursor-pointer"
                   >
                     <ChevronRight className="w-5 h-5" />
                   </button>
@@ -122,7 +134,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
               {/* Image counter pill */}
               {galleryImages.length > 1 && (
-                <div className="absolute bottom-4 right-4 px-2.5 py-1 rounded-full bg-neutral-900/70 text-white text-[10px] font-semibold backdrop-blur-xs">
+                <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 px-2.5 py-1 rounded-full bg-neutral-900/70 text-white text-[10px] font-semibold backdrop-blur-xs">
                   {selectedImageIndex + 1} / {galleryImages.length}
                 </div>
               )}
@@ -130,7 +142,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
             {/* Gallery Thumbnails */}
             {galleryImages.length > 1 && (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5 sm:gap-3 overflow-x-auto pb-1">
                 {galleryImages.map((img, idx) => {
                   const isSelected = selectedImageIndex === idx;
                   return (
@@ -138,18 +150,28 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                       key={idx}
                       type="button"
                       onClick={() => setSelectedImageIndex(idx)}
-                      className={`relative w-20 h-20 rounded-2xl overflow-hidden border p-2 bg-white transition-all cursor-pointer ${
+                      className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl overflow-hidden border p-1.5 sm:p-2 bg-white transition-all cursor-pointer shrink-0 ${
                         isSelected
                           ? "border-blue-600 ring-2 ring-blue-600/20 shadow-xs"
                           : "border-neutral-200 hover:border-neutral-300 opacity-70 hover:opacity-100"
                       }`}
                     >
-                      <Image
-                        src={img}
-                        alt={`${product.name} foto ${idx + 1}`}
-                        fill
-                        className="object-contain p-1"
-                      />
+                      {img?.startsWith("data:") ||
+                      img?.startsWith("blob:") ||
+                      img?.startsWith("http") ? (
+                        <img
+                          src={img}
+                          alt={`${product.name} foto ${idx + 1}`}
+                          className="w-full h-full object-contain p-0.5"
+                        />
+                      ) : (
+                        <Image
+                          src={img}
+                          alt={`${product.name} foto ${idx + 1}`}
+                          fill
+                          className="object-contain p-1"
+                        />
+                      )}
                     </button>
                   );
                 })}
@@ -359,42 +381,44 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               </div>
 
               {/* Action Buttons: Add to Cart + Buy Now + Favorite */}
-              <div className="flex items-center gap-3 pt-1">
-                <button
-                  onClick={handleAddToCart}
-                  className="flex-1 py-3.5 px-4 rounded-xl border border-neutral-300 hover:border-black bg-white text-neutral-900 font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xs cursor-pointer"
-                >
-                  <ShoppingBag className="w-4 h-4" />
-                  <span>Añadir al Carrito</span>
-                </button>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 pt-1">
+                <div className="flex items-center gap-2 flex-1">
+                  <button
+                    onClick={handleAddToCart}
+                    className="flex-1 py-3.5 px-4 rounded-xl border border-neutral-300 hover:border-black bg-white text-neutral-900 font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xs cursor-pointer"
+                  >
+                    <ShoppingBag className="w-4 h-4" />
+                    <span>Añadir al Carrito</span>
+                  </button>
+
+                  <button
+                    onClick={() => toggleFavorite(product.id)}
+                    aria-label="Guardar en favoritos"
+                    className={`p-3.5 rounded-xl border transition-all active:scale-90 cursor-pointer shrink-0 ${
+                      isFav
+                        ? "border-red-200 bg-red-50 text-red-500 shadow-xs"
+                        : "border-neutral-200 bg-white text-neutral-400 hover:text-red-500 hover:border-neutral-300"
+                    }`}
+                    title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
+                  >
+                    <Heart className={`w-5 h-5 ${isFav ? "fill-red-500" : ""}`} />
+                  </button>
+                </div>
 
                 <button
                   onClick={handleBuyNow}
-                  className="flex-1 py-3.5 px-4 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-98 shadow-sm cursor-pointer"
+                  className="w-full sm:flex-1 py-3.5 px-4 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-98 shadow-sm cursor-pointer"
                 >
                   <span>Comprar Ahora</span>
                 </button>
-
-                <button
-                  onClick={() => toggleFavorite(product.id)}
-                  aria-label="Guardar en favoritos"
-                  className={`p-3.5 rounded-xl border transition-all active:scale-90 cursor-pointer ${
-                    isFav
-                      ? "border-red-200 bg-red-50 text-red-500 shadow-xs"
-                      : "border-neutral-200 bg-white text-neutral-400 hover:text-red-500 hover:border-neutral-300"
-                  }`}
-                  title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
-                >
-                  <Heart className={`w-5 h-5 ${isFav ? "fill-red-500" : ""}`} />
-                </button>
               </div>
 
-              {/* Primary WhatsApp Action (Despegatec Style) */}
+              {/* Primary WhatsApp Action */}
               <a
                 href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(waMessage)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full py-3.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-98 cursor-pointer"
+                className="w-full py-3.5 sm:py-4 px-4 rounded-xl bg-[#15803d] hover:bg-[#166534] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-98 cursor-pointer"
               >
                 <MessageSquare className="w-4 h-4 fill-white text-white" />
                 <span>Contactar con un asesor por WhatsApp</span>

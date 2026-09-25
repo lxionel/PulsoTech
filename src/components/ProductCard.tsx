@@ -28,7 +28,7 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <div className="group relative rounded-2xl bg-white border border-neutral-200/90 hover:border-blue-500/40 hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden">
       {/* Top Card Image Link */}
-      <Link href={`/producto/${product.slug}`} className="block p-4 sm:p-5 pb-0">
+      <Link href={`/producto/${product.slug}`} className="block p-3.5 sm:p-5 pb-0">
         {/* Top Header: Brand, New Tag & Favorite */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
@@ -53,7 +53,7 @@ export default function ProductCard({ product }: { product: Product }) {
               type="button"
               onClick={handleToggleFavorite}
               aria-label="Guardar en favoritos"
-              className="p-1 rounded-full text-neutral-400 hover:text-red-500 transition-colors cursor-pointer"
+              className="p-1.5 rounded-full text-neutral-400 hover:text-red-500 transition-colors cursor-pointer"
               title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
             >
               <Heart className={`w-4 h-4 ${isFav ? "text-red-500 fill-red-500" : ""}`} />
@@ -86,7 +86,7 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
 
         {/* Title & Subtitle */}
-        <div className="space-y-1.5 pt-4">
+        <div className="space-y-1.5 pt-3.5 sm:pt-4">
           <h3 className="text-base sm:text-lg font-extrabold text-neutral-950 group-hover:text-blue-600 transition-colors leading-snug">
             {product.name}
           </h3>
@@ -96,35 +96,35 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
 
         {/* Specs Highlights */}
-        <div className="flex flex-wrap gap-1.5 pt-3 text-[11px] font-medium text-neutral-600">
-          <span className="px-2.5 py-1 rounded-md bg-neutral-100/90 border border-neutral-200/40">
+        <div className="flex flex-wrap gap-1.5 pt-2.5 sm:pt-3 text-[10px] sm:text-[11px] font-medium text-neutral-600">
+          <span className="px-2 sm:px-2.5 py-1 rounded-md bg-neutral-100/90 border border-neutral-200/40">
             {product.specs.battery} batería
           </span>
-          <span className="px-2.5 py-1 rounded-md bg-neutral-100/90 border border-neutral-200/40">
+          <span className="px-2 sm:px-2.5 py-1 rounded-md bg-neutral-100/90 border border-neutral-200/40">
             {product.specs.anc}
           </span>
-          <span className="px-2.5 py-1 rounded-md bg-neutral-100/90 border border-neutral-200/40">
+          <span className="px-2 sm:px-2.5 py-1 rounded-md bg-neutral-100/90 border border-neutral-200/40">
             {product.specs.connectivity}
           </span>
         </div>
       </Link>
 
       {/* Card Bottom: Price and Actions */}
-      <div className="p-4 sm:p-5 pt-4 border-t border-neutral-100 mt-4 flex items-center justify-between gap-3 bg-neutral-50/50">
-        <div>
-          <span className="text-[10px] text-neutral-400 uppercase font-semibold block">
+      <div className="p-3.5 sm:p-5 pt-3.5 sm:pt-4 border-t border-neutral-100 mt-4 flex items-center justify-between gap-2 sm:gap-3 bg-neutral-50/50">
+        <div className="min-w-0">
+          <span className="text-[10px] text-neutral-400 uppercase font-semibold block leading-tight">
             Precio Directo
           </span>
-          <span className="text-xl font-extrabold text-neutral-950 tracking-tight">
+          <span className="text-lg sm:text-xl font-extrabold text-neutral-950 tracking-tight">
             {STORE_SETTINGS.currencySymbol}
             {product.price.toFixed(2)}
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <Link
             href={`/producto/${product.slug}`}
-            className="px-3 py-2 rounded-xl border border-neutral-200 hover:border-neutral-300 bg-white text-neutral-800 hover:text-black font-semibold text-xs transition-colors flex items-center gap-1 shadow-2xs"
+            className="px-2.5 sm:px-3 py-2 rounded-xl border border-neutral-200 hover:border-neutral-300 bg-white text-neutral-800 hover:text-black font-semibold text-xs transition-colors flex items-center gap-1 shadow-2xs active:scale-95"
           >
             <span>Ver Ficha</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -132,7 +132,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
           <button
             onClick={handleAddToCart}
-            className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-colors cursor-pointer"
+            className="px-3 sm:px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-colors cursor-pointer"
           >
             <ShoppingBag className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Añadir</span>

@@ -316,38 +316,40 @@ export default function AdminPage() {
     <div className="min-h-screen bg-[#f8fafc] text-neutral-900 antialiased font-sans">
       {/* Top Admin Header - Blanco Puro y Elegante */}
       <header className="border-b border-neutral-200 bg-white sticky top-0 z-30 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 text-xs text-neutral-600 hover:text-black px-3 py-1.5 rounded-xl border border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 transition-colors font-semibold"
+              className="inline-flex items-center gap-1.5 text-xs text-neutral-600 hover:text-black px-2.5 sm:px-3 py-1.5 rounded-xl border border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 transition-colors font-semibold shrink-0"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Volver a la Tienda Comercial</span>
+              <span className="hidden sm:inline">Volver a la Tienda</span>
+              <span className="sm:hidden">Tienda</span>
             </Link>
 
             <div className="h-4 w-px bg-neutral-200 hidden sm:block" />
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2 min-w-0">
               <Logo size="sm" showText={false} />
-              <div>
-                <span className="text-sm font-black text-neutral-950 tracking-tight">
+              <div className="truncate">
+                <span className="text-xs sm:text-sm font-black text-neutral-950 tracking-tight">
                   PulsoTech Panel
                 </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 ml-2 hidden sm:inline">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 ml-1.5 hidden md:inline">
                   En Vivo
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <button
               onClick={handleNewProductClick}
-              className="px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+              className="px-3 sm:px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer shrink-0"
             >
               <PlusCircle className="w-4 h-4 text-white" />
-              <span>＋ Agregar Producto</span>
+              <span className="hidden sm:inline">＋ Agregar Producto</span>
+              <span className="sm:hidden">Agregar</span>
             </button>
 
             <Link
@@ -362,34 +364,34 @@ export default function AdminPage() {
         </div>
 
         {/* Sub-nav Tabs */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 border-t border-neutral-100">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center gap-1 sm:gap-2 border-t border-neutral-100 overflow-x-auto whitespace-nowrap scrollbar-none">
           <button
             onClick={() => setActiveTab("inventory")}
-            className={`px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-2 cursor-pointer ${
+            className={`px-3 sm:px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0 ${
               activeTab === "inventory"
                 ? "border-neutral-950 text-neutral-950"
                 : "border-transparent text-neutral-500 hover:text-neutral-900"
             }`}
           >
             <Package className="w-4 h-4" />
-            <span>Inventario &amp; Catálogo ({products.length})</span>
+            <span>Inventario ({products.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab("add_product")}
-            className={`px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-2 cursor-pointer ${
+            className={`px-3 sm:px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0 ${
               activeTab === "add_product"
                 ? "border-neutral-950 text-neutral-950"
                 : "border-transparent text-neutral-500 hover:text-neutral-900"
             }`}
           >
             <Sparkles className="w-4 h-4 text-amber-500" />
-            <span>{editingProductId ? "Editar Producto" : "＋ Agregar Nuevo Producto"}</span>
+            <span>{editingProductId ? "Editar Producto" : "＋ Nuevo Producto"}</span>
           </button>
 
           <button
             onClick={() => setActiveTab("sales")}
-            className={`px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-2 cursor-pointer ${
+            className={`px-3 sm:px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0 ${
               activeTab === "sales"
                 ? "border-neutral-950 text-neutral-950"
                 : "border-transparent text-neutral-500 hover:text-neutral-900"
@@ -401,14 +403,14 @@ export default function AdminPage() {
 
           <button
             onClick={() => setActiveTab("settings")}
-            className={`px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-2 cursor-pointer ${
+            className={`px-3 sm:px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0 ${
               activeTab === "settings"
                 ? "border-neutral-950 text-neutral-950"
                 : "border-transparent text-neutral-500 hover:text-neutral-900"
             }`}
           >
             <Phone className="w-4 h-4 text-emerald-600" />
-            <span>WhatsApp &amp; Exportar</span>
+            <span>Ajustes &amp; WhatsApp</span>
           </button>
         </div>
       </header>
@@ -512,8 +514,8 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-neutral-200/90 overflow-hidden bg-white shadow-sm">
-                <table className="w-full text-left text-xs">
+              <div className="rounded-2xl border border-neutral-200/90 overflow-x-auto bg-white shadow-sm">
+                <table className="w-full text-left text-xs min-w-[620px]">
                   <thead className="bg-neutral-50 text-neutral-600 border-b border-neutral-200 uppercase text-[10px] font-bold tracking-wider">
                     <tr>
                       <th className="py-3.5 px-4">Producto</th>

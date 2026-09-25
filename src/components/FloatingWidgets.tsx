@@ -7,7 +7,7 @@ export default function FloatingWidgets() {
   const { whatsappNumber } = useCart();
 
   return (
-    <aside aria-label="Contacto oficial por WhatsApp" className="fixed bottom-6 right-6 z-50">
+    <aside aria-label="Contacto oficial por WhatsApp" className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40">
       <a
         href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
           "¡Hola PulsoTech! Deseo consultar sobre los audífonos y productos disponibles."
@@ -15,7 +15,7 @@ export default function FloatingWidgets() {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Atención personalizada por WhatsApp"
-        className="group flex items-center gap-3 px-3.5 py-3 sm:px-4 sm:py-3.5 rounded-full bg-[#15803d] hover:bg-[#166534] text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+        className="group flex items-center gap-2.5 sm:gap-3 p-3 sm:px-4 sm:py-3.5 rounded-full bg-[#15803d] hover:bg-[#166534] text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
         title="Chatea con PulsoTech por WhatsApp"
       >
         {/* Official WhatsApp Vector Logo */}
