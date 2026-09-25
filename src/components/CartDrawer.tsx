@@ -11,10 +11,6 @@ import {
   Trash2,
   Plus,
   Minus,
-  ArrowRight,
-  ShieldCheck,
-  Truck,
-  MessageSquare,
 } from "lucide-react";
 
 export default function CartDrawer() {
@@ -25,10 +21,7 @@ export default function CartDrawer() {
     removeItem,
     updateQuantity,
     subtotal,
-    shipping,
-    total,
     itemsCount,
-    freeShippingRemaining,
     whatsappNumber,
   } = useCart();
 
@@ -90,8 +83,8 @@ export default function CartDrawer() {
     });
 
     lines.push(``);
-    lines.push(`🚚 *Envío:* ${shipping === 0 ? "GRATIS" : `${STORE_SETTINGS.currencySymbol}${shipping.toFixed(2)}`}`);
-    lines.push(`💰 *TOTAL A PAGAR:* ${STORE_SETTINGS.currencySymbol}${total.toFixed(2)}`);
+    lines.push(`🚚 *Entrega:* A coordinar por WhatsApp (Contra Entrega)`);
+    lines.push(`💰 *TOTAL:* ${STORE_SETTINGS.currencySymbol}${subtotal.toFixed(2)}`);
     lines.push(`━━━━━━━━━━━━━━━━━━━━━━`);
     lines.push(`¡Hola PulsoTech! Armé este pedido en la web. ¿Tienen disponibilidad para coordinar la entrega?`);
 
@@ -125,31 +118,6 @@ export default function CartDrawer() {
               >
                 <X className="w-5 h-5" />
               </button>
-            </div>
-
-            {/* Free shipping bar */}
-            <div className="py-3 border-b border-neutral-100">
-              <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="flex items-center gap-1.5 text-neutral-700 font-medium">
-                  <Truck className="w-3.5 h-3.5 text-blue-600" />
-                  {freeShippingRemaining === 0 ? (
-                    <strong className="text-emerald-600">¡Tienes Envío Gratis!</strong>
-                  ) : (
-                    <span>
-                      Faltan <strong className="text-neutral-950">{STORE_SETTINGS.currencySymbol}{freeShippingRemaining.toFixed(2)}</strong> para Envío Gratis
-                    </span>
-                  )}
-                </span>
-                <span className="text-neutral-400 text-[11px] font-medium">Meta {STORE_SETTINGS.currencySymbol}{STORE_SETTINGS.freeShippingThreshold}</span>
-              </div>
-              <div className="h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-blue-600 transition-all duration-300"
-                  style={{
-                    width: `${Math.min(100, (subtotal / STORE_SETTINGS.freeShippingThreshold) * 100)}%`,
-                  }}
-                />
-              </div>
             </div>
           </div>
 
@@ -301,46 +269,46 @@ export default function CartDrawer() {
               </div>
 
               {/* Price summary */}
-              <div className="space-y-1 text-xs">
+              <div className="space-y-1.5 text-xs py-2 border-t border-neutral-100">
                 <div className="flex justify-between text-neutral-600 font-medium">
                   <span>Subtotal</span>
-                  <span>
+                  <span className="font-semibold text-neutral-900">
                     {STORE_SETTINGS.currencySymbol}
                     {subtotal.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between text-neutral-600 font-medium">
                   <span>Envío</span>
-                  <span className={shipping === 0 ? "text-emerald-600 font-bold" : ""}>
-                    {shipping === 0 ? "GRATIS" : `${STORE_SETTINGS.currencySymbol}${shipping.toFixed(2)}`}
+                  <span className="text-emerald-700 font-semibold">
+                    A coordinar por WhatsApp
                   </span>
                 </div>
-                <div className="flex justify-between text-base font-extrabold text-neutral-950 pt-2 border-t border-neutral-200">
+                <div className="flex justify-between text-base font-black text-neutral-950 pt-2 border-t border-neutral-200">
                   <span>Total</span>
                   <span>
                     {STORE_SETTINGS.currencySymbol}
-                    {total.toFixed(2)}
+                    {subtotal.toFixed(2)}
                   </span>
                 </div>
               </div>
 
-              {/* WhatsApp Checkout Button */}
+              {/* WhatsApp Checkout Button - Ordenado, centrado y profesional */}
               <button
                 onClick={handleWhatsAppCheckout}
-                className="w-full py-3.5 sm:py-4 rounded-xl bg-[#15803d] hover:bg-[#166534] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
+                className="w-full py-4 px-4 rounded-xl bg-[#15803d] hover:bg-[#166534] text-white font-extrabold text-sm flex items-center justify-center gap-2.5 shadow-md active:scale-95 transition-all cursor-pointer"
               >
-                <MessageSquare className="w-4 h-4 fill-white text-white" />
-                <span>
-                  Pedir por WhatsApp ({STORE_SETTINGS.currencySymbol}
-                  {total.toFixed(2)})
+                <svg
+                  className="w-5 h-5 fill-current shrink-0"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.04 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 15 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.53 7.03C9.33 7.04 9.14 7.04 8.97 7.05C8.77 7.06 8.5 7.14 8.28 7.38C8.05 7.63 7.42 8.22 7.42 9.43C7.42 10.64 8.3 11.81 8.43 11.98C8.55 12.15 10.15 14.63 12.61 15.69C13.2 15.94 13.65 16.09 14.01 16.21C14.6 16.4 15.13 16.37 15.55 16.31C16.03 16.24 17.02 15.71 17.23 15.13C17.43 14.55 17.43 14.05 17.37 13.95C17.31 13.85 17.16 13.79 16.94 13.68C16.71 13.57 15.62 13.03 15.42 12.96C15.22 12.88 15.07 12.84 14.92 13.07C14.77 13.3 14.35 13.79 14.22 13.94C14.1 14.09 13.97 14.11 13.75 14C13.52 13.89 12.59 13.58 11.48 12.59C10.62 11.82 10.04 10.87 9.93 10.64C9.81 10.42 9.92 10.29 10.03 10.18C10.14 10.07 10.27 9.89 10.39 9.75C10.5 9.61 10.55 9.5 10.62 9.35C10.7 9.2 10.66 9.07 10.6 8.96C10.55 8.85 10.09 7.72 9.9 7.26C9.72 6.81 9.53 6.87 9.4 6.86L8.97 6.86C8.83 6.86 9.53 7.03 9.53 7.03Z" />
+                </svg>
+                <span>Pedir por WhatsApp</span>
+                <span className="text-xs font-semibold opacity-90">
+                  ({STORE_SETTINGS.currencySymbol}{subtotal.toFixed(2)})
                 </span>
-                <ArrowRight className="w-4 h-4" />
               </button>
-
-              <div className="flex items-center justify-center gap-2 text-[11px] text-neutral-500 text-center">
-                <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-                <span>Garantía Total 12 Meses • Pago Seguro</span>
-              </div>
             </div>
           )}
         </div>
