@@ -41,7 +41,7 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <div className="group relative rounded-2xl bg-white border border-neutral-200/90 hover:border-neutral-300 hover:shadow-lg transition-all duration-300 flex flex-col justify-between overflow-hidden h-full">
       {/* Top Card Image Link */}
-      <Link href={`/producto/${product.slug}`} className="block p-4 sm:p-5 pb-0 flex-1">
+      <Link href={`/producto/?id=${product.id}&slug=${product.slug}`} className="block p-4 sm:p-5 pb-0 flex-1">
         {/* Top Header: Brand, New Tag & Favorite */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-1.5">

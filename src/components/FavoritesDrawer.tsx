@@ -92,7 +92,7 @@ export default function FavoritesDrawer() {
                     className="flex gap-3.5 p-3 rounded-2xl bg-white border border-neutral-200/90 shadow-2xs hover:border-neutral-300 transition-all"
                   >
                     <Link
-                      href={`/producto/${product.slug}`}
+                      href={`/producto/?id=${product.id}&slug=${product.slug}`}
                       onClick={() => setIsFavoritesOpen(false)}
                       className="relative w-16 h-16 rounded-xl overflow-hidden bg-neutral-50 border border-neutral-100 shrink-0 flex items-center justify-center p-1"
                     >
@@ -119,9 +119,9 @@ export default function FavoritesDrawer() {
                         {product.brand}
                       </span>
                       <Link
-                        href={`/producto/${product.slug}`}
+                        href={`/producto/?id=${product.id}&slug=${product.slug}`}
                         onClick={() => setIsFavoritesOpen(false)}
-                        className="text-xs font-bold text-neutral-950 hover:text-blue-600 transition-colors truncate block"
+                        className="text-xs font-bold text-neutral-950 hover:text-neutral-700 transition-colors truncate block"
                       >
                         {product.name}
                       </Link>

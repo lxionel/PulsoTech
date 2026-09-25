@@ -57,9 +57,21 @@ function getSpecIcon(label: string) {
   return ShieldCheck;
 }
 
-export default function ProductDetailClient({ product }: { product: Product }) {
+export default function ProductDetailClient({ product: initialProduct }: { product: Product }) {
   const { addItem, setIsCartOpen, whatsappNumber, toggleFavorite, isFavorite } = useCart();
   const { products } = useProducts();
+
+  // Obtener siempre la versión más actualizada en vivo desde useProducts()
+  const product = React.useMemo(() => {
+    return (
+      products.find(
+        (p) =>
+          p.id === initialProduct.id ||
+          p.slug.toLowerCase() === initialProduct.slug.toLowerCase() ||
+          p.name.toLowerCase() === initialProduct.name.toLowerCase()
+      ) || initialProduct
+    );
+  }, [products, initialProduct]);
 
   const [quantity, setQuantity] = useState(1);
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);

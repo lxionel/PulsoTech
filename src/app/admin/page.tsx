@@ -921,7 +921,7 @@ export default function AdminPage() {
                           <td className="py-3.5 px-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">
                               <Link
-                                href={`/producto/${item.slug}`}
+                                href={`/producto/?id=${item.id}&slug=${item.slug}`}
                                 target="_blank"
                                 className="p-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:text-black hover:bg-neutral-100 transition-colors"
                                 title="Ver página de detalle"
