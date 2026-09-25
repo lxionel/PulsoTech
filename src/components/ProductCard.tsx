@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Product } from "@/types";
 import { STORE_SETTINGS } from "@/data/products";
 import { useCart } from "@/context/CartContext";
+import { getAssetUrl } from "@/utils/paths";
 import { ShoppingBag, ArrowRight, Heart } from "lucide-react";
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -14,13 +15,14 @@ export default function ProductCard({ product }: { product: Product }) {
   const isFav = isFavorite(product.id);
 
   const colors = product.colors || [];
+  const fallbackImg = getAssetUrl("/placeholder-earbuds.svg");
   const currentColor = colors[selectedColorIndex] || colors[0] || {
     name: "Original",
     hex: "#18181b",
-    image: product.images?.[0] || "/products/buds-6-black.jpg",
+    image: product.images?.[0] || fallbackImg,
   };
 
-  const primaryImage = currentColor?.image || product.images?.[0] || "/products/buds-6-black.jpg";
+  const primaryImage = currentColor?.image || product.images?.[0] || fallbackImg;
   const secondaryImage =
     product.images?.[1] && product.images[1] !== primaryImage
       ? product.images[1]

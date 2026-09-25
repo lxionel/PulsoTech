@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { STORE_SETTINGS } from "@/data/products";
+import { getAssetUrl } from "@/utils/paths";
 import confetti from "canvas-confetti";
 import {
   X,
@@ -75,8 +76,9 @@ export default function CartDrawer() {
     ];
 
     items.forEach((item) => {
+      const colorName = item.selectedColor?.name || "Original";
       lines.push(
-        `• ${item.quantity}x ${item.product.name} (${item.selectedColor.name}) - ${STORE_SETTINGS.currencySymbol}${(
+        `• ${item.quantity}x ${item.product.name} (${colorName}) - ${STORE_SETTINGS.currencySymbol}${(
           item.product.price * item.quantity
         ).toFixed(2)}`
       );
@@ -140,76 +142,83 @@ export default function CartDrawer() {
                 </button>
               </div>
             ) : (
-              items.map((item) => (
-                <div
-                  key={`${item.product.id}-${item.selectedColor.name}`}
-                  className="flex gap-3.5 p-3 rounded-2xl bg-white border border-neutral-200/80 shadow-2xs"
-                >
-                  <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-neutral-50 border border-neutral-100 shrink-0 flex items-center justify-center p-1">
-                    {item.selectedColor.image?.startsWith("data:") ||
-                    item.selectedColor.image?.startsWith("blob:") ||
-                    item.selectedColor.image?.startsWith("http") ? (
-                      <img
-                        src={item.selectedColor.image}
-                        alt={item.product.name}
-                        className="w-full h-full object-contain"
-                      />
-                    ) : (
-                      <Image
-                        src={item.selectedColor.image}
-                        alt={item.product.name}
-                        fill
-                        className="object-contain"
-                      />
-                    )}
-                  </div>
+              items.map((item) => {
+                const imgUrl =
+                  item.selectedColor?.image ||
+                  item.product.images?.[0] ||
+                  getAssetUrl("/placeholder-earbuds.svg");
+                const colorName = item.selectedColor?.name || "Original";
+                return (
+                  <div
+                    key={`${item.product.id}-${colorName}`}
+                    className="flex gap-3.5 p-3 rounded-2xl bg-white border border-neutral-200/80 shadow-2xs"
+                  >
+                    <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-neutral-50 border border-neutral-100 shrink-0 flex items-center justify-center p-1">
+                      {imgUrl.startsWith("data:") ||
+                      imgUrl.startsWith("blob:") ||
+                      imgUrl.startsWith("http") ? (
+                        <img
+                          src={imgUrl}
+                          alt={item.product.name}
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <Image
+                          src={imgUrl}
+                          alt={item.product.name}
+                          fill
+                          className="object-contain"
+                        />
+                      )}
+                    </div>
 
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-bold text-neutral-950 truncate">
-                      {item.product.name}
-                    </h4>
-                    <span className="text-[11px] text-neutral-500 block">
-                      {item.selectedColor.name}
-                    </span>
-                    <span className="text-xs font-bold text-neutral-950 mt-1 block">
-                      {STORE_SETTINGS.currencySymbol}
-                      {(item.product.price * item.quantity).toFixed(2)}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col items-end justify-between">
-                    <button
-                      onClick={() => removeItem(item.product.id, item.selectedColor.name)}
-                      className="text-neutral-400 hover:text-red-500 p-1 transition-colors cursor-pointer"
-                      title="Eliminar producto"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-
-                    <div className="flex items-center gap-1.5 border border-neutral-200 rounded-full p-0.5 bg-neutral-50">
-                      <button
-                        onClick={() =>
-                          updateQuantity(item.product.id, item.selectedColor.name, item.quantity - 1)
-                        }
-                        className="p-1 text-neutral-500 hover:text-black cursor-pointer"
-                      >
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className="text-xs font-bold px-1 text-neutral-900">
-                        {item.quantity}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-xs font-bold text-neutral-950 truncate">
+                        {item.product.name}
+                      </h4>
+                      <span className="text-[11px] text-neutral-500 block">
+                        {colorName}
                       </span>
+                      <span className="text-xs font-bold text-neutral-950 mt-1 block">
+                        {STORE_SETTINGS.currencySymbol}
+                        {(item.product.price * item.quantity).toFixed(2)}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col items-end justify-between">
                       <button
-                        onClick={() =>
-                          updateQuantity(item.product.id, item.selectedColor.name, item.quantity + 1)
-                        }
-                        className="p-1 text-neutral-500 hover:text-black cursor-pointer"
+                        onClick={() => removeItem(item.product.id, colorName)}
+                        className="text-neutral-400 hover:text-red-500 p-1 transition-colors cursor-pointer"
+                        title="Eliminar producto"
                       >
-                        <Plus className="w-3 h-3" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
+
+                      <div className="flex items-center gap-1.5 border border-neutral-200 rounded-full p-0.5 bg-neutral-50">
+                        <button
+                          onClick={() =>
+                            updateQuantity(item.product.id, colorName, item.quantity - 1)
+                          }
+                          className="p-1 text-neutral-500 hover:text-black cursor-pointer"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="text-xs font-bold px-1 text-neutral-900">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() =>
+                            updateQuantity(item.product.id, colorName, item.quantity + 1)
+                          }
+                          className="p-1 text-neutral-500 hover:text-black cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 

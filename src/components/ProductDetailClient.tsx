@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Product } from "@/types";
 import { STORE_SETTINGS } from "@/data/products";
+import { getAssetUrl } from "@/utils/paths";
 import { useCart } from "@/context/CartContext";
 import { useProducts } from "@/context/ProductsContext";
 import Navbar from "@/components/Navbar";
@@ -118,7 +119,12 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   }, [product]);
 
   const colors = product.colors || [];
-  const currentColor = colors[selectedColorIndex] || colors[0];
+  const fallbackImg = getAssetUrl("/placeholder-earbuds.svg");
+  const currentColor = colors[selectedColorIndex] || colors[0] || {
+    name: "Estándar",
+    hex: "#18181b",
+    image: product.images?.[0] || fallbackImg,
+  };
   const videoInfo = React.useMemo(() => getEmbedVideoInfo(product.videoUrl), [product.videoUrl]);
 
   const galleryImages = React.useMemo(() => {
@@ -130,8 +136,8 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
     colors.forEach((c) => {
       if (c.image && !list.includes(c.image)) list.push(c.image);
     });
-    return list.length > 0 ? list : ["/placeholder-earbuds.svg"];
-  }, [product, currentColor, colors]);
+    return list.length > 0 ? list : [fallbackImg];
+  }, [product, currentColor, colors, fallbackImg]);
 
   const activeImage = galleryImages[selectedImageIndex] || galleryImages[0];
 

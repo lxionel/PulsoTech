@@ -3,10 +3,11 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Product, ProductColor, CartItem } from "@/types";
 import { STORE_SETTINGS } from "@/data/products";
+import { getAssetUrl } from "@/utils/paths";
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (product: Product, color: ProductColor, quantity?: number) => void;
+  addItem: (product: Product, color?: ProductColor, quantity?: number) => void;
   removeItem: (productId: string, colorName: string) => void;
   updateQuantity: (productId: string, colorName: string, quantity: number) => void;
   clearCart: () => void;
@@ -33,60 +34,64 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem("pulsotech_cart");
-        if (saved) return JSON.parse(saved);
-      } catch {
-        // Ignorar error
-      }
-    }
-    return [];
-  });
-
-  const [favorites, setFavorites] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem("pulsotech_favorites");
-        if (saved) return JSON.parse(saved);
-      } catch {
-        // Ignorar error
-      }
-    }
-    return [];
-  });
-
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
   const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
-  const [whatsappNumber, setWhatsappNumber] = useState(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const savedPhone = localStorage.getItem("pulsotech_phone");
-        if (savedPhone && savedPhone !== "51987654321") return savedPhone;
-      } catch {
-        // Ignorar error
-      }
-    }
-    return STORE_SETTINGS.whatsappNumber;
-  });
+  const [whatsappNumber, setWhatsappNumber] = useState<string>(STORE_SETTINGS.whatsappNumber);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Guardar en localStorage cuando cambie
+  // Cargar datos de localStorage una sola vez tras montar en el cliente (evita Hydration Mismatch)
   useEffect(() => {
+    try {
+      const savedCart = localStorage.getItem("pulsotech_cart");
+      if (savedCart) {
+        const parsed = JSON.parse(savedCart);
+        if (Array.isArray(parsed)) setItems(parsed);
+      }
+
+      const savedFavs = localStorage.getItem("pulsotech_favorites");
+      if (savedFavs) {
+        const parsedFavs = JSON.parse(savedFavs);
+        if (Array.isArray(parsedFavs)) setFavorites(parsedFavs);
+      }
+
+      const savedPhone = localStorage.getItem("pulsotech_phone");
+      if (savedPhone && savedPhone !== "51987654321") {
+        setWhatsappNumber(savedPhone);
+      }
+    } catch {
+      // Ignorar error de parsing
+    } finally {
+      setIsLoaded(true);
+    }
+  }, []);
+
+  // Guardar en localStorage únicamente después de haber completado la carga inicial
+  useEffect(() => {
+    if (!isLoaded) return;
     try {
       localStorage.setItem("pulsotech_cart", JSON.stringify(items));
       localStorage.setItem("pulsotech_favorites", JSON.stringify(favorites));
       localStorage.setItem("pulsotech_phone", whatsappNumber);
     } catch {
-      // Ignorar error
+      // Ignorar error de almacenamiento
     }
-  }, [items, favorites, whatsappNumber]);
+  }, [items, favorites, whatsappNumber, isLoaded]);
 
-  const addItem = (product: Product, color: ProductColor, quantity = 1) => {
+  const addItem = (product: Product, color?: ProductColor, quantity = 1) => {
+    const validColor: ProductColor = color || (product.colors && product.colors[0]) || {
+      name: "Original",
+      hex: "#18181b",
+      image: product.images?.[0] || getAssetUrl("/placeholder-earbuds.svg"),
+    };
+
     setItems((prev) => {
       const existingIndex = prev.findIndex(
-        (item) => item.product.id === product.id && item.selectedColor.name === color.name
+        (item) =>
+          item.product.id === product.id &&
+          (item.selectedColor?.name || "Original") === validColor.name
       );
 
       if (existingIndex > -1) {
@@ -95,7 +100,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         return next;
       }
 
-      return [...prev, { product, selectedColor: color, quantity }];
+      return [...prev, { product, selectedColor: validColor, quantity }];
     });
     setIsCartOpen(true);
   };
@@ -103,7 +108,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const removeItem = (productId: string, colorName: string) => {
     setItems((prev) =>
       prev.filter(
-        (item) => !(item.product.id === productId && item.selectedColor.name === colorName)
+        (item) =>
+          !(item.product.id === productId && (item.selectedColor?.name || "Original") === colorName)
       )
     );
   };
@@ -115,7 +121,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
     setItems((prev) =>
       prev.map((item) =>
-        item.product.id === productId && item.selectedColor.name === colorName
+        item.product.id === productId && (item.selectedColor?.name || "Original") === colorName
           ? { ...item, quantity }
           : item
       )

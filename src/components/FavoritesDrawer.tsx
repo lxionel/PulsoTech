@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { useProducts } from "@/context/ProductsContext";
 import { STORE_SETTINGS } from "@/data/products";
+import { getAssetUrl } from "@/utils/paths";
 import { X, Heart, ShoppingBag, Trash2, ArrowRight } from "lucide-react";
 
 export default function FavoritesDrawer() {
@@ -85,7 +86,13 @@ export default function FavoritesDrawer() {
               </div>
             ) : (
               favoriteProducts.map((product) => {
-                const currentColor = product.colors[0];
+                const fallbackImg = getAssetUrl("/placeholder-earbuds.svg");
+                const currentColor = (product.colors && product.colors[0]) || {
+                  name: "Original",
+                  hex: "#18181b",
+                  image: product.images?.[0] || fallbackImg,
+                };
+                const displayImg = currentColor.image || product.images?.[0] || fallbackImg;
                 return (
                   <div
                     key={product.id}
@@ -96,17 +103,17 @@ export default function FavoritesDrawer() {
                       onClick={() => setIsFavoritesOpen(false)}
                       className="relative w-16 h-16 rounded-xl overflow-hidden bg-neutral-50 border border-neutral-100 shrink-0 flex items-center justify-center p-1"
                     >
-                      {currentColor?.image?.startsWith("data:") ||
-                      currentColor?.image?.startsWith("blob:") ||
-                      currentColor?.image?.startsWith("http") ? (
+                      {displayImg.startsWith("data:") ||
+                      displayImg.startsWith("blob:") ||
+                      displayImg.startsWith("http") ? (
                         <img
-                          src={currentColor.image}
+                          src={displayImg}
                           alt={product.name}
                           className="w-full h-full object-contain"
                         />
                       ) : (
                         <Image
-                          src={currentColor?.image || "/products/buds-6-black.jpg"}
+                          src={displayImg}
                           alt={product.name}
                           fill
                           className="object-contain p-1"
