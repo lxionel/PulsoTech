@@ -3,6 +3,18 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Product } from "@/types";
 import { PRODUCTS as DEFAULT_PRODUCTS } from "@/data/products";
+import {
+  isSupabaseReady,
+  fetchProductsFromSupabase,
+  upsertProductToSupabase,
+  deleteProductFromSupabase,
+  updateStockInSupabase,
+  fetchStoreSettingsFromSupabase,
+  saveStoreSettingsToSupabase,
+  saveSupabaseConfig,
+  getSupabaseConfig,
+  getSupabaseClient,
+} from "@/lib/supabase";
 
 interface ProductsContextType {
   products: Product[];
@@ -18,13 +30,21 @@ interface ProductsContextType {
   categories: string[];
   addCategory: (category: string) => void;
   deleteCategory: (category: string) => void;
+  // Supabase Cloud Integration
+  isCloudConfigured: boolean;
+  isCloudConnected: boolean;
+  cloudStatus: string;
+  connectSupabase: (url: string, anonKey: string) => Promise<{ success: boolean; message: string }>;
+  disconnectSupabase: () => void;
+  syncLocalToCloud: () => Promise<{ success: boolean; count: number; message: string }>;
+  refreshFromCloud: () => Promise<void>;
 }
 
 const ProductsContext = createContext<ProductsContextType | undefined>(undefined);
 
 const STORAGE_KEY = "pulsotech_custom_products";
 const DATA_VERSION_KEY = "pulsotech_catalog_data_version";
-const CURRENT_DATA_VERSION = "2026_09_25_v7";
+const CURRENT_DATA_VERSION = "2026_09_25_v8";
 
 const BRANDS_STORAGE_KEY = "pulsotech_custom_brands";
 const CATEGORIES_STORAGE_KEY = "pulsotech_custom_categories";
@@ -143,33 +163,182 @@ function getInitialProducts(): Product[] {
 
 export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<Product[]>(getInitialProducts);
+  const [brands, setBrands] = useState<string[]>(getInitialBrands);
+  const [categories, setCategories] = useState<string[]>(getInitialCategories);
 
-  // Sincronizar entre pestañas y recargas
-  useEffect(() => {
-    // 1. Cargar y sincronizar al montar en el cliente
+  // Estados de Supabase Cloud
+  const [isCloudConfigured, setIsCloudConfigured] = useState<boolean>(false);
+  const [isCloudConnected, setIsCloudConnected] = useState<boolean>(false);
+  const [cloudStatus, setCloudStatus] = useState<string>("Iniciando...");
+
+  // Guardar en localStorage de respaldo
+  const saveProductsLocal = useCallback((newProducts: Product[]) => {
+    setProducts(newProducts);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newProducts));
+        localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
+      } catch (e) {
+        console.error("Error writing to localStorage:", e);
+      }
+    }
+  }, []);
+
+  // Función para refrescar desde Supabase
+  const refreshFromCloud = useCallback(async () => {
+    if (!isSupabaseReady()) {
+      setIsCloudConfigured(false);
+      setIsCloudConnected(false);
+      setCloudStatus("Modo local (Sin Supabase configurado)");
+      return;
+    }
+
+    setIsCloudConfigured(true);
+    setCloudStatus("Conectando con Supabase...");
+
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      const version = localStorage.getItem(DATA_VERSION_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const synced = syncWithDefaults(parsed);
-          setProducts(synced);
-          if (version !== CURRENT_DATA_VERSION) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(synced));
-            localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
+      const cloudProds = await fetchProductsFromSupabase();
+      if (cloudProds !== null) {
+        setIsCloudConnected(true);
+        setCloudStatus("🟢 Conectado en tiempo real a Supabase");
+
+        if (cloudProds.length > 0) {
+          // Hay productos en la nube: actualizar estado local
+          setProducts(cloudProds);
+          if (typeof window !== "undefined") {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudProds));
+          }
+        } else {
+          setCloudStatus("🟢 Conectado a Supabase (Tabla de productos vacía)");
+        }
+
+        // Cargar marcas y categorías de la nube si existen
+        const cloudSettings = await fetchStoreSettingsFromSupabase();
+        if (cloudSettings) {
+          if (cloudSettings.brands && cloudSettings.brands.length > 0) {
+            setBrands(cloudSettings.brands);
+          }
+          if (cloudSettings.categories && cloudSettings.categories.length > 0) {
+            setCategories(cloudSettings.categories);
           }
         }
       } else {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_PRODUCTS));
-        localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
-        setProducts(DEFAULT_PRODUCTS);
+        setIsCloudConnected(false);
+        setCloudStatus("⚠️ Credenciales configuradas pero no se pudo conectar. Verifica la tabla 'products'.");
       }
     } catch (e) {
-      console.error(e);
+      console.error("Error en refreshFromCloud:", e);
+      setIsCloudConnected(false);
+      setCloudStatus("❌ Error al comunicar con Supabase");
+    }
+  }, []);
+
+  // Conectar Supabase dinámicamente desde el panel Admin
+  const connectSupabase = useCallback(async (url: string, anonKey: string): Promise<{ success: boolean; message: string }> => {
+    if (!url.trim() || !anonKey.trim()) {
+      return { success: false, message: "La URL y la Anon Key de Supabase son obligatorias." };
     }
 
-    // 2. Escuchar cambios de storage entre pestañas
+    saveSupabaseConfig(url.trim(), anonKey.trim());
+    setIsCloudConfigured(true);
+    setCloudStatus("Verificando conexión...");
+
+    const testResult = await fetchProductsFromSupabase();
+    if (testResult !== null) {
+      setIsCloudConnected(true);
+      setCloudStatus("🟢 Conectado exitosamente en tiempo real");
+      if (testResult.length > 0) {
+        setProducts(testResult);
+        if (typeof window !== "undefined") {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(testResult));
+        }
+      }
+      return {
+        success: true,
+        message: `¡Conexión establecida con éxito! Se sincronizaron ${testResult.length} productos desde Supabase.`,
+      };
+    } else {
+      setIsCloudConnected(false);
+      setCloudStatus("❌ Falló la conexión con Supabase");
+      return {
+        success: false,
+        message: "No se pudo conectar a Supabase. Verifica que la URL y Anon Key sean correctas y que hayas ejecutado el script SQL.",
+      };
+    }
+  }, []);
+
+  // Desconectar Supabase
+  const disconnectSupabase = useCallback(() => {
+    saveSupabaseConfig("", "");
+    setIsCloudConfigured(false);
+    setIsCloudConnected(false);
+    setCloudStatus("Modo local (Desconectado de Supabase)");
+  }, []);
+
+  // Subir el catálogo actual completo a Supabase
+  const syncLocalToCloud = useCallback(async (): Promise<{ success: boolean; count: number; message: string }> => {
+    if (!isSupabaseReady()) {
+      return { success: false, count: 0, message: "Supabase no está configurado." };
+    }
+
+    let successCount = 0;
+    for (const prod of products) {
+      const ok = await upsertProductToSupabase(prod);
+      if (ok) successCount++;
+    }
+
+    // Subir marcas y categorías también
+    await saveStoreSettingsToSupabase("brands", brands);
+    await saveStoreSettingsToSupabase("categories", categories);
+
+    if (successCount > 0) {
+      return {
+        success: true,
+        count: successCount,
+        message: `¡${successCount} de ${products.length} productos y configuraciones se subieron exitosamente a Supabase!`,
+      };
+    } else {
+      return {
+        success: false,
+        count: 0,
+        message: "Ocurrió un error al subir los productos. Revisa la consola o las políticas RLS en Supabase.",
+      };
+    }
+  }, [products, brands, categories]);
+
+  // Inicialización y suscripción en tiempo real
+  useEffect(() => {
+    refreshFromCloud();
+
+    // Suscripción Realtime en Supabase si está disponible
+    const client = getSupabaseClient();
+    if (client) {
+      const channel = client
+        .channel("realtime-products-sync")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "products" },
+          () => {
+            fetchProductsFromSupabase().then((data) => {
+              if (data && Array.isArray(data)) {
+                setProducts(data);
+                if (typeof window !== "undefined") {
+                  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                }
+              }
+            });
+          }
+        )
+        .subscribe();
+
+      return () => {
+        client.removeChannel(channel);
+      };
+    }
+  }, [refreshFromCloud]);
+
+  // Sincronizar storage entre pestañas cuando se usa modo local
+  useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === STORAGE_KEY && e.newValue) {
         try {
@@ -182,104 +351,76 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         }
       }
     };
-
-    // 3. Escuchar evento personalizado en la misma ventana
-    const handleCustomUpdate = () => {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            setProducts(parsed);
-          }
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
     window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("pulsotech_products_updated", handleCustomUpdate);
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("pulsotech_products_updated", handleCustomUpdate);
-    };
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  const saveProducts = useCallback((newProducts: Product[]) => {
-    setProducts(newProducts);
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newProducts));
-        window.dispatchEvent(new Event("pulsotech_products_updated"));
-      } catch (e) {
-        console.error("Error saving to localStorage:", e);
-      }
-    }
-  }, []);
-
+  // Mutaciones de Productos (Sincronizan tanto local como en Supabase)
   const addProduct = useCallback((newProduct: Product) => {
     setProducts((prev) => {
-      const next = [newProduct, ...prev.filter((p) => p.id !== newProduct.id)];
-      saveProducts(next);
+      const exists = prev.some((p) => p.id === newProduct.id);
+      const next = exists ? prev.map((p) => (p.id === newProduct.id ? newProduct : p)) : [newProduct, ...prev];
+      saveProductsLocal(next);
       return next;
     });
-  }, [saveProducts]);
+
+    if (isSupabaseReady()) {
+      upsertProductToSupabase(newProduct).catch((err) => {
+        console.error("Error guardando producto en Supabase:", err);
+      });
+    }
+  }, [saveProductsLocal]);
 
   const updateProduct = useCallback((updatedProduct: Product) => {
     setProducts((prev) => {
       const next = prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p));
-      saveProducts(next);
+      saveProductsLocal(next);
       return next;
     });
-  }, [saveProducts]);
+
+    if (isSupabaseReady()) {
+      upsertProductToSupabase(updatedProduct).catch((err) => {
+        console.error("Error actualizando producto en Supabase:", err);
+      });
+    }
+  }, [saveProductsLocal]);
 
   const deleteProduct = useCallback((id: string) => {
     setProducts((prev) => {
       const next = prev.filter((p) => p.id !== id);
-      saveProducts(next);
+      saveProductsLocal(next);
       return next;
     });
-  }, [saveProducts]);
+
+    if (isSupabaseReady()) {
+      deleteProductFromSupabase(id).catch((err) => {
+        console.error("Error eliminando producto en Supabase:", err);
+      });
+    }
+  }, [saveProductsLocal]);
 
   const updateStock = useCallback((id: string, value: number, isDelta: boolean = false) => {
+    let finalStock = 0;
     setProducts((prev) => {
       const next = prev.map((p) => {
         if (p.id !== id) return p;
-        const newStock = isDelta
-          ? Math.max(0, p.stockCount + value)
-          : Math.max(0, value);
+        finalStock = isDelta ? Math.max(0, p.stockCount + value) : Math.max(0, value);
         return {
           ...p,
-          stockCount: newStock,
-          inStock: newStock > 0,
+          stockCount: finalStock,
+          inStock: finalStock > 0,
         };
       });
-      saveProducts(next);
+      saveProductsLocal(next);
       return next;
     });
-  }, [saveProducts]);
 
-  const [brands, setBrands] = useState<string[]>(getInitialBrands);
-  const [categories, setCategories] = useState<string[]>(getInitialCategories);
-
-  // Sincronizar marcas y categorías al montar
-  useEffect(() => {
-    try {
-      const storedB = localStorage.getItem(BRANDS_STORAGE_KEY);
-      if (storedB) {
-        const parsed = JSON.parse(storedB);
-        if (Array.isArray(parsed) && parsed.length > 0) setBrands(parsed);
-      }
-      const storedC = localStorage.getItem(CATEGORIES_STORAGE_KEY);
-      if (storedC) {
-        const parsed = JSON.parse(storedC);
-        if (Array.isArray(parsed) && parsed.length > 0) setCategories(parsed);
-      }
-    } catch (e) {
-      console.error(e);
+    if (isSupabaseReady()) {
+      updateStockInSupabase(id, finalStock).catch((err) => {
+        console.error("Error actualizando stock en Supabase:", err);
+      });
     }
-  }, []);
+  }, [saveProductsLocal]);
 
   const addBrand = useCallback((newBrand: string) => {
     const trimmed = newBrand.trim();
@@ -290,6 +431,9 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       if (typeof window !== "undefined") {
         localStorage.setItem(BRANDS_STORAGE_KEY, JSON.stringify(next));
       }
+      if (isSupabaseReady()) {
+        saveStoreSettingsToSupabase("brands", next).catch(console.error);
+      }
       return next;
     });
   }, []);
@@ -299,6 +443,9 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       const next = prev.filter((b) => b.toLowerCase() !== brandToDelete.toLowerCase());
       if (typeof window !== "undefined") {
         localStorage.setItem(BRANDS_STORAGE_KEY, JSON.stringify(next));
+      }
+      if (isSupabaseReady()) {
+        saveStoreSettingsToSupabase("brands", next).catch(console.error);
       }
       return next;
     });
@@ -313,6 +460,9 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       if (typeof window !== "undefined") {
         localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(next));
       }
+      if (isSupabaseReady()) {
+        saveStoreSettingsToSupabase("categories", next).catch(console.error);
+      }
       return next;
     });
   }, []);
@@ -323,13 +473,19 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       if (typeof window !== "undefined") {
         localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(next));
       }
+      if (isSupabaseReady()) {
+        saveStoreSettingsToSupabase("categories", next).catch(console.error);
+      }
       return next;
     });
   }, []);
 
   const resetToDefault = useCallback(() => {
-    saveProducts(DEFAULT_PRODUCTS);
-  }, [saveProducts]);
+    saveProductsLocal(DEFAULT_PRODUCTS);
+    if (isSupabaseReady()) {
+      syncLocalToCloud().catch(console.error);
+    }
+  }, [saveProductsLocal, syncLocalToCloud]);
 
   const exportProductsJson = useCallback(() => {
     return JSON.stringify(products, null, 2);
@@ -351,6 +507,13 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         categories,
         addCategory,
         deleteCategory,
+        isCloudConfigured,
+        isCloudConnected,
+        cloudStatus,
+        connectSupabase,
+        disconnectSupabase,
+        syncLocalToCloud,
+        refreshFromCloud,
       }}
     >
       {children}
