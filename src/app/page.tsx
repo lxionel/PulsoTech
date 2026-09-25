@@ -4,8 +4,6 @@ import React from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import ProductCatalog from "@/components/ProductCatalog";
-import HowToBuy from "@/components/HowToBuy";
-import FaqSection from "@/components/FaqSection";
 import Footer from "@/components/Footer";
 
 export default function Home() {
@@ -14,19 +12,13 @@ export default function Home() {
       {/* Main Navigation */}
       <Navbar />
 
-      {/* Main Content */}
+      {/* Main Content: 100% Tienda Comercial Pura */}
       <main className="flex-1">
-        {/* 1. Commercial Hero Showcase (Fixed single image, green button) */}
+        {/* 1. Commercial Hero Showcase */}
         <HeroSection />
 
         {/* 2. Real E-Commerce Product Catalog with Vertical Filters & Grid */}
         <ProductCatalog />
-
-        {/* 3. Simple 3-Step Buying Guide */}
-        <HowToBuy />
-
-        {/* 4. Frequently Asked Questions */}
-        <FaqSection />
       </main>
 
       {/* Clean Customer Footer */}
