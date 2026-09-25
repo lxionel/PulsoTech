@@ -48,11 +48,6 @@ export default function ProductCard({ product }: { product: Product }) {
             <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
               {product.brand}
             </span>
-            {product.isNew && (
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-600 text-white tracking-wide uppercase">
-                Nuevo
-              </span>
-            )}
           </div>
 
           <div className="flex items-center gap-2">

@@ -1254,13 +1254,9 @@ export default function AdminPage() {
                       <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
                         {formBrand || "XIAOMI"}
                       </span>
-                      {formHasPromo ? (
+                      {formHasPromo && (
                         <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-600 text-white tracking-wide uppercase">
                           {formPromoTag}
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-600 text-white tracking-wide uppercase">
-                          Nuevo
                         </span>
                       )}
                     </div>

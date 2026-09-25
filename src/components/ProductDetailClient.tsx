@@ -320,12 +320,6 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 <span className="px-3 py-1 rounded-md text-xs font-bold bg-neutral-950 text-white tracking-wide">
                   En Stock
                 </span>
-
-                {product.isNew && (
-                  <span className="px-2.5 py-1 rounded-md text-xs font-bold bg-blue-600 text-white tracking-wide uppercase">
-                    Nuevo Modelo
-                  </span>
-                )}
               </div>
 
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-neutral-950 tracking-tight leading-tight">
@@ -384,11 +378,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             {/* Selector de Colores Disponibles */}
             {colors.length > 0 && (
               <div className="p-4 rounded-2xl bg-white border border-neutral-200/90 shadow-2xs space-y-2.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-neutral-900">Color Disponible:</span>
-                  <span className="font-extrabold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
-                    {currentColor?.name}
-                  </span>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-neutral-500 font-medium">Color:</span>
+                  <span className="font-extrabold text-neutral-950">{currentColor?.name}</span>
                 </div>
                 <div className="flex items-center gap-2.5 pt-1">
                   {colors.map((c, idx) => {

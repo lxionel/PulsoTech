@@ -17,16 +17,69 @@ interface ProductsContextType {
 const ProductsContext = createContext<ProductsContextType | undefined>(undefined);
 
 const STORAGE_KEY = "pulsotech_custom_products";
+const DATA_VERSION_KEY = "pulsotech_catalog_data_version";
+const CURRENT_DATA_VERSION = "2026_09_25_v5";
+
+function syncWithDefaults(storedList: Product[]): Product[] {
+  if (!Array.isArray(storedList) || storedList.length === 0) {
+    return DEFAULT_PRODUCTS;
+  }
+
+  const updatedList = storedList.map((storedProd) => {
+    const defaultMatch = DEFAULT_PRODUCTS.find(
+      (dp) => dp.id === storedProd.id || dp.slug === storedProd.slug
+    );
+    if (!defaultMatch) {
+      // Es un producto nuevo creado por el usuario en el admin
+      return storedProd;
+    }
+
+    // Es un producto del catálogo por defecto.
+    // Si tiene colores desactualizados (solo 1 color, o dice "Original" o tiene menos colores que DEFAULT_PRODUCTS)
+    const hasOutdatedColors =
+      !storedProd.colors ||
+      storedProd.colors.length <= 1 ||
+      (storedProd.colors.length === 1 && storedProd.colors[0]?.name === "Original") ||
+      storedProd.colors.length < defaultMatch.colors.length;
+
+    return {
+      ...defaultMatch,
+      stockCount: typeof storedProd.stockCount === "number" ? storedProd.stockCount : defaultMatch.stockCount,
+      inStock: typeof storedProd.inStock === "boolean" ? storedProd.inStock : defaultMatch.inStock,
+      price: typeof storedProd.price === "number" ? storedProd.price : defaultMatch.price,
+      colors: hasOutdatedColors ? defaultMatch.colors : storedProd.colors,
+      images: defaultMatch.images && defaultMatch.images.length > 1 ? defaultMatch.images : storedProd.images,
+    };
+  });
+
+  // Asegurar que no falte ningún producto de DEFAULT_PRODUCTS
+  DEFAULT_PRODUCTS.forEach((dp) => {
+    if (!updatedList.some((p) => p.id === dp.id || p.slug === dp.slug)) {
+      updatedList.push(dp);
+    }
+  });
+
+  return updatedList;
+}
 
 function getInitialProducts(): Product[] {
   if (typeof window !== "undefined") {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
+      const version = localStorage.getItem(DATA_VERSION_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          const synced = syncWithDefaults(parsed);
+          if (version !== CURRENT_DATA_VERSION) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(synced));
+            localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
+          }
+          return synced;
         }
+      } else {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_PRODUCTS));
+        localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
       }
     } catch (e) {
       console.error("Error reading localStorage:", e);
@@ -40,14 +93,24 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
 
   // Sincronizar entre pestañas y recargas
   useEffect(() => {
-    // 1. Cargar al montar en el cliente
+    // 1. Cargar y sincronizar al montar en el cliente
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
+      const version = localStorage.getItem(DATA_VERSION_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setProducts(parsed);
+          const synced = syncWithDefaults(parsed);
+          setProducts(synced);
+          if (version !== CURRENT_DATA_VERSION) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(synced));
+            localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
+          }
         }
+      } else {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_PRODUCTS));
+        localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
+        setProducts(DEFAULT_PRODUCTS);
       }
     } catch (e) {
       console.error(e);
