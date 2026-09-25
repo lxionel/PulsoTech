@@ -4,9 +4,12 @@ import { Product } from "@/types";
 const LOCAL_STORAGE_URL_KEY = "pulsotech_supabase_url";
 const LOCAL_STORAGE_KEY_KEY = "pulsotech_supabase_anon_key";
 
+export const DEFAULT_SUPABASE_URL = "https://upovmpudzgtafobtxnfr.supabase.co";
+export const DEFAULT_SUPABASE_ANON_KEY = "sb_publishable_xvdDq0pAicQ-0C4PYkvlVQ_wN_Xqakm";
+
 export function getSupabaseConfig(): { url: string; anonKey: string } {
-  let url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  let anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+  let url = process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL;
+  let anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
 
   if (typeof window !== "undefined") {
     const savedUrl = localStorage.getItem(LOCAL_STORAGE_URL_KEY);
