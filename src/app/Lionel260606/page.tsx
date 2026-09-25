@@ -158,13 +158,6 @@ export default function AdminPage() {
     categories,
     addCategory,
     deleteCategory,
-    isCloudConfigured,
-    isCloudConnected,
-    cloudStatus,
-    connectSupabase,
-    disconnectSupabase,
-    syncLocalToCloud,
-    refreshFromCloud,
   } = useProducts();
 
   // Navegación por pestañas
@@ -173,16 +166,6 @@ export default function AdminPage() {
   // Estados de WhatsApp
   const [phoneInput, setPhoneInput] = useState(whatsappNumber);
   const [phoneSaved, setPhoneSaved] = useState(false);
-  const [isRefreshingCloud, setIsRefreshingCloud] = useState(false);
-  const [refreshNotice, setRefreshNotice] = useState(false);
-
-  const handleRefreshData = async () => {
-    setIsRefreshingCloud(true);
-    await refreshFromCloud();
-    setIsRefreshingCloud(false);
-    setRefreshNotice(true);
-    setTimeout(() => setRefreshNotice(false), 3000);
-  };
 
   // Filtros de búsqueda en inventario
   const [searchFilter, setSearchFilter] = useState("");
@@ -639,39 +622,11 @@ export default function AdminPage() {
                 <span className="text-xs sm:text-sm font-black text-neutral-950 tracking-tight">
                   PulsoTech Panel
                 </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 ml-1.5 hidden md:inline">
-                  En Vivo
-                </span>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Indicador de Estado Cloud / Local */}
-            <button
-              onClick={() => setActiveTab("settings")}
-              title={
-                isCloudConfigured
-                  ? "Base de datos en la nube Supabase conectada. Los cambios se sincronizan en tiempo real para todos los clientes."
-                  : "Modo Local: Datos guardados únicamente en este navegador. Haz clic para conectar Supabase."
-              }
-              className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-all border cursor-pointer ${
-                isCloudConfigured
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                  : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
-              }`}
-            >
-              <span
-                className={`w-2 h-2 rounded-full shrink-0 ${
-                  isCloudConfigured ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
-                }`}
-              />
-              <span className="flex items-center gap-1">
-                <Database className="w-3 h-3" />
-                <span>{isCloudConfigured ? "Supabase Nube" : "Modo Local"}</span>
-              </span>
-            </button>
-
             <button
               onClick={handleNewProductClick}
               className="px-3 sm:px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer shrink-0"
@@ -2138,47 +2093,6 @@ export default function AdminPage() {
               )}
             </form>
 
-            {/* Tarjeta de Estado del Sistema & Nube */}
-            <div className="p-6 rounded-2xl border border-neutral-200 bg-white shadow-xs space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3.5">
-                  <div className="p-3 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 shrink-0">
-                    <Database className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold text-neutral-950">
-                        Base de Datos en la Nube
-                      </h3>
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-bold text-emerald-700">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Sincronización en Tiempo Real Activa
-                      </span>
-                    </div>
-                    <p className="text-xs text-neutral-500 mt-0.5">
-                      Tus productos, precios, fotos y stock se sincronizan automáticamente con Supabase y son visibles en tiempo real para todos tus clientes.
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleRefreshData}
-                  disabled={isRefreshingCloud}
-                  className="px-4 py-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 disabled:opacity-50 text-neutral-800 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 self-start sm:self-auto"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingCloud ? "animate-spin text-emerald-600" : ""}`} />
-                  <span>{isRefreshingCloud ? "Comprobando..." : "Comprobar Sincronización"}</span>
-                </button>
-              </div>
-
-              {refreshNotice && (
-                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
-                  <CheckCircle className="w-4 h-4 text-emerald-600" />
-                  <span>¡Datos verificados y sincronizados correctamente con la nube!</span>
-                </div>
-              )}
-            </div>
           </div>
         )}
       </main>
