@@ -1287,29 +1287,29 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  {/* Selector de Colores en la Vista Previa */}
-                  <div className="min-h-[26px] flex items-center gap-1.5 pb-2">
+                  {/* Selector de Colores en la Vista Previa (Inmóvil y exacto) */}
+                  <div className="h-7 flex items-center gap-1.5 shrink-0 pb-1">
                     {formColors.map((color, idx) => (
                       <button
                         key={idx}
                         type="button"
                         onClick={() => setPreviewColorIndex(idx)}
-                        className={`relative rounded-full transition-all duration-200 cursor-pointer flex items-center justify-center ${
-                          previewColorIndex === idx
-                            ? "w-5 h-5 ring-2 ring-offset-2 ring-neutral-900"
-                            : "w-4 h-4 hover:scale-110 opacity-75 hover:opacity-100"
-                        }`}
+                        className="w-6 h-6 flex items-center justify-center cursor-pointer shrink-0 transition-opacity"
                         title={color.name}
                       >
                         <span
-                          className={`w-full h-full rounded-full border border-neutral-300 block ${
+                          className={`rounded-full border border-neutral-300 transition-all duration-150 block ${
+                            previewColorIndex === idx
+                              ? "w-4 h-4 ring-2 ring-offset-2 ring-neutral-900 opacity-100"
+                              : "w-3.5 h-3.5 opacity-70 hover:opacity-100"
+                          } ${
                             color.hex?.toLowerCase() === "#ffffff" ? "bg-white" : ""
                           }`}
                           style={{ backgroundColor: color.hex }}
                         />
                       </button>
                     ))}
-                    <span className="text-[10px] font-semibold text-neutral-400 ml-1">
+                    <span className="text-[10px] font-semibold text-neutral-400 ml-1 truncate max-w-[80px]">
                       {formColors[previewColorIndex]?.name}
                     </span>
                   </div>

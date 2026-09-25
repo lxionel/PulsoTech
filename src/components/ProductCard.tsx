@@ -94,10 +94,10 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
         </div>
 
-        {/* Selector de Colores Disponibles (Swatches con aro activo) */}
-        <div className="min-h-[28px] flex items-center gap-1.5 pt-3 pb-0.5">
+        {/* Selector de Colores Disponibles (Swatches con aro activo, selección SOLO al hacer clic) */}
+        <div className="h-7 flex items-center gap-1.5 pt-2 pb-0.5 shrink-0">
           {colors.length > 0 && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               {colors.map((color, idx) => {
                 const isSelected = selectedColorIndex === idx;
                 return (
@@ -109,17 +109,16 @@ export default function ProductCard({ product }: { product: Product }) {
                       e.stopPropagation();
                       setSelectedColorIndex(idx);
                     }}
-                    onMouseEnter={() => setSelectedColorIndex(idx)}
                     aria-label={`Color ${color.name}`}
                     title={color.name}
-                    className={`relative rounded-full transition-all duration-200 cursor-pointer flex items-center justify-center ${
-                      isSelected
-                        ? "w-5 h-5 ring-2 ring-offset-2 ring-neutral-900"
-                        : "w-4 h-4 hover:scale-110 opacity-75 hover:opacity-100"
-                    }`}
+                    className="w-6 h-6 flex items-center justify-center cursor-pointer shrink-0 transition-opacity"
                   >
                     <span
-                      className={`w-full h-full rounded-full border border-neutral-300 block ${
+                      className={`rounded-full border border-neutral-300 transition-all duration-150 block ${
+                        isSelected
+                          ? "w-4 h-4 ring-2 ring-offset-2 ring-neutral-900 opacity-100"
+                          : "w-3.5 h-3.5 opacity-70 hover:opacity-100"
+                      } ${
                         color.hex?.toLowerCase() === "#ffffff" ? "bg-white" : ""
                       }`}
                       style={{ backgroundColor: color.hex }}
@@ -127,14 +126,14 @@ export default function ProductCard({ product }: { product: Product }) {
                   </button>
                 );
               })}
-              <span className="text-[10px] font-semibold text-neutral-400 ml-1">
+              <span className="text-[10px] font-semibold text-neutral-400 ml-1 truncate max-w-[80px]">
                 {currentColor?.name}
               </span>
             </div>
           )}
         </div>
 
-        {/* Title & Subtitle */}
+        {/* Title & Subtitle (Inmóviles y perfectamente alineados) */}
         <div className="pt-1 pb-3">
           <h3 className="text-base sm:text-lg font-extrabold text-neutral-950 group-hover:text-blue-600 transition-colors leading-snug line-clamp-1 min-h-[1.75rem]">
             {product.name}
