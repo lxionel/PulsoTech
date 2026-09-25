@@ -32,6 +32,8 @@ import {
   Video as VideoIcon,
   Plus,
   Layers,
+  Check,
+  ArrowRight,
 } from "lucide-react";
 
 interface SaleRecord {
@@ -199,6 +201,7 @@ export default function AdminPage() {
 
   // ====== ESTADO DEL FORMULARIO DE AGREGAR / EDITAR PRODUCTO (INICIALMENTE LIMPIO) ======
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [formActiveStep, setFormActiveStep] = useState<1 | 2 | 3 | 4>(1);
   const [formCustomId, setFormCustomId] = useState(generate6DigitId());
   const [formName, setFormName] = useState("");
   const [formBrand, setFormBrand] = useState(brands[0] || "Xiaomi");
@@ -414,6 +417,7 @@ export default function AdminPage() {
       template.forEach((t) => loadedSpecs.push({ label: t.label, value: "" }));
     }
     setFormCustomSpecs(loadedSpecs);
+    setFormActiveStep(1);
 
     setActiveTab("add_product");
   };
@@ -421,6 +425,7 @@ export default function AdminPage() {
   // Limpiar formulario para nuevo producto (100% LIMPIO, SIN EJEMPLOS PRECARGADOS)
   const handleNewProductClick = () => {
     setEditingProductId(null);
+    setFormActiveStep(1);
     setFormCustomId(generate6DigitId());
     setFormName("");
     setFormBrand(brands[0] || "Xiaomi");
@@ -967,639 +972,782 @@ export default function AdminPage() {
 
             {/* Split Formulario + Live Preview */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              {/* Formulario (7 Cols) */}
-              <form onSubmit={handleSaveProduct} className="lg:col-span-7 space-y-6 bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm">
-                {/* 1. Datos Principales */}
-                <div className="space-y-4">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 border-b border-neutral-100 pb-2">
-                    1. Información Básica &amp; Identificador
-                  </h3>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="text-xs font-bold text-neutral-900">
-                          ID (6 dígitos) *
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => setFormCustomId(generate6DigitId())}
-                          className="text-[10px] font-bold text-neutral-700 hover:text-black flex items-center gap-1 cursor-pointer bg-neutral-100 hover:bg-neutral-200 px-2 py-0.5 rounded transition-colors"
-                          title="Generar nuevo número de 6 dígitos aleatorio"
-                        >
-                          🎲 Generar ID
-                        </button>
-                      </div>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-neutral-400 text-xs">
-                          #
-                        </span>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          maxLength={6}
-                          placeholder="100001"
-                          value={formCustomId}
-                          onChange={(e) => setFormCustomId(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                          className="w-full pl-7 pr-3 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 tracking-wider"
-                        />
-                      </div>
-                      <span className="text-[10px] text-neutral-400 mt-1 block">
-                        Código numérico único de 6 dígitos para rastreo rápido.
-                      </span>
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="text-xs font-bold text-neutral-900 block mb-1">
-                        Nombre del Producto *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Ej: Redmi Buds 6 Active ANC"
-                        value={formName}
-                        onChange={(e) => setFormName(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-sm text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 font-semibold"
-                      />
-                    </div>
+              {/* Formulario Organizado en 4 Pasos (7 Cols) */}
+              <form onSubmit={handleSaveProduct} className="lg:col-span-7 space-y-6 bg-white p-5 sm:p-7 rounded-2xl border border-neutral-200 shadow-xs">
+                {/* 4-Step Progress Selector Tabs */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                      Paso {formActiveStep} de 4
+                    </span>
+                    {editingProductId && (
+                      <button
+                        type="submit"
+                        className="text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                        title="Guardar cambios directamente"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        <span>Guardar de inmediato</span>
+                      </button>
+                    )}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="text-xs font-bold text-neutral-900">
-                          Marca
-                        </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { id: 1, title: "1. Info Básica", subtitle: "Datos y detalle", icon: Tag },
+                      { id: 2, title: "2. Colores & Fotos", subtitle: "Variantes y fotos", icon: Sparkles },
+                      { id: 3, title: "3. Ficha Técnica", subtitle: "Especificaciones", icon: Layers },
+                      { id: 4, title: "4. Precios & Stock", subtitle: "Valores y oferta", icon: DollarSign },
+                    ].map((step) => {
+                      const Icon = step.icon;
+                      const isActive = formActiveStep === step.id;
+                      const isCompleted = formActiveStep > step.id;
+                      return (
                         <button
+                          key={step.id}
                           type="button"
-                          onClick={() => {
-                            const nb = prompt("Ingresa el nombre de la nueva marca:");
-                            if (nb && nb.trim()) {
-                              addBrand(nb.trim());
-                              setFormBrand(nb.trim());
-                            }
-                          }}
-                          className="text-[10px] font-bold text-neutral-700 hover:text-black cursor-pointer underline"
+                          onClick={() => setFormActiveStep(step.id as 1 | 2 | 3 | 4)}
+                          className={`p-2.5 sm:p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+                            isActive
+                              ? "bg-neutral-950 text-white border-neutral-950 shadow-sm ring-2 ring-neutral-950/20"
+                              : isCompleted
+                              ? "bg-neutral-50 border-neutral-300 text-neutral-900 hover:bg-neutral-100"
+                              : "bg-white border-neutral-200 text-neutral-400 hover:border-neutral-300 hover:text-neutral-700"
+                          }`}
                         >
-                          ＋ Nueva Marca
+                          <div className="flex items-center justify-between w-full">
+                            <Icon className={`w-3.5 h-3.5 ${isActive ? "text-amber-400" : isCompleted ? "text-emerald-600" : "text-neutral-400"}`} />
+                            {isCompleted && <Check className="w-3 h-3 text-emerald-600" />}
+                          </div>
+                          <div>
+                            <span className="text-xs font-black block truncate">{step.title}</span>
+                            <span className={`text-[10px] block truncate ${isActive ? "text-neutral-300" : "text-neutral-400"}`}>{step.subtitle}</span>
+                          </div>
                         </button>
-                      </div>
-                      <select
-                        value={formBrand}
-                        onChange={(e) => setFormBrand(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-semibold text-neutral-900 focus:outline-none focus:bg-white"
-                      >
-                        {brands.map((b) => (
-                          <option key={b} value={b}>
-                            {b}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="text-xs font-bold text-neutral-900">
-                          Categoría
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const nc = prompt("Ingresa el nombre de la nueva categoría:");
-                            if (nc && nc.trim()) {
-                              addCategory(nc.trim());
-                              handleCategoryChange(nc.trim());
-                            }
-                          }}
-                          className="text-[10px] font-bold text-neutral-700 hover:text-black cursor-pointer underline"
-                        >
-                          ＋ Nueva Categoría
-                        </button>
-                      </div>
-                      <select
-                        value={formCategory}
-                        onChange={(e) => handleCategoryChange(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-semibold text-neutral-900 focus:outline-none focus:bg-white"
-                      >
-                        {categories.map((c) => (
-                          <option key={c} value={c}>
-                            {c}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-bold text-neutral-900 block mb-1">
-                      Subtítulo o Resumen Breve
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Ej: Sin cancelación de ruido · 36h de batería · Resistencia IPX4"
-                      value={formSubtitle}
-                      onChange={(e) => setFormSubtitle(e.target.value)}
-                      className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none focus:bg-white"
-                    />
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* 2. Especificaciones Técnicas por Categoría */}
-                <div className="space-y-4 pt-2">
-                  <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
-                    <div>
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
-                        <Layers className="w-3.5 h-3.5 text-neutral-900" />
-                        <span>2. Ficha Técnica Oficial ({formCategory})</span>
+                {/* ===== PASO 1: INFORMACIÓN BÁSICA ===== */}
+                {formActiveStep === 1 && (
+                  <div className="space-y-4 animate-in fade-in duration-200">
+                    <div className="border-b border-neutral-100 pb-2">
+                      <h3 className="text-sm font-extrabold text-neutral-950 flex items-center gap-2">
+                        <Tag className="w-4 h-4 text-neutral-900" />
+                        <span>Paso 1: Información Básica &amp; Identificador</span>
                       </h3>
-                      <p className="text-[11px] text-neutral-500 mt-0.5">
-                        Preguntas y campos formales según la categoría seleccionada. Se mostrarán con iconos en la ficha del producto.
+                      <p className="text-xs text-neutral-500 mt-0.5">
+                        Define el identificador numérico de 6 dígitos, nombre, marca, categoría y descripción.
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const tpl = getCategorySpecTemplate(formCategory);
-                          setFormCustomSpecs(tpl.map((t) => ({ label: t.label, value: "" })));
-                        }}
-                        className="px-2.5 py-1 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-[11px] font-bold text-neutral-700 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
-                        title="Restablecer plantilla formal para esta categoría"
-                      >
-                        <RefreshCw className="w-3 h-3" />
-                        <span>Plantilla</span>
-                      </button>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-xs font-bold text-neutral-900">
+                            ID (6 dígitos) *
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setFormCustomId(generate6DigitId())}
+                            className="text-[10px] font-bold text-neutral-700 hover:text-black flex items-center gap-1 cursor-pointer bg-neutral-100 hover:bg-neutral-200 px-2 py-0.5 rounded transition-colors"
+                            title="Generar nuevo número de 6 dígitos aleatorio"
+                          >
+                            🎲 Generar ID
+                          </button>
+                        </div>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-neutral-400 text-xs">
+                            #
+                          </span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={6}
+                            placeholder="100001"
+                            value={formCustomId}
+                            onChange={(e) => setFormCustomId(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                            className="w-full pl-7 pr-3 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 tracking-wider"
+                          />
+                        </div>
+                        <span className="text-[10px] text-neutral-400 mt-1 block">
+                          Código único de 6 dígitos para pedidos por WhatsApp.
+                        </span>
+                      </div>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFormCustomSpecs([...formCustomSpecs, { label: "", value: "" }]);
-                        }}
-                        className="px-2.5 py-1 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-[11px] font-bold text-white flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
-                      >
-                        <Plus className="w-3 h-3" />
-                        <span>+ Característica</span>
-                      </button>
+                      <div className="sm:col-span-2">
+                        <label className="text-xs font-bold text-neutral-900 block mb-1">
+                          Nombre del Producto *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ej: Redmi Buds 6 Active ANC"
+                          value={formName}
+                          onChange={(e) => setFormName(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-sm text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 font-semibold"
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-3 bg-neutral-50/70 p-4 rounded-xl border border-neutral-200/80">
-                    {formCustomSpecs.map((spec, sIdx) => (
-                      <div key={sIdx} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
-                        <div className="sm:col-span-5">
-                          <input
-                            type="text"
-                            placeholder="Nombre formal (ej: Autonomía)"
-                            value={spec.label}
-                            onChange={(e) => {
-                              const next = [...formCustomSpecs];
-                              next[sIdx].label = e.target.value;
-                              setFormCustomSpecs(next);
-                            }}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-200 text-xs font-bold text-neutral-900 focus:outline-none focus:border-neutral-900"
-                          />
-                        </div>
-                        <div className="sm:col-span-6">
-                          <input
-                            type="text"
-                            placeholder="Valor / Especificación (ej: Hasta 30 horas)"
-                            value={spec.value}
-                            onChange={(e) => {
-                              const next = [...formCustomSpecs];
-                              next[sIdx].value = e.target.value;
-                              setFormCustomSpecs(next);
-                            }}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-200 text-xs text-neutral-800 focus:outline-none focus:border-neutral-900"
-                          />
-                        </div>
-                        <div className="sm:col-span-1 flex justify-end">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-xs font-bold text-neutral-900">
+                            Marca
+                          </label>
                           <button
                             type="button"
                             onClick={() => {
-                              setFormCustomSpecs(formCustomSpecs.filter((_, i) => i !== sIdx));
+                              const nb = prompt("Ingresa el nombre de la nueva marca:");
+                              if (nb && nb.trim()) {
+                                addBrand(nb.trim());
+                                setFormBrand(nb.trim());
+                              }
                             }}
-                            className="p-1.5 text-neutral-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                            title="Eliminar esta característica"
+                            className="text-[10px] font-bold text-neutral-700 hover:text-black cursor-pointer underline"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            ＋ Nueva Marca
                           </button>
                         </div>
+                        <select
+                          value={formBrand}
+                          onChange={(e) => setFormBrand(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-semibold text-neutral-900 focus:outline-none focus:bg-white"
+                        >
+                          {brands.map((b) => (
+                            <option key={b} value={b}>
+                              {b}
+                            </option>
+                          ))}
+                        </select>
                       </div>
-                    ))}
 
-                    {formCustomSpecs.length === 0 && (
-                      <div className="text-center py-4 text-xs text-neutral-400">
-                        No hay características agregadas. Pulsa &quot;+ Característica&quot; para añadir especificaciones técnicas.
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* 3. Precios & Promociones */}
-                <div className="space-y-4 pt-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 border-b border-neutral-100 pb-2">
-                    3. Precios, Descuentos &amp; Stock
-                  </h3>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-bold text-neutral-900 block mb-1">
-                        Precio de Venta ({STORE_SETTINGS.currencySymbol}) *
-                      </label>
-                      <input
-                        type="number"
-                        step="0.5"
-                        required
-                        min={1}
-                        value={formPrice}
-                        onChange={(e) => setFormPrice(parseFloat(e.target.value) || 0)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-base font-extrabold text-neutral-950 focus:outline-none focus:bg-white focus:border-emerald-600 font-mono"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-xs font-bold text-neutral-900 block mb-1">
-                        Stock Inicial (unidades)
-                      </label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={formStock}
-                        onChange={(e) => setFormStock(parseInt(e.target.value) || 0)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-base font-extrabold text-neutral-950 focus:outline-none focus:bg-white font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Switch Promoción */}
-                  <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/70 space-y-3">
-                    <label className="flex items-center gap-3 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={formHasPromo}
-                        onChange={(e) => setFormHasPromo(e.target.checked)}
-                        className="w-4 h-4 rounded text-red-600 focus:ring-0 bg-white border-neutral-300"
-                      />
-                      <span className="text-xs font-extrabold text-neutral-900 flex items-center gap-1.5">
-                        <Tag className="w-3.5 h-3.5 text-red-600" />
-                        <span>Activar Precio de Oferta / Promoción Especial</span>
-                      </span>
-                    </label>
-
-                    {formHasPromo && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-neutral-200">
-                        <div>
-                          <label className="text-[11px] font-bold text-neutral-600 block mb-1">
-                            Precio Original Tachado ({STORE_SETTINGS.currencySymbol})
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-xs font-bold text-neutral-900">
+                            Categoría
                           </label>
-                          <input
-                            type="number"
-                            step="0.5"
-                            value={formOriginalPrice}
-                            onChange={(e) => setFormOriginalPrice(parseFloat(e.target.value) || 0)}
-                            className="w-full px-3.5 py-2 rounded-xl bg-white border border-neutral-200 text-xs font-bold text-neutral-900 font-mono"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="text-[11px] font-bold text-neutral-600 block mb-1">
-                            Etiqueta en Tarjeta
-                          </label>
-                          <select
-                            value={formPromoTag}
-                            onChange={(e) => setFormPromoTag(e.target.value)}
-                            className="w-full px-3.5 py-2 rounded-xl bg-white border border-neutral-200 text-xs text-neutral-900 font-semibold"
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const nc = prompt("Ingresa el nombre de la nueva categoría:");
+                              if (nc && nc.trim()) {
+                                addCategory(nc.trim());
+                                handleCategoryChange(nc.trim());
+                              }
+                            }}
+                            className="text-[10px] font-bold text-neutral-700 hover:text-black cursor-pointer underline"
                           >
-                            <option value="OFERTA FLASH">OFERTA FLASH</option>
-                            <option value="MÁS VENDIDO">MÁS VENDIDO</option>
-                            <option value="DESCUENTO ESPECIAL">DESCUENTO ESPECIAL</option>
-                            <option value="NUEVO LANZAMIENTO">NUEVO LANZAMIENTO</option>
-                          </select>
+                            ＋ Nueva Categoría
+                          </button>
                         </div>
-
-                        {Number(formOriginalPrice) > Number(formPrice) && Number(formPrice) > 0 && (
-                          <div className="sm:col-span-2 text-xs font-bold text-emerald-800 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
-                            ✓ Descuento del {Math.round(((Number(formOriginalPrice) - Number(formPrice)) / Number(formOriginalPrice)) * 100)}% (Ahorro de {STORE_SETTINGS.currencySymbol}{(Number(formOriginalPrice) - Number(formPrice)).toFixed(2)})
-                          </div>
-                        )}
+                        <select
+                          value={formCategory}
+                          onChange={(e) => handleCategoryChange(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-semibold text-neutral-900 focus:outline-none focus:bg-white"
+                        >
+                          {categories.map((c) => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
+                        </select>
                       </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* 4. Gestión Detallada de Colores & Fotografías */}
-                <div className="space-y-4 pt-2">
-                  <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
-                    <div>
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                        <span>4. Colores Disponibles &amp; Fotografías</span>
-                      </h3>
-                      <p className="text-[11px] text-neutral-500 mt-0.5">
-                        Agrega todos los colores que tiene el producto. Cada uno tendrá su círculo interactivo en la tienda.
-                      </p>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={handleAddColor}
-                      className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
-                    >
-                      <PlusCircle className="w-3.5 h-3.5" />
-                      <span>Añadir Color</span>
-                    </button>
-                  </div>
+                    <div>
+                      <label className="text-xs font-bold text-neutral-900 block mb-1">
+                        Subtítulo o Resumen Breve (Aparece en la tarjeta)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ej: Sin cancelación de ruido · 36h de batería · Resistencia IPX4"
+                        value={formSubtitle}
+                        onChange={(e) => setFormSubtitle(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none focus:bg-white"
+                      />
+                    </div>
 
-                  {/* Lista de Colores Configurados */}
-                  <div className="space-y-4">
-                    {formColors.map((color, idx) => (
-                      <div
-                        key={idx}
-                        className="p-4 rounded-xl border border-neutral-200/90 bg-neutral-50/70 space-y-3 relative transition-all"
+                    <div>
+                      <label className="text-xs font-bold text-neutral-900 block mb-1">
+                        Descripción Comercial Detallada
+                      </label>
+                      <textarea
+                        rows={3}
+                        placeholder="Describe los aspectos clave, experiencia de sonido, uso recomendado o detalles técnicos..."
+                        value={formDescription}
+                        onChange={(e) => setFormDescription(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none focus:bg-white leading-relaxed"
+                      />
+                    </div>
+
+                    <div className="pt-4 border-t border-neutral-100 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("inventory")}
+                        className="px-4 py-2.5 rounded-xl border border-neutral-200 text-neutral-600 hover:text-black text-xs font-semibold"
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="w-5 h-5 rounded-full border border-neutral-300 shadow-2xs"
-                              style={{ backgroundColor: color.hex }}
-                            />
-                            <span className="text-xs font-black text-neutral-900">
-                              Color #{idx + 1}: {color.name || "Sin nombre"}
-                            </span>
-                          </div>
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!formName.trim()) {
+                            alert("Por favor ingresa el nombre del producto.");
+                            return;
+                          }
+                          setFormActiveStep(2);
+                        }}
+                        className="px-5 py-2.5 rounded-xl bg-neutral-950 text-white text-xs font-bold flex items-center gap-2 hover:bg-neutral-800 transition-colors shadow-xs cursor-pointer"
+                      >
+                        <span>Siguiente: Colores &amp; Fotos</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
 
-                          {formColors.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveColor(idx)}
-                              className="text-neutral-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-colors"
-                              title="Eliminar este color"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
+                {/* ===== PASO 2: COLORES & FOTOGRAFÍAS ===== */}
+                {formActiveStep === 2 && (
+                  <div className="space-y-6 animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
+                      <div>
+                        <h3 className="text-sm font-extrabold text-neutral-950 flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-amber-500" />
+                          <span>Paso 2: Colores Disponibles &amp; Fotografías</span>
+                        </h3>
+                        <p className="text-xs text-neutral-500 mt-0.5">
+                          Agrega los colores que tiene el producto. Cada uno tendrá su círculo interactivo y su foto en la tienda.
+                        </p>
+                      </div>
 
-                        {/* Campos del color */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div>
-                            <label className="text-[11px] font-bold text-neutral-600 block mb-1">
-                              Nombre del Color
-                            </label>
-                            <input
-                              type="text"
-                              value={color.name}
-                              onChange={(e) => handleUpdateColor(idx, "name", e.target.value)}
-                              placeholder="Ej: Negro, Blanco, Beige, Azul..."
-                              className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-200 text-xs font-semibold text-neutral-900"
-                            />
-                          </div>
+                      <button
+                        type="button"
+                        onClick={handleAddColor}
+                        className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+                      >
+                        <PlusCircle className="w-3.5 h-3.5" />
+                        <span>Añadir Color</span>
+                      </button>
+                    </div>
 
-                          <div>
-                            <label className="text-[11px] font-bold text-neutral-600 block mb-1">
-                              Tono HEX
-                            </label>
+                    {/* Lista de Colores Configurados */}
+                    <div className="space-y-4">
+                      {formColors.map((color, idx) => (
+                        <div
+                          key={idx}
+                          className="p-4 rounded-xl border border-neutral-200/90 bg-neutral-50/70 space-y-3 relative transition-all"
+                        >
+                          <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <input
-                                type="color"
-                                value={color.hex}
-                                onChange={(e) => handleUpdateColor(idx, "hex", e.target.value)}
-                                className="w-8 h-8 rounded-lg border border-neutral-200 p-0.5 cursor-pointer shrink-0"
+                              <span
+                                className="w-5 h-5 rounded-full border border-neutral-300 shadow-2xs"
+                                style={{ backgroundColor: color.hex }}
                               />
-                              <input
-                                type="text"
-                                value={color.hex}
-                                onChange={(e) => handleUpdateColor(idx, "hex", e.target.value)}
-                                className="flex-1 px-3 py-2 rounded-xl bg-white border border-neutral-200 text-xs font-mono font-bold text-neutral-900 uppercase"
-                              />
+                              <span className="text-xs font-black text-neutral-900">
+                                Color #{idx + 1}: {color.name || "Sin nombre"}
+                              </span>
                             </div>
-                          </div>
-                        </div>
 
-                        {/* Paleta rápida de sugerencias */}
-                        <div>
-                          <span className="text-[10px] font-bold text-neutral-400 block mb-1">
-                            Sugerencias de color rápidas:
-                          </span>
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            {[
-                              { name: "Beige", hex: "#f5f0e6" },
-                              { name: "Negro", hex: "#18181b" },
-                              { name: "Blanco", hex: "#FFFFFF" },
-                              { name: "Azul", hex: "#1e3a8a" },
-                              { name: "Titanio", hex: "#64748b" },
-                              { name: "Verde", hex: "#059669" },
-                              { name: "Rosa", hex: "#f43f5e" },
-                            ].map((preset) => (
+                            {formColors.length > 1 && (
                               <button
                                 type="button"
-                                key={preset.name}
-                                onClick={() => {
-                                  handleUpdateColor(idx, "name", preset.name);
-                                  handleUpdateColor(idx, "hex", preset.hex);
-                                }}
-                                className={`px-2 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 transition-all ${
-                                  color.hex?.toLowerCase() === preset.hex.toLowerCase()
-                                    ? "bg-neutral-900 text-white border-neutral-900 shadow-2xs"
-                                    : "bg-white text-neutral-700 border-neutral-200 hover:border-neutral-400"
-                                }`}
+                                onClick={() => handleRemoveColor(idx)}
+                                className="text-neutral-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-colors"
+                                title="Eliminar este color"
                               >
-                                <span
-                                  className="w-2.5 h-2.5 rounded-full border border-neutral-300"
-                                  style={{ backgroundColor: preset.hex }}
-                                />
-                                <span>{preset.name}</span>
+                                <Trash2 className="w-4 h-4" />
                               </button>
-                            ))}
+                            )}
                           </div>
-                        </div>
 
-                        {/* Foto para este color */}
-                        <div className="pt-2 border-t border-neutral-200/80">
-                          <label className="text-[11px] font-bold text-neutral-700 block mb-1.5">
-                            Fotografía para el color {color.name || `#${idx + 1}`}:
-                          </label>
-                          <div className="flex flex-col sm:flex-row items-center gap-3">
-                            <div className="w-14 h-14 rounded-xl bg-white border border-neutral-200 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
-                              {color.image ? (
-                                <img
-                                  src={color.image}
-                                  alt={color.name}
-                                  className="w-full h-full object-contain"
-                                />
-                              ) : (
-                                <ImageIcon className="w-5 h-5 text-neutral-300" />
-                              )}
+                          {/* Campos del color */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-[11px] font-bold text-neutral-600 block mb-1">
+                                Nombre del Color
+                              </label>
+                              <input
+                                type="text"
+                                value={color.name}
+                                onChange={(e) => handleUpdateColor(idx, "name", e.target.value)}
+                                placeholder="Ej: Negro, Blanco, Beige, Azul..."
+                                className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-200 text-xs font-semibold text-neutral-900"
+                              />
                             </div>
 
-                            <div className="flex-1 w-full space-y-2">
-                              <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 text-xs font-bold text-neutral-800 cursor-pointer transition-colors shadow-2xs">
-                                <Upload className="w-3.5 h-3.5 text-neutral-600" />
-                                <span>Subir foto de este color (PC o Celular)</span>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={(e) => handleColorImageUpload(idx, e)}
-                                  className="hidden"
-                                />
+                            <div>
+                              <label className="text-[11px] font-bold text-neutral-600 block mb-1">
+                                Tono HEX
                               </label>
-
                               <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-neutral-400">O elegir muestra:</span>
-                                {[
-                                  { name: "Buds 6 Play", path: getAssetUrl("/images/products/redmi-buds-6-play.png") },
-                                  { name: "Buds 8 Lite", path: getAssetUrl("/images/products/redmi-buds-8-lite.png") },
-                                  { name: "Buds 7S", path: getAssetUrl("/images/products/redmi-buds-7s.png") },
-                                ].map((sample) => (
-                                  <button
-                                    type="button"
-                                    key={sample.name}
-                                    onClick={() => handleUpdateColor(idx, "image", sample.path)}
-                                    className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
-                                      color.image === sample.path
-                                        ? "bg-neutral-900 text-white border-neutral-900"
-                                        : "bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50"
-                                    }`}
-                                  >
-                                    {sample.name}
-                                  </button>
-                                ))}
+                                <input
+                                  type="color"
+                                  value={color.hex}
+                                  onChange={(e) => handleUpdateColor(idx, "hex", e.target.value)}
+                                  className="w-8 h-8 rounded-lg border border-neutral-200 p-0.5 cursor-pointer shrink-0"
+                                />
+                                <input
+                                  type="text"
+                                  value={color.hex}
+                                  onChange={(e) => handleUpdateColor(idx, "hex", e.target.value)}
+                                  className="flex-1 px-3 py-2 rounded-xl bg-white border border-neutral-200 text-xs font-mono font-bold text-neutral-900 uppercase"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Paleta rápida de sugerencias */}
+                          <div>
+                            <span className="text-[10px] font-bold text-neutral-400 block mb-1">
+                              Sugerencias de color rápidas:
+                            </span>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {[
+                                { name: "Beige", hex: "#f5f0e6" },
+                                { name: "Negro", hex: "#18181b" },
+                                { name: "Blanco", hex: "#FFFFFF" },
+                                { name: "Azul", hex: "#1e3a8a" },
+                                { name: "Titanio", hex: "#64748b" },
+                                { name: "Verde", hex: "#059669" },
+                                { name: "Rosa", hex: "#f43f5e" },
+                              ].map((preset) => (
+                                <button
+                                  type="button"
+                                  key={preset.name}
+                                  onClick={() => {
+                                    handleUpdateColor(idx, "name", preset.name);
+                                    handleUpdateColor(idx, "hex", preset.hex);
+                                  }}
+                                  className={`px-2 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 transition-all ${
+                                    color.hex?.toLowerCase() === preset.hex.toLowerCase()
+                                      ? "bg-neutral-900 text-white border-neutral-900 shadow-2xs"
+                                      : "bg-white text-neutral-700 border-neutral-200 hover:border-neutral-400"
+                                  }`}
+                                >
+                                  <span
+                                    className="w-2.5 h-2.5 rounded-full border border-neutral-300"
+                                    style={{ backgroundColor: preset.hex }}
+                                  />
+                                  <span>{preset.name}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Foto para este color */}
+                          <div className="pt-2 border-t border-neutral-200/80">
+                            <label className="text-[11px] font-bold text-neutral-700 block mb-1.5">
+                              Fotografía para el color {color.name || `#${idx + 1}`}:
+                            </label>
+                            <div className="flex flex-col sm:flex-row items-center gap-3">
+                              <div className="w-14 h-14 rounded-xl bg-white border border-neutral-200 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
+                                {color.image ? (
+                                  <img
+                                    src={color.image}
+                                    alt={color.name}
+                                    className="w-full h-full object-contain"
+                                  />
+                                ) : (
+                                  <ImageIcon className="w-5 h-5 text-neutral-300" />
+                                )}
+                              </div>
+
+                              <div className="flex-1 w-full space-y-2">
+                                <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 text-xs font-bold text-neutral-800 cursor-pointer transition-colors shadow-2xs">
+                                  <Upload className="w-3.5 h-3.5 text-neutral-600" />
+                                  <span>Subir foto de este color (PC o Celular)</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleColorImageUpload(idx, e)}
+                                    className="hidden"
+                                  />
+                                </label>
+
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] text-neutral-400">O elegir muestra:</span>
+                                  {[
+                                    { name: "Buds 6 Play", path: getAssetUrl("/images/products/redmi-buds-6-play.png") },
+                                    { name: "Buds 8 Lite", path: getAssetUrl("/images/products/redmi-buds-8-lite.png") },
+                                    { name: "Buds 7S", path: getAssetUrl("/images/products/redmi-buds-7s.png") },
+                                  ].map((sample) => (
+                                    <button
+                                      type="button"
+                                      key={sample.name}
+                                      onClick={() => handleUpdateColor(idx, "image", sample.path)}
+                                      className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
+                                        color.image === sample.path
+                                          ? "bg-neutral-900 text-white border-neutral-900"
+                                          : "bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50"
+                                      }`}
+                                    >
+                                      {sample.name}
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
 
-                  {/* Imagen Secundaria (Efecto de transición al pasar el cursor) */}
-                  <div className="p-4 rounded-xl border border-blue-200/80 bg-blue-50/30 space-y-3 mt-3">
-                    <div className="flex items-start justify-between gap-2">
+                    {/* Imagen Secundaria (Efecto de transición al pasar el cursor) */}
+                    <div className="p-4 rounded-xl border border-blue-200/80 bg-blue-50/30 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <span className="text-xs font-extrabold text-neutral-900 flex items-center gap-1.5">
+                            <Eye className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Foto Secundaria (Efecto Hover / Transición al pasar el cursor)</span>
+                          </span>
+                          <p className="text-[11px] text-neutral-500 mt-0.5">
+                            Esta fotografía aparecerá suavemente cuando el cliente pase el cursor por encima del producto en el catálogo.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row items-center gap-3">
+                        <div className="w-14 h-14 rounded-xl bg-white border border-neutral-200 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
+                          {formSecondaryImage ? (
+                            <img
+                              src={formSecondaryImage}
+                              alt="Secondary Preview"
+                              className="w-full h-full object-contain"
+                            />
+                          ) : (
+                            <ImageIcon className="w-5 h-5 text-neutral-300" />
+                          )}
+                        </div>
+
+                        <div className="flex-1 w-full space-y-2">
+                          <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-xs font-bold text-white cursor-pointer transition-colors shadow-2xs">
+                            <Upload className="w-3.5 h-3.5 text-white" />
+                            <span>Subir foto secundaria (auriculares fuera del estuche)</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleSecondaryImageUpload}
+                              className="hidden"
+                            />
+                          </label>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-neutral-400">O muestras de catálogo:</span>
+                            {[
+                              { name: "Buds 6 Earbuds", path: getAssetUrl("/images/products/redmi-buds-6-play-earbuds.png") },
+                              { name: "Buds 8 Features", path: getAssetUrl("/images/products/redmi-buds-8-lite-features.png") },
+                              { name: "Buds 7S Earbuds", path: getAssetUrl("/images/products/redmi-buds-7s-earbuds.png") },
+                            ].map((sample) => (
+                              <button
+                                type="button"
+                                key={sample.name}
+                                onClick={() => setFormSecondaryImage(sample.path)}
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
+                                  formSecondaryImage === sample.path
+                                    ? "bg-neutral-900 text-white border-neutral-900"
+                                    : "bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50"
+                                }`}
+                              >
+                                {sample.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Video Demostrativo del Producto */}
+                    <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/70 space-y-3">
+                      <span className="text-xs font-bold text-neutral-900 flex items-center gap-1.5">
+                        <VideoIcon className="w-3.5 h-3.5 text-red-600" />
+                        <span>Video Multimedia Oficial (YouTube o MP4 - Opcional)</span>
+                      </span>
+
                       <div>
-                        <span className="text-xs font-extrabold text-neutral-900 flex items-center gap-1.5">
-                          <Eye className="w-3.5 h-3.5 text-blue-600" />
-                          <span>Foto Secundaria (Efecto Hover / Transición al pasar el cursor)</span>
-                        </span>
-                        <p className="text-[11px] text-neutral-500 mt-0.5">
-                          Esta fotografía aparecerá suavemente cuando el cliente pase el cursor por encima del producto en el catálogo.
+                        <input
+                          type="url"
+                          placeholder="https://www.youtube.com/watch?v=... o https://youtu.be/... o video .mp4"
+                          value={formVideoUrl}
+                          onChange={(e) => setFormVideoUrl(e.target.value)}
+                          className="w-full px-3.5 py-2 rounded-xl bg-white border border-neutral-200 text-xs font-mono text-neutral-900 focus:outline-none focus:border-neutral-900"
+                        />
+                        <p className="text-[11px] text-neutral-400 mt-1">
+                          Se reproducirá en alta definición en la galería interactiva de la página de detalle del producto.
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row items-center gap-3">
-                      <div className="w-14 h-14 rounded-xl bg-white border border-neutral-200 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
-                        {formSecondaryImage ? (
-                          <img
-                            src={formSecondaryImage}
-                            alt="Secondary Preview"
-                            className="w-full h-full object-contain"
-                          />
-                        ) : (
-                          <ImageIcon className="w-5 h-5 text-neutral-300" />
-                        )}
-                      </div>
-
-                      <div className="flex-1 w-full space-y-2">
-                        <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-xs font-bold text-white cursor-pointer transition-colors shadow-2xs">
-                          <Upload className="w-3.5 h-3.5 text-white" />
-                          <span>Subir foto secundaria (auriculares fuera del estuche)</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleSecondaryImageUpload}
-                            className="hidden"
-                          />
-                        </label>
-
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-neutral-400">O muestras de catálogo:</span>
-                          {[
-                            { name: "Buds 6 Earbuds", path: getAssetUrl("/images/products/redmi-buds-6-play-earbuds.png") },
-                            { name: "Buds 8 Features", path: getAssetUrl("/images/products/redmi-buds-8-lite-features.png") },
-                            { name: "Buds 7S Earbuds", path: getAssetUrl("/images/products/redmi-buds-7s-earbuds.png") },
-                          ].map((sample) => (
-                            <button
-                              type="button"
-                              key={sample.name}
-                              onClick={() => setFormSecondaryImage(sample.path)}
-                              className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
-                                formSecondaryImage === sample.path
-                                  ? "bg-neutral-900 text-white border-neutral-900"
-                                  : "bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50"
-                              }`}
-                            >
-                              {sample.name}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                    <div className="pt-4 border-t border-neutral-100 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setFormActiveStep(1)}
+                        className="px-4 py-2.5 rounded-xl border border-neutral-200 text-neutral-700 hover:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        <span>Anterior: Info Básica</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormActiveStep(3)}
+                        className="px-5 py-2.5 rounded-xl bg-neutral-950 text-white text-xs font-bold flex items-center gap-2 hover:bg-neutral-800 transition-colors shadow-xs cursor-pointer"
+                      >
+                        <span>Siguiente: Ficha Técnica</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
-                </div>
+                )}
 
-                {/* 5. Video Demostrativo del Producto */}
-                <div className="space-y-4 pt-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 border-b border-neutral-100 pb-2 flex items-center gap-1.5">
-                    <VideoIcon className="w-3.5 h-3.5 text-red-600" />
-                    <span>5. Video Multimedia (YouTube o MP4 - Opcional)</span>
-                  </h3>
+                {/* ===== PASO 3: FICHA TÉCNICA OFICIAL ===== */}
+                {formActiveStep === 3 && (
+                  <div className="space-y-4 animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
+                      <div>
+                        <h3 className="text-sm font-extrabold text-neutral-950 flex items-center gap-2">
+                          <Layers className="w-4 h-4 text-neutral-900" />
+                          <span>Paso 3: Ficha Técnica Oficial ({formCategory})</span>
+                        </h3>
+                        <p className="text-xs text-neutral-500 mt-0.5">
+                          Especificaciones formales que se mostrarán con iconos en la ficha de detalle del producto.
+                        </p>
+                      </div>
 
-                  <div>
-                    <label className="text-xs font-bold text-neutral-900 block mb-1">
-                      URL del Video (YouTube o Enlace Directo MP4)
-                    </label>
-                    <input
-                      type="url"
-                      placeholder="https://www.youtube.com/watch?v=... o https://youtu.be/... o video .mp4"
-                      value={formVideoUrl}
-                      onChange={(e) => setFormVideoUrl(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono text-neutral-900 focus:outline-none focus:bg-white"
-                    />
-                    <p className="text-[11px] text-neutral-500 mt-1">
-                      Se reproducirá en alta definición en la galería interactiva de la página de detalle del producto.
-                    </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const tpl = getCategorySpecTemplate(formCategory);
+                            setFormCustomSpecs(tpl.map((t) => ({ label: t.label, value: "" })));
+                          }}
+                          className="px-2.5 py-1 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-[11px] font-bold text-neutral-700 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                          title="Restablecer plantilla formal para esta categoría"
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          <span>Plantilla</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormCustomSpecs([...formCustomSpecs, { label: "", value: "" }]);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-[11px] font-bold text-white flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>+ Característica</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 bg-neutral-50/70 p-4 rounded-xl border border-neutral-200/80">
+                      {formCustomSpecs.map((spec, sIdx) => (
+                        <div key={sIdx} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                          <div className="sm:col-span-5">
+                            <input
+                              type="text"
+                              placeholder="Nombre formal (ej: Autonomía)"
+                              value={spec.label}
+                              onChange={(e) => {
+                                const next = [...formCustomSpecs];
+                                next[sIdx].label = e.target.value;
+                                setFormCustomSpecs(next);
+                              }}
+                              className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-200 text-xs font-bold text-neutral-900 focus:outline-none focus:border-neutral-900"
+                            />
+                          </div>
+                          <div className="sm:col-span-6">
+                            <input
+                              type="text"
+                              placeholder="Valor / Especificación (ej: Hasta 30 horas)"
+                              value={spec.value}
+                              onChange={(e) => {
+                                const next = [...formCustomSpecs];
+                                next[sIdx].value = e.target.value;
+                                setFormCustomSpecs(next);
+                              }}
+                              className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-200 text-xs text-neutral-800 focus:outline-none focus:border-neutral-900"
+                            />
+                          </div>
+                          <div className="sm:col-span-1 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFormCustomSpecs(formCustomSpecs.filter((_, i) => i !== sIdx));
+                              }}
+                              className="p-1.5 text-neutral-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                              title="Eliminar esta característica"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+
+                      {formCustomSpecs.length === 0 && (
+                        <div className="text-center py-4 text-xs text-neutral-400">
+                          No hay características agregadas. Pulsa &quot;+ Característica&quot; para añadir especificaciones técnicas.
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-4 border-t border-neutral-100 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setFormActiveStep(2)}
+                        className="px-4 py-2.5 rounded-xl border border-neutral-200 text-neutral-700 hover:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        <span>Anterior: Colores &amp; Fotos</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormActiveStep(4)}
+                        className="px-5 py-2.5 rounded-xl bg-neutral-950 text-white text-xs font-bold flex items-center gap-2 hover:bg-neutral-800 transition-colors shadow-xs cursor-pointer"
+                      >
+                        <span>Siguiente: Precios &amp; Stock</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {/* 6. Descripción Comercial */}
-                <div className="space-y-4 pt-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 border-b border-neutral-100 pb-2">
-                    6. Descripción Comercial
-                  </h3>
+                {/* ===== PASO 4: PRECIOS, DESCUENTOS & STOCK ===== */}
+                {formActiveStep === 4 && (
+                  <div className="space-y-5 animate-in fade-in duration-200">
+                    <div className="border-b border-neutral-100 pb-2">
+                      <h3 className="text-sm font-extrabold text-neutral-950 flex items-center gap-2">
+                        <DollarSign className="w-4 h-4 text-emerald-600" />
+                        <span>Paso 4: Precios, Descuentos &amp; Stock</span>
+                      </h3>
+                      <p className="text-xs text-neutral-500 mt-0.5">
+                        Define el precio de venta directo, stock disponible y promociones especiales.
+                      </p>
+                    </div>
 
-                  <div>
-                    <label className="text-xs font-bold text-neutral-900 block mb-1">
-                      Descripción del Producto
-                    </label>
-                    <textarea
-                      rows={3}
-                      placeholder="Describe los aspectos clave, detalles de uso o características del producto..."
-                      value={formDescription}
-                      onChange={(e) => setFormDescription(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none focus:bg-white leading-relaxed"
-                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-bold text-neutral-900 block mb-1">
+                          Precio de Venta ({STORE_SETTINGS.currencySymbol}) *
+                        </label>
+                        <input
+                          type="number"
+                          step="0.5"
+                          required
+                          min={1}
+                          value={formPrice}
+                          onChange={(e) => setFormPrice(parseFloat(e.target.value) || 0)}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-base font-extrabold text-neutral-950 focus:outline-none focus:bg-white focus:border-emerald-600 font-mono"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-bold text-neutral-900 block mb-1">
+                          Stock Inicial (unidades)
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={formStock}
+                          onChange={(e) => setFormStock(parseInt(e.target.value) || 0)}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-base font-extrabold text-neutral-950 focus:outline-none focus:bg-white font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Switch Promoción */}
+                    <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/70 space-y-3">
+                      <label className="flex items-center gap-3 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={formHasPromo}
+                          onChange={(e) => setFormHasPromo(e.target.checked)}
+                          className="w-4 h-4 rounded text-red-600 focus:ring-0 bg-white border-neutral-300"
+                        />
+                        <span className="text-xs font-extrabold text-neutral-900 flex items-center gap-1.5">
+                          <Tag className="w-3.5 h-3.5 text-red-600" />
+                          <span>Activar Precio de Oferta / Promoción Especial</span>
+                        </span>
+                      </label>
+
+                      {formHasPromo && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-neutral-200">
+                          <div>
+                            <label className="text-[11px] font-bold text-neutral-600 block mb-1">
+                              Precio Original Tachado ({STORE_SETTINGS.currencySymbol})
+                            </label>
+                            <input
+                              type="number"
+                              step="0.5"
+                              value={formOriginalPrice}
+                              onChange={(e) => setFormOriginalPrice(parseFloat(e.target.value) || 0)}
+                              className="w-full px-3.5 py-2 rounded-xl bg-white border border-neutral-200 text-xs font-bold text-neutral-900 font-mono"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] font-bold text-neutral-600 block mb-1">
+                              Etiqueta en Tarjeta
+                            </label>
+                            <select
+                              value={formPromoTag}
+                              onChange={(e) => setFormPromoTag(e.target.value)}
+                              className="w-full px-3.5 py-2 rounded-xl bg-white border border-neutral-200 text-xs text-neutral-900 font-semibold"
+                            >
+                              <option value="OFERTA FLASH">OFERTA FLASH</option>
+                              <option value="MÁS VENDIDO">MÁS VENDIDO</option>
+                              <option value="DESCUENTO ESPECIAL">DESCUENTO ESPECIAL</option>
+                              <option value="NUEVO LANZAMIENTO">NUEVO LANZAMIENTO</option>
+                            </select>
+                          </div>
+
+                          {Number(formOriginalPrice) > Number(formPrice) && Number(formPrice) > 0 && (
+                            <div className="sm:col-span-2 text-xs font-bold text-emerald-800 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
+                              ✓ Descuento del {Math.round(((Number(formOriginalPrice) - Number(formPrice)) / Number(formOriginalPrice)) * 100)}% (Ahorro de {STORE_SETTINGS.currencySymbol}{(Number(formOriginalPrice) - Number(formPrice)).toFixed(2)})
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Resumen previo */}
+                    <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50 text-xs space-y-2.5">
+                      <div className="font-bold text-neutral-900 flex items-center justify-between">
+                        <span>Resumen Final del Producto</span>
+                        <span className="font-mono bg-white px-2 py-0.5 rounded border border-neutral-200 font-bold">#{formCustomId}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-neutral-600">
+                        <div><span className="text-neutral-400">Producto:</span> <strong className="text-neutral-900">{formName || "Sin nombre"}</strong></div>
+                        <div><span className="text-neutral-400">Marca:</span> <strong className="text-neutral-900">{formBrand}</strong></div>
+                        <div><span className="text-neutral-400">Categoría:</span> <strong className="text-neutral-900">{formCategory}</strong></div>
+                        <div><span className="text-neutral-400">Variantes:</span> <strong className="text-neutral-900">{formColors.length} colores</strong></div>
+                        <div><span className="text-neutral-400">Precio Final:</span> <strong className="text-emerald-700 font-extrabold">{STORE_SETTINGS.currencySymbol}{Number(formPrice || 0).toFixed(2)}</strong></div>
+                        <div><span className="text-neutral-400">Stock Inicial:</span> <strong className="text-neutral-900">{formStock} unidades</strong></div>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-neutral-100 flex items-center justify-between gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setFormActiveStep(3)}
+                        className="px-4 py-2.5 rounded-xl border border-neutral-200 text-neutral-700 hover:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        <span>Anterior: Ficha Técnica</span>
+                      </button>
+
+                      <button
+                        type="submit"
+                        className="px-6 py-3 rounded-xl bg-neutral-950 text-white font-extrabold text-xs hover:bg-neutral-800 transition-all flex items-center gap-2 shadow-md active:scale-95 cursor-pointer"
+                      >
+                        <Save className="w-4 h-4 text-white" />
+                        <span>{editingProductId ? "✓ Actualizar y Guardar Cambios" : "✓ Guardar y Publicar en Tienda"}</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-
-                {/* Botón de Guardar */}
-                <div className="pt-4 border-t border-neutral-200 flex items-center justify-between gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("inventory")}
-                    className="px-4 py-2.5 rounded-xl border border-neutral-200 text-neutral-600 hover:text-black text-xs font-semibold transition-colors cursor-pointer"
-                  >
-                    Cancelar
-                  </button>
-
-                  <button
-                    type="submit"
-                    className="px-6 py-3 rounded-xl bg-neutral-950 text-white font-extrabold text-xs hover:bg-neutral-800 transition-all flex items-center gap-2 shadow-md active:scale-95 cursor-pointer"
-                  >
-                    <Save className="w-4 h-4 text-white" />
-                    <span>{editingProductId ? "Actualizar y Guardar Cambios" : "Guardar y Publicar en Tienda"}</span>
-                  </button>
-                </div>
+                )}
               </form>
 
               {/* Live Preview de la Tarjeta en la Tienda (5 Cols) */}
