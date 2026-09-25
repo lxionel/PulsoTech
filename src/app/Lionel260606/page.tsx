@@ -34,6 +34,8 @@ import {
   Layers,
   Check,
   ArrowRight,
+  Download,
+  FileText,
 } from "lucide-react";
 
 interface SaleRecord {
@@ -161,36 +163,34 @@ export default function AdminPage() {
   const [newBrandInput, setNewBrandInput] = useState("");
   const [newCategoryInput, setNewCategoryInput] = useState("");
 
-  // Registro de ventas de ejemplo
-  const [sales, setSales] = useState<SaleRecord[]>([
-    {
-      id: "VTA-1001",
-      productName: "Redmi Buds 6 Play",
-      quantity: 1,
-      total: 49.0,
-      channel: "WhatsApp",
-      customerName: "Carlos Méndez",
-      date: "Hoy, 14:20",
-    },
-    {
-      id: "VTA-1002",
-      productName: "Redmi Buds 8 Lite",
-      quantity: 2,
-      total: 178.0,
-      channel: "WhatsApp",
-      customerName: "Mariana Rivas",
-      date: "Hoy, 11:05",
-    },
-    {
-      id: "VTA-1003",
-      productName: "Redmi Buds 7S",
-      quantity: 1,
-      total: 139.0,
-      channel: "Presencial",
-      customerName: "Lucas Benítez",
-      date: "Ayer, 18:40",
-    },
-  ]);
+  // Registro de ventas en localStorage (persistente y sin ventas simuladas por defecto)
+  const SALES_STORAGE_KEY = "pulsotech_sales_records";
+  const [sales, setSales] = useState<SaleRecord[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = localStorage.getItem(SALES_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(
+            (s: SaleRecord) => !["VTA-1001", "VTA-1002", "VTA-1003"].includes(s.id)
+          );
+        }
+      }
+    } catch {
+      // Ignorar error de carga
+    }
+    return [];
+  });
+
+  const saveSalesToStorage = (updatedSales: SaleRecord[]) => {
+    setSales(updatedSales);
+    try {
+      localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(updatedSales));
+    } catch {
+      // Ignorar error de guardado
+    }
+  };
 
   // Venta rápida
   const [newSaleProduct, setNewSaleProduct] = useState(products[0]?.id || "");
@@ -269,21 +269,116 @@ export default function AdminPage() {
 
     updateStock(prod.id, -newSaleQty, true);
 
+    const now = new Date();
+    const dateFormatted = `${now.toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit" })}, ${now.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}`;
+
     const newRecord: SaleRecord = {
-      id: `VTA-${1000 + sales.length + 1}`,
+      id: `VTA-${Math.floor(1000 + Math.random() * 9000)}`,
       productName: prod.name,
       quantity: newSaleQty,
       total: prod.price * newSaleQty,
       channel: newSaleChannel,
       customerName: newSaleCustomer.trim() || "Cliente WhatsApp",
-      date: "Justo ahora",
+      date: dateFormatted,
     };
 
-    setSales([newRecord, ...sales]);
+    saveSalesToStorage([newRecord, ...sales]);
     setNewSaleCustomer("");
     setNewSaleQty(1);
     setSuccessNotice(`¡Venta #${newRecord.id} registrada! Se descontaron ${newSaleQty} unidades del stock.`);
     setTimeout(() => setSuccessNotice(""), 4000);
+  };
+
+  const handleDeleteSale = (saleId: string) => {
+    if (confirm("¿Deseas eliminar este registro de venta?")) {
+      const updated = sales.filter((s) => s.id !== saleId);
+      saveSalesToStorage(updated);
+      setSuccessNotice("Registro de venta eliminado.");
+      setTimeout(() => setSuccessNotice(""), 3000);
+    }
+  };
+
+  const handleClearAllSales = () => {
+    if (confirm("¿Estás seguro de vaciar todo el historial de ventas? Esta acción dejará los ingresos en S/ 0.00.")) {
+      saveSalesToStorage([]);
+      setSuccessNotice("Historial de ventas vaciado correctamente.");
+      setTimeout(() => setSuccessNotice(""), 3000);
+    }
+  };
+
+  const handleExportSalesCSV = () => {
+    if (sales.length === 0) {
+      alert("No hay ventas registradas para exportar.");
+      return;
+    }
+    const headers = ["ID", "Producto", "Cantidad", "Total_PEN", "Canal", "Cliente", "Fecha"];
+    const rows = sales.map((s) => [
+      s.id,
+      `"${s.productName.replace(/"/g, '""')}"`,
+      s.quantity,
+      s.total.toFixed(2),
+      s.channel,
+      `"${s.customerName.replace(/"/g, '""')}"`,
+      `"${s.date}"`,
+    ]);
+    const csvContent =
+      "data:text/csv;charset=utf-8,\uFEFF" +
+      [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `ventas_pulsotech_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportProductsCSV = () => {
+    if (products.length === 0) {
+      alert("No hay productos en inventario para exportar.");
+      return;
+    }
+    const headers = ["ID", "Nombre", "Marca", "Categoria", "Precio_PEN", "Precio_Original_PEN", "Stock", "En_Oferta"];
+    const rows = products.map((p) => [
+      p.id,
+      `"${p.name.replace(/"/g, '""')}"`,
+      `"${p.brand}"`,
+      `"${p.category}"`,
+      p.price.toFixed(2),
+      (p.originalPrice || p.price).toFixed(2),
+      p.stockCount,
+      p.originalPrice && p.originalPrice > p.price ? "SI" : "NO",
+    ]);
+    const csvContent =
+      "data:text/csv;charset=utf-8,\uFEFF" +
+      [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `inventario_pulsotech_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportBackupJSON = () => {
+    const backupData = {
+      store: "PulsoTech",
+      exportedAt: new Date().toISOString(),
+      productsCount: products.length,
+      brands,
+      categories,
+      products,
+    };
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `backup_catalogo_pulsotech_${new Date().toISOString().slice(0, 10)}.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Manejadores de colores detallados
@@ -777,17 +872,37 @@ export default function AdminPage() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                  <div className="relative flex-1 sm:w-64">
+                <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                  <div className="relative flex-1 sm:w-56">
                     <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
-                      placeholder="Buscar por ID, modelo, marca o categoría..."
+                      placeholder="Buscar por ID, modelo, marca..."
                       value={searchFilter}
                       onChange={(e) => setSearchFilter(e.target.value)}
                       className="w-full pl-8 pr-3 py-2 rounded-xl bg-white border border-neutral-200 text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-400 shadow-2xs"
                     />
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={handleExportProductsCSV}
+                    className="px-3 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-bold text-xs shrink-0 flex items-center gap-1.5 transition-colors cursor-pointer border border-neutral-200"
+                    title="Exportar inventario en formato CSV para Microsoft Excel"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Exportar CSV</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleExportBackupJSON}
+                    className="px-3 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-bold text-xs shrink-0 flex items-center gap-1.5 transition-colors cursor-pointer border border-neutral-200"
+                    title="Descargar copia de seguridad completa del catálogo en JSON"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Backup JSON</span>
+                  </button>
 
                   <button
                     onClick={handleNewProductClick}
@@ -2149,31 +2264,91 @@ export default function AdminPage() {
 
             {/* Sales History */}
             <div className="lg:col-span-7 space-y-3">
-              <span className="text-xs uppercase text-neutral-500 block font-bold tracking-wider">
-                Historial de Órdenes Recientes ({sales.length}):
-              </span>
-              <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-                {sales.map((s) => (
-                  <div
-                    key={s.id}
-                    className="p-4 rounded-xl border border-neutral-200/90 bg-white shadow-2xs flex items-center justify-between text-xs"
-                  >
-                    <div>
-                      <div className="font-extrabold text-neutral-950 text-sm">{s.productName}</div>
-                      <div className="text-[11px] text-neutral-500 mt-0.5">
-                        {s.customerName} • Cantidad: {s.quantity} •{" "}
-                        <span className="text-emerald-700 font-bold">{s.channel}</span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-extrabold text-neutral-950 text-sm">
-                        {STORE_SETTINGS.currencySymbol}{s.total.toFixed(2)}
-                      </div>
-                      <div className="text-[10px] text-neutral-400">{s.date}</div>
-                    </div>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="text-xs uppercase text-neutral-500 block font-bold tracking-wider">
+                  Historial de Órdenes Recientes ({sales.length})
+                </span>
+                {sales.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleExportSalesCSV}
+                      className="px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-neutral-200"
+                      title="Descargar reporte en formato CSV para Excel"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Exportar CSV</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleClearAllSales}
+                      className="px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-red-200"
+                      title="Vaciar todo el historial de ventas"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Vaciar</span>
+                    </button>
                   </div>
-                ))}
+                )}
               </div>
+
+              {sales.length === 0 ? (
+                <div className="p-8 text-center rounded-2xl border border-dashed border-neutral-300 bg-neutral-50/70 space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-white border border-neutral-200 flex items-center justify-center mx-auto text-neutral-400 shadow-2xs">
+                    <ShoppingBag className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-neutral-800">No hay ventas registradas aún</h4>
+                    <p className="text-[11px] text-neutral-500 mt-1 max-w-sm mx-auto leading-relaxed">
+                      Registra una venta manual usando el formulario de la izquierda. El stock del producto se descontará automáticamente y sumará a tus ingresos registrados.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                  {sales.map((s) => (
+                    <div
+                      key={s.id}
+                      className="p-4 rounded-xl border border-neutral-200/90 bg-white shadow-2xs flex items-center justify-between text-xs hover:border-neutral-300 transition-colors"
+                    >
+                      <div>
+                        <div className="font-extrabold text-neutral-950 text-sm flex items-center gap-2">
+                          <span>{s.productName}</span>
+                          <span className="text-[10px] font-mono font-normal bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded">
+                            #{s.id}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-neutral-500 mt-0.5">
+                          {s.customerName} • Cantidad: <strong className="text-neutral-900">{s.quantity}</strong> •{" "}
+                          <span
+                            className={`font-bold ${
+                              s.channel === "WhatsApp" ? "text-emerald-700" : "text-blue-700"
+                            }`}
+                          >
+                            {s.channel}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-right">
+                        <div>
+                          <div className="font-extrabold text-neutral-950 text-sm">
+                            {STORE_SETTINGS.currencySymbol}{s.total.toFixed(2)}
+                          </div>
+                          <div className="text-[10px] text-neutral-400">{s.date}</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSale(s.id)}
+                          className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                          title="Eliminar este registro de venta"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -2224,6 +2399,67 @@ export default function AdminPage() {
                 </div>
               )}
             </form>
+
+            {/* Backup & Export Card */}
+            <div className="p-6 rounded-2xl border border-neutral-200 bg-white shadow-xs space-y-4">
+              <div className="flex items-center gap-3.5">
+                <div className="p-3 rounded-xl bg-blue-50 text-blue-700 border border-blue-100 shrink-0">
+                  <Download className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-neutral-950">
+                    Copias de Seguridad & Exportación de Datos
+                  </h3>
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    Descarga respaldos de tu catálogo en JSON o exporta tus productos y ventas a hojas de cálculo (Excel / Google Sheets).
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleExportProductsCSV}
+                  className="p-3.5 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-left transition-colors cursor-pointer group"
+                >
+                  <div className="flex items-center justify-between text-neutral-900 font-bold text-xs mb-1">
+                    <span>Inventario (.CSV)</span>
+                    <Download className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors" />
+                  </div>
+                  <p className="text-[11px] text-neutral-500">
+                    Descarga {products.length} productos con precios y stock para Excel.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleExportSalesCSV}
+                  className="p-3.5 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-left transition-colors cursor-pointer group"
+                >
+                  <div className="flex items-center justify-between text-neutral-900 font-bold text-xs mb-1">
+                    <span>Ventas (.CSV)</span>
+                    <Download className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors" />
+                  </div>
+                  <p className="text-[11px] text-neutral-500">
+                    Descarga historial de {sales.length} órdenes registradas.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleExportBackupJSON}
+                  className="p-3.5 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-left transition-colors cursor-pointer group"
+                >
+                  <div className="flex items-center justify-between text-neutral-900 font-bold text-xs mb-1">
+                    <span>Backup JSON</span>
+                    <FileText className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors" />
+                  </div>
+                  <p className="text-[11px] text-neutral-500">
+                    Copia de seguridad íntegra con marcas y categorías.
+                  </p>
+                </button>
+              </div>
+            </div>
 
           </div>
         )}
