@@ -2,7 +2,7 @@
 
 import React from "react";
 import { STORE_SETTINGS } from "@/data/products";
-import { ShieldCheck, Truck, Headphones, MessageSquare, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import Logo from "./Logo";
 
@@ -11,58 +11,6 @@ export default function Footer() {
 
   return (
     <footer id="garantia" className="border-t border-neutral-200 bg-white text-neutral-600 text-xs">
-      {/* Guarantees bar */}
-      <div className="border-b border-neutral-100 py-14">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          <div className="flex items-start gap-3.5">
-            <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 shrink-0">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-bold text-neutral-900 text-sm">Garantía Total</h4>
-              <p className="text-neutral-500 mt-1 leading-relaxed">
-                Productos 100% originales con garantía total ante cualquier falla técnica.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3.5">
-            <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 shrink-0">
-              <Truck className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-bold text-neutral-900 text-sm">Entrega el Mismo Día</h4>
-              <p className="text-neutral-500 mt-1 leading-relaxed">
-                Entrega puntual con coordinación inmediata por WhatsApp.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3.5">
-            <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 shrink-0">
-              <Headphones className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-bold text-neutral-900 text-sm">Originales Garantizados</h4>
-              <p className="text-neutral-500 mt-1 leading-relaxed">
-                Empaque sellado de fábrica con verificación auténtica y números de serie.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3.5">
-            <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-600 shrink-0">
-              <MessageSquare className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-bold text-neutral-900 text-sm">Asesoría Personalizada</h4>
-              <p className="text-neutral-500 mt-1 leading-relaxed">
-                Te asesoramos directamente por WhatsApp para escoger el modelo ideal para ti.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Main Footer Links */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
