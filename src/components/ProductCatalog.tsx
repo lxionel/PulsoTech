@@ -25,24 +25,28 @@ export default function ProductCatalog() {
   const [onlyNew, setOnlyNew] = useState(false);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
-  // Lista dinámica combinada de marcas
+  // Lista dinámica combinada de marcas (sin duplicados por mayúsculas/minúsculas)
   const allBrands = useMemo(() => {
-    const set = new Set<string>();
-    (brands || []).forEach((b) => set.add(b));
-    products.forEach((p) => {
-      if (p.brand) set.add(p.brand);
+    const map = new Map<string, string>();
+    (brands || []).forEach((b) => {
+      if (b && b.trim()) map.set(b.trim().toLowerCase(), b.trim());
     });
-    return Array.from(set);
+    products.forEach((p) => {
+      if (p.brand && p.brand.trim()) map.set(p.brand.trim().toLowerCase(), p.brand.trim());
+    });
+    return Array.from(map.values());
   }, [brands, products]);
 
-  // Lista dinámica combinada de categorías
+  // Lista dinámica combinada de categorías (sin duplicados por mayúsculas/minúsculas)
   const allCategories = useMemo(() => {
-    const set = new Set<string>();
-    (categories || []).forEach((c) => set.add(c));
-    products.forEach((p) => {
-      if (p.category) set.add(p.category);
+    const map = new Map<string, string>();
+    (categories || []).forEach((c) => {
+      if (c && c.trim()) map.set(c.trim().toLowerCase(), c.trim());
     });
-    return Array.from(set);
+    products.forEach((p) => {
+      if (p.category && p.category.trim()) map.set(p.category.trim().toLowerCase(), p.category.trim());
+    });
+    return Array.from(map.values());
   }, [categories, products]);
 
   // Lock body scroll when mobile filters drawer is open

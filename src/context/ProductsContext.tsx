@@ -24,12 +24,12 @@ const ProductsContext = createContext<ProductsContextType | undefined>(undefined
 
 const STORAGE_KEY = "pulsotech_custom_products";
 const DATA_VERSION_KEY = "pulsotech_catalog_data_version";
-const CURRENT_DATA_VERSION = "2026_09_25_v5";
+const CURRENT_DATA_VERSION = "2026_09_25_v7";
 
 const BRANDS_STORAGE_KEY = "pulsotech_custom_brands";
 const CATEGORIES_STORAGE_KEY = "pulsotech_custom_categories";
 const DEFAULT_BRANDS = ["Xiaomi", "Redmi", "Soundcore", "Haylou", "Sony"];
-const DEFAULT_CATEGORIES = ["In-Ear", "Over-Ear", "Deportivos", "Audífonos TWS", "Smartwatches"];
+const DEFAULT_CATEGORIES = ["Audífonos Inalámbricos", "Smartwatches", "Altavoces Bluetooth", "Accesorios"];
 
 function getInitialBrands(): string[] {
   if (typeof window !== "undefined") {
@@ -68,15 +68,27 @@ function syncWithDefaults(storedList: Product[]): Product[] {
 
   const updatedList = storedList.map((storedProd) => {
     const defaultMatch = DEFAULT_PRODUCTS.find(
-      (dp) => dp.id === storedProd.id || dp.slug === storedProd.slug
+      (dp) =>
+        dp.id === storedProd.id ||
+        dp.slug === storedProd.slug ||
+        (storedProd.name && dp.name.toLowerCase() === storedProd.name.toLowerCase())
     );
-    if (!defaultMatch) {
-      // Es un producto nuevo creado por el usuario en el admin
-      return storedProd;
+
+    // Asegurar que todo ID sea numérico de 6 dígitos
+    let safeId = storedProd.id;
+    if (!safeId || !/^\d{6}$/.test(safeId)) {
+      safeId = defaultMatch ? defaultMatch.id : Math.floor(100000 + Math.random() * 900000).toString();
     }
 
-    // Es un producto del catálogo por defecto.
-    // Si tiene colores desactualizados (solo 1 color, o dice "Original" o tiene menos colores que DEFAULT_PRODUCTS)
+    if (!defaultMatch) {
+      // Producto creado por el admin: se preserva íntegramente
+      return {
+        ...storedProd,
+        id: safeId,
+      };
+    }
+
+    // Para productos de catálogo base: preservar las modificaciones del usuario
     const hasOutdatedColors =
       !storedProd.colors ||
       storedProd.colors.length <= 1 ||
@@ -85,11 +97,11 @@ function syncWithDefaults(storedList: Product[]): Product[] {
 
     return {
       ...defaultMatch,
-      stockCount: typeof storedProd.stockCount === "number" ? storedProd.stockCount : defaultMatch.stockCount,
-      inStock: typeof storedProd.inStock === "boolean" ? storedProd.inStock : defaultMatch.inStock,
-      price: typeof storedProd.price === "number" ? storedProd.price : defaultMatch.price,
-      colors: hasOutdatedColors ? defaultMatch.colors : storedProd.colors,
-      images: defaultMatch.images && defaultMatch.images.length > 1 ? defaultMatch.images : storedProd.images,
+      ...storedProd,
+      id: safeId,
+      colors: hasOutdatedColors ? defaultMatch.colors : (storedProd.colors || defaultMatch.colors),
+      images: storedProd.images && storedProd.images.length > 0 ? storedProd.images : defaultMatch.images,
+      customSpecs: storedProd.customSpecs && storedProd.customSpecs.length > 0 ? storedProd.customSpecs : defaultMatch.customSpecs,
     };
   });
 

@@ -39,15 +39,20 @@ export default function ProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <div className="group relative rounded-2xl bg-white border border-neutral-200/90 hover:border-blue-500/40 hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden h-full">
+    <div className="group relative rounded-2xl bg-white border border-neutral-200/90 hover:border-neutral-300 hover:shadow-lg transition-all duration-300 flex flex-col justify-between overflow-hidden h-full">
       {/* Top Card Image Link */}
       <Link href={`/producto/${product.slug}`} className="block p-4 sm:p-5 pb-0 flex-1">
         {/* Top Header: Brand, New Tag & Favorite */}
         <div className="flex items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
               {product.brand}
             </span>
+            {product.id && (
+              <span className="font-mono text-[10px] font-bold text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded border border-neutral-200">
+                #{product.id}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -135,7 +140,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
         {/* Title & Subtitle (Inmóviles y perfectamente alineados) */}
         <div className="pt-1 pb-3">
-          <h3 className="text-base sm:text-lg font-extrabold text-neutral-950 group-hover:text-blue-600 transition-colors leading-snug line-clamp-1 min-h-[1.75rem]">
+          <h3 className="text-base sm:text-lg font-extrabold text-neutral-950 leading-snug line-clamp-1 min-h-[1.75rem]">
             {product.name}
           </h3>
           <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed min-h-[2.5rem] mt-1">
@@ -144,8 +149,8 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
       </Link>
 
-      {/* Card Bottom: Price & Symmetric Action Buttons */}
-      <div className="p-3.5 sm:p-4 pt-3.5 border-t border-neutral-100 mt-auto bg-neutral-50/50 flex flex-col gap-2.5">
+      {/* Card Bottom: Price & Long Elegant Action Button */}
+      <div className="p-3.5 sm:p-4 pt-3.5 border-t border-neutral-100 mt-auto bg-neutral-50/50 flex flex-col gap-3">
         {/* Row 1: Full-width clear price, NO extra tags */}
         <div>
           <span className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider block leading-none mb-1">
@@ -156,24 +161,14 @@ export default function ProductCard({ product }: { product: Product }) {
           </span>
         </div>
 
-        {/* Row 2: 50/50 Balanced Action Buttons - Nunca se cortan */}
-        <div className="grid grid-cols-2 gap-2 w-full">
-          <Link
-            href={`/producto/${product.slug}`}
-            className="w-full py-2 px-2.5 rounded-xl border border-neutral-200 hover:border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-800 hover:text-black font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-2xs active:scale-[0.98]"
-          >
-            <span>Ver Ficha</span>
-            <ArrowRight className="w-3.5 h-3.5 text-neutral-400 group-hover:translate-x-0.5 transition-transform" />
-          </Link>
-
-          <button
-            onClick={handleAddToCart}
-            className="w-full py-2 px-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-blue-500/20 active:scale-[0.98] transition-all cursor-pointer"
-          >
-            <ShoppingBag className="w-3.5 h-3.5" />
-            <span>Añadir</span>
-          </button>
-        </div>
+        {/* Row 2: Botón Añadir largo, ordenado y destacado */}
+        <button
+          onClick={handleAddToCart}
+          className="w-full py-2.5 sm:py-3 px-4 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs active:scale-[0.98] transition-all cursor-pointer"
+        >
+          <ShoppingBag className="w-4 h-4 shrink-0" />
+          <span>Añadir al Carrito</span>
+        </button>
       </div>
     </div>
   );

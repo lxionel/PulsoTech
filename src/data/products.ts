@@ -26,7 +26,7 @@ export const TECH_CATEGORIES = [
 
 export const PRODUCTS: Product[] = [
   {
-    id: "redmi-buds-6-play",
+    id: "100001",
     name: "Redmi Buds 6 Play",
     slug: "redmi-buds-6-play",
     subtitle: "Sin cancelación de ruido · 36h de batería con estuche · Resistencia IPX4",
@@ -35,7 +35,7 @@ export const PRODUCTS: Product[] = [
     price: 49.0,
     originalPrice: undefined,
     brand: "Xiaomi",
-    category: "in-ear",
+    category: "Audífonos Inalámbricos",
     inStock: true,
     stockCount: 15,
     isFeatured: true,
@@ -71,6 +71,16 @@ export const PRODUCTS: Product[] = [
       weight: "3.6g por auricular",
       latency: "Baja latencia",
     },
+    customSpecs: [
+      { label: "Autonomía de Auriculares", value: "Hasta 7.5 horas continuas" },
+      { label: "Autonomía con Estuche", value: "Hasta 36 horas de uso total" },
+      { label: "Tiempo de Carga", value: "Carga rápida Tipo-C (10 min = 3h)" },
+      { label: "Versión de Bluetooth", value: "Bluetooth 5.4 de baja latencia" },
+      { label: "Cancelación de Ruido", value: "Reducción de ruido ambiental por IA" },
+      { label: "Resistencia al Agua", value: "Certificación IPX4 contra sudor y lluvia" },
+      { label: "Diafragma / Driver", value: "Dinámico de 10mm con graves mejorados" },
+      { label: "Compatibilidad", value: "Universal (Android, iOS, Windows, Mac)" },
+    ],
     soundProfile: {
       type: "Audio Equilibrado",
       description: "Perfil de sonido balanceado con voces claras y agudos nítidos para uso diario.",
@@ -88,7 +98,7 @@ export const PRODUCTS: Product[] = [
     tags: ["Audio", "In-Ear", "Xiaomi", "Redmi", "Batería 36h"],
   },
   {
-    id: "redmi-buds-8-lite",
+    id: "100002",
     name: "Redmi Buds 8 Lite",
     slug: "redmi-buds-8-lite",
     subtitle: "ANC 42dB · 36h de batería con estuche · Resistencia IP54",
@@ -97,7 +107,7 @@ export const PRODUCTS: Product[] = [
     price: 89.0,
     originalPrice: undefined,
     brand: "Xiaomi",
-    category: "in-ear",
+    category: "Audífonos Inalámbricos",
     inStock: true,
     stockCount: 12,
     isFeatured: true,
@@ -138,6 +148,16 @@ export const PRODUCTS: Product[] = [
       weight: "3.9g por auricular",
       latency: "Modo baja latencia para gaming",
     },
+    customSpecs: [
+      { label: "Cancelación Activa (ANC)", value: "Híbrida de hasta 42dB de profundidad" },
+      { label: "Autonomía de Auriculares", value: "Hasta 8 horas (ANC apagado)" },
+      { label: "Autonomía con Estuche", value: "Hasta 36 horas totales combinadas" },
+      { label: "Versión de Bluetooth", value: "Bluetooth 5.3 con códec AAC / SBC" },
+      { label: "Protección al Agua y Polvo", value: "Certificación IP54 completa" },
+      { label: "Diafragma / Driver", value: "12.4mm con diafragma de titanio" },
+      { label: "Micrófonos en Llamadas", value: "Doble micrófono con IA canceladora de ruido" },
+      { label: "Puerto de Carga", value: "USB Tipo-C con carga veloz" },
+    ],
     soundProfile: {
       type: "Bass Boost & ANC",
       description: "Sonido enriquecido con graves profundos y atenuación activa de ruido ambiente.",
@@ -155,7 +175,7 @@ export const PRODUCTS: Product[] = [
     tags: ["Audio", "In-Ear", "ANC 42dB", "Xiaomi", "Redmi", "Nuevo 2026"],
   },
   {
-    id: "redmi-buds-7s",
+    id: "100003",
     name: "Redmi Buds 7S",
     slug: "redmi-buds-7s",
     subtitle: "Cancelación activa de ruido · 32h de batería con estuche · Resistencia IP54",
@@ -164,7 +184,7 @@ export const PRODUCTS: Product[] = [
     price: 139.0,
     originalPrice: undefined,
     brand: "Xiaomi",
-    category: "in-ear",
+    category: "Audífonos Inalámbricos",
     inStock: true,
     stockCount: 8,
     isFeatured: true,
@@ -195,6 +215,15 @@ export const PRODUCTS: Product[] = [
       weight: "4.2g por auricular",
       latency: "Ultra baja latencia",
     },
+    customSpecs: [
+      { label: "Cancelación de Ruido", value: "ANC Adaptativo Inteligente de alta fidelidad" },
+      { label: "Autonomía de Auriculares", value: "Hasta 7 horas por carga individual" },
+      { label: "Autonomía con Estuche", value: "Hasta 32 horas de reproducción total" },
+      { label: "Versión de Bluetooth", value: "Bluetooth 5.3 de ultra baja latencia" },
+      { label: "Driver de Audio", value: "Doble diafragma coaxial Hi-Fi" },
+      { label: "Resistencia IP", value: "Certificación IP54 contra polvo y salpicaduras" },
+      { label: "Compatibilidad", value: "Android, iOS y emparejamiento dual multidispositivo" },
+    ],
     soundProfile: {
       type: "Hi-Fi Acústica Detallada",
       description: "Respuesta de frecuencia equilibrada con gran definición en instrumentos y voces.",

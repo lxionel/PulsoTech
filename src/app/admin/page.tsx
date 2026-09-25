@@ -48,6 +48,91 @@ interface SaleRecord {
   date: string;
 }
 
+export const generate6DigitId = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+export interface SpecFieldTemplate {
+  label: string;
+  placeholder: string;
+}
+
+export const CATEGORY_SPEC_TEMPLATES: Record<string, SpecFieldTemplate[]> = {
+  "Audífonos Inalámbricos": [
+    { label: "Autonomía de Auriculares", placeholder: "Ej: Hasta 6 horas continuas" },
+    { label: "Autonomía con Estuche", placeholder: "Ej: Hasta 30 horas totales" },
+    { label: "Tiempo / Carga Rápida", placeholder: "Ej: 10 min de carga = 2h de uso" },
+    { label: "Versión de Bluetooth", placeholder: "Ej: Bluetooth 5.3" },
+    { label: "Cancelación de Ruido", placeholder: "Ej: Cancelación Activa de Ruido (ANC) / Reducción IA" },
+    { label: "Resistencia al Agua", placeholder: "Ej: Certificación IP54 / IPX4" },
+    { label: "Driver Acústico", placeholder: "Ej: Diafragma dinámico de 12.4mm" },
+    { label: "Compatibilidad", placeholder: "Ej: Android, iOS, Windows, Mac" },
+  ],
+  "Smartwatches": [
+    { label: "Pantalla & Resolución", placeholder: "Ej: AMOLED 1.75'' Ultra HD (60Hz)" },
+    { label: "Autonomía de Batería", placeholder: "Ej: Hasta 12 días de uso típico" },
+    { label: "Resistencia al Agua", placeholder: "Ej: Sumergible 5 ATM (50 metros)" },
+    { label: "Sensores de Salud", placeholder: "Ej: Ritmo Cardíaco 24/7, SpO2, Sueño" },
+    { label: "Modos Deportivos", placeholder: "Ej: Más de 120 modos de entrenamiento" },
+    { label: "Llamadas Bluetooth", placeholder: "Ej: Micrófono y altavoz integrados" },
+    { label: "Compatibilidad", placeholder: "Ej: Android 6.0+ / iOS 12.0+" },
+  ],
+  "Altavoces Bluetooth": [
+    { label: "Potencia de Audio (RMS)", placeholder: "Ej: 20W RMS Audio Envolvente 360°" },
+    { label: "Autonomía de Batería", placeholder: "Ej: Hasta 16 horas de reproducción continua" },
+    { label: "Tiempo de Carga & Puerto", placeholder: "Ej: 3 horas vía USB Tipo C" },
+    { label: "Versión de Bluetooth", placeholder: "Ej: Bluetooth 5.3 (Rango de 15m)" },
+    { label: "Resistencia al Agua", placeholder: "Ej: Certificación IPX7 sumergible" },
+    { label: "Funciones Adicionales", placeholder: "Ej: Emparejamiento Estéreo TWS / Manos Libres" },
+  ],
+  "Accesorios": [
+    { label: "Material & Construcción", placeholder: "Ej: Polímero reforzado / Aleación de aluminio" },
+    { label: "Conectores / Puertos", placeholder: "Ej: USB Tipo C con soporte Power Delivery" },
+    { label: "Compatibilidad Universal", placeholder: "Ej: Compatible con dispositivos USB Tipo C" },
+    { label: "Garantía de Fábrica", placeholder: "Ej: 6 meses de garantía directa PulsoTech" },
+  ],
+};
+
+export function getCategorySpecTemplate(categoryName: string): SpecFieldTemplate[] {
+  const norm = (categoryName || "").toLowerCase().trim();
+  if (
+    norm.includes("audífono") ||
+    norm.includes("audifono") ||
+    norm.includes("ear") ||
+    norm.includes("auricular") ||
+    norm.includes("headphone") ||
+    norm.includes("tws")
+  ) {
+    return CATEGORY_SPEC_TEMPLATES["Audífonos Inalámbricos"];
+  }
+  if (
+    norm.includes("smartwatch") ||
+    norm.includes("reloj") ||
+    norm.includes("watch") ||
+    norm.includes("band")
+  ) {
+    return CATEGORY_SPEC_TEMPLATES["Smartwatches"];
+  }
+  if (
+    norm.includes("altavoz") ||
+    norm.includes("parlante") ||
+    norm.includes("speaker") ||
+    norm.includes("bocina")
+  ) {
+    return CATEGORY_SPEC_TEMPLATES["Altavoces Bluetooth"];
+  }
+  if (norm.includes("accesorio") || norm.includes("cable") || norm.includes("cargador")) {
+    return CATEGORY_SPEC_TEMPLATES["Accesorios"];
+  }
+  return [
+    { label: "Rendimiento / Potencia", placeholder: "Ej: Alto rendimiento" },
+    { label: "Autonomía / Batería", placeholder: "Ej: Batería de larga duración" },
+    { label: "Conectividad", placeholder: "Ej: Inalámbrico / USB-C" },
+    { label: "Material & Protección", placeholder: "Ej: Resistente al uso diario" },
+    { label: "Compatibilidad", placeholder: "Ej: Universal" },
+  ];
+}
+
 export default function AdminPage() {
   const { whatsappNumber, setWhatsappNumber } = useCart();
   const {
@@ -121,10 +206,10 @@ export default function AdminPage() {
 
   // ====== ESTADO DEL FORMULARIO DE AGREGAR / EDITAR PRODUCTO (INICIALMENTE LIMPIO) ======
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
-  const [formCustomId, setFormCustomId] = useState("");
+  const [formCustomId, setFormCustomId] = useState(generate6DigitId());
   const [formName, setFormName] = useState("");
   const [formBrand, setFormBrand] = useState(brands[0] || "Xiaomi");
-  const [formCategory, setFormCategory] = useState(categories[0] || "In-Ear");
+  const [formCategory, setFormCategory] = useState(categories[0] || "Audífonos Inalámbricos");
   const [formPrice, setFormPrice] = useState<number | "">("");
   const [formHasPromo, setFormHasPromo] = useState(false);
   const [formOriginalPrice, setFormOriginalPrice] = useState<number | "">("");
@@ -147,10 +232,23 @@ export default function AdminPage() {
   // Imagen Secundaria (Para el efecto de transición / hover al pasar el cursor)
   const [formSecondaryImage, setFormSecondaryImage] = useState("");
 
-  // Specs
-  const [formSpecBattery, setFormSpecBattery] = useState("");
-  const [formSpecAnc, setFormSpecAnc] = useState("");
-  const [formSpecConnectivity, setFormSpecConnectivity] = useState("");
+  // Especificaciones Técnicas Dinámicas por Categoría
+  const [formCustomSpecs, setFormCustomSpecs] = useState<{ label: string; value: string }[]>(() => {
+    return getCategorySpecTemplate(categories[0] || "Audífonos Inalámbricos").map((item) => ({
+      label: item.label,
+      value: "",
+    }));
+  });
+
+  const handleCategoryChange = (newCat: string) => {
+    setFormCategory(newCat);
+    // Si no hay valores rellenados, cambiar automáticamente a la plantilla técnica de la nueva categoría
+    const hasValues = formCustomSpecs.some((s) => s.value.trim().length > 0);
+    if (!hasValues) {
+      const template = getCategorySpecTemplate(newCat);
+      setFormCustomSpecs(template.map((t) => ({ label: t.label, value: "" })));
+    }
+  };
 
   // Métricas
   const totalRevenue = sales.reduce((acc, s) => acc + s.total, 0);
@@ -283,7 +381,7 @@ export default function AdminPage() {
     setFormCustomId(product.id);
     setFormName(product.name);
     setFormBrand(product.brand || brands[0] || "Xiaomi");
-    setFormCategory(product.category || categories[0] || "In-Ear");
+    setFormCategory(product.category || categories[0] || "Audífonos Inalámbricos");
     setFormPrice(product.price);
     setFormHasPromo(!!product.originalPrice && product.originalPrice > product.price);
     setFormOriginalPrice(product.originalPrice || "");
@@ -305,19 +403,37 @@ export default function AdminPage() {
     );
     setFormSecondaryImage(product.images?.[1] || "");
     setPreviewColorIndex(0);
-    setFormSpecBattery(product.specs?.battery || "");
-    setFormSpecAnc(product.specs?.anc || "");
-    setFormSpecConnectivity(product.specs?.connectivity || "");
+
+    // Cargar especificaciones técnicas personalizadas
+    const loadedSpecs: { label: string; value: string }[] = [];
+    if (product.customSpecs && product.customSpecs.length > 0) {
+      product.customSpecs.forEach((s) => {
+        loadedSpecs.push({ label: s.label, value: s.value });
+      });
+    } else if (product.specs) {
+      if (product.specs.battery) loadedSpecs.push({ label: "Autonomía de Batería", value: product.specs.battery });
+      if (product.specs.anc) loadedSpecs.push({ label: "Cancelación de Ruido", value: product.specs.anc });
+      if (product.specs.connectivity) loadedSpecs.push({ label: "Versión de Bluetooth", value: product.specs.connectivity });
+      if (product.specs.driver) loadedSpecs.push({ label: "Driver Acústico", value: product.specs.driver });
+      if (product.specs.latency) loadedSpecs.push({ label: "Latencia", value: product.specs.latency });
+    }
+    if (loadedSpecs.length === 0) {
+      const template = getCategorySpecTemplate(product.category || "Audífonos Inalámbricos");
+      template.forEach((t) => loadedSpecs.push({ label: t.label, value: "" }));
+    }
+    setFormCustomSpecs(loadedSpecs);
+
     setActiveTab("add_product");
   };
 
   // Limpiar formulario para nuevo producto (100% LIMPIO, SIN EJEMPLOS PRECARGADOS)
   const handleNewProductClick = () => {
     setEditingProductId(null);
-    setFormCustomId("");
+    setFormCustomId(generate6DigitId());
     setFormName("");
     setFormBrand(brands[0] || "Xiaomi");
-    setFormCategory(categories[0] || "In-Ear");
+    const initialCat = categories[0] || "Audífonos Inalámbricos";
+    setFormCategory(initialCat);
     setFormPrice("");
     setFormHasPromo(false);
     setFormOriginalPrice("");
@@ -335,9 +451,10 @@ export default function AdminPage() {
     ]);
     setFormSecondaryImage("");
     setPreviewColorIndex(0);
-    setFormSpecBattery("");
-    setFormSpecAnc("");
-    setFormSpecConnectivity("");
+
+    const template = getCategorySpecTemplate(initialCat);
+    setFormCustomSpecs(template.map((t) => ({ label: t.label, value: "" })));
+
     setActiveTab("add_product");
   };
 
@@ -352,9 +469,20 @@ export default function AdminPage() {
     const priceNum = typeof formPrice === "number" ? formPrice : parseFloat(formPrice as string) || 0;
     const origPriceNum = typeof formOriginalPrice === "number" ? formOriginalPrice : parseFloat(formOriginalPrice as string) || 0;
 
-    const finalId = formCustomId.trim()
-      ? formCustomId.trim().toUpperCase()
-      : (editingProductId || `PROD-${Date.now().toString().slice(-4)}`);
+    // Validación de ID estricto a 6 dígitos numéricos
+    let finalId = formCustomId.replace(/\D/g, "").slice(0, 6);
+    if (!finalId || finalId.length < 6) {
+      if (editingProductId && /^\d{6}$/.test(editingProductId)) {
+        finalId = editingProductId;
+      } else {
+        finalId = generate6DigitId();
+      }
+    }
+
+    // Verificar si el ID ya existe en otro producto al crear uno nuevo
+    if (!editingProductId && products.some((p) => p.id === finalId)) {
+      finalId = generate6DigitId();
+    }
 
     const slug = formName
       .toLowerCase()
@@ -376,10 +504,29 @@ export default function AdminPage() {
     const secImg = formSecondaryImage || finalColors[1]?.image || "";
     const images = [primaryImg, secImg].filter(Boolean);
 
+    // Consolidar especificaciones técnicas válidas
+    const validSpecs = formCustomSpecs
+      .map((s) => ({ label: s.label.trim(), value: s.value.trim() }))
+      .filter((s) => s.label.length > 0 && s.value.length > 0);
+
+    const findSpecValue = (keywords: string[], fallback: string) => {
+      const match = validSpecs.find((s) =>
+        keywords.some((k) => s.label.toLowerCase().includes(k))
+      );
+      return match ? match.value : fallback;
+    };
+
+    const batteryVal = findSpecValue(["batería", "bateria", "autonomía", "autonomia"], "Hasta 30h");
+    const ancVal = findSpecValue(["cancelación", "cancelacion", "anc", "ruido"], "Estándar");
+    const driverVal = findSpecValue(["driver", "diafragma", "potencia"], "Dinámico");
+    const connVal = findSpecValue(["bluetooth", "conectividad", "inalámbrico"], "Bluetooth 5.3");
+    const latencyVal = findSpecValue(["latencia", "ms"], "60ms");
+    const weightVal = findSpecValue(["peso", "gr", "gramos"], "4.2g");
+
     const productPayload: Product = {
       id: finalId,
       name: formName.trim(),
-      slug: slug || `producto-${finalId.toLowerCase()}`,
+      slug: slug || `producto-${finalId}`,
       subtitle: formSubtitle.trim(),
       description: formDescription.trim(),
       price: priceNum,
@@ -395,13 +542,14 @@ export default function AdminPage() {
       videoUrl: formVideoUrl.trim() || undefined,
       colors: finalColors,
       images: images.length > 0 ? images : [getAssetUrl("/images/products/redmi-buds-6-play.png")],
+      customSpecs: validSpecs.length > 0 ? validSpecs : undefined,
       specs: {
-        battery: formSpecBattery || "Hasta 30h",
-        anc: formSpecAnc || "Estándar",
-        driver: "Dinámico",
-        connectivity: formSpecConnectivity || "Bluetooth 5.3",
-        weight: "4.2g",
-        latency: "60ms",
+        battery: batteryVal,
+        anc: ancVal,
+        driver: driverVal,
+        connectivity: connVal,
+        weight: weightVal,
+        latency: latencyVal,
       },
       soundProfile: {
         type: "Equilibrado",
@@ -410,12 +558,13 @@ export default function AdminPage() {
         mid: 80,
         treble: 80,
       },
-      features: [
-        "100% Original Sellado",
-        ...(formSpecBattery ? [`${formSpecBattery} de batería con estuche`] : []),
-        ...(formSpecConnectivity ? [formSpecConnectivity] : []),
-      ],
-      tags: [formBrand.toLowerCase(), formCategory.toLowerCase(), "audio"],
+      features: validSpecs.length > 0
+        ? validSpecs.slice(0, 5).map((s) => `${s.label}: ${s.value}`)
+        : [
+            "100% Original Sellado",
+            ...(formSubtitle ? [formSubtitle] : []),
+          ],
+      tags: [formBrand.toLowerCase(), formCategory.toLowerCase(), "tecnología"],
     };
 
     if (editingProductId) {
@@ -845,18 +994,35 @@ export default function AdminPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="text-xs font-bold text-neutral-900 block mb-1">
-                        ID / Código SKU *
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Ej: RB-001 o PROD-101"
-                        value={formCustomId}
-                        onChange={(e) => setFormCustomId(e.target.value.toUpperCase())}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900"
-                      />
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-bold text-neutral-900">
+                          ID (6 dígitos) *
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setFormCustomId(generate6DigitId())}
+                          className="text-[10px] font-bold text-neutral-700 hover:text-black flex items-center gap-1 cursor-pointer bg-neutral-100 hover:bg-neutral-200 px-2 py-0.5 rounded transition-colors"
+                          title="Generar nuevo número de 6 dígitos aleatorio"
+                        >
+                          🎲 Generar ID
+                        </button>
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-neutral-400 text-xs">
+                          #
+                        </span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={6}
+                          placeholder="100001"
+                          value={formCustomId}
+                          onChange={(e) => setFormCustomId(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                          className="w-full pl-7 pr-3 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 tracking-wider"
+                        />
+                      </div>
                       <span className="text-[10px] text-neutral-400 mt-1 block">
-                        Si lo dejas vacío, se autogenerará uno.
+                        Código numérico único de 6 dígitos para rastreo rápido.
                       </span>
                     </div>
 
@@ -890,7 +1056,7 @@ export default function AdminPage() {
                               setFormBrand(nb.trim());
                             }
                           }}
-                          className="text-[10px] font-bold text-blue-600 hover:text-blue-800 cursor-pointer"
+                          className="text-[10px] font-bold text-neutral-700 hover:text-black cursor-pointer underline"
                         >
                           ＋ Nueva Marca
                         </button>
@@ -919,17 +1085,17 @@ export default function AdminPage() {
                             const nc = prompt("Ingresa el nombre de la nueva categoría:");
                             if (nc && nc.trim()) {
                               addCategory(nc.trim());
-                              setFormCategory(nc.trim());
+                              handleCategoryChange(nc.trim());
                             }
                           }}
-                          className="text-[10px] font-bold text-blue-600 hover:text-blue-800 cursor-pointer"
+                          className="text-[10px] font-bold text-neutral-700 hover:text-black cursor-pointer underline"
                         >
                           ＋ Nueva Categoría
                         </button>
                       </div>
                       <select
                         value={formCategory}
-                        onChange={(e) => setFormCategory(e.target.value)}
+                        onChange={(e) => handleCategoryChange(e.target.value)}
                         className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-semibold text-neutral-900 focus:outline-none focus:bg-white"
                       >
                         {categories.map((c) => (
@@ -955,10 +1121,102 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* 2. Precios & Promociones */}
+                {/* 2. Especificaciones Técnicas por Categoría */}
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
+                    <div>
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5 text-neutral-900" />
+                        <span>2. Ficha Técnica Oficial ({formCategory})</span>
+                      </h3>
+                      <p className="text-[11px] text-neutral-500 mt-0.5">
+                        Preguntas y campos formales según la categoría seleccionada. Se mostrarán con iconos en la ficha del producto.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const tpl = getCategorySpecTemplate(formCategory);
+                          setFormCustomSpecs(tpl.map((t) => ({ label: t.label, value: "" })));
+                        }}
+                        className="px-2.5 py-1 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-[11px] font-bold text-neutral-700 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                        title="Restablecer plantilla formal para esta categoría"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        <span>Plantilla</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormCustomSpecs([...formCustomSpecs, { label: "", value: "" }]);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-[11px] font-bold text-white flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>+ Característica</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 bg-neutral-50/70 p-4 rounded-xl border border-neutral-200/80">
+                    {formCustomSpecs.map((spec, sIdx) => (
+                      <div key={sIdx} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                        <div className="sm:col-span-5">
+                          <input
+                            type="text"
+                            placeholder="Nombre formal (ej: Autonomía)"
+                            value={spec.label}
+                            onChange={(e) => {
+                              const next = [...formCustomSpecs];
+                              next[sIdx].label = e.target.value;
+                              setFormCustomSpecs(next);
+                            }}
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-200 text-xs font-bold text-neutral-900 focus:outline-none focus:border-neutral-900"
+                          />
+                        </div>
+                        <div className="sm:col-span-6">
+                          <input
+                            type="text"
+                            placeholder="Valor / Especificación (ej: Hasta 30 horas)"
+                            value={spec.value}
+                            onChange={(e) => {
+                              const next = [...formCustomSpecs];
+                              next[sIdx].value = e.target.value;
+                              setFormCustomSpecs(next);
+                            }}
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-200 text-xs text-neutral-800 focus:outline-none focus:border-neutral-900"
+                          />
+                        </div>
+                        <div className="sm:col-span-1 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormCustomSpecs(formCustomSpecs.filter((_, i) => i !== sIdx));
+                            }}
+                            className="p-1.5 text-neutral-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                            title="Eliminar esta característica"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {formCustomSpecs.length === 0 && (
+                      <div className="text-center py-4 text-xs text-neutral-400">
+                        No hay características agregadas. Pulsa "+ Característica" para añadir especificaciones técnicas.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 3. Precios & Promociones */}
                 <div className="space-y-4 pt-2">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 border-b border-neutral-100 pb-2">
-                    2. Precios, Descuentos &amp; Stock
+                    3. Precios, Descuentos &amp; Stock
                   </h3>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1047,13 +1305,13 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* 3. Gestión Detallada de Colores & Fotografías */}
+                {/* 4. Gestión Detallada de Colores & Fotografías */}
                 <div className="space-y-4 pt-2">
                   <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
                     <div>
                       <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                        <span>3. Colores Disponibles &amp; Fotografías</span>
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                        <span>4. Colores Disponibles &amp; Fotografías</span>
                       </h3>
                       <p className="text-[11px] text-neutral-500 mt-0.5">
                         Agrega todos los colores que tiene el producto. Cada uno tendrá su círculo interactivo en la tienda.
@@ -1297,11 +1555,11 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* 4. Video Demostrativo del Producto */}
+                {/* 5. Video Demostrativo del Producto */}
                 <div className="space-y-4 pt-2">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 border-b border-neutral-100 pb-2 flex items-center gap-1.5">
                     <VideoIcon className="w-3.5 h-3.5 text-red-600" />
-                    <span>4. Video Multimedia (YouTube o MP4 - Opcional)</span>
+                    <span>5. Video Multimedia (YouTube o MP4 - Opcional)</span>
                   </h3>
 
                   <div>
@@ -1321,10 +1579,10 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* 5. Descripción Comercial */}
+                {/* 6. Descripción Comercial */}
                 <div className="space-y-4 pt-2">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 border-b border-neutral-100 pb-2">
-                    5. Descripción Comercial
+                    6. Descripción Comercial
                   </h3>
 
                   <div>
@@ -1485,18 +1743,33 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 w-full">
-                      <div className="w-full py-2 px-2.5 rounded-xl border border-neutral-200 bg-white text-neutral-800 font-bold text-xs flex items-center justify-center gap-1 shadow-2xs">
-                        <span>Ver Ficha</span>
-                        <ArrowRight className="w-3.5 h-3.5 text-neutral-400" />
-                      </div>
-                      <div className="w-full py-2 px-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm">
-                        <ShoppingBag className="w-3.5 h-3.5" />
-                        <span>Añadir</span>
+                    <div className="w-full">
+                      <div className="w-full py-2.5 sm:py-3 px-4 rounded-xl bg-neutral-950 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs cursor-default">
+                        <ShoppingBag className="w-4 h-4 stroke-[2.2]" />
+                        <span>Añadir al Carrito</span>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                {/* Resumen de Ficha Técnica en la Vista Previa */}
+                {formCustomSpecs.filter((s) => s.label.trim() && s.value.trim()).length > 0 && (
+                  <div className="p-4 rounded-2xl bg-white border border-neutral-200/90 shadow-2xs space-y-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
+                      Ficha Técnica en Vivo ({formCustomSpecs.filter((s) => s.label.trim() && s.value.trim()).length} campos)
+                    </span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {formCustomSpecs
+                        .filter((s) => s.label.trim() && s.value.trim())
+                        .map((spec, sIdx) => (
+                          <div key={sIdx} className="p-2 rounded-xl bg-neutral-50 border border-neutral-100 text-[11px]">
+                            <span className="font-bold text-neutral-400 text-[10px] uppercase block truncate">{spec.label}</span>
+                            <span className="font-extrabold text-neutral-900 block truncate">{spec.value}</span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

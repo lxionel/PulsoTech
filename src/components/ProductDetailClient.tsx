@@ -46,6 +46,17 @@ function getEmbedVideoInfo(url?: string): { isYouTube: boolean; embedUrl: string
   };
 }
 
+function getSpecIcon(label: string) {
+  const l = label.toLowerCase();
+  if (l.includes("batería") || l.includes("autonomía") || l.includes("estuche")) return Battery;
+  if (l.includes("bluetooth") || l.includes("conectividad") || l.includes("inalámbrico") || l.includes("conexión")) return Wifi;
+  if (l.includes("anc") || l.includes("cancelación") || l.includes("ruido") || l.includes("micrófono") || l.includes("sonido") || l.includes("audio")) return Volume2;
+  if (l.includes("driver") || l.includes("diafragma") || l.includes("potencia") || l.includes("carga") || l.includes("watts")) return Zap;
+  if (l.includes("resistencia") || l.includes("agua") || l.includes("polvo") || l.includes("ip") || l.includes("protección") || l.includes("garantía")) return ShieldCheck;
+  if (l.includes("tiempo") || l.includes("latencia") || l.includes("duración") || l.includes("hora")) return Clock;
+  return ShieldCheck;
+}
+
 export default function ProductDetailClient({ product }: { product: Product }) {
   const { addItem, setIsCartOpen, whatsappNumber, toggleFavorite, isFavorite } = useCart();
   const { products } = useProducts();
@@ -55,6 +66,44 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isVideoActive, setIsVideoActive] = useState(false);
   const isFav = isFavorite(product.id);
+
+  // Consolidar especificaciones técnicas oficiales (customSpecs + specs estándar)
+  const allSpecsList = React.useMemo(() => {
+    const list: { label: string; value: string }[] = [];
+
+    // 1. Agregar customSpecs si existen
+    if (product.customSpecs && Array.isArray(product.customSpecs)) {
+      product.customSpecs.forEach((s) => {
+        if (s.label?.trim() && s.value?.trim()) {
+          list.push({ label: s.label.trim(), value: s.value.trim() });
+        }
+      });
+    }
+
+    // 2. Si faltan campos de specs estándar, agregarlos:
+    if (product.specs) {
+      if (product.specs.battery && !list.some((s) => s.label.toLowerCase().includes("batería") || s.label.toLowerCase().includes("autonomía"))) {
+        list.push({ label: "Batería Total", value: `${product.specs.battery} con estuche` });
+      }
+      if (product.specs.anc && !list.some((s) => s.label.toLowerCase().includes("cancelación") || s.label.toLowerCase().includes("anc"))) {
+        list.push({ label: "Cancelación de Ruido", value: product.specs.anc });
+      }
+      if (product.specs.driver && !list.some((s) => s.label.toLowerCase().includes("driver") || s.label.toLowerCase().includes("diafragma"))) {
+        list.push({ label: "Driver Acústico", value: product.specs.driver });
+      }
+      if (product.specs.connectivity && !list.some((s) => s.label.toLowerCase().includes("conectividad") || s.label.toLowerCase().includes("bluetooth"))) {
+        list.push({ label: "Conectividad", value: product.specs.connectivity });
+      }
+      if (product.specs.latency && !list.some((s) => s.label.toLowerCase().includes("latencia"))) {
+        list.push({ label: "Latencia", value: product.specs.latency });
+      }
+      if (product.specs.weight && !list.some((s) => s.label.toLowerCase().includes("peso"))) {
+        list.push({ label: "Peso", value: product.specs.weight });
+      }
+    }
+
+    return list;
+  }, [product]);
 
   const colors = product.colors || [];
   const currentColor = colors[selectedColorIndex] || colors[0];
@@ -118,12 +167,12 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 w-full">
         {/* Breadcrumb Navigation */}
         <nav className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-neutral-500 mb-6 sm:mb-8 font-medium overflow-x-auto whitespace-nowrap py-1">
-          <Link href="/" className="hover:text-blue-600 transition-colors flex items-center gap-1 shrink-0">
+          <Link href="/" className="hover:text-neutral-900 transition-colors flex items-center gap-1 shrink-0">
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Inicio</span>
           </Link>
           <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-          <Link href="/#catalogo" className="hover:text-blue-600 transition-colors shrink-0">
+          <Link href="/#catalogo" className="hover:text-neutral-900 transition-colors shrink-0">
             Catálogo
           </Link>
           <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
@@ -247,7 +296,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                     }}
                     className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl overflow-hidden border p-1.5 sm:p-2 bg-white transition-all cursor-pointer shrink-0 ${
                       isSelected
-                        ? "border-blue-600 ring-2 ring-blue-600/20 shadow-xs"
+                        ? "border-neutral-900 ring-2 ring-neutral-900/20 shadow-xs"
                         : "border-neutral-200 hover:border-neutral-300 opacity-70 hover:opacity-100"
                     }`}
                   >
@@ -273,109 +322,43 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               </div>
             )}
 
-            {/* Technical Specification Grid (Despegatec Blue Icon Style) */}
-            <div className="pt-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-                  Ficha Técnica de Rendimiento
-                </h3>
-                <span className="text-[11px] font-semibold text-neutral-400">
-                  Especificaciones Oficiales
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {/* 1. Batería */}
-                <div className="p-3.5 rounded-2xl bg-white border border-neutral-200/80 shadow-2xs flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                    <Battery className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">
-                      Batería Total
-                    </span>
-                    <span className="text-xs font-extrabold text-neutral-900 truncate block">
-                      {product.specs.battery} con estuche
-                    </span>
-                  </div>
+            {/* Technical Specification Grid */}
+            {allSpecsList.length > 0 && (
+              <div className="pt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+                    Ficha Técnica de Rendimiento
+                  </h3>
+                  <span className="text-[11px] font-semibold text-neutral-400">
+                    Especificaciones Oficiales
+                  </span>
                 </div>
 
-                {/* 2. Cancelación */}
-                <div className="p-3.5 rounded-2xl bg-white border border-neutral-200/80 shadow-2xs flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                    <Volume2 className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">
-                      Cancelación
-                    </span>
-                    <span className="text-xs font-extrabold text-neutral-900 truncate block">
-                      {product.specs.anc}
-                    </span>
-                  </div>
-                </div>
-
-                {/* 3. Driver */}
-                <div className="p-3.5 rounded-2xl bg-white border border-neutral-200/80 shadow-2xs flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                    <Zap className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">
-                      Driver Acústico
-                    </span>
-                    <span className="text-xs font-extrabold text-neutral-900 truncate block">
-                      {product.specs.driver}
-                    </span>
-                  </div>
-                </div>
-
-                {/* 4. Conectividad */}
-                <div className="p-3.5 rounded-2xl bg-white border border-neutral-200/80 shadow-2xs flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                    <Wifi className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">
-                      Conectividad
-                    </span>
-                    <span className="text-xs font-extrabold text-neutral-900 truncate block">
-                      {product.specs.connectivity}
-                    </span>
-                  </div>
-                </div>
-
-                {/* 5. Protección */}
-                <div className="p-3.5 rounded-2xl bg-white border border-neutral-200/80 shadow-2xs flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                    <ShieldCheck className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">
-                      Protección
-                    </span>
-                    <span className="text-xs font-extrabold text-neutral-900 truncate block">
-                      Resistencia IP
-                    </span>
-                  </div>
-                </div>
-
-                {/* 6. Latencia */}
-                <div className="p-3.5 rounded-2xl bg-white border border-neutral-200/80 shadow-2xs flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                    <Clock className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">
-                      Latencia
-                    </span>
-                    <span className="text-xs font-extrabold text-neutral-900 truncate block">
-                      {product.specs.latency}
-                    </span>
-                  </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {allSpecsList.map((spec, sIdx) => {
+                    const IconComponent = getSpecIcon(spec.label);
+                    return (
+                      <div
+                        key={spec.label + sIdx}
+                        className="p-3.5 rounded-2xl bg-white border border-neutral-200/80 shadow-2xs flex items-center gap-3 transition-colors hover:border-neutral-300"
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-neutral-900 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                          <IconComponent className="w-5 h-5 text-neutral-100" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block truncate">
+                            {spec.label}
+                          </span>
+                          <span className="text-xs font-extrabold text-neutral-900 truncate block" title={spec.value}>
+                            {spec.value}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Right Column: Commercial Details & Purchase Actions */}
@@ -428,21 +411,16 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 </div>
               </div>
 
-              {/* Delivery Local Notice Box (Despegatec Inspired) */}
-              <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200/60 text-xs text-emerald-950 space-y-1.5">
-                <div className="flex items-center gap-2 font-bold text-emerald-900">
-                  <Truck className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Entrega el mismo día — Pago contra entrega</span>
+              {/* Trust & Guarantee Indicators */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200/70 text-xs text-neutral-800 font-medium">
+                  <ShieldCheck className="w-4 h-4 text-neutral-700 shrink-0" />
+                  <span className="truncate">Garantía PulsoTech</span>
                 </div>
-                <p className="text-[11px] text-emerald-800 pl-6 leading-relaxed">
-                  Te lo llevamos a tu domicilio o punto de encuentro. Pagas cómodamente con Efectivo, Yape o Plin al recibir y comprobar tu producto.
-                </p>
-              </div>
-
-              {/* Official Warranty Notice Box */}
-              <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-blue-50/70 border border-blue-200/60 text-xs text-blue-950 font-medium">
-                <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
-                <span>Garantía de funcionamiento PulsoTech · Caja sellada de fábrica</span>
+                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200/70 text-xs text-neutral-800 font-medium">
+                  <Truck className="w-4 h-4 text-neutral-700 shrink-0" />
+                  <span className="truncate">Envío & Entrega Segura</span>
+                </div>
               </div>
             </div>
 
@@ -562,7 +540,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 <ul className="space-y-2 text-xs text-neutral-600">
                   {product.features.map((feature, idx) => (
                     <li key={idx} className="flex items-start gap-2">
-                      <div className="w-4 h-4 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+                      <div className="w-4 h-4 rounded-full bg-neutral-100 text-neutral-900 flex items-center justify-center shrink-0 mt-0.5">
                         <Check className="w-3 h-3 stroke-[3]" />
                       </div>
                       <span className="leading-relaxed">{feature}</span>
@@ -588,7 +566,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               </div>
               <Link
                 href="/#catalogo"
-                className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                className="text-xs font-bold text-neutral-900 hover:text-neutral-700 flex items-center gap-1"
               >
                 <span>Ver todo el catálogo</span>
                 <ChevronRight className="w-4 h-4" />

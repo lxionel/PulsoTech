@@ -4,13 +4,19 @@ export interface ProductColor {
   image: string;
 }
 
+export interface ProductSpecItem {
+  label: string;
+  value: string;
+}
+
 export interface ProductSpecs {
-  battery: string;
-  anc: string;
-  driver: string;
-  connectivity: string;
-  weight: string;
-  latency: string;
+  battery?: string;
+  anc?: string;
+  driver?: string;
+  connectivity?: string;
+  weight?: string;
+  latency?: string;
+  [key: string]: string | undefined;
 }
 
 export interface SoundProfile {
@@ -22,7 +28,7 @@ export interface SoundProfile {
 }
 
 export interface Product {
-  id: string;
+  id: string; // Código numérico de 6 dígitos (ej: 100234)
   name: string;
   slug: string;
   subtitle: string;
@@ -39,7 +45,8 @@ export interface Product {
   reviewsCount: number;
   colors: ProductColor[];
   specs: ProductSpecs;
-  soundProfile: SoundProfile;
+  customSpecs?: ProductSpecItem[];
+  soundProfile?: SoundProfile;
   features: string[];
   tags: string[];
   images?: string[];
