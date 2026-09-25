@@ -39,9 +39,18 @@ import {
   QrCode,
   Copy,
   X,
+  BarChart3,
+  TrendingUp,
+  Calendar,
+  CreditCard,
+  ArrowUpRight,
+  PieChart,
+  Clock,
+  UserCheck,
+  SlidersHorizontal,
 } from "lucide-react";
 
-interface SaleRecord {
+export interface SaleRecord {
   id: string;
   productName: string;
   quantity: number;
@@ -49,7 +58,19 @@ interface SaleRecord {
   channel: "WhatsApp" | "Presencial" | "Web";
   customerName: string;
   date: string;
+  timestamp: number;
+  paymentMethod?: string;
+  notes?: string;
 }
+
+export type SalesPeriod = "all" | "today" | "this_week" | "this_month" | "last_month";
+
+export const getLocalDateString = (d = new Date()) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 export const generate6DigitId = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -185,7 +206,7 @@ export default function AdminPage() {
   const [newBrandInput, setNewBrandInput] = useState("");
   const [newCategoryInput, setNewCategoryInput] = useState("");
 
-  // Registro de ventas en localStorage (persistente y sin ventas simuladas por defecto)
+  // Registro de ventas en localStorage (persistente y con soporte para analíticas)
   const SALES_STORAGE_KEY = "pulsotech_sales_records";
   const [sales, setSales] = useState<SaleRecord[]>(() => {
     if (typeof window === "undefined") return [];
@@ -194,9 +215,21 @@ export default function AdminPage() {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
-          return parsed.filter(
-            (s: SaleRecord) => !["VTA-1001", "VTA-1002", "VTA-1003"].includes(s.id)
-          );
+          return parsed
+            .filter((s: SaleRecord) => !["VTA-1001", "VTA-1002", "VTA-1003"].includes(s.id))
+            .map((s: SaleRecord) => {
+              let ts = s.timestamp;
+              if (typeof ts !== "number" || isNaN(ts)) {
+                const parsedDate = Date.parse(s.date);
+                ts = !isNaN(parsedDate) ? parsedDate : Date.now();
+              }
+              return {
+                ...s,
+                timestamp: ts,
+                paymentMethod: s.paymentMethod || "Yape / Plin",
+                channel: s.channel || "WhatsApp",
+              };
+            });
         }
       }
     } catch {
@@ -214,11 +247,24 @@ export default function AdminPage() {
     }
   };
 
-  // Venta rápida
+  // Filtros de visualización para Analíticas y Reportes de Ventas
+  const [salesPeriod, setSalesPeriod] = useState<SalesPeriod>("all");
+  const [salesChannelFilter, setSalesChannelFilter] = useState<string>("all");
+  const [salesSearchQuery, setSalesSearchQuery] = useState<string>("");
+
+  // Registro de Venta Manual
   const [newSaleProduct, setNewSaleProduct] = useState(products[0]?.id || "");
   const [newSaleQty, setNewSaleQty] = useState(1);
   const [newSaleCustomer, setNewSaleCustomer] = useState("");
-  const [newSaleChannel, setNewSaleChannel] = useState<"WhatsApp" | "Presencial">("WhatsApp");
+  const [newSaleChannel, setNewSaleChannel] = useState<"WhatsApp" | "Presencial" | "Web">("WhatsApp");
+  const [newSalePayment, setNewSalePayment] = useState("Yape / Plin");
+  const [newSaleCustomPrice, setNewSaleCustomPrice] = useState<string>("");
+  const [newSaleDate, setNewSaleDate] = useState(() => getLocalDateString());
+  const [newSaleTime, setNewSaleTime] = useState(() => {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  });
+  const [newSaleNotes, setNewSaleNotes] = useState("");
   const [successNotice, setSuccessNotice] = useState("");
 
   // ====== ESTADO DEL FORMULARIO DE AGREGAR / EDITAR PRODUCTO (INICIALMENTE LIMPIO) ======
@@ -268,9 +314,131 @@ export default function AdminPage() {
     }
   };
 
-  // Métricas
+  // Métricas Generales
   const totalRevenue = sales.reduce((acc, s) => acc + s.total, 0);
   const lowStockCount = products.filter((p) => p.stockCount <= 5).length;
+
+  // Cálculos de Períodos Temporales para Analíticas de Ventas
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+
+  const monthNames = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+  ];
+
+  const todayStart = new Date(currentYear, currentMonth, now.getDate(), 0, 0, 0, 0).getTime();
+  const todayEnd = new Date(currentYear, currentMonth, now.getDate(), 23, 59, 59, 999).getTime();
+  const thisWeekStart = new Date(currentYear, currentMonth, now.getDate() - 6, 0, 0, 0, 0).getTime();
+  const thisMonthStart = new Date(currentYear, currentMonth, 1, 0, 0, 0, 0).getTime();
+  const thisMonthEnd = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999).getTime();
+
+  const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+  const lastMonthIndex = currentMonth === 0 ? 11 : currentMonth - 1;
+  const lastMonthStart = new Date(lastMonthYear, lastMonthIndex, 1, 0, 0, 0, 0).getTime();
+  const lastMonthEnd = new Date(lastMonthYear, lastMonthIndex + 1, 0, 23, 59, 59, 999).getTime();
+
+  const thisMonthName = monthNames[currentMonth];
+  const lastMonthName = monthNames[lastMonthIndex];
+
+  // Conteo de pedidos por período (para las insignias de filtro)
+  const countToday = sales.filter((s) => s.timestamp >= todayStart && s.timestamp <= todayEnd).length;
+  const countThisWeek = sales.filter((s) => s.timestamp >= thisWeekStart && s.timestamp <= todayEnd).length;
+  const countThisMonth = sales.filter((s) => s.timestamp >= thisMonthStart && s.timestamp <= thisMonthEnd).length;
+  const countLastMonth = sales.filter((s) => s.timestamp >= lastMonthStart && s.timestamp <= lastMonthEnd).length;
+  const countAll = sales.length;
+
+  // Ventas filtradas según el período temporal activo
+  const periodSales = sales.filter((s) => {
+    const ts = s.timestamp || 0;
+    if (salesPeriod === "today") return ts >= todayStart && ts <= todayEnd;
+    if (salesPeriod === "this_week") return ts >= thisWeekStart && ts <= todayEnd;
+    if (salesPeriod === "this_month") return ts >= thisMonthStart && ts <= thisMonthEnd;
+    if (salesPeriod === "last_month") return ts >= lastMonthStart && ts <= lastMonthEnd;
+    return true;
+  });
+
+  // Ventas mostradas en la tabla (aplica además filtro por canal y buscador)
+  const displayedSales = periodSales.filter((s) => {
+    if (salesChannelFilter !== "all" && s.channel !== salesChannelFilter) {
+      return false;
+    }
+    if (salesSearchQuery.trim()) {
+      const q = salesSearchQuery.toLowerCase();
+      const matchProduct = (s.productName || "").toLowerCase().includes(q);
+      const matchCustomer = (s.customerName || "").toLowerCase().includes(q);
+      const matchId = (s.id || "").toLowerCase().includes(q);
+      const matchPayment = (s.paymentMethod || "").toLowerCase().includes(q);
+      return matchProduct || matchCustomer || matchId || matchPayment;
+    }
+    return true;
+  });
+
+  // KPIs del Período
+  const periodRevenue = periodSales.reduce((acc, s) => acc + s.total, 0);
+  const periodOrdersCount = periodSales.length;
+  const periodUnitsCount = periodSales.reduce((acc, s) => acc + s.quantity, 0);
+  const periodAvgTicket = periodOrdersCount > 0 ? periodRevenue / periodOrdersCount : 0;
+
+  const periodLabel =
+    salesPeriod === "today"
+      ? "Hoy"
+      : salesPeriod === "this_week"
+      ? "Esta Semana (Últimos 7 días)"
+      : salesPeriod === "this_month"
+      ? `Este Mes (${thisMonthName} ${currentYear})`
+      : salesPeriod === "last_month"
+      ? `Mes Pasado (${lastMonthName} ${lastMonthYear})`
+      : "Todo el Historial";
+
+  // Distribución por canal en el período seleccionado
+  const whatsappSales = periodSales.filter((s) => s.channel === "WhatsApp");
+  const presencialSales = periodSales.filter((s) => s.channel === "Presencial");
+  const webSales = periodSales.filter((s) => s.channel === "Web");
+
+  const whatsappRevenue = whatsappSales.reduce((acc, s) => acc + s.total, 0);
+  const presencialRevenue = presencialSales.reduce((acc, s) => acc + s.total, 0);
+  const webRevenue = webSales.reduce((acc, s) => acc + s.total, 0);
+
+  // Top productos más vendidos en el período
+  const productSalesMap = new Map<string, { name: string; units: number; revenue: number }>();
+  periodSales.forEach((s) => {
+    const key = s.productName || "Producto";
+    const existing = productSalesMap.get(key) || { name: key, units: 0, revenue: 0 };
+    existing.units += s.quantity;
+    existing.revenue += s.total;
+    productSalesMap.set(key, existing);
+  });
+  const topProducts = Array.from(productSalesMap.values())
+    .sort((a, b) => b.units - a.units || b.revenue - a.revenue)
+    .slice(0, 5);
+
+  // Agrupación para el Gráfico de Barras de Ingresos por Fecha
+  const salesByDateMap = new Map<
+    string,
+    { label: string; sublabel: string; revenue: number; orders: number; ts: number }
+  >();
+  periodSales.forEach((s) => {
+    const d = new Date(s.timestamp || Date.now());
+    const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const dayLabel = `${d.getDate()} ${monthNames[d.getMonth()].slice(0, 3)}`;
+    const dayName = d.toLocaleDateString("es-PE", { weekday: "short" });
+    const existing = salesByDateMap.get(dateKey) || {
+      label: dayLabel,
+      sublabel: dayName.toUpperCase(),
+      revenue: 0,
+      orders: 0,
+      ts: new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(),
+    };
+    existing.revenue += s.total;
+    existing.orders += 1;
+    salesByDateMap.set(dateKey, existing);
+  });
+
+  const chartBars = Array.from(salesByDateMap.values()).sort((a, b) => a.ts - b.ts);
+  const maxBarRevenue = Math.max(...chartBars.map((b) => b.revenue), 10);
+  const bestDay = chartBars.length > 0 ? [...chartBars].sort((a, b) => b.revenue - a.revenue)[0] : null;
 
   const handleSavePhone = (e: React.FormEvent) => {
     e.preventDefault();
@@ -291,23 +459,53 @@ export default function AdminPage() {
 
     updateStock(prod.id, -newSaleQty, true);
 
-    const now = new Date();
-    const dateFormatted = `${now.toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit" })}, ${now.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}`;
+    const nowRef = new Date();
+    const [yStr, mStr, dStr] = (newSaleDate || getLocalDateString()).split("-");
+    const [hStr, minStr] = (newSaleTime || "12:00").split(":");
+    const year = parseInt(yStr) || nowRef.getFullYear();
+    const month = (parseInt(mStr) || (nowRef.getMonth() + 1)) - 1;
+    const day = parseInt(dStr) || nowRef.getDate();
+    const hours = parseInt(hStr) || 12;
+    const mins = parseInt(minStr) || 0;
+
+    const saleDateObj = new Date(year, month, day, hours, mins, 0);
+    const timestamp = saleDateObj.getTime();
+
+    const dateFormatted = `${saleDateObj.toLocaleDateString("es-PE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })}, ${saleDateObj.toLocaleTimeString("es-PE", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })}`;
+
+    const computedTotal =
+      newSaleCustomPrice !== ""
+        ? parseFloat(newSaleCustomPrice) || 0
+        : prod.price * newSaleQty;
 
     const newRecord: SaleRecord = {
       id: `VTA-${Math.floor(1000 + Math.random() * 9000)}`,
       productName: prod.name,
       quantity: newSaleQty,
-      total: prod.price * newSaleQty,
+      total: computedTotal,
       channel: newSaleChannel,
+      paymentMethod: newSalePayment,
       customerName: newSaleCustomer.trim() || "Cliente WhatsApp",
       date: dateFormatted,
+      timestamp,
+      notes: newSaleNotes.trim() || undefined,
     };
 
     saveSalesToStorage([newRecord, ...sales]);
     setNewSaleCustomer("");
     setNewSaleQty(1);
-    setSuccessNotice(`¡Venta #${newRecord.id} registrada! Se descontaron ${newSaleQty} unidades del stock.`);
+    setNewSaleCustomPrice("");
+    setNewSaleNotes("");
+    setSuccessNotice(
+      `¡Venta #${newRecord.id} registrada con éxito! Total: ${STORE_SETTINGS.currencySymbol}${newRecord.total.toFixed(2)}.`
+    );
     setTimeout(() => setSuccessNotice(""), 4000);
   };
 
@@ -321,7 +519,11 @@ export default function AdminPage() {
   };
 
   const handleClearAllSales = () => {
-    if (confirm("¿Estás seguro de vaciar todo el historial de ventas? Esta acción dejará los ingresos en S/ 0.00.")) {
+    if (
+      confirm(
+        "¿Estás seguro de vaciar todo el historial de ventas? Esta acción dejará los ingresos en S/ 0.00."
+      )
+    ) {
       saveSalesToStorage([]);
       setSuccessNotice("Historial de ventas vaciado correctamente.");
       setTimeout(() => setSuccessNotice(""), 3000);
@@ -329,19 +531,32 @@ export default function AdminPage() {
   };
 
   const handleExportSalesCSV = () => {
-    if (sales.length === 0) {
-      alert("No hay ventas registradas para exportar.");
+    const dataToExport = displayedSales.length > 0 ? displayedSales : sales;
+    if (dataToExport.length === 0) {
+      alert("No hay ventas registradas para exportar en este período.");
       return;
     }
-    const headers = ["ID", "Producto", "Cantidad", "Total_PEN", "Canal", "Cliente", "Fecha"];
-    const rows = sales.map((s) => [
+    const headers = [
+      "ID",
+      "Producto",
+      "Cantidad",
+      "Total_PEN",
+      "Canal",
+      "Metodo_Pago",
+      "Cliente",
+      "Fecha_Hora",
+      "Notas",
+    ];
+    const rows = dataToExport.map((s) => [
       s.id,
-      `"${s.productName.replace(/"/g, '""')}"`,
+      `"${(s.productName || "").replace(/"/g, '""')}"`,
       s.quantity,
       s.total.toFixed(2),
       s.channel,
-      `"${s.customerName.replace(/"/g, '""')}"`,
+      `"${(s.paymentMethod || "No especificado").replace(/"/g, '""')}"`,
+      `"${(s.customerName || "").replace(/"/g, '""')}"`,
       `"${s.date}"`,
+      `"${(s.notes || "").replace(/"/g, '""')}"`,
     ]);
     const csvContent =
       "data:text/csv;charset=utf-8,\uFEFF" +
@@ -349,7 +564,10 @@ export default function AdminPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `ventas_pulsotech_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute(
+      "download",
+      `ventas_${salesPeriod}_pulsotech_${getLocalDateString()}.csv`
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -834,8 +1052,8 @@ export default function AdminPage() {
                 : "border-transparent text-neutral-500 hover:text-neutral-900"
             }`}
           >
-            <ShoppingBag className="w-4 h-4" />
-            <span>Ventas &amp; Pedidos</span>
+            <BarChart3 className="w-4 h-4 text-emerald-600" />
+            <span>📊 Ventas &amp; Analíticas ({sales.length})</span>
           </button>
 
           <button
@@ -2423,178 +2641,816 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ================= PESTAÑA 3: VENTAS & PEDIDOS ================= */}
+        {/* ================= PESTAÑA: VENTAS & ANALÍTICAS ================= */}
         {activeTab === "sales" && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-5 space-y-6">
-              <div className="p-6 rounded-2xl border border-neutral-200 bg-white shadow-xs space-y-4">
-                <h3 className="text-sm font-bold text-neutral-950 flex items-center gap-2">
-                  <PlusCircle className="w-4 h-4 text-emerald-600" />
-                  <span>Registrar Venta Manual (WhatsApp o Presencial)</span>
-                </h3>
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* 1. BARRA SUPERIOR DE CONTROL: FILTRO DE PERÍODO TEMPORAL Y ACCIONES */}
+            <div className="p-4 sm:p-5 rounded-2xl border border-neutral-200 bg-white shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-emerald-600" />
+                  <h3 className="text-sm font-black text-neutral-950 uppercase tracking-wide">
+                    Panel de Ventas &amp; Analíticas
+                  </h3>
+                </div>
                 <p className="text-xs text-neutral-500">
-                  Registra pedidos cerrados fuera de la web para descontar las unidades del stock automáticamente.
+                  Período: <strong className="text-neutral-900">{periodLabel}</strong> • Mostrando {displayedSales.length} de {sales.length} órdenes registradas
                 </p>
+              </div>
 
-                <form onSubmit={handleRecordManualSale} className="space-y-3.5">
-                  <div>
-                    <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
-                      Producto vendido:
-                    </label>
-                    <select
-                      value={newSaleProduct}
-                      onChange={(e) => setNewSaleProduct(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none"
-                    >
-                      {products.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.name} ({STORE_SETTINGS.currencySymbol}{item.price.toFixed(2)}) - Stock: {item.stockCount}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+              {/* Botones de Selección de Período Temporal */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setSalesPeriod("all")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    salesPeriod === "all"
+                      ? "bg-neutral-950 text-white shadow-sm"
+                      : "bg-neutral-100 hover:bg-neutral-200 text-neutral-700"
+                  }`}
+                >
+                  <span>Todo</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${salesPeriod === "all" ? "bg-neutral-800 text-neutral-200" : "bg-white text-neutral-600"}`}>
+                    {countAll}
+                  </span>
+                </button>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
-                        Cantidad:
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        value={newSaleQty}
-                        onChange={(e) => setNewSaleQty(parseInt(e.target.value) || 1)}
-                        className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono text-neutral-900 focus:outline-none font-bold"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
-                        Canal:
-                      </label>
-                      <select
-                        value={newSaleChannel}
-                        onChange={(e) =>
-                          setNewSaleChannel(e.target.value as "WhatsApp" | "Presencial")
-                        }
-                        className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none font-semibold"
-                      >
-                        <option value="WhatsApp">WhatsApp</option>
-                        <option value="Presencial">Presencial</option>
-                      </select>
-                    </div>
-                  </div>
+                <button
+                  type="button"
+                  onClick={() => setSalesPeriod("this_month")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    salesPeriod === "this_month"
+                      ? "bg-neutral-950 text-white shadow-sm"
+                      : "bg-neutral-100 hover:bg-neutral-200 text-neutral-700"
+                  }`}
+                >
+                  <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                  <span>Este Mes ({thisMonthName.slice(0, 3)})</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${salesPeriod === "this_month" ? "bg-neutral-800 text-neutral-200" : "bg-white text-neutral-600"}`}>
+                    {countThisMonth}
+                  </span>
+                </button>
 
-                  <div>
-                    <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
-                      Nombre o Teléfono del Cliente:
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Ej: Sofia Martínez"
-                      value={newSaleCustomer}
-                      onChange={(e) => setNewSaleCustomer(e.target.value)}
-                      className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none placeholder-neutral-400"
-                    />
-                  </div>
+                <button
+                  type="button"
+                  onClick={() => setSalesPeriod("last_month")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    salesPeriod === "last_month"
+                      ? "bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-500/20"
+                      : "bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/80"
+                  }`}
+                  title="Ver cuántos pedidos se hicieron el mes pasado"
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Mes Pasado ({lastMonthName.slice(0, 3)})</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${salesPeriod === "last_month" ? "bg-emerald-700 text-white" : "bg-emerald-200/80 text-emerald-900"}`}>
+                    {countLastMonth}
+                  </span>
+                </button>
 
+                <button
+                  type="button"
+                  onClick={() => setSalesPeriod("this_week")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    salesPeriod === "this_week"
+                      ? "bg-neutral-950 text-white shadow-sm"
+                      : "bg-neutral-100 hover:bg-neutral-200 text-neutral-700"
+                  }`}
+                >
+                  <span>Esta Semana</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${salesPeriod === "this_week" ? "bg-neutral-800 text-neutral-200" : "bg-white text-neutral-600"}`}>
+                    {countThisWeek}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSalesPeriod("today")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    salesPeriod === "today"
+                      ? "bg-neutral-950 text-white shadow-sm"
+                      : "bg-neutral-100 hover:bg-neutral-200 text-neutral-700"
+                  }`}
+                >
+                  <span>Hoy</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${salesPeriod === "today" ? "bg-neutral-800 text-neutral-200" : "bg-white text-neutral-600"}`}>
+                    {countToday}
+                  </span>
+                </button>
+              </div>
+
+              {/* Botones de Acción Rápida */}
+              <div className="flex items-center gap-2 self-end md:self-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={handleExportSalesCSV}
+                  className="px-3 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-neutral-200 shadow-2xs"
+                  title="Exportar ventas del período actual en formato CSV para Excel"
+                >
+                  <Download className="w-3.5 h-3.5 text-neutral-600" />
+                  <span>Exportar CSV</span>
+                </button>
+
+                {sales.length > 0 && (
                   <button
-                    type="submit"
-                    className="w-full py-3 rounded-xl bg-neutral-950 text-white font-bold text-xs hover:bg-neutral-800 transition-colors flex items-center justify-center gap-2 shadow-md active:scale-95 cursor-pointer"
+                    type="button"
+                    onClick={handleClearAllSales}
+                    className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer border border-red-200"
+                    title="Vaciar todo el historial"
                   >
-                    <ShoppingBag className="w-3.5 h-3.5" />
-                    <span>Procesar Venta y Descontar Stock</span>
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
-                </form>
+                )}
               </div>
             </div>
 
-            {/* Sales History */}
-            <div className="lg:col-span-7 space-y-3">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <span className="text-xs uppercase text-neutral-500 block font-bold tracking-wider">
-                  Historial de Órdenes Recientes ({sales.length})
-                </span>
-                {sales.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleExportSalesCSV}
-                      className="px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-neutral-200"
-                      title="Descargar reporte en formato CSV para Excel"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Exportar CSV</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleClearAllSales}
-                      className="px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-red-200"
-                      title="Vaciar todo el historial de ventas"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Vaciar</span>
-                    </button>
+            {/* 2. TARJETAS KPIS DEL PERÍODO SELECCIONADO */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* KPI 1: Ingresos del Período */}
+              <div className="p-5 rounded-2xl border border-neutral-200 bg-white shadow-2xs relative overflow-hidden">
+                <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
+                  <span>INGRESOS DEL PERÍODO</span>
+                  <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <DollarSign className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="text-3xl font-extrabold text-neutral-950 tracking-tight">
+                  {STORE_SETTINGS.currencySymbol}{periodRevenue.toFixed(2)}
+                </div>
+                <div className="text-[11px] text-neutral-400 mt-1 flex items-center justify-between">
+                  <span>{periodLabel}</span>
+                  <span className="font-semibold text-emerald-600">Facturación Neta</span>
+                </div>
+              </div>
+
+              {/* KPI 2: Pedidos Realizados */}
+              <div className="p-5 rounded-2xl border border-neutral-200 bg-white shadow-2xs relative overflow-hidden">
+                <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
+                  <span>TOTAL PEDIDOS</span>
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <ShoppingBag className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="text-3xl font-extrabold text-neutral-950 tracking-tight">
+                  {periodOrdersCount} <span className="text-sm font-semibold text-neutral-500">pedidos</span>
+                </div>
+                <div className="text-[11px] text-neutral-400 mt-1 flex items-center justify-between">
+                  <span>Registrados con éxito</span>
+                  <span className="font-semibold text-blue-600">
+                    {periodOrdersCount > 0 ? "Actividad activa" : "Sin pedidos"}
+                  </span>
+                </div>
+              </div>
+
+              {/* KPI 3: Ticket Promedio */}
+              <div className="p-5 rounded-2xl border border-neutral-200 bg-white shadow-2xs relative overflow-hidden">
+                <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
+                  <span>TICKET PROMEDIO</span>
+                  <div className="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="text-3xl font-extrabold text-neutral-950 tracking-tight">
+                  {STORE_SETTINGS.currencySymbol}{periodAvgTicket.toFixed(2)}
+                </div>
+                <div className="text-[11px] text-neutral-400 mt-1 flex items-center justify-between">
+                  <span>Promedio por orden</span>
+                  <span className="font-semibold text-purple-600">Rentabilidad</span>
+                </div>
+              </div>
+
+              {/* KPI 4: Unidades Vendidas */}
+              <div className="p-5 rounded-2xl border border-neutral-200 bg-white shadow-2xs relative overflow-hidden">
+                <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
+                  <span>UNIDADES DESPACHADAS</span>
+                  <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <Package className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="text-3xl font-extrabold text-neutral-950 tracking-tight">
+                  {periodUnitsCount} <span className="text-sm font-semibold text-neutral-500">unidades</span>
+                </div>
+                <div className="text-[11px] text-neutral-400 mt-1 flex items-center justify-between">
+                  <span>Descontadas del stock</span>
+                  <span className="font-semibold text-amber-600">Volumen físico</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. SECCIÓN DE GRÁFICOS VISUALES & ANALÍTICAS */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Gráfico 1: Evolución de Ingresos y Pedidos por Día (8 Columnas) */}
+              <div className="lg:col-span-8 p-6 rounded-2xl border border-neutral-200 bg-white shadow-2xs space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-neutral-100 text-neutral-800">
+                      <BarChart3 className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-neutral-950">
+                        Evolución de Ingresos &amp; Pedidos
+                      </h4>
+                      <p className="text-[11px] text-neutral-500">
+                        Comportamiento diario de ventas en {periodLabel}
+                      </p>
+                    </div>
+                  </div>
+                  {chartBars.length > 0 && (
+                    <div className="text-right">
+                      <span className="text-xs font-black text-neutral-950">
+                        {STORE_SETTINGS.currencySymbol}{periodRevenue.toFixed(2)}
+                      </span>
+                      <span className="text-[10px] text-neutral-400 block font-medium">
+                        en {periodOrdersCount} órdenes
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Renderizado del Gráfico de Barras */}
+                {chartBars.length === 0 ? (
+                  <div className="h-56 flex flex-col items-center justify-center rounded-xl border border-dashed border-neutral-200 bg-neutral-50/50 p-6 text-center space-y-2">
+                    <div className="w-10 h-10 rounded-full bg-white border border-neutral-200 flex items-center justify-center text-neutral-400 shadow-2xs">
+                      <BarChart3 className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs font-bold text-neutral-700">
+                      Sin datos registrados en {periodLabel}
+                    </span>
+                    <p className="text-[11px] text-neutral-400 max-w-sm">
+                      No se han registrado ventas con fecha en este período. Registra una venta manual a la izquierda o selecciona &quot;Todo&quot; para ver el acumulado.
+                    </p>
+                    {salesPeriod !== "all" && (
+                      <button
+                        type="button"
+                        onClick={() => setSalesPeriod("all")}
+                        className="mt-1 px-3 py-1.5 rounded-lg bg-neutral-950 text-white text-[11px] font-bold hover:bg-neutral-800 transition-colors cursor-pointer"
+                      >
+                        Ver Todo el Historial ({sales.length})
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Contenedor de Barras SVG Interactivo */}
+                    <div className="h-56 flex items-end justify-around gap-2 pt-8 pb-3 px-3 rounded-xl bg-gradient-to-b from-neutral-50/60 to-white border border-neutral-100 overflow-x-auto">
+                      {chartBars.map((bar, idx) => {
+                        const heightPct = Math.max(14, Math.round((bar.revenue / maxBarRevenue) * 100));
+                        const isBest = bestDay && bar.ts === bestDay.ts && chartBars.length > 1;
+                        return (
+                          <div
+                            key={idx}
+                            className="flex-1 min-w-[42px] max-w-[70px] h-full flex flex-col items-center justify-end group cursor-pointer relative"
+                          >
+                            {/* Tooltip flotante al pasar el mouse */}
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 bg-neutral-950 text-white text-[10px] font-mono font-bold px-2 py-1 rounded-md shadow-lg pointer-events-none whitespace-nowrap z-20">
+                              {STORE_SETTINGS.currencySymbol}{bar.revenue.toFixed(2)} ({bar.orders} ped.)
+                            </div>
+
+                            {/* Valor sobre la barra */}
+                            <div className="text-[10px] font-bold text-neutral-600 mb-1.5 group-hover:text-emerald-600 transition-colors font-mono">
+                              {STORE_SETTINGS.currencySymbol}{bar.revenue >= 1000 ? `${(bar.revenue / 1000).toFixed(1)}k` : bar.revenue.toFixed(0)}
+                            </div>
+
+                            {/* Barra con degradado */}
+                            <div
+                              style={{ height: `${heightPct}%` }}
+                              className={`w-full rounded-t-lg transition-all duration-300 ${
+                                isBest
+                                  ? "bg-gradient-to-t from-emerald-700 via-emerald-600 to-emerald-400 group-hover:brightness-110 shadow-sm shadow-emerald-500/20 ring-2 ring-emerald-400/40"
+                                  : "bg-gradient-to-t from-neutral-900 to-neutral-700 group-hover:from-emerald-600 group-hover:to-emerald-400"
+                              }`}
+                            />
+
+                            {/* Etiquetas inferiores: Día y Nombre */}
+                            <div className="mt-2 text-center">
+                              <span className="text-[11px] font-bold text-neutral-800 block leading-tight">
+                                {bar.label}
+                              </span>
+                              <span className="text-[9px] font-semibold text-neutral-400 uppercase tracking-tight block">
+                                {bar.sublabel}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Resumen del Mejor Día */}
+                    {bestDay && (
+                      <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-200/80 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="text-neutral-600">
+                            Día con mayores ventas: <strong className="text-neutral-950">{bestDay.label} ({bestDay.sublabel})</strong>
+                          </span>
+                        </div>
+                        <span className="font-extrabold text-emerald-700 font-mono">
+                          {STORE_SETTINGS.currencySymbol}{bestDay.revenue.toFixed(2)} ({bestDay.orders} {bestDay.orders === 1 ? "pedido" : "pedidos"})
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
 
-              {sales.length === 0 ? (
-                <div className="p-8 text-center rounded-2xl border border-dashed border-neutral-300 bg-neutral-50/70 space-y-3">
-                  <div className="w-12 h-12 rounded-full bg-white border border-neutral-200 flex items-center justify-center mx-auto text-neutral-400 shadow-2xs">
-                    <ShoppingBag className="w-6 h-6" />
+              {/* Gráfico 2: Canales de Venta & Más Vendidos (4 Columnas) */}
+              <div className="lg:col-span-4 space-y-6">
+                {/* Canales de Venta */}
+                <div className="p-6 rounded-2xl border border-neutral-200 bg-white shadow-2xs space-y-4">
+                  <div className="flex items-center gap-2">
+                    <PieChart className="w-4 h-4 text-neutral-700" />
+                    <h4 className="text-sm font-black text-neutral-950">
+                      Canales de Venta
+                    </h4>
                   </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-neutral-800">No hay ventas registradas aún</h4>
-                    <p className="text-[11px] text-neutral-500 mt-1 max-w-sm mx-auto leading-relaxed">
-                      Registra una venta manual usando el formulario de la izquierda. El stock del producto se descontará automáticamente y sumará a tus ingresos registrados.
-                    </p>
+
+                  {/* Barra Multi-Segmento de Distribución */}
+                  <div className="w-full h-3 rounded-full bg-neutral-100 overflow-hidden flex shadow-inner">
+                    {periodRevenue > 0 ? (
+                      <>
+                        <div
+                          style={{ width: `${(whatsappRevenue / periodRevenue) * 100}%` }}
+                          className="bg-emerald-500 h-full transition-all"
+                          title={`WhatsApp: ${((whatsappRevenue / periodRevenue) * 100).toFixed(0)}%`}
+                        />
+                        <div
+                          style={{ width: `${(presencialRevenue / periodRevenue) * 100}%` }}
+                          className="bg-blue-500 h-full transition-all"
+                          title={`Presencial: ${((presencialRevenue / periodRevenue) * 100).toFixed(0)}%`}
+                        />
+                        <div
+                          style={{ width: `${(webRevenue / periodRevenue) * 100}%` }}
+                          className="bg-purple-500 h-full transition-all"
+                          title={`Web: ${((webRevenue / periodRevenue) * 100).toFixed(0)}%`}
+                        />
+                      </>
+                    ) : (
+                      <div className="w-full bg-neutral-200 h-full" />
+                    )}
                   </div>
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-                  {sales.map((s) => (
-                    <div
-                      key={s.id}
-                      className="p-4 rounded-xl border border-neutral-200/90 bg-white shadow-2xs flex items-center justify-between text-xs hover:border-neutral-300 transition-colors"
-                    >
-                      <div>
-                        <div className="font-extrabold text-neutral-950 text-sm flex items-center gap-2">
-                          <span>{s.productName}</span>
-                          <span className="text-[10px] font-mono font-normal bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded">
-                            #{s.id}
-                          </span>
+
+                  {/* Lista de Canales */}
+                  <div className="space-y-2.5 pt-1">
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-50 border border-neutral-100 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                        <div>
+                          <span className="font-bold text-neutral-900 block">WhatsApp</span>
+                          <span className="text-[10px] text-neutral-400">{whatsappSales.length} pedidos</span>
                         </div>
-                        <div className="text-[11px] text-neutral-500 mt-0.5">
-                          {s.customerName} • Cantidad: <strong className="text-neutral-900">{s.quantity}</strong> •{" "}
-                          <span
-                            className={`font-bold ${
-                              s.channel === "WhatsApp" ? "text-emerald-700" : "text-blue-700"
-                            }`}
-                          >
-                            {s.channel}
+                      </div>
+                      <div className="text-right">
+                        <span className="font-black text-neutral-950 block">
+                          {STORE_SETTINGS.currencySymbol}{whatsappRevenue.toFixed(2)}
+                        </span>
+                        <span className="text-[10px] text-emerald-600 font-bold">
+                          {periodRevenue > 0 ? ((whatsappRevenue / periodRevenue) * 100).toFixed(0) : 0}%
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-50 border border-neutral-100 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                        <div>
+                          <span className="font-bold text-neutral-900 block">Presencial</span>
+                          <span className="text-[10px] text-neutral-400">{presencialSales.length} pedidos</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-black text-neutral-950 block">
+                          {STORE_SETTINGS.currencySymbol}{presencialRevenue.toFixed(2)}
+                        </span>
+                        <span className="text-[10px] text-blue-600 font-bold">
+                          {periodRevenue > 0 ? ((presencialRevenue / periodRevenue) * 100).toFixed(0) : 0}%
+                        </span>
+                      </div>
+                    </div>
+
+                    {webSales.length > 0 && (
+                      <div className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-50 border border-neutral-100 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+                          <div>
+                            <span className="font-bold text-neutral-900 block">Web Comercial</span>
+                            <span className="text-[10px] text-neutral-400">{webSales.length} pedidos</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-black text-neutral-950 block">
+                            {STORE_SETTINGS.currencySymbol}{webRevenue.toFixed(2)}
+                          </span>
+                          <span className="text-[10px] text-purple-600 font-bold">
+                            {periodRevenue > 0 ? ((webRevenue / periodRevenue) * 100).toFixed(0) : 0}%
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 text-right">
-                        <div>
-                          <div className="font-extrabold text-neutral-950 text-sm">
-                            {STORE_SETTINGS.currencySymbol}{s.total.toFixed(2)}
+                    )}
+                  </div>
+                </div>
+
+                {/* Top 5 Productos Más Vendidos */}
+                <div className="p-6 rounded-2xl border border-neutral-200 bg-white shadow-2xs space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-black text-neutral-950 flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-emerald-600" />
+                      <span>Top Productos Más Vendidos</span>
+                    </h4>
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase">
+                      {topProducts.length} productos
+                    </span>
+                  </div>
+
+                  {topProducts.length === 0 ? (
+                    <p className="text-xs text-neutral-400 py-3 text-center">
+                      No hay datos de productos en este período.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {topProducts.map((p, idx) => {
+                        const maxUnits = topProducts[0]?.units || 1;
+                        const pct = Math.round((p.units / maxUnits) * 100);
+                        return (
+                          <div key={idx} className="space-y-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-bold text-neutral-900 truncate max-w-[180px]">
+                                #{idx + 1} {p.name}
+                              </span>
+                              <div className="flex items-center gap-2 font-mono">
+                                <span className="font-bold text-neutral-950">
+                                  {p.units} un.
+                                </span>
+                                <span className="text-[11px] text-neutral-400">
+                                  ({STORE_SETTINGS.currencySymbol}{p.revenue.toFixed(0)})
+                                </span>
+                              </div>
+                            </div>
+                            <div className="w-full h-1.5 rounded-full bg-neutral-100 overflow-hidden">
+                              <div
+                                style={{ width: `${pct}%` }}
+                                className={`h-full rounded-full ${
+                                  idx === 0
+                                    ? "bg-emerald-500"
+                                    : idx === 1
+                                    ? "bg-blue-500"
+                                    : "bg-neutral-400"
+                                }`}
+                              />
+                            </div>
                           </div>
-                          <div className="text-[10px] text-neutral-400">{s.date}</div>
-                        </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 4. SECCIÓN INFERIOR: REGISTRAR VENTA MANUAL (IZQUIERDA) & TABLA DETALLADA DE ÓRDENES (DERECHA) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Formulario de Registrar Venta Manual */}
+              <div className="lg:col-span-5 space-y-6">
+                <div className="p-6 rounded-2xl border border-neutral-200 bg-white shadow-xs space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-neutral-950 flex items-center gap-2">
+                      <PlusCircle className="w-4 h-4 text-emerald-600" />
+                      <span>Registrar Venta Manual</span>
+                    </h3>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      Descuenta Stock
+                    </span>
+                  </div>
+                  <p className="text-xs text-neutral-500">
+                    Registra pedidos de WhatsApp o presenciales. Puedes asignar fechas pasadas (como el mes anterior) para armar tu historial.
+                  </p>
+
+                  <form onSubmit={handleRecordManualSale} className="space-y-3.5">
+                    <div>
+                      <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                        Producto vendido:
+                      </label>
+                      <select
+                        value={newSaleProduct}
+                        onChange={(e) => setNewSaleProduct(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none"
+                      >
+                        {products.map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.name} ({STORE_SETTINGS.currencySymbol}{item.price.toFixed(2)}) - Stock: {item.stockCount}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                          Cantidad:
+                        </label>
+                        <input
+                          type="number"
+                          min={1}
+                          value={newSaleQty}
+                          onChange={(e) => setNewSaleQty(parseInt(e.target.value) || 1)}
+                          className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono text-neutral-900 focus:outline-none font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                          Total (Soles):
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          placeholder={`Auto: ${STORE_SETTINGS.currencySymbol}${((products.find((p) => p.id === newSaleProduct)?.price || 0) * newSaleQty).toFixed(2)}`}
+                          value={newSaleCustomPrice}
+                          onChange={(e) => setNewSaleCustomPrice(e.target.value)}
+                          className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono text-neutral-900 focus:outline-none font-bold placeholder-neutral-400"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                          Canal:
+                        </label>
+                        <select
+                          value={newSaleChannel}
+                          onChange={(e) =>
+                            setNewSaleChannel(e.target.value as "WhatsApp" | "Presencial" | "Web")
+                          }
+                          className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none font-semibold"
+                        >
+                          <option value="WhatsApp">WhatsApp</option>
+                          <option value="Presencial">Presencial</option>
+                          <option value="Web">Web Comercial</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                          Método de Pago:
+                        </label>
+                        <select
+                          value={newSalePayment}
+                          onChange={(e) => setNewSalePayment(e.target.value)}
+                          className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none font-semibold"
+                        >
+                          <option value="Yape / Plin">Yape / Plin</option>
+                          <option value="Transferencia BCP">Transferencia BCP</option>
+                          <option value="Transferencia BBVA">Transferencia BBVA</option>
+                          <option value="Transferencia Interbank">Transferencia Interbank</option>
+                          <option value="Efectivo Contraentrega">Efectivo Contraentrega</option>
+                          <option value="Tarjeta Débito/Crédito">Tarjeta Débito/Crédito</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Selector de Fecha & Hora con Preajustes Rápidos */}
+                    <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-200/90 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-neutral-700 uppercase flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-neutral-500" />
+                          <span>Fecha y Hora del Pedido:</span>
+                        </label>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="date"
+                          value={newSaleDate}
+                          onChange={(e) => setNewSaleDate(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-neutral-300 text-xs font-mono text-neutral-900 focus:outline-none font-semibold"
+                        />
+                        <input
+                          type="time"
+                          value={newSaleTime}
+                          onChange={(e) => setNewSaleTime(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-neutral-300 text-xs font-mono text-neutral-900 focus:outline-none font-semibold"
+                        />
+                      </div>
+
+                      {/* Botones de Preajustes Rápidos */}
+                      <div className="flex items-center gap-1.5 pt-1 flex-wrap">
+                        <span className="text-[10px] text-neutral-400 font-semibold">Preajuste rápido:</span>
                         <button
                           type="button"
-                          onClick={() => handleDeleteSale(s.id)}
-                          className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                          title="Eliminar este registro de venta"
+                          onClick={() => setNewSaleDate(getLocalDateString())}
+                          className="px-2 py-0.5 rounded bg-white hover:bg-neutral-200 text-neutral-700 text-[10px] font-bold transition-colors cursor-pointer border border-neutral-200"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          Hoy
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const yesterday = new Date(Date.now() - 86400000);
+                            setNewSaleDate(getLocalDateString(yesterday));
+                          }}
+                          className="px-2 py-0.5 rounded bg-white hover:bg-neutral-200 text-neutral-700 text-[10px] font-bold transition-colors cursor-pointer border border-neutral-200"
+                        >
+                          Ayer
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const pastMonthDate = new Date(lastMonthYear, lastMonthIndex, 15);
+                            setNewSaleDate(getLocalDateString(pastMonthDate));
+                          }}
+                          className="px-2 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold transition-colors cursor-pointer border border-emerald-300"
+                          title="Fijar fecha al día 15 del mes pasado para pruebas o registros atrasados"
+                        >
+                          📅 Mes Pasado ({lastMonthName.slice(0, 3)})
                         </button>
                       </div>
                     </div>
-                  ))}
+
+                    <div>
+                      <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                        Nombre o Teléfono del Cliente:
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ej: Sofia Martínez (+51 987 654 321)"
+                        value={newSaleCustomer}
+                        onChange={(e) => setNewSaleCustomer(e.target.value)}
+                        className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none placeholder-neutral-400"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                        Notas u Observaciones (Opcional):
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ej: Entregado en estación Javier Prado / Envío Lima Metropolitana"
+                        value={newSaleNotes}
+                        onChange={(e) => setNewSaleNotes(e.target.value)}
+                        className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none placeholder-neutral-400"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-3 rounded-xl bg-neutral-950 text-white font-bold text-xs hover:bg-neutral-800 transition-colors flex items-center justify-center gap-2 shadow-md active:scale-95 cursor-pointer"
+                    >
+                      <ShoppingBag className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Procesar Venta y Descontar Stock</span>
+                    </button>
+                  </form>
                 </div>
-              )}
+              </div>
+
+              {/* Historial Detallado de Órdenes */}
+              <div className="lg:col-span-7 space-y-3.5">
+                {/* Barra de Filtros & Búsqueda dentro del Historial */}
+                <div className="p-4 rounded-2xl border border-neutral-200 bg-white shadow-2xs space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <span className="text-xs uppercase text-neutral-500 font-bold tracking-wider flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-neutral-700" />
+                      <span>Órdenes en {periodLabel} ({displayedSales.length})</span>
+                    </span>
+
+                    {/* Filtro por Canal de Venta */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] text-neutral-400 font-semibold mr-1">Canal:</span>
+                      {["all", "WhatsApp", "Presencial", "Web"].map((channel) => (
+                        <button
+                          key={channel}
+                          type="button"
+                          onClick={() => setSalesChannelFilter(channel)}
+                          className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-colors cursor-pointer ${
+                            salesChannelFilter === channel
+                              ? "bg-neutral-900 text-white"
+                              : "bg-neutral-100 hover:bg-neutral-200 text-neutral-600"
+                          }`}
+                        >
+                          {channel === "all" ? "Todos" : channel}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Buscador de Órdenes */}
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Buscar por producto, cliente, #ID de venta o método de pago..."
+                      value={salesSearchQuery}
+                      onChange={(e) => setSalesSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-400"
+                    />
+                    {salesSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSalesSearchQuery("")}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 text-xs font-bold"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Lista de Órdenes */}
+                {displayedSales.length === 0 ? (
+                  <div className="p-10 text-center rounded-2xl border border-dashed border-neutral-300 bg-white space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-neutral-50 border border-neutral-200 flex items-center justify-center mx-auto text-neutral-400 shadow-2xs">
+                      <ShoppingBag className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-neutral-800">
+                        {sales.length === 0
+                          ? "No hay ventas registradas aún"
+                          : `No se encontraron órdenes para este filtro (${periodLabel})`}
+                      </h4>
+                      <p className="text-[11px] text-neutral-500 mt-1 max-w-sm mx-auto leading-relaxed">
+                        {sales.length === 0
+                          ? "Usa el formulario de la izquierda para registrar una venta manual. El stock se descontará automáticamente y alimentará tus gráficos de facturación."
+                          : "Intenta cambiando el filtro de período o limpiando la búsqueda para ver más órdenes."}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5 max-h-[620px] overflow-y-auto pr-1">
+                    {displayedSales.map((s) => (
+                      <div
+                        key={s.id}
+                        className="p-4 rounded-xl border border-neutral-200/90 bg-white shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs hover:border-neutral-300 transition-colors"
+                      >
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-extrabold text-neutral-950 text-sm truncate">
+                              {s.productName}
+                            </span>
+                            <span className="text-[10px] font-mono font-bold bg-neutral-100 text-neutral-700 px-1.5 py-0.5 rounded border border-neutral-200">
+                              #{s.id}
+                            </span>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                s.channel === "WhatsApp"
+                                  ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                  : s.channel === "Presencial"
+                                  ? "bg-blue-50 text-blue-800 border border-blue-200"
+                                  : "bg-purple-50 text-purple-800 border border-purple-200"
+                              }`}
+                            >
+                              {s.channel}
+                            </span>
+                            {s.paymentMethod && (
+                              <span className="text-[10px] font-medium bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded">
+                                💳 {s.paymentMethod}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="text-[11px] text-neutral-500 flex items-center gap-2 flex-wrap">
+                            <span>
+                              Cliente: <strong className="text-neutral-800">{s.customerName}</strong>
+                            </span>
+                            <span>•</span>
+                            <span>
+                              Cant: <strong className="text-neutral-900 font-mono">{s.quantity} un.</strong>
+                            </span>
+                            <span>•</span>
+                            <span className="text-neutral-400 font-mono text-[10px]">
+                              {s.date}
+                            </span>
+                          </div>
+
+                          {s.notes && (
+                            <div className="text-[10px] text-neutral-500 bg-neutral-50 px-2 py-1 rounded border border-neutral-100 inline-block mt-0.5">
+                              💬 {s.notes}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between sm:justify-end gap-3 text-right shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-neutral-100">
+                          <div>
+                            <div className="font-black text-neutral-950 text-base font-mono">
+                              {STORE_SETTINGS.currencySymbol}{s.total.toFixed(2)}
+                            </div>
+                            <div className="text-[10px] text-emerald-600 font-semibold">
+                              Completado
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSale(s.id)}
+                            className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-red-200"
+                            title="Eliminar este registro de venta"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
