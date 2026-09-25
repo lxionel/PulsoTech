@@ -81,84 +81,21 @@ function getInitialCategories(): string[] {
   return DEFAULT_CATEGORIES;
 }
 
-function syncWithDefaults(storedList: Product[]): Product[] {
-  if (!Array.isArray(storedList) || storedList.length === 0) {
-    return DEFAULT_PRODUCTS;
-  }
-
-  const updatedList = storedList.map((storedProd) => {
-    const defaultMatch = DEFAULT_PRODUCTS.find(
-      (dp) =>
-        dp.id === storedProd.id ||
-        dp.slug === storedProd.slug ||
-        (storedProd.name && dp.name.toLowerCase() === storedProd.name.toLowerCase())
-    );
-
-    // Asegurar que todo ID sea numérico de 6 dígitos
-    let safeId = storedProd.id;
-    if (!safeId || !/^\d{6}$/.test(safeId)) {
-      safeId = defaultMatch ? defaultMatch.id : Math.floor(100000 + Math.random() * 900000).toString();
-    }
-
-    if (!defaultMatch) {
-      // Producto creado por el admin: se preserva íntegramente
-      return {
-        ...storedProd,
-        id: safeId,
-      };
-    }
-
-    // Para productos de catálogo base: preservar las modificaciones del usuario
-    const hasOutdatedColors =
-      !storedProd.colors ||
-      storedProd.colors.length <= 1 ||
-      (storedProd.colors.length === 1 && storedProd.colors[0]?.name === "Original") ||
-      storedProd.colors.length < defaultMatch.colors.length;
-
-    return {
-      ...defaultMatch,
-      ...storedProd,
-      id: safeId,
-      colors: hasOutdatedColors ? defaultMatch.colors : (storedProd.colors || defaultMatch.colors),
-      images: storedProd.images && storedProd.images.length > 0 ? storedProd.images : defaultMatch.images,
-      customSpecs: storedProd.customSpecs && storedProd.customSpecs.length > 0 ? storedProd.customSpecs : defaultMatch.customSpecs,
-    };
-  });
-
-  // Asegurar que no falte ningún producto de DEFAULT_PRODUCTS
-  DEFAULT_PRODUCTS.forEach((dp) => {
-    if (!updatedList.some((p) => p.id === dp.id || p.slug === dp.slug)) {
-      updatedList.push(dp);
-    }
-  });
-
-  return updatedList;
-}
-
 function getInitialProducts(): Product[] {
   if (typeof window !== "undefined") {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      const version = localStorage.getItem(DATA_VERSION_KEY);
-      if (stored) {
+      if (stored !== null) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const synced = syncWithDefaults(parsed);
-          if (version !== CURRENT_DATA_VERSION) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(synced));
-            localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
-          }
-          return synced;
+        if (Array.isArray(parsed)) {
+          return parsed;
         }
-      } else {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_PRODUCTS));
-        localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
       }
     } catch (e) {
       console.error("Error reading localStorage:", e);
     }
   }
-  return DEFAULT_PRODUCTS;
+  return [];
 }
 
 export function ProductsProvider({ children }: { children: React.ReactNode }) {
@@ -202,14 +139,10 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         setIsCloudConnected(true);
         setCloudStatus("🟢 Conectado en tiempo real a Supabase");
 
-        if (cloudProds.length > 0) {
-          // Hay productos en la nube: actualizar estado local
-          setProducts(cloudProds);
-          if (typeof window !== "undefined") {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudProds));
-          }
-        } else {
-          setCloudStatus("🟢 Conectado a Supabase (Tabla de productos vacía)");
+        // Respetar fielmente los productos de Supabase (incluso si está vacío porque se borraron)
+        setProducts(cloudProds);
+        if (typeof window !== "undefined") {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudProds));
         }
 
         // Cargar marcas y categorías de la nube si existen
@@ -247,11 +180,9 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     if (testResult !== null) {
       setIsCloudConnected(true);
       setCloudStatus("🟢 Conectado exitosamente en tiempo real");
-      if (testResult.length > 0) {
-        setProducts(testResult);
-        if (typeof window !== "undefined") {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(testResult));
-        }
+      setProducts(testResult);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(testResult));
       }
       return {
         success: true,
@@ -343,7 +274,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       if (e.key === STORAGE_KEY && e.newValue) {
         try {
           const parsed = JSON.parse(e.newValue);
-          if (Array.isArray(parsed) && parsed.length > 0) {
+          if (Array.isArray(parsed)) {
             setProducts(parsed);
           }
         } catch (err) {
