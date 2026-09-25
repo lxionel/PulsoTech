@@ -79,3 +79,19 @@ export interface Order {
   channel: "WhatsApp" | "Web" | "Presencial";
   createdAt: string;
 }
+
+export interface Coupon {
+  id: string;
+  code: string;
+  discountType: "percentage" | "fixed";
+  discountValue: number;
+  minPurchase: number;
+  isActive: boolean;
+}
+
+export interface StoreBanner {
+  enabled: boolean;
+  text: string;
+  badge: string;
+  theme: "dark" | "emerald" | "blue" | "rose";
+}

@@ -12,6 +12,7 @@ import {
   Trash2,
   Plus,
   Minus,
+  Tag,
 } from "lucide-react";
 
 export default function CartDrawer() {
@@ -22,14 +23,21 @@ export default function CartDrawer() {
     removeItem,
     updateQuantity,
     subtotal,
+    discountAmount,
+    total,
     itemsCount,
     whatsappNumber,
+    appliedCoupon,
+    applyCoupon,
+    removeCoupon,
   } = useCart();
 
   const [customerName, setCustomerName] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"contra_entrega" | "transferencia">("contra_entrega");
   const [errorMsg, setErrorMsg] = useState("");
+  const [couponCodeInput, setCouponCodeInput] = useState("");
+  const [couponNotice, setCouponNotice] = useState<{ text: string; isError: boolean } | null>(null);
 
   // Lock body scroll when cart is open
   React.useEffect(() => {
@@ -44,6 +52,15 @@ export default function CartDrawer() {
   }, [isCartOpen]);
 
   if (!isCartOpen) return null;
+
+  const handleApplyCoupon = () => {
+    if (!couponCodeInput.trim()) return;
+    const res = applyCoupon(couponCodeInput.trim());
+    setCouponNotice({ text: res.message, isError: !res.success });
+    if (res.success) {
+      setCouponCodeInput("");
+    }
+  };
 
   const handleWhatsAppCheckout = () => {
     if (items.length === 0) return;
@@ -86,7 +103,12 @@ export default function CartDrawer() {
 
     lines.push(``);
     lines.push(`🚚 *Entrega:* A coordinar por WhatsApp (Contra Entrega)`);
-    lines.push(`💰 *TOTAL:* ${STORE_SETTINGS.currencySymbol}${subtotal.toFixed(2)}`);
+    if (appliedCoupon && discountAmount > 0) {
+      lines.push(
+        `🎟️ *Cupón Aplicado:* ${appliedCoupon.code} (-${STORE_SETTINGS.currencySymbol}${discountAmount.toFixed(2)})`
+      );
+    }
+    lines.push(`💰 *TOTAL:* ${STORE_SETTINGS.currencySymbol}${total.toFixed(2)}`);
     lines.push(`━━━━━━━━━━━━━━━━━━━━━━`);
     lines.push(`¡Hola PulsoTech! Armé este pedido en la web. ¿Tienen disponibilidad para coordinar la entrega?`);
 
@@ -275,6 +297,79 @@ export default function CartDrawer() {
                 {errorMsg && (
                   <p className="text-[11px] text-red-500 font-medium">{errorMsg}</p>
                 )}
+
+                {/* Sección de Cupón de Descuento */}
+                <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-neutral-700 flex items-center gap-1.5 uppercase tracking-wider">
+                      <Tag className="w-3.5 h-3.5 text-neutral-500" />
+                      <span>Cupón de Descuento</span>
+                    </span>
+                    {appliedCoupon && (
+                      <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                        Activo
+                      </span>
+                    )}
+                  </div>
+
+                  {appliedCoupon ? (
+                    <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-xs">
+                      <div>
+                        <div className="font-extrabold text-emerald-900 font-mono">
+                          {appliedCoupon.code}
+                        </div>
+                        <div className="text-[10px] text-emerald-700">
+                          {appliedCoupon.discountType === "percentage"
+                            ? `${appliedCoupon.discountValue}% de descuento aplicado`
+                            : `Descuento de ${STORE_SETTINGS.currencySymbol}${appliedCoupon.discountValue.toFixed(2)}`}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removeCoupon}
+                        className="px-2 py-1 text-[11px] font-bold text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors cursor-pointer"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Ej: PULSO10"
+                        value={couponCodeInput}
+                        onChange={(e) => {
+                          setCouponCodeInput(e.target.value.toUpperCase());
+                          if (couponNotice) setCouponNotice(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleApplyCoupon();
+                          }
+                        }}
+                        className="flex-1 px-3 py-1.5 rounded-lg border border-neutral-300 text-xs font-mono font-bold uppercase focus:outline-none focus:border-neutral-900 bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        className="px-3.5 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition-colors cursor-pointer shrink-0"
+                      >
+                        Aplicar
+                      </button>
+                    </div>
+                  )}
+
+                  {couponNotice && (
+                    <p
+                      className={`text-[11px] font-medium ${
+                        couponNotice.isError ? "text-red-600" : "text-emerald-700"
+                      }`}
+                    >
+                      {couponNotice.text}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Price summary */}
@@ -286,17 +381,29 @@ export default function CartDrawer() {
                     {subtotal.toFixed(2)}
                   </span>
                 </div>
+
+                {appliedCoupon && discountAmount > 0 && (
+                  <div className="flex justify-between text-emerald-700 font-bold">
+                    <span>Descuento ({appliedCoupon.code})</span>
+                    <span>
+                      -{STORE_SETTINGS.currencySymbol}
+                      {discountAmount.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+
                 <div className="flex justify-between text-neutral-600 font-medium">
                   <span>Envío</span>
                   <span className="text-emerald-700 font-semibold">
                     A coordinar por WhatsApp
                   </span>
                 </div>
+
                 <div className="flex justify-between text-base font-black text-neutral-950 pt-2 border-t border-neutral-200">
                   <span>Total</span>
                   <span>
                     {STORE_SETTINGS.currencySymbol}
-                    {subtotal.toFixed(2)}
+                    {total.toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -315,7 +422,7 @@ export default function CartDrawer() {
                 </svg>
                 <span>Pedir por WhatsApp</span>
                 <span className="text-xs font-semibold opacity-90">
-                  ({STORE_SETTINGS.currencySymbol}{subtotal.toFixed(2)})
+                  ({STORE_SETTINGS.currencySymbol}{total.toFixed(2)})
                 </span>
               </button>
             </div>

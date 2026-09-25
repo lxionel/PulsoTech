@@ -36,6 +36,10 @@ import {
   ArrowRight,
   Download,
   FileText,
+  QrCode,
+  Copy,
+  Megaphone,
+  X,
 } from "lucide-react";
 
 interface SaleRecord {
@@ -134,7 +138,16 @@ export function getCategorySpecTemplate(categoryName: string): SpecFieldTemplate
 }
 
 export default function AdminPage() {
-  const { whatsappNumber, setWhatsappNumber } = useCart();
+  const {
+    whatsappNumber,
+    setWhatsappNumber,
+    coupons,
+    addCoupon,
+    deleteCoupon,
+    toggleCoupon,
+    storeBanner,
+    setStoreBanner,
+  } = useCart();
   const {
     products,
     addProduct,
@@ -150,11 +163,30 @@ export default function AdminPage() {
   } = useProducts();
 
   // Navegación por pestañas
-  const [activeTab, setActiveTab] = useState<"inventory" | "add_product" | "filters" | "sales" | "settings">("inventory");
+  const [activeTab, setActiveTab] = useState<
+    "inventory" | "add_product" | "filters" | "coupons" | "sales" | "settings"
+  >("inventory");
 
   // Estados de WhatsApp
   const [phoneInput, setPhoneInput] = useState(whatsappNumber);
   const [phoneSaved, setPhoneSaved] = useState(false);
+
+  // Estados de Banner Superior
+  const [bannerEnabled, setBannerEnabled] = useState(storeBanner.enabled);
+  const [bannerText, setBannerText] = useState(storeBanner.text);
+  const [bannerBadge, setBannerBadge] = useState(storeBanner.badge);
+  const [bannerTheme, setBannerTheme] = useState(storeBanner.theme);
+  const [bannerSavedNotice, setBannerSavedNotice] = useState(false);
+
+  // Estados de Cupones
+  const [newCouponCode, setNewCouponCode] = useState("");
+  const [newCouponType, setNewCouponType] = useState<"percentage" | "fixed">("percentage");
+  const [newCouponValue, setNewCouponValue] = useState<number>(10);
+  const [newCouponMin, setNewCouponMin] = useState<number>(50);
+
+  // Modal de Código QR de Producto
+  const [qrModalProduct, setQrModalProduct] = useState<Product | null>(null);
+  const [copiedQrLink, setCopiedQrLink] = useState(false);
 
   // Filtros de búsqueda en inventario
   const [searchFilter, setSearchFilter] = useState("");
@@ -379,6 +411,41 @@ export default function AdminPage() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  const handleSaveBanner = (e: React.FormEvent) => {
+    e.preventDefault();
+    setStoreBanner({
+      enabled: bannerEnabled,
+      text: bannerText.trim(),
+      badge: bannerBadge.trim(),
+      theme: bannerTheme,
+    });
+    setBannerSavedNotice(true);
+    setTimeout(() => setBannerSavedNotice(false), 3000);
+  };
+
+  const handleCreateCoupon = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCouponCode.trim()) {
+      alert("Por favor ingresa un código para el cupón (ej: VERANO10).");
+      return;
+    }
+    const exists = coupons.some((c) => c.code.toUpperCase() === newCouponCode.trim().toUpperCase());
+    if (exists) {
+      alert("Ya existe un cupón con este código.");
+      return;
+    }
+    addCoupon({
+      code: newCouponCode.trim().toUpperCase(),
+      discountType: newCouponType,
+      discountValue: Number(newCouponValue) || 1,
+      minPurchase: Number(newCouponMin) || 0,
+      isActive: true,
+    });
+    setNewCouponCode("");
+    setSuccessNotice(`¡Cupón ${newCouponCode.trim().toUpperCase()} creado con éxito!`);
+    setTimeout(() => setSuccessNotice(""), 3000);
   };
 
   // Manejadores de colores detallados
@@ -770,6 +837,18 @@ export default function AdminPage() {
           </button>
 
           <button
+            onClick={() => setActiveTab("coupons")}
+            className={`px-3 sm:px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0 ${
+              activeTab === "coupons"
+                ? "border-neutral-950 text-neutral-950"
+                : "border-transparent text-neutral-500 hover:text-neutral-900"
+            }`}
+          >
+            <Tag className="w-4 h-4 text-purple-600" />
+            <span>🎟️ Cupones ({coupons.length})</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab("sales")}
             className={`px-3 sm:px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0 ${
               activeTab === "sales"
@@ -790,7 +869,7 @@ export default function AdminPage() {
             }`}
           >
             <Phone className="w-4 h-4 text-emerald-600" />
-            <span>Ajustes &amp; WhatsApp</span>
+            <span>⚙️ Ajustes &amp; Banner</span>
           </button>
         </div>
       </header>
@@ -1023,6 +1102,14 @@ export default function AdminPage() {
 
                           <td className="py-3.5 px-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setQrModalProduct(item)}
+                                className="p-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:text-purple-600 hover:bg-purple-50 transition-colors cursor-pointer"
+                                title="Generar Código QR para vitrina o folletos"
+                              >
+                                <QrCode className="w-4 h-4" />
+                              </button>
                               <Link
                                 href={`/producto/?id=${item.id}&slug=${item.slug}`}
                                 target="_blank"
@@ -2177,6 +2264,187 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* ================= PESTAÑA: CUPONES DE DESCUENTO ================= */}
+        {activeTab === "coupons" && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Formulario de creación de cupón */}
+            <div className="lg:col-span-5 space-y-6">
+              <div className="p-6 rounded-2xl border border-neutral-200 bg-white shadow-xs space-y-4">
+                <h3 className="text-sm font-bold text-neutral-950 flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-purple-600" />
+                  <span>Crear Nuevo Cupón de Descuento</span>
+                </h3>
+                <p className="text-xs text-neutral-500">
+                  Crea códigos promocionales para que tus clientes los ingresen en el carrito y reciban descuentos antes de pedir por WhatsApp.
+                </p>
+
+                <form onSubmit={handleCreateCoupon} className="space-y-4">
+                  <div>
+                    <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                      Código del Cupón:
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ej: PULSO15, BIENVENIDA, YAPE10"
+                      value={newCouponCode}
+                      onChange={(e) => setNewCouponCode(e.target.value.toUpperCase())}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono font-bold uppercase text-neutral-900 focus:outline-none focus:bg-white"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                        Tipo de Descuento:
+                      </label>
+                      <select
+                        value={newCouponType}
+                        onChange={(e) => setNewCouponType(e.target.value as "percentage" | "fixed")}
+                        className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 font-bold focus:outline-none"
+                      >
+                        <option value="percentage">Porcentaje (%)</option>
+                        <option value="fixed">Monto Fijo ({STORE_SETTINGS.currencySymbol})</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                        Valor del Descuento:
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={newCouponValue}
+                        onChange={(e) => setNewCouponValue(parseFloat(e.target.value) || 0)}
+                        className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono font-bold text-neutral-900 focus:outline-none"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                      Compra Mínima Requerida ({STORE_SETTINGS.currencySymbol}):
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      step={5}
+                      value={newCouponMin}
+                      onChange={(e) => setNewCouponMin(parseFloat(e.target.value) || 0)}
+                      className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono font-bold text-neutral-900 focus:outline-none"
+                    />
+                    <span className="text-[10px] text-neutral-400 mt-1 block">
+                      Deja en 0 si no requiere un monto mínimo para aplicarse.
+                    </span>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3 rounded-xl bg-neutral-950 text-white font-bold text-xs hover:bg-neutral-800 transition-colors flex items-center justify-center gap-2 shadow-md active:scale-95 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Crear y Activar Cupón</span>
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            {/* Lista de Cupones */}
+            <div className="lg:col-span-7 space-y-3">
+              <span className="text-xs uppercase text-neutral-500 block font-bold tracking-wider">
+                Cupones Registrados ({coupons.length})
+              </span>
+
+              {coupons.length === 0 ? (
+                <div className="p-8 text-center rounded-2xl border border-dashed border-neutral-300 bg-neutral-50/70 space-y-2">
+                  <Tag className="w-8 h-8 text-neutral-400 mx-auto" />
+                  <h4 className="text-xs font-bold text-neutral-800">No hay cupones activos</h4>
+                  <p className="text-[11px] text-neutral-500 max-w-sm mx-auto">
+                    Crea tu primer cupón con el formulario de la izquierda para incentivar compras en tu tienda.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {coupons.map((coupon) => (
+                    <div
+                      key={coupon.id}
+                      className="p-4 rounded-xl border border-neutral-200 bg-white shadow-2xs flex items-center justify-between gap-3 text-xs"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className={`w-10 h-10 rounded-xl flex items-center justify-center font-mono font-black text-sm shrink-0 border ${
+                            coupon.isActive
+                              ? "bg-purple-50 text-purple-700 border-purple-200"
+                              : "bg-neutral-100 text-neutral-400 border-neutral-200"
+                          }`}
+                        >
+                          %
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-extrabold text-sm text-neutral-950">
+                              {coupon.code}
+                            </span>
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                coupon.isActive
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  : "bg-neutral-100 text-neutral-500 border border-neutral-200"
+                              }`}
+                            >
+                              {coupon.isActive ? "Activo" : "Inactivo"}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-neutral-500 mt-0.5">
+                            Descuento:{" "}
+                            <strong className="text-neutral-900">
+                              {coupon.discountType === "percentage"
+                                ? `${coupon.discountValue}%`
+                                : `${STORE_SETTINGS.currencySymbol}${coupon.discountValue.toFixed(2)}`}
+                            </strong>
+                            {coupon.minPurchase > 0 && (
+                              <span> • Min. compra: {STORE_SETTINGS.currencySymbol}{coupon.minPurchase.toFixed(2)}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => toggleCoupon(coupon.id)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer border ${
+                            coupon.isActive
+                              ? "bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-neutral-200"
+                              : "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200"
+                          }`}
+                        >
+                          {coupon.isActive ? "Pausar" : "Activar"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm(`¿Eliminar el cupón ${coupon.code}?`)) {
+                              deleteCoupon(coupon.id);
+                            }
+                          }}
+                          className="p-1.5 rounded-lg text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                          title="Eliminar cupón"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ================= PESTAÑA 3: VENTAS & PEDIDOS ================= */}
         {activeTab === "sales" && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -2400,6 +2668,140 @@ export default function AdminPage() {
               )}
             </form>
 
+            {/* Announcement Banner Editor Card */}
+            <form
+              onSubmit={handleSaveBanner}
+              className="p-6 rounded-2xl border border-neutral-200 bg-white shadow-xs space-y-4"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3.5">
+                  <div className="p-3 rounded-xl bg-purple-50 text-purple-700 border border-purple-100 shrink-0">
+                    <Megaphone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-neutral-950">
+                      Banner de Anuncios Superior (Top Bar)
+                    </h3>
+                    <p className="text-xs text-neutral-500 mt-0.5">
+                      Muestra un mensaje importante, ofertas o avisos de envíos en la parte superior de toda la tienda.
+                    </p>
+                  </div>
+                </div>
+
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={bannerEnabled}
+                    onChange={(e) => setBannerEnabled(e.target.checked)}
+                    className="w-4 h-4 rounded text-neutral-900 focus:ring-0 bg-neutral-100 border-neutral-300"
+                  />
+                  <span className="text-xs font-bold text-neutral-800">
+                    {bannerEnabled ? "Visible" : "Oculto"}
+                  </span>
+                </label>
+              </div>
+
+              {bannerEnabled && (
+                <div className="space-y-3.5 pt-3 border-t border-neutral-100">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                        Texto del Anuncio:
+                      </label>
+                      <input
+                        type="text"
+                        value={bannerText}
+                        onChange={(e) => setBannerText(e.target.value)}
+                        placeholder="Ej: 🚚 ¡Envíos gratis a todo el Perú por compras mayores a S/ 100!"
+                        className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none focus:bg-white"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                        Etiqueta / Badge:
+                      </label>
+                      <input
+                        type="text"
+                        value={bannerBadge}
+                        onChange={(e) => setBannerBadge(e.target.value.toUpperCase())}
+                        placeholder="Ej: OFERTA, ENVÍOS"
+                        className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-bold uppercase text-neutral-900 focus:outline-none focus:bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                      Color / Tema del Banner:
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {[
+                        { id: "emerald", label: "Verde Esmeralda", bg: "bg-emerald-600" },
+                        { id: "dark", label: "Negro Elegante", bg: "bg-neutral-950" },
+                        { id: "blue", label: "Azul Eléctrico", bg: "bg-blue-600" },
+                        { id: "rose", label: "Rojo / Rosa", bg: "bg-rose-600" },
+                      ].map((t) => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setBannerTheme(t.id as "emerald" | "dark" | "blue" | "rose")}
+                          className={`p-2 rounded-xl border text-xs font-bold flex items-center gap-2 cursor-pointer transition-all ${
+                            bannerTheme === t.id
+                              ? "border-neutral-950 bg-neutral-50 ring-2 ring-neutral-900/10"
+                              : "border-neutral-200 hover:border-neutral-300"
+                          }`}
+                        >
+                          <span className={`w-3.5 h-3.5 rounded-full ${t.bg} shrink-0`} />
+                          <span className="truncate">{t.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Vista Previa en Vivo del Banner */}
+                  <div className="pt-2">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1.5">
+                      Vista previa de cómo se verá en la tienda:
+                    </span>
+                    <div
+                      className={`p-2 rounded-xl text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-xs ${
+                        {
+                          emerald: "bg-emerald-600",
+                          dark: "bg-neutral-950",
+                          blue: "bg-blue-600",
+                          rose: "bg-rose-600",
+                        }[bannerTheme] || "bg-emerald-600"
+                      }`}
+                    >
+                      {bannerBadge && (
+                        <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-black uppercase">
+                          {bannerBadge}
+                        </span>
+                      )}
+                      <span>{bannerText || "Texto de ejemplo"}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Guardar Cambios del Banner</span>
+                  </button>
+                </div>
+              )}
+
+              {bannerSavedNotice && (
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-600" />
+                  <span>¡Banner actualizado en la tienda comercial!</span>
+                </div>
+              )}
+            </form>
+
             {/* Backup & Export Card */}
             <div className="p-6 rounded-2xl border border-neutral-200 bg-white shadow-xs space-y-4">
               <div className="flex items-center gap-3.5">
@@ -2461,6 +2863,96 @@ export default function AdminPage() {
               </div>
             </div>
 
+          </div>
+        )}
+
+        {/* Modal de Código QR para Vitrina y Redes */}
+        {qrModalProduct && (
+          <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+            <div
+              className="absolute inset-0"
+              onClick={() => setQrModalProduct(null)}
+            />
+            <div className="relative bg-white rounded-3xl border border-neutral-200 p-6 sm:p-8 max-w-sm w-full shadow-2xl space-y-5 text-center text-neutral-900 animate-in zoom-in-95 duration-150">
+              <button
+                type="button"
+                onClick={() => setQrModalProduct(null)}
+                className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-black rounded-full hover:bg-neutral-100 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono font-bold bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-md">
+                  #{qrModalProduct.id}
+                </span>
+                <h3 className="text-base font-extrabold text-neutral-950">
+                  {qrModalProduct.name}
+                </h3>
+                <p className="text-xs text-neutral-500">
+                  {qrModalProduct.brand} • {STORE_SETTINGS.currencySymbol}{qrModalProduct.price.toFixed(2)}
+                </p>
+              </div>
+
+              {/* QR Image */}
+              <div className="p-4 bg-white rounded-2xl border-2 border-dashed border-neutral-200 inline-block shadow-inner">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=10&data=${encodeURIComponent(
+                    typeof window !== "undefined"
+                      ? `${window.location.origin}${window.location.pathname.replace(/\/Lionel260606.*$/, "")}/producto/?id=${qrModalProduct.id}&slug=${qrModalProduct.slug}`
+                      : `https://lxionel.github.io/PulsoTech/producto/?id=${qrModalProduct.id}&slug=${qrModalProduct.slug}`
+                  )}`}
+                  alt={`QR de ${qrModalProduct.name}`}
+                  className="w-48 h-48 mx-auto object-contain rounded-lg"
+                />
+              </div>
+
+              <p className="text-[11px] text-neutral-500 leading-relaxed">
+                Escanea para ver la ficha técnica, fotos de colores y pedir directo por WhatsApp.
+              </p>
+
+              <div className="flex flex-col gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const url = typeof window !== "undefined"
+                      ? `${window.location.origin}${window.location.pathname.replace(/\/Lionel260606.*$/, "")}/producto/?id=${qrModalProduct.id}&slug=${qrModalProduct.slug}`
+                      : `https://lxionel.github.io/PulsoTech/producto/?id=${qrModalProduct.id}&slug=${qrModalProduct.slug}`;
+                    navigator.clipboard.writeText(url);
+                    setCopiedQrLink(true);
+                    setTimeout(() => setCopiedQrLink(false), 2500);
+                  }}
+                  className="w-full py-2.5 rounded-xl border border-neutral-200 hover:bg-neutral-50 text-neutral-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  {copiedQrLink ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="text-emerald-700">¡Enlace Copiado al Portapapeles!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copiar Enlace Directo</span>
+                    </>
+                  )}
+                </button>
+
+                <a
+                  href={`https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=15&format=png&data=${encodeURIComponent(
+                    typeof window !== "undefined"
+                      ? `${window.location.origin}${window.location.pathname.replace(/\/Lionel260606.*$/, "")}/producto/?id=${qrModalProduct.id}&slug=${qrModalProduct.slug}`
+                      : `https://lxionel.github.io/PulsoTech/producto/?id=${qrModalProduct.id}&slug=${qrModalProduct.slug}`
+                  )}`}
+                  download={`QR_${qrModalProduct.slug}.png`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Descargar Imagen QR (PNG)</span>
+                </a>
+              </div>
+            </div>
           </div>
         )}
       </main>

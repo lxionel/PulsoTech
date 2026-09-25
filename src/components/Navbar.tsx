@@ -6,6 +6,7 @@ import { useCart } from "@/context/CartContext";
 import { ShoppingBag, Heart } from "lucide-react";
 import { STORE_SETTINGS } from "@/data/products";
 import Logo from "./Logo";
+import TopBanner from "./TopBanner";
 
 export default function Navbar() {
   const {
@@ -17,7 +18,9 @@ export default function Navbar() {
   } = useCart();
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-neutral-200 shadow-2xs transition-all">
+    <div className="sticky top-0 z-40 w-full transition-all">
+      <TopBanner />
+      <header className="w-full bg-white/95 backdrop-blur-md border-b border-neutral-200 shadow-2xs transition-all">
       <div className="w-full max-w-[1650px] mx-auto px-3 sm:px-6 lg:px-10 xl:px-14 h-16 flex items-center justify-between gap-2 sm:gap-4 lg:gap-8">
         {/* Brand Logo PulsoTech + Nav */}
         <div className="flex items-center gap-4 sm:gap-6 lg:gap-8 shrink-0 min-w-0">
@@ -125,5 +128,6 @@ export default function Navbar() {
         </div>
       </div>
     </header>
+    </div>
   );
 }
