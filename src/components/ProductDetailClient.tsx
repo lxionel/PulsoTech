@@ -177,18 +177,26 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
       <Navbar />
 
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 w-full">
-        {/* Breadcrumb Navigation */}
-        <nav className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-neutral-500 mb-6 sm:mb-8 font-medium overflow-x-auto whitespace-nowrap py-1">
-          <Link href="/" className="hover:text-neutral-900 transition-colors flex items-center gap-1 shrink-0">
-            <ArrowLeft className="w-3.5 h-3.5" />
+        {/* Breadcrumb Navigation (Más grande y legible) */}
+        <nav className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base text-neutral-500 mb-6 sm:mb-8 font-medium overflow-x-auto whitespace-nowrap py-1.5">
+          <Link
+            href="/"
+            className="hover:text-neutral-950 transition-colors flex items-center gap-1.5 shrink-0"
+          >
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-600" />
             <span>Inicio</span>
           </Link>
-          <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-          <Link href="/#catalogo" className="hover:text-neutral-900 transition-colors shrink-0">
+          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-400 shrink-0" />
+          <Link
+            href="/#catalogo"
+            className="hover:text-neutral-950 transition-colors shrink-0"
+          >
             Catálogo
           </Link>
-          <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-          <span className="text-neutral-900 font-bold truncate max-w-[130px] sm:max-w-xs shrink-0">{product.name}</span>
+          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-400 shrink-0" />
+          <span className="text-neutral-950 font-bold truncate max-w-xs sm:max-w-md shrink-0">
+            {product.name}
+          </span>
         </nav>
 
         {/* Full Product Grid (Despegatec & Miccell Inspired) */}
