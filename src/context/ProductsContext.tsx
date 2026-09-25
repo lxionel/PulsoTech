@@ -12,6 +12,12 @@ interface ProductsContextType {
   updateStock: (id: string, deltaOrExact: number, isDelta?: boolean) => void;
   resetToDefault: () => void;
   exportProductsJson: () => string;
+  brands: string[];
+  addBrand: (brand: string) => void;
+  deleteBrand: (brand: string) => void;
+  categories: string[];
+  addCategory: (category: string) => void;
+  deleteCategory: (category: string) => void;
 }
 
 const ProductsContext = createContext<ProductsContextType | undefined>(undefined);
@@ -19,6 +25,41 @@ const ProductsContext = createContext<ProductsContextType | undefined>(undefined
 const STORAGE_KEY = "pulsotech_custom_products";
 const DATA_VERSION_KEY = "pulsotech_catalog_data_version";
 const CURRENT_DATA_VERSION = "2026_09_25_v5";
+
+const BRANDS_STORAGE_KEY = "pulsotech_custom_brands";
+const CATEGORIES_STORAGE_KEY = "pulsotech_custom_categories";
+const DEFAULT_BRANDS = ["Xiaomi", "Redmi", "Soundcore", "Haylou", "Sony"];
+const DEFAULT_CATEGORIES = ["In-Ear", "Over-Ear", "Deportivos", "Audífonos TWS", "Smartwatches"];
+
+function getInitialBrands(): string[] {
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem(BRANDS_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  return DEFAULT_BRANDS;
+}
+
+function getInitialCategories(): string[] {
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem(CATEGORIES_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  return DEFAULT_CATEGORIES;
+}
 
 function syncWithDefaults(storedList: Product[]): Product[] {
   if (!Array.isArray(storedList) || storedList.length === 0) {
@@ -207,6 +248,73 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     });
   }, [saveProducts]);
 
+  const [brands, setBrands] = useState<string[]>(getInitialBrands);
+  const [categories, setCategories] = useState<string[]>(getInitialCategories);
+
+  // Sincronizar marcas y categorías al montar
+  useEffect(() => {
+    try {
+      const storedB = localStorage.getItem(BRANDS_STORAGE_KEY);
+      if (storedB) {
+        const parsed = JSON.parse(storedB);
+        if (Array.isArray(parsed) && parsed.length > 0) setBrands(parsed);
+      }
+      const storedC = localStorage.getItem(CATEGORIES_STORAGE_KEY);
+      if (storedC) {
+        const parsed = JSON.parse(storedC);
+        if (Array.isArray(parsed) && parsed.length > 0) setCategories(parsed);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  const addBrand = useCallback((newBrand: string) => {
+    const trimmed = newBrand.trim();
+    if (!trimmed) return;
+    setBrands((prev) => {
+      if (prev.some((b) => b.toLowerCase() === trimmed.toLowerCase())) return prev;
+      const next = [...prev, trimmed];
+      if (typeof window !== "undefined") {
+        localStorage.setItem(BRANDS_STORAGE_KEY, JSON.stringify(next));
+      }
+      return next;
+    });
+  }, []);
+
+  const deleteBrand = useCallback((brandToDelete: string) => {
+    setBrands((prev) => {
+      const next = prev.filter((b) => b.toLowerCase() !== brandToDelete.toLowerCase());
+      if (typeof window !== "undefined") {
+        localStorage.setItem(BRANDS_STORAGE_KEY, JSON.stringify(next));
+      }
+      return next;
+    });
+  }, []);
+
+  const addCategory = useCallback((newCategory: string) => {
+    const trimmed = newCategory.trim();
+    if (!trimmed) return;
+    setCategories((prev) => {
+      if (prev.some((c) => c.toLowerCase() === trimmed.toLowerCase())) return prev;
+      const next = [...prev, trimmed];
+      if (typeof window !== "undefined") {
+        localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(next));
+      }
+      return next;
+    });
+  }, []);
+
+  const deleteCategory = useCallback((categoryToDelete: string) => {
+    setCategories((prev) => {
+      const next = prev.filter((c) => c.toLowerCase() !== categoryToDelete.toLowerCase());
+      if (typeof window !== "undefined") {
+        localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(next));
+      }
+      return next;
+    });
+  }, []);
+
   const resetToDefault = useCallback(() => {
     saveProducts(DEFAULT_PRODUCTS);
   }, [saveProducts]);
@@ -225,6 +333,12 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         updateStock,
         resetToDefault,
         exportProductsJson,
+        brands,
+        addBrand,
+        deleteBrand,
+        categories,
+        addCategory,
+        deleteCategory,
       }}
     >
       {children}

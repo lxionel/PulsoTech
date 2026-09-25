@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 export default function ProductCatalog() {
-  const { products } = useProducts();
+  const { products, brands, categories } = useProducts();
   const [selectedCategory, setSelectedCategory] = useState<string>("todos");
   const [selectedBrand, setSelectedBrand] = useState<string>("todas");
   const [priceRange, setPriceRange] = useState<"all" | "under50" | "50to100" | "over100" | "custom">("all");
@@ -24,6 +24,26 @@ export default function ProductCatalog() {
   const [onlyInStock, setOnlyInStock] = useState(false);
   const [onlyNew, setOnlyNew] = useState(false);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+
+  // Lista dinámica combinada de marcas
+  const allBrands = useMemo(() => {
+    const set = new Set<string>();
+    (brands || []).forEach((b) => set.add(b));
+    products.forEach((p) => {
+      if (p.brand) set.add(p.brand);
+    });
+    return Array.from(set);
+  }, [brands, products]);
+
+  // Lista dinámica combinada de categorías
+  const allCategories = useMemo(() => {
+    const set = new Set<string>();
+    (categories || []).forEach((c) => set.add(c));
+    products.forEach((p) => {
+      if (p.category) set.add(p.category);
+    });
+    return Array.from(set);
+  }, [categories, products]);
 
   // Lock body scroll when mobile filters drawer is open
   React.useEffect(() => {
@@ -41,8 +61,10 @@ export default function ProductCatalog() {
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       // Category filter
-      if (selectedCategory !== "todos" && selectedCategory !== "audifonos") {
-        if (product.category?.toLowerCase() !== selectedCategory.toLowerCase()) {
+      if (selectedCategory !== "todos") {
+        const prodCat = (product.category || "").toLowerCase();
+        const selCat = selectedCategory.toLowerCase();
+        if (prodCat !== selCat && !prodCat.includes(selCat) && !selCat.includes(prodCat)) {
           return false;
         }
       }
@@ -67,20 +89,22 @@ export default function ProductCatalog() {
       if (onlyInStock && !product.inStock) return false;
       if (onlyNew && !product.isNew) return false;
 
-      // Search query
+      // Search query: busca por ID, nombre, marca o subtítulo
       const query = searchQuery.trim().toLowerCase();
       if (query) {
         const matchesQuery =
+          product.id.toLowerCase().includes(query) ||
           product.name.toLowerCase().includes(query) ||
-          product.subtitle.toLowerCase().includes(query) ||
-          product.brand.toLowerCase().includes(query) ||
-          product.tags.some((t) => t.toLowerCase().includes(query));
+          (product.subtitle && product.subtitle.toLowerCase().includes(query)) ||
+          (product.brand && product.brand.toLowerCase().includes(query)) ||
+          (product.tags && product.tags.some((t) => t.toLowerCase().includes(query)));
         if (!matchesQuery) return false;
       }
 
       return true;
     });
   }, [
+    products,
     selectedCategory,
     selectedBrand,
     priceRange,
@@ -154,7 +178,7 @@ export default function ProductCatalog() {
           <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Buscar modelo o función..."
+            placeholder="Buscar por ID, modelo o marca..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-9 py-2.5 rounded-xl bg-white border border-neutral-200 text-xs font-medium text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 transition-colors shadow-2xs"
@@ -249,34 +273,56 @@ export default function ProductCatalog() {
             </div>
           </div>
 
-          {/* 2. Brand Filter */}
+          {/* 2. Brand Filter (Dinámico) */}
           <div className="space-y-2.5 pb-5 border-b border-neutral-100">
             <h4 className="text-xs font-black text-neutral-950 uppercase tracking-wider">
               Marca
             </h4>
             <div className="space-y-1.5">
-              {[
-                { id: "todas", label: "Todas las marcas" },
-                { id: "xiaomi", label: "Xiaomi" },
-                { id: "redmi", label: "Redmi" },
-              ].map((brand) => (
-                <button
-                  key={brand.id}
-                  onClick={() => setSelectedBrand(brand.id)}
-                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
-                    selectedBrand === brand.id
-                      ? "bg-neutral-950 text-white font-bold"
-                      : "text-neutral-700 hover:bg-neutral-50 hover:text-neutral-950"
-                  }`}
-                >
-                  <span>{brand.label}</span>
-                  {selectedBrand === brand.id && <Check className="w-3.5 h-3.5" />}
-                </button>
-              ))}
+              <button
+                onClick={() => setSelectedBrand("todas")}
+                className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
+                  selectedBrand === "todas"
+                    ? "bg-neutral-950 text-white font-bold"
+                    : "text-neutral-700 hover:bg-neutral-50 hover:text-neutral-950"
+                }`}
+              >
+                <span>Todas las marcas</span>
+                {selectedBrand === "todas" ? (
+                  <Check className="w-3.5 h-3.5" />
+                ) : (
+                  <span className="text-[10px] text-neutral-400 font-bold">{products.length}</span>
+                )}
+              </button>
+
+              {allBrands.map((brandName) => {
+                const count = products.filter(
+                  (p) => p.brand?.toLowerCase() === brandName.toLowerCase()
+                ).length;
+                const isSelected = selectedBrand.toLowerCase() === brandName.toLowerCase();
+                return (
+                  <button
+                    key={brandName}
+                    onClick={() => setSelectedBrand(brandName.toLowerCase())}
+                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-neutral-950 text-white font-bold"
+                        : "text-neutral-700 hover:bg-neutral-50 hover:text-neutral-950"
+                    }`}
+                  >
+                    <span>{brandName}</span>
+                    {isSelected ? (
+                      <Check className="w-3.5 h-3.5" />
+                    ) : (
+                      <span className="text-[10px] text-neutral-400 font-bold">{count}</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* 3. Category Filter */}
+          {/* 3. Category Filter (Dinámico) */}
           <div className="space-y-2.5 pb-5 border-b border-neutral-100">
             <h4 className="text-xs font-black text-neutral-950 uppercase tracking-wider">
               Categoría
@@ -291,27 +337,29 @@ export default function ProductCatalog() {
                 }`}
               >
                 <span>Todos los productos</span>
-                <span className="text-[10px] font-bold opacity-75">3</span>
+                <span className="text-[10px] font-bold opacity-75">{products.length}</span>
               </button>
 
-              <button
-                onClick={() => setSelectedCategory("audifonos")}
-                className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
-                  selectedCategory === "audifonos"
-                    ? "bg-neutral-950 text-white font-bold"
-                    : "text-neutral-700 hover:bg-neutral-50 hover:text-neutral-950"
-                }`}
-              >
-                <span>Audífonos TWS</span>
-                <span className="text-[10px] font-bold opacity-75">3</span>
-              </button>
-
-              <div className="px-3 py-2 text-xs font-medium text-neutral-400 flex items-center justify-between opacity-60">
-                <span>Smartwatches</span>
-                <span className="text-[9px] uppercase tracking-wider font-bold bg-neutral-100 px-1.5 py-0.5 rounded">
-                  Pronto
-                </span>
-              </div>
+              {allCategories.map((catName) => {
+                const count = products.filter(
+                  (p) => (p.category || "").toLowerCase() === catName.toLowerCase()
+                ).length;
+                const isSelected = selectedCategory.toLowerCase() === catName.toLowerCase();
+                return (
+                  <button
+                    key={catName}
+                    onClick={() => setSelectedCategory(catName.toLowerCase())}
+                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-neutral-950 text-white font-bold"
+                        : "text-neutral-700 hover:bg-neutral-50 hover:text-neutral-950"
+                    }`}
+                  >
+                    <span>{catName}</span>
+                    <span className="text-[10px] font-bold opacity-75">{count}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -547,24 +595,87 @@ export default function ProductCatalog() {
                   Marca
                 </h4>
                 <div className="space-y-1.5">
-                  {[
-                    { id: "todas", label: "Todas las marcas" },
-                    { id: "xiaomi", label: "Xiaomi" },
-                    { id: "redmi", label: "Redmi" },
-                  ].map((brand) => (
-                    <button
-                      key={brand.id}
-                      onClick={() => setSelectedBrand(brand.id)}
-                      className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between cursor-pointer ${
-                        selectedBrand === brand.id
-                          ? "bg-neutral-950 text-white font-bold"
-                          : "text-neutral-700 hover:bg-neutral-50"
-                      }`}
-                    >
-                      <span>{brand.label}</span>
-                      {selectedBrand === brand.id && <Check className="w-3.5 h-3.5" />}
-                    </button>
-                  ))}
+                  <button
+                    onClick={() => setSelectedBrand("todas")}
+                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between cursor-pointer ${
+                      selectedBrand === "todas"
+                        ? "bg-neutral-950 text-white font-bold"
+                        : "text-neutral-700 hover:bg-neutral-50"
+                    }`}
+                  >
+                    <span>Todas las marcas</span>
+                    {selectedBrand === "todas" ? (
+                      <Check className="w-3.5 h-3.5" />
+                    ) : (
+                      <span className="text-[10px] text-neutral-400 font-bold">{products.length}</span>
+                    )}
+                  </button>
+
+                  {allBrands.map((brandName) => {
+                    const count = products.filter(
+                      (p) => p.brand?.toLowerCase() === brandName.toLowerCase()
+                    ).length;
+                    const isSelected = selectedBrand.toLowerCase() === brandName.toLowerCase();
+                    return (
+                      <button
+                        key={brandName}
+                        onClick={() => setSelectedBrand(brandName.toLowerCase())}
+                        className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between cursor-pointer ${
+                          isSelected
+                            ? "bg-neutral-950 text-white font-bold"
+                            : "text-neutral-700 hover:bg-neutral-50"
+                        }`}
+                      >
+                        <span>{brandName}</span>
+                        {isSelected ? (
+                          <Check className="w-3.5 h-3.5" />
+                        ) : (
+                          <span className="text-[10px] text-neutral-400 font-bold">{count}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Category Filter Mobile */}
+              <div className="space-y-2.5 pt-2 border-t border-neutral-100">
+                <h4 className="text-xs font-black text-neutral-950 uppercase tracking-wider">
+                  Categoría
+                </h4>
+                <div className="space-y-1.5">
+                  <button
+                    onClick={() => setSelectedCategory("todos")}
+                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between cursor-pointer ${
+                      selectedCategory === "todos"
+                        ? "bg-neutral-950 text-white font-bold"
+                        : "text-neutral-700 hover:bg-neutral-50"
+                    }`}
+                  >
+                    <span>Todos los productos</span>
+                    <span className="text-[10px] font-bold opacity-75">{products.length}</span>
+                  </button>
+
+                  {allCategories.map((catName) => {
+                    const count = products.filter(
+                      (p) => (p.category || "").toLowerCase() === catName.toLowerCase()
+                    ).length;
+                    const isSelected = selectedCategory.toLowerCase() === catName.toLowerCase();
+                    return (
+                      <button
+                        key={catName}
+                        onClick={() => setSelectedCategory(catName.toLowerCase())}
+                        className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between cursor-pointer ${
+                          isSelected
+                            ? "bg-neutral-950 text-white font-bold"
+                            : "text-neutral-700 hover:bg-neutral-50"
+                        }`}
+                      >
+                        <span>{catName}</span>
+                        <span className="text-[10px] font-bold opacity-75">{count}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

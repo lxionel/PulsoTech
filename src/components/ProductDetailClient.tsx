@@ -26,7 +26,25 @@ import {
   Star,
   Check,
   Heart,
+  Play,
+  Video,
 } from "lucide-react";
+
+function getEmbedVideoInfo(url?: string): { isYouTube: boolean; embedUrl: string } | null {
+  if (!url || !url.trim()) return null;
+  const trimmed = url.trim();
+  const ytMatch = trimmed.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
+  if (ytMatch && ytMatch[1]) {
+    return {
+      isYouTube: true,
+      embedUrl: `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?autoplay=1&rel=0`,
+    };
+  }
+  return {
+    isYouTube: false,
+    embedUrl: trimmed,
+  };
+}
 
 export default function ProductDetailClient({ product }: { product: Product }) {
   const { addItem, setIsCartOpen, whatsappNumber, toggleFavorite, isFavorite } = useCart();
@@ -35,10 +53,12 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [quantity, setQuantity] = useState(1);
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [isVideoActive, setIsVideoActive] = useState(false);
   const isFav = isFavorite(product.id);
 
   const colors = product.colors || [];
   const currentColor = colors[selectedColorIndex] || colors[0];
+  const videoInfo = React.useMemo(() => getEmbedVideoInfo(product.videoUrl), [product.videoUrl]);
 
   const galleryImages = React.useMemo(() => {
     const list: string[] = [];
@@ -56,6 +76,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
   const handleSelectColor = (index: number) => {
     setSelectedColorIndex(index);
+    setIsVideoActive(false);
     const chosenColor = colors[index];
     if (chosenColor?.image) {
       const idx = galleryImages.indexOf(chosenColor.image);
@@ -68,10 +89,12 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   };
 
   const handleNextImage = () => {
+    setIsVideoActive(false);
     setSelectedImageIndex((prev) => (prev + 1) % galleryImages.length);
   };
 
   const handlePrevImage = () => {
+    setIsVideoActive(false);
     setSelectedImageIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
   };
 
@@ -111,31 +134,53 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
           {/* Left Column: Stage Image Gallery + Lab Tech Specs Grid */}
           <div className="lg:col-span-7 space-y-6">
-            {/* Main Stage Image Frame */}
-            <div className="relative aspect-square w-full rounded-2xl sm:rounded-3xl bg-white border border-neutral-200/90 p-4 sm:p-8 flex items-center justify-center shadow-xs overflow-hidden group">
-              <div className="relative w-full h-full flex items-center justify-center">
-                {activeImage?.startsWith("data:") ||
-                activeImage?.startsWith("blob:") ||
-                activeImage?.startsWith("http") ? (
-                  <img
-                    src={activeImage}
-                    alt={product.name}
-                    className="w-full h-full object-contain p-2"
-                  />
-                ) : (
-                  <Image
-                    src={activeImage}
-                    alt={product.name}
-                    fill
-                    sizes="(max-width: 1024px) 100vw, 700px"
-                    className="object-contain p-2 transition-transform duration-300 group-hover:scale-105"
-                    priority
-                  />
-                )}
-              </div>
+            {/* Main Stage Frame (Image or Video) */}
+            <div className="relative aspect-square w-full rounded-2xl sm:rounded-3xl bg-white border border-neutral-200/90 p-3 sm:p-6 flex items-center justify-center shadow-xs overflow-hidden group">
+              {isVideoActive && videoInfo ? (
+                <div className="relative w-full h-full flex items-center justify-center bg-black rounded-xl sm:rounded-2xl overflow-hidden">
+                  {videoInfo.isYouTube ? (
+                    <iframe
+                      src={videoInfo.embedUrl}
+                      title={`Video oficial ${product.name}`}
+                      className="w-full h-full border-0 aspect-square"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <video
+                      src={videoInfo.embedUrl}
+                      controls
+                      autoPlay
+                      className="w-full h-full object-contain"
+                    />
+                  )}
+                </div>
+              ) : (
+                <div className="relative w-full h-full flex items-center justify-center">
+                  {activeImage?.startsWith("data:") ||
+                  activeImage?.startsWith("blob:") ||
+                  activeImage?.startsWith("http") ? (
+                    <img
+                      src={activeImage}
+                      alt={product.name}
+                      className="w-full h-full object-contain p-2 max-w-full max-h-full"
+                    />
+                  ) : (
+                    <Image
+                      src={activeImage}
+                      alt={product.name}
+                      fill
+                      unoptimized
+                      sizes="(max-width: 1024px) 100vw, 750px"
+                      className="object-contain p-2 transition-transform duration-300 group-hover:scale-105"
+                      priority
+                    />
+                  )}
+                </div>
+              )}
 
-              {/* Prev/Next arrows if multiple images */}
-              {galleryImages.length > 1 && (
+              {/* Prev/Next arrows if multiple images and not in video mode */}
+              {!isVideoActive && galleryImages.length > 1 && (
                 <>
                   <button
                     type="button"
@@ -156,30 +201,56 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 </>
               )}
 
-              {/* Image counter pill */}
-              {galleryImages.length > 1 && (
+              {/* Image counter or Video indicator */}
+              {isVideoActive ? (
+                <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 px-2.5 py-1 rounded-full bg-red-600 text-white text-[10px] font-bold shadow-sm flex items-center gap-1">
+                  <Play className="w-3 h-3 fill-white" />
+                  <span>Video Oficial</span>
+                </div>
+              ) : galleryImages.length > 1 ? (
                 <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 px-2.5 py-1 rounded-full bg-neutral-900/70 text-white text-[10px] font-semibold backdrop-blur-xs">
                   {selectedImageIndex + 1} / {galleryImages.length}
                 </div>
-              )}
+              ) : null}
             </div>
 
-            {/* Gallery Thumbnails */}
-            {galleryImages.length > 1 && (
+            {/* Gallery Thumbnails (Photos & Video) */}
+            {(galleryImages.length > 1 || !!videoInfo) && (
               <div className="flex items-center gap-2.5 sm:gap-3 overflow-x-auto pb-1">
-                {galleryImages.map((img, idx) => {
-                  const isSelected = selectedImageIndex === idx;
-                  return (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setSelectedImageIndex(idx)}
-                      className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl overflow-hidden border p-1.5 sm:p-2 bg-white transition-all cursor-pointer shrink-0 ${
-                        isSelected
-                          ? "border-blue-600 ring-2 ring-blue-600/20 shadow-xs"
-                          : "border-neutral-200 hover:border-neutral-300 opacity-70 hover:opacity-100"
-                      }`}
-                    >
+              {videoInfo && (
+                <button
+                  type="button"
+                  onClick={() => setIsVideoActive(true)}
+                  className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl overflow-hidden border p-1.5 sm:p-2 bg-neutral-950 text-white transition-all cursor-pointer shrink-0 flex flex-col items-center justify-center gap-1 ${
+                    isVideoActive
+                      ? "border-red-600 ring-2 ring-red-600/30 shadow-xs"
+                      : "border-neutral-700 opacity-80 hover:opacity-100"
+                  }`}
+                  title="Reproducir Video Oficial"
+                >
+                  <div className="w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center shadow-xs">
+                    <Play className="w-3 h-3 fill-white ml-0.5" />
+                  </div>
+                  <span className="text-[9px] font-bold uppercase tracking-wider">Video</span>
+                </button>
+              )}
+
+              {galleryImages.map((img, idx) => {
+                const isSelected = !isVideoActive && selectedImageIndex === idx;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setIsVideoActive(false);
+                      setSelectedImageIndex(idx);
+                    }}
+                    className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl overflow-hidden border p-1.5 sm:p-2 bg-white transition-all cursor-pointer shrink-0 ${
+                      isSelected
+                        ? "border-blue-600 ring-2 ring-blue-600/20 shadow-xs"
+                        : "border-neutral-200 hover:border-neutral-300 opacity-70 hover:opacity-100"
+                    }`}
+                  >
                       {img?.startsWith("data:") ||
                       img?.startsWith("blob:") ||
                       img?.startsWith("http") ? (

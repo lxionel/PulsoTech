@@ -32,6 +32,10 @@ import {
   Eye,
   Check,
   ArrowRight,
+  Filter,
+  Video as VideoIcon,
+  Plus,
+  Layers,
 } from "lucide-react";
 
 interface SaleRecord {
@@ -54,10 +58,16 @@ export default function AdminPage() {
     updateStock,
     resetToDefault,
     exportProductsJson,
+    brands,
+    addBrand,
+    deleteBrand,
+    categories,
+    addCategory,
+    deleteCategory,
   } = useProducts();
 
   // Navegación por pestañas
-  const [activeTab, setActiveTab] = useState<"inventory" | "add_product" | "sales" | "settings">("inventory");
+  const [activeTab, setActiveTab] = useState<"inventory" | "add_product" | "filters" | "sales" | "settings">("inventory");
 
   // Estados de WhatsApp
   const [phoneInput, setPhoneInput] = useState(whatsappNumber);
@@ -66,6 +76,10 @@ export default function AdminPage() {
   // Filtros de búsqueda en inventario
   const [searchFilter, setSearchFilter] = useState("");
   const [copiedJson, setCopiedJson] = useState(false);
+
+  // Estados para gestión de filtros (marcas y categorías)
+  const [newBrandInput, setNewBrandInput] = useState("");
+  const [newCategoryInput, setNewCategoryInput] = useState("");
 
   // Registro de ventas de ejemplo
   const [sales, setSales] = useState<SaleRecord[]>([
@@ -105,55 +119,38 @@ export default function AdminPage() {
   const [newSaleChannel, setNewSaleChannel] = useState<"WhatsApp" | "Presencial">("WhatsApp");
   const [successNotice, setSuccessNotice] = useState("");
 
-  // ====== ESTADO DEL FORMULARIO DE AGREGAR / EDITAR PRODUCTO ======
+  // ====== ESTADO DEL FORMULARIO DE AGREGAR / EDITAR PRODUCTO (INICIALMENTE LIMPIO) ======
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [formCustomId, setFormCustomId] = useState("");
   const [formName, setFormName] = useState("");
-  const [formBrand, setFormBrand] = useState("Xiaomi");
-  const [formCategory, setFormCategory] = useState<"in-ear" | "over-ear" | "deportivos" | "estudio">("in-ear");
-  const [formPrice, setFormPrice] = useState<number>(49.0);
+  const [formBrand, setFormBrand] = useState(brands[0] || "Xiaomi");
+  const [formCategory, setFormCategory] = useState(categories[0] || "In-Ear");
+  const [formPrice, setFormPrice] = useState<number | "">("");
   const [formHasPromo, setFormHasPromo] = useState(false);
-  const [formOriginalPrice, setFormOriginalPrice] = useState<number>(69.0);
+  const [formOriginalPrice, setFormOriginalPrice] = useState<number | "">("");
   const [formPromoTag, setFormPromoTag] = useState("OFERTA FLASH");
-  const [formStock, setFormStock] = useState<number>(15);
-  const [formSubtitle, setFormSubtitle] = useState("36h de batería con estuche · Resistencia IPX4");
-  const [formDescription, setFormDescription] = useState(
-    "Audífonos True Wireless originales con sonido de alta fidelidad, conexión instantánea y batería de larga duración con estuche de carga."
-  );
+  const [formStock, setFormStock] = useState<number>(10);
+  const [formSubtitle, setFormSubtitle] = useState("");
+  const [formDescription, setFormDescription] = useState("");
+  const [formVideoUrl, setFormVideoUrl] = useState("");
   
-  // Múltiples Colores Detallados con sus Fotografías
+  // Múltiples Colores Detallados con sus Fotografías (empieza con 1 casilla limpia)
   const [formColors, setFormColors] = useState<ProductColor[]>([
-    {
-      name: "Beige",
-      hex: "#f5f0e6",
-      image: getAssetUrl("/images/products/redmi-buds-8-lite.png"),
-    },
     {
       name: "Negro",
       hex: "#18181b",
-      image: getAssetUrl("/images/products/redmi-buds-8-lite.png"),
-    },
-    {
-      name: "Blanco",
-      hex: "#FFFFFF",
-      image: getAssetUrl("/images/products/redmi-buds-8-lite.png"),
-    },
-    {
-      name: "Azul",
-      hex: "#1e3a8a",
-      image: getAssetUrl("/images/products/redmi-buds-8-lite.png"),
+      image: "",
     },
   ]);
   const [previewColorIndex, setPreviewColorIndex] = useState(0);
 
   // Imagen Secundaria (Para el efecto de transición / hover al pasar el cursor)
-  const [formSecondaryImage, setFormSecondaryImage] = useState(
-    getAssetUrl("/images/products/redmi-buds-8-lite-features.png")
-  );
+  const [formSecondaryImage, setFormSecondaryImage] = useState("");
 
   // Specs
-  const [formSpecBattery, setFormSpecBattery] = useState("36h");
-  const [formSpecAnc, setFormSpecAnc] = useState("Sin cancelación");
-  const [formSpecConnectivity, setFormSpecConnectivity] = useState("Bluetooth 5.4");
+  const [formSpecBattery, setFormSpecBattery] = useState("");
+  const [formSpecAnc, setFormSpecAnc] = useState("");
+  const [formSpecConnectivity, setFormSpecConnectivity] = useState("");
 
   // Métricas
   const totalRevenue = sales.reduce((acc, s) => acc + s.total, 0);
@@ -261,18 +258,40 @@ export default function AdminPage() {
     }
   };
 
+  // Handlers para Marcas y Categorías
+  const handleAddBrandSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newBrandInput.trim()) return;
+    addBrand(newBrandInput.trim());
+    setSuccessNotice(`¡Marca "${newBrandInput.trim()}" agregada exitosamente!`);
+    setNewBrandInput("");
+    setTimeout(() => setSuccessNotice(""), 3500);
+  };
+
+  const handleAddCategorySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCategoryInput.trim()) return;
+    addCategory(newCategoryInput.trim());
+    setSuccessNotice(`¡Categoría "${newCategoryInput.trim()}" agregada exitosamente!`);
+    setNewCategoryInput("");
+    setTimeout(() => setSuccessNotice(""), 3500);
+  };
+
   // Cargar datos en el formulario para editar
   const handleEditClick = (product: Product) => {
     setEditingProductId(product.id);
+    setFormCustomId(product.id);
     setFormName(product.name);
-    setFormBrand(product.brand);
-    setFormCategory(product.category);
+    setFormBrand(product.brand || brands[0] || "Xiaomi");
+    setFormCategory(product.category || categories[0] || "In-Ear");
     setFormPrice(product.price);
     setFormHasPromo(!!product.originalPrice && product.originalPrice > product.price);
-    setFormOriginalPrice(product.originalPrice || product.price * 1.25);
+    setFormOriginalPrice(product.originalPrice || "");
+    setFormPromoTag("OFERTA FLASH");
     setFormStock(product.stockCount);
     setFormSubtitle(product.subtitle || "");
     setFormDescription(product.description || "");
+    setFormVideoUrl(product.videoUrl || "");
     setFormColors(
       product.colors && product.colors.length > 0
         ? product.colors
@@ -280,57 +299,45 @@ export default function AdminPage() {
             {
               name: "Negro",
               hex: "#18181b",
-              image: product.images?.[0] || getAssetUrl("/images/products/redmi-buds-6-play.png"),
+              image: product.images?.[0] || "",
             },
           ]
     );
     setFormSecondaryImage(product.images?.[1] || "");
     setPreviewColorIndex(0);
-    setFormSpecBattery(product.specs?.battery || "36h");
-    setFormSpecAnc(product.specs?.anc || "Sin cancelación");
-    setFormSpecConnectivity(product.specs?.connectivity || "Bluetooth 5.3");
+    setFormSpecBattery(product.specs?.battery || "");
+    setFormSpecAnc(product.specs?.anc || "");
+    setFormSpecConnectivity(product.specs?.connectivity || "");
     setActiveTab("add_product");
   };
 
-  // Limpiar formulario para nuevo producto
+  // Limpiar formulario para nuevo producto (100% LIMPIO, SIN EJEMPLOS PRECARGADOS)
   const handleNewProductClick = () => {
     setEditingProductId(null);
+    setFormCustomId("");
     setFormName("");
-    setFormBrand("Xiaomi");
-    setFormCategory("in-ear");
-    setFormPrice(49.0);
+    setFormBrand(brands[0] || "Xiaomi");
+    setFormCategory(categories[0] || "In-Ear");
+    setFormPrice("");
     setFormHasPromo(false);
-    setFormOriginalPrice(69.0);
-    setFormStock(15);
-    setFormSubtitle("Sin cancelación de ruido · 36h de batería con estuche · Resistencia IPX4");
-    setFormDescription("Audífonos True Wireless originales con sonido de alta fidelidad y garantía.");
+    setFormOriginalPrice("");
+    setFormPromoTag("OFERTA FLASH");
+    setFormStock(10);
+    setFormSubtitle("");
+    setFormDescription("");
+    setFormVideoUrl("");
     setFormColors([
       {
         name: "Negro",
         hex: "#18181b",
-        image: getAssetUrl("/images/products/redmi-buds-6-play.png"),
-      },
-      {
-        name: "Blanco",
-        hex: "#FFFFFF",
-        image: getAssetUrl("/images/products/redmi-buds-6-play.png"),
-      },
-      {
-        name: "Beige",
-        hex: "#f5f0e6",
-        image: getAssetUrl("/images/products/redmi-buds-6-play.png"),
-      },
-      {
-        name: "Azul",
-        hex: "#1d4ed8",
-        image: getAssetUrl("/images/products/redmi-buds-6-play.png"),
+        image: "",
       },
     ]);
-    setFormSecondaryImage(getAssetUrl("/images/products/redmi-buds-6-play-earbuds.png"));
+    setFormSecondaryImage("");
     setPreviewColorIndex(0);
-    setFormSpecBattery("36h");
-    setFormSpecAnc("Sin cancelación");
-    setFormSpecConnectivity("Bluetooth 5.4");
+    setFormSpecBattery("");
+    setFormSpecAnc("");
+    setFormSpecConnectivity("");
     setActiveTab("add_product");
   };
 
@@ -342,6 +349,13 @@ export default function AdminPage() {
       return;
     }
 
+    const priceNum = typeof formPrice === "number" ? formPrice : parseFloat(formPrice as string) || 0;
+    const origPriceNum = typeof formOriginalPrice === "number" ? formOriginalPrice : parseFloat(formOriginalPrice as string) || 0;
+
+    const finalId = formCustomId.trim()
+      ? formCustomId.trim().toUpperCase()
+      : (editingProductId || `PROD-${Date.now().toString().slice(-4)}`);
+
     const slug = formName
       .toLowerCase()
       .trim()
@@ -349,14 +363,27 @@ export default function AdminPage() {
       .replace(/[\s_-]+/g, "-")
       .replace(/^-+|-+$/g, "");
 
+    const validColors = formColors.filter(c => c.name.trim() || c.image.trim());
+    const finalColors = validColors.length > 0 ? validColors : [
+      {
+        name: "Original",
+        hex: "#18181b",
+        image: formColors[0]?.image || "",
+      },
+    ];
+
+    const primaryImg = finalColors[0]?.image || formColors[0]?.image || "";
+    const secImg = formSecondaryImage || finalColors[1]?.image || "";
+    const images = [primaryImg, secImg].filter(Boolean);
+
     const productPayload: Product = {
-      id: editingProductId || `prod-${Date.now()}`,
+      id: finalId,
       name: formName.trim(),
-      slug: slug || `producto-${Date.now()}`,
+      slug: slug || `producto-${finalId.toLowerCase()}`,
       subtitle: formSubtitle.trim(),
       description: formDescription.trim(),
-      price: formPrice,
-      originalPrice: formHasPromo ? formOriginalPrice : undefined,
+      price: priceNum,
+      originalPrice: formHasPromo && origPriceNum > priceNum ? origPriceNum : undefined,
       brand: formBrand,
       category: formCategory,
       inStock: formStock > 0,
@@ -365,46 +392,43 @@ export default function AdminPage() {
       isNew: !editingProductId,
       rating: 5.0,
       reviewsCount: 1,
-      colors: formColors.length > 0 ? formColors : [
-        {
-          name: "Original",
-          hex: "#18181b",
-          image: getAssetUrl("/images/products/redmi-buds-6-play.png"),
-        },
-      ],
-      images: [
-        formColors[0]?.image || getAssetUrl("/images/products/redmi-buds-6-play.png"),
-        formSecondaryImage || formColors[1]?.image || formColors[0]?.image || getAssetUrl("/images/products/redmi-buds-6-play-earbuds.png"),
-      ],
+      videoUrl: formVideoUrl.trim() || undefined,
+      colors: finalColors,
+      images: images.length > 0 ? images : [getAssetUrl("/images/products/redmi-buds-6-play.png")],
       specs: {
-        battery: formSpecBattery,
-        anc: formSpecAnc,
-        driver: "10mm Dinámico",
-        connectivity: formSpecConnectivity,
+        battery: formSpecBattery || "Hasta 30h",
+        anc: formSpecAnc || "Estándar",
+        driver: "Dinámico",
+        connectivity: formSpecConnectivity || "Bluetooth 5.3",
         weight: "4.2g",
         latency: "60ms",
       },
       soundProfile: {
         type: "Equilibrado",
-        description: "Bajos profundos y voces nítidas",
-        bass: 85,
+        description: "Audio de alta fidelidad",
+        bass: 80,
         mid: 80,
-        treble: 85,
+        treble: 80,
       },
       features: [
         "100% Original Sellado",
-        formSpecBattery + " de batería con estuche",
-        formSpecConnectivity,
+        ...(formSpecBattery ? [`${formSpecBattery} de batería con estuche`] : []),
+        ...(formSpecConnectivity ? [formSpecConnectivity] : []),
       ],
-      tags: [formBrand.toLowerCase(), formCategory, "inalambricos"],
+      tags: [formBrand.toLowerCase(), formCategory.toLowerCase(), "audio"],
     };
 
     if (editingProductId) {
-      updateProduct(productPayload);
-      setSuccessNotice(`¡Producto "${productPayload.name}" actualizado exitosamente!`);
+      if (editingProductId !== finalId) {
+        deleteProduct(editingProductId);
+        addProduct(productPayload);
+      } else {
+        updateProduct(productPayload);
+      }
+      setSuccessNotice(`¡Producto "${productPayload.name}" (#${productPayload.id}) actualizado exitosamente!`);
     } else {
       addProduct(productPayload);
-      setSuccessNotice(`¡Producto "${productPayload.name}" guardado y publicado en la tienda!`);
+      setSuccessNotice(`¡Producto "${productPayload.name}" (#${productPayload.id}) guardado y publicado en la tienda!`);
     }
 
     setTimeout(() => setSuccessNotice(""), 5000);
@@ -418,8 +442,10 @@ export default function AdminPage() {
   };
 
   const filteredInventory = products.filter((item) =>
+    item.id.toLowerCase().includes(searchFilter.toLowerCase()) ||
     item.name.toLowerCase().includes(searchFilter.toLowerCase()) ||
-    item.brand.toLowerCase().includes(searchFilter.toLowerCase())
+    item.brand.toLowerCase().includes(searchFilter.toLowerCase()) ||
+    (item.category && item.category.toLowerCase().includes(searchFilter.toLowerCase()))
   );
 
   return (
@@ -497,6 +523,18 @@ export default function AdminPage() {
           >
             <Sparkles className="w-4 h-4 text-amber-500" />
             <span>{editingProductId ? "Editar Producto" : "＋ Nuevo Producto"}</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("filters")}
+            className={`px-3 sm:px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0 ${
+              activeTab === "filters"
+                ? "border-neutral-950 text-neutral-950"
+                : "border-transparent text-neutral-500 hover:text-neutral-900"
+            }`}
+          >
+            <Filter className="w-4 h-4 text-blue-600" />
+            <span>🏷️ Marcas &amp; Filtros</span>
           </button>
 
           <button
@@ -607,7 +645,7 @@ export default function AdminPage() {
                     <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
-                      placeholder="Buscar por modelo o marca..."
+                      placeholder="Buscar por ID, modelo, marca o categoría..."
                       value={searchFilter}
                       onChange={(e) => setSearchFilter(e.target.value)}
                       className="w-full pl-8 pr-3 py-2 rounded-xl bg-white border border-neutral-200 text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-400 shadow-2xs"
@@ -625,11 +663,13 @@ export default function AdminPage() {
               </div>
 
               <div className="rounded-2xl border border-neutral-200/90 overflow-x-auto bg-white shadow-sm">
-                <table className="w-full text-left text-xs min-w-[620px]">
+                <table className="w-full text-left text-xs min-w-[700px]">
                   <thead className="bg-neutral-50 text-neutral-600 border-b border-neutral-200 uppercase text-[10px] font-bold tracking-wider">
                     <tr>
+                      <th className="py-3.5 px-3">ID</th>
                       <th className="py-3.5 px-4">Producto</th>
                       <th className="py-3.5 px-3">Marca</th>
+                      <th className="py-3.5 px-3">Categoría</th>
                       <th className="py-3.5 px-3">Precio</th>
                       <th className="py-3.5 px-3">Promoción</th>
                       <th className="py-3.5 px-3">Stock</th>
@@ -641,6 +681,12 @@ export default function AdminPage() {
                       const hasDiscount = item.originalPrice && item.originalPrice > item.price;
                       return (
                         <tr key={item.id} className="hover:bg-neutral-50/60 transition-colors">
+                          <td className="py-3.5 px-3 whitespace-nowrap">
+                            <span className="font-mono text-xs font-black text-neutral-800 bg-neutral-100 border border-neutral-200 px-2 py-0.5 rounded-md">
+                              #{item.id}
+                            </span>
+                          </td>
+
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-3">
                               <div className="w-11 h-11 rounded-xl bg-neutral-50 border border-neutral-200 p-1 shrink-0 flex items-center justify-center overflow-hidden">
@@ -661,8 +707,14 @@ export default function AdminPage() {
                             </div>
                           </td>
 
-                          <td className="py-3.5 px-3 font-bold text-neutral-800">
+                          <td className="py-3.5 px-3 font-bold text-neutral-800 whitespace-nowrap">
                             {item.brand}
+                          </td>
+
+                          <td className="py-3.5 px-3 whitespace-nowrap">
+                            <span className="text-[11px] font-medium text-neutral-600 bg-neutral-50 border border-neutral-200 px-2 py-0.5 rounded">
+                              {item.category}
+                            </span>
                           </td>
 
                           <td className="py-3.5 px-3">
@@ -788,55 +840,103 @@ export default function AdminPage() {
                 {/* 1. Datos Principales */}
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 border-b border-neutral-100 pb-2">
-                    1. Información Básica
+                    1. Información Básica &amp; Identificador
                   </h3>
 
-                  <div>
-                    <label className="text-xs font-bold text-neutral-900 block mb-1">
-                      Nombre del Producto *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ej: Redmi Buds 6 Active ANC"
-                      value={formName}
-                      onChange={(e) => setFormName(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-sm text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 font-semibold"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-neutral-900 block mb-1">
+                        ID / Código SKU *
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ej: RB-001 o PROD-101"
+                        value={formCustomId}
+                        onChange={(e) => setFormCustomId(e.target.value.toUpperCase())}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900"
+                      />
+                      <span className="text-[10px] text-neutral-400 mt-1 block">
+                        Si lo dejas vacío, se autogenerará uno.
+                      </span>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="text-xs font-bold text-neutral-900 block mb-1">
+                        Nombre del Producto *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ej: Redmi Buds 6 Active ANC"
+                        value={formName}
+                        onChange={(e) => setFormName(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-sm text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 font-semibold"
+                      />
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-bold text-neutral-900 block mb-1">
-                        Marca
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-bold text-neutral-900">
+                          Marca
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const nb = prompt("Ingresa el nombre de la nueva marca:");
+                            if (nb && nb.trim()) {
+                              addBrand(nb.trim());
+                              setFormBrand(nb.trim());
+                            }
+                          }}
+                          className="text-[10px] font-bold text-blue-600 hover:text-blue-800 cursor-pointer"
+                        >
+                          ＋ Nueva Marca
+                        </button>
+                      </div>
                       <select
                         value={formBrand}
                         onChange={(e) => setFormBrand(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-sm text-neutral-900 focus:outline-none focus:bg-white"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-semibold text-neutral-900 focus:outline-none focus:bg-white"
                       >
-                        <option value="Xiaomi">Xiaomi</option>
-                        <option value="Redmi">Redmi</option>
-                        <option value="Soundcore">Soundcore</option>
-                        <option value="Haylou">Haylou</option>
-                        <option value="Sony">Sony</option>
-                        <option value="Otra">Otra Marca</option>
+                        {brands.map((b) => (
+                          <option key={b} value={b}>
+                            {b}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
                     <div>
-                      <label className="text-xs font-bold text-neutral-900 block mb-1">
-                        Categoría
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-bold text-neutral-900">
+                          Categoría
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const nc = prompt("Ingresa el nombre de la nueva categoría:");
+                            if (nc && nc.trim()) {
+                              addCategory(nc.trim());
+                              setFormCategory(nc.trim());
+                            }
+                          }}
+                          className="text-[10px] font-bold text-blue-600 hover:text-blue-800 cursor-pointer"
+                        >
+                          ＋ Nueva Categoría
+                        </button>
+                      </div>
                       <select
                         value={formCategory}
-                        onChange={(e) => setFormCategory(e.target.value as any)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-sm text-neutral-900 focus:outline-none focus:bg-white"
+                        onChange={(e) => setFormCategory(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-semibold text-neutral-900 focus:outline-none focus:bg-white"
                       >
-                        <option value="in-ear">In-Ear (Intraurales / Botón)</option>
-                        <option value="over-ear">Over-Ear (Diadema / Vincha)</option>
-                        <option value="deportivos">Deportivos con Gancho</option>
-                        <option value="estudio">Audio Estudio &amp; Pro</option>
+                        {categories.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -937,9 +1037,9 @@ export default function AdminPage() {
                           </select>
                         </div>
 
-                        {formOriginalPrice > formPrice && (
+                        {Number(formOriginalPrice) > Number(formPrice) && Number(formPrice) > 0 && (
                           <div className="sm:col-span-2 text-xs font-bold text-emerald-800 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
-                            ✓ Descuento del {Math.round(((formOriginalPrice - formPrice) / formOriginalPrice) * 100)}% (Ahorro de {STORE_SETTINGS.currencySymbol}{(formOriginalPrice - formPrice).toFixed(2)})
+                            ✓ Descuento del {Math.round(((Number(formOriginalPrice) - Number(formPrice)) / Number(formOriginalPrice)) * 100)}% (Ahorro de {STORE_SETTINGS.currencySymbol}{(Number(formOriginalPrice) - Number(formPrice)).toFixed(2)})
                           </div>
                         )}
                       </div>
@@ -1197,10 +1297,34 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* 4. Descripción Comercial */}
+                {/* 4. Video Demostrativo del Producto */}
+                <div className="space-y-4 pt-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 border-b border-neutral-100 pb-2 flex items-center gap-1.5">
+                    <VideoIcon className="w-3.5 h-3.5 text-red-600" />
+                    <span>4. Video Multimedia (YouTube o MP4 - Opcional)</span>
+                  </h3>
+
+                  <div>
+                    <label className="text-xs font-bold text-neutral-900 block mb-1">
+                      URL del Video (YouTube o Enlace Directo MP4)
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://www.youtube.com/watch?v=... o https://youtu.be/... o video .mp4"
+                      value={formVideoUrl}
+                      onChange={(e) => setFormVideoUrl(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono text-neutral-900 focus:outline-none focus:bg-white"
+                    />
+                    <p className="text-[11px] text-neutral-500 mt-1">
+                      Se reproducirá en alta definición en la galería interactiva de la página de detalle del producto.
+                    </p>
+                  </div>
+                </div>
+
+                {/* 5. Descripción Comercial */}
                 <div className="space-y-4 pt-2">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 border-b border-neutral-100 pb-2">
-                    4. Descripción Comercial
+                    5. Descripción Comercial
                   </h3>
 
                   <div>
@@ -1209,6 +1333,7 @@ export default function AdminPage() {
                     </label>
                     <textarea
                       rows={3}
+                      placeholder="Describe los aspectos clave, detalles de uso o características del producto..."
                       value={formDescription}
                       onChange={(e) => setFormDescription(e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none focus:bg-white leading-relaxed"
@@ -1252,8 +1377,13 @@ export default function AdminPage() {
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                        {formBrand || "XIAOMI"}
+                        {formBrand || "MARCA"}
                       </span>
+                      {formCustomId && (
+                        <span className="font-mono text-[10px] font-bold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded border border-neutral-200">
+                          #{formCustomId}
+                        </span>
+                      )}
                       {formHasPromo && (
                         <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-600 text-white tracking-wide uppercase">
                           {formPromoTag}
@@ -1261,33 +1391,46 @@ export default function AdminPage() {
                       )}
                     </div>
                     <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-neutral-950 text-white tracking-wide">
-                      {formStock > 0 ? "En Stock" : "Agotado"}
+                      {Number(formStock) > 0 ? "En Stock" : "Agotado"}
                     </span>
                   </div>
 
-                  {/* Imagen con Transición en Hover (solo al pasar el cursor sobre la imagen) */}
-                  <div className="relative w-full aspect-square rounded-xl bg-white flex items-center justify-center p-2 overflow-hidden border border-neutral-100 mb-3 group/preview-image">
-                    <div className="relative w-full h-full flex items-center justify-center">
-                      <img
-                        src={formColors[previewColorIndex]?.image || formColors[0]?.image || getAssetUrl("/images/products/redmi-buds-6-play.png")}
-                        alt="Preview"
-                        className={`absolute inset-0 w-full h-full object-contain p-1 transition-all duration-500 ease-out ${
-                          formSecondaryImage
-                            ? "opacity-100 group-hover/preview-image:opacity-0 group-hover/preview-image:scale-95"
-                            : "group-hover/preview-image:scale-105"
-                        }`}
-                      />
-                      {formSecondaryImage && (
-                        <img
-                          src={formSecondaryImage}
-                          alt="Hover Preview"
-                          className="absolute inset-0 w-full h-full object-contain p-1 transition-all duration-500 ease-out opacity-0 group-hover/preview-image:opacity-100 scale-95 group-hover/preview-image:scale-100 pointer-events-none"
-                        />
-                      )}
-                    </div>
-                  </div>
+                  {/* Imagen con Transición en Hover */}
+                  {(() => {
+                    const activePreviewImg = formColors[previewColorIndex]?.image || formColors[0]?.image;
+                    return (
+                      <div className="relative w-full aspect-square rounded-xl bg-white flex items-center justify-center p-2 overflow-hidden border border-neutral-100 mb-3 group/preview-image">
+                        {activePreviewImg ? (
+                          <div className="relative w-full h-full flex items-center justify-center">
+                            <img
+                              src={activePreviewImg}
+                              alt="Preview"
+                              className={`absolute inset-0 w-full h-full object-contain p-1 transition-all duration-500 ease-out ${
+                                formSecondaryImage
+                                  ? "opacity-100 group-hover/preview-image:opacity-0 group-hover/preview-image:scale-95"
+                                  : "group-hover/preview-image:scale-105"
+                              }`}
+                            />
+                            {formSecondaryImage && (
+                              <img
+                                src={formSecondaryImage}
+                                alt="Hover Preview"
+                                className="absolute inset-0 w-full h-full object-contain p-1 transition-all duration-500 ease-out opacity-0 group-hover/preview-image:opacity-100 scale-95 group-hover/preview-image:scale-100 pointer-events-none"
+                              />
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center text-center p-4">
+                            <ImageIcon className="w-10 h-10 text-neutral-300 mb-2 stroke-[1.5]" />
+                            <span className="text-xs font-bold text-neutral-400">Sin fotografía aún</span>
+                            <span className="text-[10px] text-neutral-400 mt-0.5">Sube una foto en la sección de colores</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
-                  {/* Selector de Colores en la Vista Previa (Inmóvil y exacto) */}
+                  {/* Selector de Colores en la Vista Previa */}
                   <div className="h-7 flex items-center gap-1.5 shrink-0 pb-1">
                     {formColors.map((color, idx) => (
                       <button
@@ -1295,7 +1438,7 @@ export default function AdminPage() {
                         type="button"
                         onClick={() => setPreviewColorIndex(idx)}
                         className="w-6 h-6 flex items-center justify-center cursor-pointer shrink-0 transition-opacity"
-                        title={color.name}
+                        title={color.name || `Color #${idx + 1}`}
                       >
                         <span
                           className={`rounded-full border border-neutral-300 transition-all duration-150 block ${
@@ -1305,12 +1448,12 @@ export default function AdminPage() {
                           } ${
                             color.hex?.toLowerCase() === "#ffffff" ? "bg-white" : ""
                           }`}
-                          style={{ backgroundColor: color.hex }}
+                          style={{ backgroundColor: color.hex || "#18181b" }}
                         />
                       </button>
                     ))}
                     <span className="text-[10px] font-semibold text-neutral-400 ml-1 truncate max-w-[80px]">
-                      {formColors[previewColorIndex]?.name}
+                      {formColors[previewColorIndex]?.name || "Color"}
                     </span>
                   </div>
 
@@ -1332,11 +1475,11 @@ export default function AdminPage() {
                       </div>
                       <div className="flex items-baseline gap-2">
                         <span className="text-xl font-black text-neutral-950">
-                          {STORE_SETTINGS.currencySymbol}{formPrice.toFixed(2)}
+                          {STORE_SETTINGS.currencySymbol}{Number(formPrice || 0).toFixed(2)}
                         </span>
-                        {formHasPromo && formOriginalPrice > formPrice && (
+                        {formHasPromo && Number(formOriginalPrice || 0) > Number(formPrice || 0) && (
                           <span className="text-xs text-neutral-400 line-through">
-                            {STORE_SETTINGS.currencySymbol}{formOriginalPrice.toFixed(2)}
+                            {STORE_SETTINGS.currencySymbol}{Number(formOriginalPrice || 0).toFixed(2)}
                           </span>
                         )}
                       </div>
@@ -1353,6 +1496,162 @@ export default function AdminPage() {
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= PESTAÑA: GESTIÓN DE MARCAS & FILTROS ================= */}
+        {activeTab === "filters" && (
+          <div className="space-y-6">
+            <div className="border-b border-neutral-200 pb-4">
+              <h2 className="text-xl font-black text-neutral-950 flex items-center gap-2">
+                <Filter className="w-5 h-5 text-blue-600" />
+                <span>Gestión de Marcas &amp; Filtros de Categorías</span>
+              </h2>
+              <p className="text-xs text-neutral-500 mt-1">
+                Agrega o elimina marcas y categorías disponibles en la tienda. Los cambios se actualizan automáticamente en el catálogo para los clientes y en el formulario de nuevos productos.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Columna 1: Marcas */}
+              <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-5">
+                <div>
+                  <h3 className="text-sm font-extrabold text-neutral-950 flex items-center gap-2">
+                    <Tag className="w-4 h-4 text-neutral-700" />
+                    <span>Marcas Registradas ({brands.length})</span>
+                  </h3>
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    Marcas que aparecerán en el filtro lateral y tarjetas del catálogo.
+                  </p>
+                </div>
+
+                {/* Formulario Agregar Marca */}
+                <form onSubmit={handleAddBrandSubmit} className="flex gap-2">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Nueva marca (ej: JBL, Sony, Haylou)..."
+                    value={newBrandInput}
+                    onChange={(e) => setNewBrandInput(e.target.value)}
+                    className="flex-1 px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 font-semibold"
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-xl bg-neutral-950 text-white font-bold text-xs hover:bg-neutral-800 transition-colors flex items-center gap-1.5 shrink-0 shadow-xs cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Agregar</span>
+                  </button>
+                </form>
+
+                {/* Lista de Marcas */}
+                <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+                  {brands.map((b) => {
+                    const count = products.filter(
+                      (p) => p.brand?.toLowerCase() === b.toLowerCase()
+                    ).length;
+                    return (
+                      <div
+                        key={b}
+                        className="flex items-center justify-between p-3 rounded-xl border border-neutral-200 bg-neutral-50/60 hover:bg-neutral-100/60 transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-2 h-2 rounded-full bg-blue-600" />
+                          <span className="text-xs font-black text-neutral-900">{b}</span>
+                          <span className="text-[10px] font-semibold text-neutral-400 bg-white border border-neutral-200 px-2 py-0.5 rounded-full">
+                            {count} {count === 1 ? "producto" : "productos"}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm(`¿Estás seguro de eliminar la marca "${b}"?`)) {
+                              deleteBrand(b);
+                            }
+                          }}
+                          className="text-neutral-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                          title={`Eliminar marca ${b}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Columna 2: Categorías */}
+              <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-5">
+                <div>
+                  <h3 className="text-sm font-extrabold text-neutral-950 flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-neutral-700" />
+                    <span>Categorías del Catálogo ({categories.length})</span>
+                  </h3>
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    Categorías para organizar y filtrar las líneas de productos.
+                  </p>
+                </div>
+
+                {/* Formulario Agregar Categoría */}
+                <form onSubmit={handleAddCategorySubmit} className="flex gap-2">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Nueva categoría (ej: Smartwatches, Gamer)..."
+                    value={newCategoryInput}
+                    onChange={(e) => setNewCategoryInput(e.target.value)}
+                    className="flex-1 px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 font-semibold"
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-xl bg-neutral-950 text-white font-bold text-xs hover:bg-neutral-800 transition-colors flex items-center gap-1.5 shrink-0 shadow-xs cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Agregar</span>
+                  </button>
+                </form>
+
+                {/* Lista de Categorías */}
+                <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+                  {categories.map((c) => {
+                    const count = products.filter(
+                      (p) =>
+                        p.category?.toLowerCase() === c.toLowerCase() ||
+                        p.category?.toLowerCase().includes(c.toLowerCase()) ||
+                        c.toLowerCase().includes((p.category || "").toLowerCase())
+                    ).length;
+                    return (
+                      <div
+                        key={c}
+                        className="flex items-center justify-between p-3 rounded-xl border border-neutral-200 bg-neutral-50/60 hover:bg-neutral-100/60 transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-600" />
+                          <span className="text-xs font-black text-neutral-900">{c}</span>
+                          <span className="text-[10px] font-semibold text-neutral-400 bg-white border border-neutral-200 px-2 py-0.5 rounded-full">
+                            {count} {count === 1 ? "producto" : "productos"}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm(`¿Estás seguro de eliminar la categoría "${c}"?`)) {
+                              deleteCategory(c);
+                            }
+                          }}
+                          className="text-neutral-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                          title={`Eliminar categoría ${c}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

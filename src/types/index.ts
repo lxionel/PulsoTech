@@ -30,7 +30,7 @@ export interface Product {
   price: number;
   originalPrice?: number;
   brand: string;
-  category: "over-ear" | "in-ear" | "deportivos" | "estudio";
+  category: string;
   inStock: boolean;
   stockCount: number;
   isFeatured?: boolean;
@@ -43,6 +43,7 @@ export interface Product {
   features: string[];
   tags: string[];
   images?: string[];
+  videoUrl?: string;
 }
 
 export interface CartItem {
