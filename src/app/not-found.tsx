@@ -17,48 +17,52 @@ export default function NotFoundPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    try {
-      const pathname = window.location.pathname;
-      // Detectar si la ruta intentaba abrir un producto: ej: /PulsoTech/producto/freebuds-se-2/ o /producto/freebuds-se-2
-      const match = pathname.match(/\/producto\/([^/?#]+)/i);
-      if (match && match[1]) {
-        const slugOrId = decodeURIComponent(match[1]).replace(/\/$/, "").trim().toLowerCase();
+    const timer = setTimeout(() => {
+      try {
+        const pathname = window.location.pathname;
+        // Detectar si la ruta intentaba abrir un producto: ej: /PulsoTech/producto/freebuds-se-2/ o /producto/freebuds-se-2
+        const match = pathname.match(/\/producto\/([^/?#]+)/i);
+        if (match && match[1]) {
+          const slugOrId = decodeURIComponent(match[1]).replace(/\/$/, "").trim().toLowerCase();
 
-        // 1. Buscar en products del contexto
-        let found = products.find(
-          (p) =>
-            p.slug.toLowerCase() === slugOrId ||
-            p.id.toLowerCase() === slugOrId ||
-            p.name.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-") === slugOrId
-        );
+          // 1. Buscar en products del contexto
+          let found = products.find(
+            (p) =>
+              p.slug.toLowerCase() === slugOrId ||
+              p.id.toLowerCase() === slugOrId ||
+              p.name.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-") === slugOrId
+          );
 
-        // 2. Si aún no está en contexto, buscar directamente en localStorage
-        if (!found) {
-          const raw = localStorage.getItem("pulsotech_custom_products");
-          if (raw) {
-            const list: Product[] = JSON.parse(raw);
-            if (Array.isArray(list)) {
-              found = list.find(
-                (p) =>
-                  p.slug?.toLowerCase() === slugOrId ||
-                  p.id?.toLowerCase() === slugOrId ||
-                  p.name?.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-") === slugOrId
-              );
+          // 2. Si aún no está en contexto, buscar directamente en localStorage
+          if (!found) {
+            const raw = localStorage.getItem("pulsotech_custom_products");
+            if (raw) {
+              const list: Product[] = JSON.parse(raw);
+              if (Array.isArray(list)) {
+                found = list.find(
+                  (p) =>
+                    p.slug?.toLowerCase() === slugOrId ||
+                    p.id?.toLowerCase() === slugOrId ||
+                    p.name?.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-") === slugOrId
+                );
+              }
             }
           }
-        }
 
-        if (found) {
-          setMatchedProduct(found);
-          setIsSearchingProduct(false);
-          return;
+          if (found) {
+            setMatchedProduct(found);
+            setIsSearchingProduct(false);
+            return;
+          }
         }
+      } catch (err) {
+        console.error("Error matching route in not-found:", err);
       }
-    } catch (err) {
-      console.error("Error matching route in not-found:", err);
-    }
 
-    setIsSearchingProduct(false);
+      setIsSearchingProduct(false);
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [products]);
 
   // Si se encontró el producto a partir de la URL dinámica, renderizar la ficha directamente

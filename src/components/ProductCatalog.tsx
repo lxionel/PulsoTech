@@ -10,7 +10,6 @@ import {
   X,
   Filter,
   Check,
-  Tag,
 } from "lucide-react";
 
 export default function ProductCatalog() {

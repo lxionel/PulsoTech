@@ -12,7 +12,6 @@ import {
   fetchStoreSettingsFromSupabase,
   saveStoreSettingsToSupabase,
   saveSupabaseConfig,
-  getSupabaseConfig,
   getSupabaseClient,
 } from "@/lib/supabase";
 
@@ -239,7 +238,14 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
 
   // Inicialización y suscripción en tiempo real
   useEffect(() => {
-    refreshFromCloud();
+    let isMounted = true;
+
+    const init = async () => {
+      if (isMounted) {
+        await refreshFromCloud();
+      }
+    };
+    void init();
 
     // Suscripción Realtime en Supabase si está disponible
     const client = getSupabaseClient();
@@ -251,7 +257,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
           { event: "*", schema: "public", table: "products" },
           () => {
             fetchProductsFromSupabase().then((data) => {
-              if (data && Array.isArray(data)) {
+              if (data && Array.isArray(data) && isMounted) {
                 setProducts(data);
                 if (typeof window !== "undefined") {
                   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -263,9 +269,14 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         .subscribe();
 
       return () => {
+        isMounted = false;
         client.removeChannel(channel);
       };
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [refreshFromCloud]);
 
   // Sincronizar storage entre pestañas cuando se usa modo local

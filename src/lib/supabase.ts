@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { Product } from "@/types";
+import { Product, ProductColor, ProductSpecs, ProductSpecItem, SoundProfile } from "@/types";
 
 const LOCAL_STORAGE_URL_KEY = "pulsotech_supabase_url";
 const LOCAL_STORAGE_KEY_KEY = "pulsotech_supabase_anon_key";
@@ -69,8 +69,42 @@ export function isSupabaseReady(): boolean {
   return Boolean(url && anonKey);
 }
 
+export interface DbProductRow {
+  id: string | number;
+  name?: string;
+  slug?: string;
+  subtitle?: string;
+  description?: string;
+  price?: number;
+  original_price?: number | null;
+  brand?: string;
+  category?: string;
+  in_stock?: boolean;
+  stock_count?: number;
+  is_featured?: boolean;
+  is_new?: boolean;
+  rating?: number;
+  reviews_count?: number;
+  video_url?: string | null;
+  colors?: ProductColor[];
+  images?: string[];
+  custom_specs?: ProductSpecItem[];
+  specs?: ProductSpecs;
+  sound_profile?: SoundProfile;
+  features?: string[];
+  tags?: string[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface DbStoreSettingRow {
+  key: string;
+  value: unknown;
+  updated_at?: string;
+}
+
 // Convertidor de fila de base de datos a Product
-export function dbRowToProduct(row: any): Product {
+export function dbRowToProduct(row: DbProductRow): Product {
   return {
     id: String(row.id),
     name: row.name || "",
@@ -92,7 +126,7 @@ export function dbRowToProduct(row: any): Product {
     images: Array.isArray(row.images) ? row.images : [],
     customSpecs: Array.isArray(row.custom_specs) ? row.custom_specs : undefined,
     specs: row.specs || {},
-    soundProfile: row.sound_profile || {
+    soundProfile: (row.sound_profile as Product["soundProfile"]) || {
       type: "Equilibrado",
       description: "Audio de alta fidelidad",
       bass: 80,
@@ -105,7 +139,7 @@ export function dbRowToProduct(row: any): Product {
 }
 
 // Convertidor de Product a fila de base de datos
-export function productToDbRow(p: Product): any {
+export function productToDbRow(p: Product): DbProductRow {
   return {
     id: String(p.id),
     name: p.name,
@@ -127,7 +161,7 @@ export function productToDbRow(p: Product): any {
     images: p.images || [],
     custom_specs: p.customSpecs || [],
     specs: p.specs || {},
-    sound_profile: p.soundProfile || {},
+    sound_profile: p.soundProfile || undefined,
     features: p.features || [],
     tags: p.tags || [],
     updated_at: new Date().toISOString(),
@@ -236,9 +270,9 @@ export async function fetchStoreSettingsFromSupabase(): Promise<{ brands?: strin
     }
 
     const result: { brands?: string[]; categories?: string[] } = {};
-    (data || []).forEach((item: any) => {
-      if (item.key === "brands" && Array.isArray(item.value)) result.brands = item.value;
-      if (item.key === "categories" && Array.isArray(item.value)) result.categories = item.value;
+    (data || []).forEach((item: DbStoreSettingRow) => {
+      if (item.key === "brands" && Array.isArray(item.value)) result.brands = item.value as string[];
+      if (item.key === "categories" && Array.isArray(item.value)) result.categories = item.value as string[];
     });
 
     return result;

@@ -1,13 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Product } from "@/types";
 import { STORE_SETTINGS } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import { getAssetUrl } from "@/utils/paths";
-import { ShoppingBag, ArrowRight, Heart } from "lucide-react";
+import { ShoppingBag, Heart } from "lucide-react";
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem, toggleFavorite, isFavorite } = useCart();

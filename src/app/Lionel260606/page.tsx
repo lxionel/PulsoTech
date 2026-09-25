@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { useProducts } from "@/context/ProductsContext";
@@ -9,7 +9,6 @@ import { getAssetUrl } from "@/utils/paths";
 import { Product, ProductColor } from "@/types";
 import Logo from "@/components/Logo";
 import {
-  TrendingUp,
   Package,
   DollarSign,
   AlertCircle,
@@ -26,25 +25,13 @@ import {
   Image as ImageIcon,
   Sparkles,
   Tag,
-  Copy,
   RefreshCw,
   Upload,
   Eye,
-  Check,
-  ArrowRight,
   Filter,
   Video as VideoIcon,
   Plus,
   Layers,
-  Database,
-  Cloud,
-  CloudOff,
-  Code,
-  ShieldCheck,
-  Globe,
-  Loader2,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 
 interface SaleRecord {
@@ -150,8 +137,6 @@ export default function AdminPage() {
     updateProduct,
     deleteProduct,
     updateStock,
-    resetToDefault,
-    exportProductsJson,
     brands,
     addBrand,
     deleteBrand,
@@ -260,7 +245,6 @@ export default function AdminPage() {
 
   // Métricas
   const totalRevenue = sales.reduce((acc, s) => acc + s.total, 0);
-  const totalUnitsSold = sales.reduce((acc, s) => acc + s.quantity, 0);
   const lowStockCount = products.filter((p) => p.stockCount <= 5).length;
 
   const handleSavePhone = (e: React.FormEvent) => {
@@ -1206,7 +1190,7 @@ export default function AdminPage() {
 
                     {formCustomSpecs.length === 0 && (
                       <div className="text-center py-4 text-xs text-neutral-400">
-                        No hay características agregadas. Pulsa "+ Característica" para añadir especificaciones técnicas.
+                        No hay características agregadas. Pulsa &quot;+ Característica&quot; para añadir especificaciones técnicas.
                       </div>
                     )}
                   </div>

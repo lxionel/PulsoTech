@@ -44,28 +44,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Cargar datos de localStorage una sola vez tras montar en el cliente (evita Hydration Mismatch)
   useEffect(() => {
-    try {
-      const savedCart = localStorage.getItem("pulsotech_cart");
-      if (savedCart) {
-        const parsed = JSON.parse(savedCart);
-        if (Array.isArray(parsed)) setItems(parsed);
-      }
+    const timer = setTimeout(() => {
+      try {
+        const savedCart = localStorage.getItem("pulsotech_cart");
+        if (savedCart) {
+          const parsed = JSON.parse(savedCart);
+          if (Array.isArray(parsed)) setItems(parsed);
+        }
 
-      const savedFavs = localStorage.getItem("pulsotech_favorites");
-      if (savedFavs) {
-        const parsedFavs = JSON.parse(savedFavs);
-        if (Array.isArray(parsedFavs)) setFavorites(parsedFavs);
-      }
+        const savedFavs = localStorage.getItem("pulsotech_favorites");
+        if (savedFavs) {
+          const parsedFavs = JSON.parse(savedFavs);
+          if (Array.isArray(parsedFavs)) setFavorites(parsedFavs);
+        }
 
-      const savedPhone = localStorage.getItem("pulsotech_phone");
-      if (savedPhone && savedPhone !== "51987654321") {
-        setWhatsappNumber(savedPhone);
+        const savedPhone = localStorage.getItem("pulsotech_phone");
+        if (savedPhone && savedPhone !== "51987654321") {
+          setWhatsappNumber(savedPhone);
+        }
+      } catch {
+        // Ignorar error de parsing
+      } finally {
+        setIsLoaded(true);
       }
-    } catch {
-      // Ignorar error de parsing
-    } finally {
-      setIsLoaded(true);
-    }
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Guardar en localStorage únicamente después de haber completado la carga inicial

@@ -28,7 +28,6 @@ import {
   Check,
   Heart,
   Play,
-  Video,
 } from "lucide-react";
 
 function getEmbedVideoInfo(url?: string): { isYouTube: boolean; embedUrl: string } | null {
@@ -118,13 +117,18 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
     return list;
   }, [product]);
 
-  const colors = product.colors || [];
+  const colors = React.useMemo(() => product.colors || [], [product.colors]);
   const fallbackImg = getAssetUrl("/placeholder-earbuds.svg");
-  const currentColor = colors[selectedColorIndex] || colors[0] || {
-    name: "Estándar",
-    hex: "#18181b",
-    image: product.images?.[0] || fallbackImg,
-  };
+  const currentColor = React.useMemo(() => {
+    return (
+      colors[selectedColorIndex] ||
+      colors[0] || {
+        name: "Estándar",
+        hex: "#18181b",
+        image: product.images?.[0] || fallbackImg,
+      }
+    );
+  }, [colors, selectedColorIndex, product.images, fallbackImg]);
   const videoInfo = React.useMemo(() => getEmbedVideoInfo(product.videoUrl), [product.videoUrl]);
 
   const galleryImages = React.useMemo(() => {
