@@ -33,15 +33,39 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const { products } = useProducts();
 
   const [quantity, setQuantity] = useState(1);
+  const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const isFav = isFavorite(product.id);
 
-  const galleryImages =
-    product.images && product.images.length > 0
-      ? product.images
-      : [product.colors[0]?.image || "/placeholder-earbuds.svg"];
+  const colors = product.colors || [];
+  const currentColor = colors[selectedColorIndex] || colors[0];
+
+  const galleryImages = React.useMemo(() => {
+    const list: string[] = [];
+    if (currentColor?.image) list.push(currentColor.image);
+    (product.images || []).forEach((img) => {
+      if (img && !list.includes(img)) list.push(img);
+    });
+    colors.forEach((c) => {
+      if (c.image && !list.includes(c.image)) list.push(c.image);
+    });
+    return list.length > 0 ? list : ["/placeholder-earbuds.svg"];
+  }, [product, currentColor, colors]);
 
   const activeImage = galleryImages[selectedImageIndex] || galleryImages[0];
+
+  const handleSelectColor = (index: number) => {
+    setSelectedColorIndex(index);
+    const chosenColor = colors[index];
+    if (chosenColor?.image) {
+      const idx = galleryImages.indexOf(chosenColor.image);
+      if (idx !== -1) {
+        setSelectedImageIndex(idx);
+      } else {
+        setSelectedImageIndex(0);
+      }
+    }
+  };
 
   const handleNextImage = () => {
     setSelectedImageIndex((prev) => (prev + 1) % galleryImages.length);
@@ -52,17 +76,17 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   };
 
   const handleAddToCart = () => {
-    addItem(product, product.colors[0], quantity);
+    addItem(product, currentColor, quantity);
   };
 
   const handleBuyNow = () => {
-    addItem(product, product.colors[0], quantity);
+    addItem(product, currentColor, quantity);
     setIsCartOpen(true);
   };
 
   const relatedProducts = products.filter((p) => p.id !== product.id);
 
-  const waMessage = `¡Hola PulsoTech! Deseo comprar el modelo *${product.name}* (Precio: ${STORE_SETTINGS.currencySymbol}${product.price.toFixed(2)}). ¿Tienen stock disponible para entrega hoy?`;
+  const waMessage = `¡Hola PulsoTech! Deseo comprar el modelo *${product.name}* (Color: ${currentColor?.name || "Estándar"}, Precio: ${STORE_SETTINGS.currencySymbol}${product.price.toFixed(2)}). ¿Tienen stock disponible para entrega hoy?`;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fbfbfd] text-[#111113]">
@@ -356,6 +380,44 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 <span>Garantía de funcionamiento PulsoTech · Caja sellada de fábrica</span>
               </div>
             </div>
+
+            {/* Selector de Colores Disponibles */}
+            {colors.length > 0 && (
+              <div className="p-4 rounded-2xl bg-white border border-neutral-200/90 shadow-2xs space-y-2.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-neutral-900">Color Disponible:</span>
+                  <span className="font-extrabold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
+                    {currentColor?.name}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5 pt-1">
+                  {colors.map((c, idx) => {
+                    const isSelected = selectedColorIndex === idx;
+                    return (
+                      <button
+                        key={c.name + idx}
+                        type="button"
+                        onClick={() => handleSelectColor(idx)}
+                        aria-label={`Color ${c.name}`}
+                        title={c.name}
+                        className={`relative rounded-full transition-all duration-200 cursor-pointer flex items-center justify-center ${
+                          isSelected
+                            ? "w-8 h-8 ring-2 ring-offset-2 ring-neutral-900 shadow-sm"
+                            : "w-7 h-7 hover:scale-105 opacity-75 hover:opacity-100"
+                        }`}
+                      >
+                        <span
+                          className={`w-full h-full rounded-full border border-neutral-300 block ${
+                            c.hex?.toLowerCase() === "#ffffff" ? "bg-white" : ""
+                          }`}
+                          style={{ backgroundColor: c.hex }}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Quantity Selector, Cart Buttons & Favorites */}
             <div className="space-y-3 pt-1">

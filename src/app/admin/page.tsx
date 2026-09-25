@@ -31,6 +31,7 @@ import {
   Upload,
   Eye,
   Check,
+  ArrowRight,
 } from "lucide-react";
 
 interface SaleRecord {
@@ -119,14 +120,39 @@ export default function AdminPage() {
     "Audífonos True Wireless originales con sonido de alta fidelidad, conexión instantánea y batería de larga duración con estuche de carga."
   );
   
-  // Por defecto color Blanco como solicitó el usuario
-  const [formImage, setFormImage] = useState(getAssetUrl("/images/products/redmi-buds-6-play.png"));
-  const [formColorName, setFormColorName] = useState("Blanco");
-  const [formColorHex, setFormColorHex] = useState("#FFFFFF");
+  // Múltiples Colores Detallados con sus Fotografías
+  const [formColors, setFormColors] = useState<ProductColor[]>([
+    {
+      name: "Beige",
+      hex: "#f5f0e6",
+      image: getAssetUrl("/images/products/redmi-buds-8-lite.png"),
+    },
+    {
+      name: "Negro",
+      hex: "#18181b",
+      image: getAssetUrl("/images/products/redmi-buds-8-lite.png"),
+    },
+    {
+      name: "Blanco",
+      hex: "#FFFFFF",
+      image: getAssetUrl("/images/products/redmi-buds-8-lite.png"),
+    },
+    {
+      name: "Azul",
+      hex: "#1e3a8a",
+      image: getAssetUrl("/images/products/redmi-buds-8-lite.png"),
+    },
+  ]);
+  const [previewColorIndex, setPreviewColorIndex] = useState(0);
+
+  // Imagen Secundaria (Para el efecto de transición / hover al pasar el cursor)
+  const [formSecondaryImage, setFormSecondaryImage] = useState(
+    getAssetUrl("/images/products/redmi-buds-8-lite-features.png")
+  );
 
   // Specs
-  const [formSpecBattery, setFormSpecBattery] = useState("36 horas");
-  const [formSpecAnc, setFormSpecAnc] = useState("Sin ANC");
+  const [formSpecBattery, setFormSpecBattery] = useState("36h");
+  const [formSpecAnc, setFormSpecAnc] = useState("Sin cancelación");
   const [formSpecConnectivity, setFormSpecConnectivity] = useState("Bluetooth 5.4");
 
   // Métricas
@@ -170,14 +196,65 @@ export default function AdminPage() {
     setTimeout(() => setSuccessNotice(""), 4000);
   };
 
-  // Manejador para subir foto desde archivo local (computadora o celular)
-  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Manejadores de colores detallados
+  const handleAddColor = () => {
+    const palette = [
+      { name: "Negro", hex: "#18181b" },
+      { name: "Blanco", hex: "#FFFFFF" },
+      { name: "Beige", hex: "#f5f0e6" },
+      { name: "Azul", hex: "#1d4ed8" },
+      { name: "Verde", hex: "#059669" },
+      { name: "Gris", hex: "#64748b" },
+      { name: "Rosa", hex: "#f43f5e" },
+    ];
+    const nextColor = palette[formColors.length % palette.length];
+    setFormColors([
+      ...formColors,
+      {
+        name: nextColor.name,
+        hex: nextColor.hex,
+        image: formColors[0]?.image || getAssetUrl("/images/products/redmi-buds-6-play.png"),
+      },
+    ]);
+  };
+
+  const handleRemoveColor = (index: number) => {
+    if (formColors.length <= 1) {
+      alert("El producto debe tener al menos un color disponible.");
+      return;
+    }
+    setFormColors(formColors.filter((_, i) => i !== index));
+    if (previewColorIndex >= formColors.length - 1) {
+      setPreviewColorIndex(0);
+    }
+  };
+
+  const handleUpdateColor = (index: number, field: keyof ProductColor, value: string) => {
+    setFormColors((prev) =>
+      prev.map((c, i) => (i === index ? { ...c, [field]: value } : c))
+    );
+  };
+
+  const handleColorImageUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
         if (typeof reader.result === "string") {
-          setFormImage(reader.result);
+          handleUpdateColor(index, "image", reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSecondaryImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === "string") {
+          setFormSecondaryImage(reader.result);
         }
       };
       reader.readAsDataURL(file);
@@ -196,11 +273,21 @@ export default function AdminPage() {
     setFormStock(product.stockCount);
     setFormSubtitle(product.subtitle || "");
     setFormDescription(product.description || "");
-    setFormImage(product.colors[0]?.image || getAssetUrl("/images/products/redmi-buds-6-play.png"));
-    setFormColorName(product.colors[0]?.name || "Blanco");
-    setFormColorHex(product.colors[0]?.hex || "#FFFFFF");
-    setFormSpecBattery(product.specs?.battery || "30h");
-    setFormSpecAnc(product.specs?.anc || "Sin ANC");
+    setFormColors(
+      product.colors && product.colors.length > 0
+        ? product.colors
+        : [
+            {
+              name: "Negro",
+              hex: "#18181b",
+              image: product.images?.[0] || getAssetUrl("/images/products/redmi-buds-6-play.png"),
+            },
+          ]
+    );
+    setFormSecondaryImage(product.images?.[1] || "");
+    setPreviewColorIndex(0);
+    setFormSpecBattery(product.specs?.battery || "36h");
+    setFormSpecAnc(product.specs?.anc || "Sin cancelación");
     setFormSpecConnectivity(product.specs?.connectivity || "Bluetooth 5.3");
     setActiveTab("add_product");
   };
@@ -215,13 +302,34 @@ export default function AdminPage() {
     setFormHasPromo(false);
     setFormOriginalPrice(69.0);
     setFormStock(15);
-    setFormSubtitle("36h de batería con estuche · Resistencia IPX4");
+    setFormSubtitle("Sin cancelación de ruido · 36h de batería con estuche · Resistencia IPX4");
     setFormDescription("Audífonos True Wireless originales con sonido de alta fidelidad y garantía.");
-    setFormImage(getAssetUrl("/images/products/redmi-buds-6-play.png"));
-    setFormColorName("Blanco");
-    setFormColorHex("#FFFFFF");
-    setFormSpecBattery("36 horas");
-    setFormSpecAnc("Sin ANC");
+    setFormColors([
+      {
+        name: "Negro",
+        hex: "#18181b",
+        image: getAssetUrl("/images/products/redmi-buds-6-play.png"),
+      },
+      {
+        name: "Blanco",
+        hex: "#FFFFFF",
+        image: getAssetUrl("/images/products/redmi-buds-6-play.png"),
+      },
+      {
+        name: "Beige",
+        hex: "#f5f0e6",
+        image: getAssetUrl("/images/products/redmi-buds-6-play.png"),
+      },
+      {
+        name: "Azul",
+        hex: "#1d4ed8",
+        image: getAssetUrl("/images/products/redmi-buds-6-play.png"),
+      },
+    ]);
+    setFormSecondaryImage(getAssetUrl("/images/products/redmi-buds-6-play-earbuds.png"));
+    setPreviewColorIndex(0);
+    setFormSpecBattery("36h");
+    setFormSpecAnc("Sin cancelación");
     setFormSpecConnectivity("Bluetooth 5.4");
     setActiveTab("add_product");
   };
@@ -241,14 +349,6 @@ export default function AdminPage() {
       .replace(/[\s_-]+/g, "-")
       .replace(/^-+|-+$/g, "");
 
-    const newColors: ProductColor[] = [
-      {
-        name: formColorName || "Blanco",
-        hex: formColorHex || "#FFFFFF",
-        image: formImage,
-      },
-    ];
-
     const productPayload: Product = {
       id: editingProductId || `prod-${Date.now()}`,
       name: formName.trim(),
@@ -265,7 +365,17 @@ export default function AdminPage() {
       isNew: !editingProductId,
       rating: 5.0,
       reviewsCount: 1,
-      colors: newColors,
+      colors: formColors.length > 0 ? formColors : [
+        {
+          name: "Original",
+          hex: "#18181b",
+          image: getAssetUrl("/images/products/redmi-buds-6-play.png"),
+        },
+      ],
+      images: [
+        formColors[0]?.image || getAssetUrl("/images/products/redmi-buds-6-play.png"),
+        formSecondaryImage || formColors[1]?.image || formColors[0]?.image || getAssetUrl("/images/products/redmi-buds-6-play-earbuds.png"),
+      ],
       specs: {
         battery: formSpecBattery,
         anc: formSpecAnc,
@@ -283,7 +393,7 @@ export default function AdminPage() {
       },
       features: [
         "100% Original Sellado",
-        formSpecBattery + " de reproducción",
+        formSpecBattery + " de batería con estuche",
         formSpecConnectivity,
       ],
       tags: [formBrand.toLowerCase(), formCategory, "inalambricos"],
@@ -837,133 +947,250 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* 3. Fotos & Color (Por defecto Blanco como solicitaste) */}
+                {/* 3. Gestión Detallada de Colores & Fotografías */}
                 <div className="space-y-4 pt-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 border-b border-neutral-100 pb-2">
-                    3. Fotografía &amp; Color
-                  </h3>
-
-                  <div className="space-y-3">
-                    <label className="text-xs font-bold text-neutral-900 block">
-                      Imagen del Producto
-                    </label>
-
-                    <div className="flex flex-col sm:flex-row items-center gap-3">
-                      <label className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-xs font-bold text-white flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-xs">
-                        <Upload className="w-4 h-4 text-white" />
-                        <span>Subir foto desde mi computadora o celular</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageFileUpload}
-                          className="hidden"
-                        />
-                      </label>
-
-                      <span className="text-xs text-neutral-400">o ruta de imagen:</span>
-
-                      <input
-                        type="text"
-                        value={formImage}
-                        onChange={(e) => setFormImage(e.target.value)}
-                        className="flex-1 w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-800 font-mono"
-                      />
+                  <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
+                    <div>
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                        <span>3. Colores Disponibles &amp; Fotografías</span>
+                      </h3>
+                      <p className="text-[11px] text-neutral-500 mt-0.5">
+                        Agrega todos los colores que tiene el producto. Cada uno tendrá su círculo interactivo en la tienda.
+                      </p>
                     </div>
 
-                    {/* Galería de Fotos Rápidas */}
-                    <div className="pt-2">
-                      <span className="text-[11px] font-bold text-neutral-500 block mb-1.5">
-                        O selecciona una de nuestras fotos de catálogo:
-                      </span>
-                      <div className="flex items-center gap-3">
-                        {[
-                          { name: "Buds 6 Play", path: getAssetUrl("/images/products/redmi-buds-6-play.png") },
-                          { name: "Buds 8 Lite", path: getAssetUrl("/images/products/redmi-buds-8-lite.png") },
-                          { name: "Buds 7S", path: getAssetUrl("/images/products/redmi-buds-7s.png") },
-                        ].map((sample) => (
-                          <button
-                            type="button"
-                            key={sample.name}
-                            onClick={() => setFormImage(sample.path)}
-                            className={`p-1.5 rounded-xl border flex items-center gap-2 bg-neutral-50 hover:bg-white text-[11px] font-semibold transition-all ${
-                              formImage === sample.path ? "border-black shadow-xs bg-white" : "border-neutral-200"
-                            }`}
-                          >
-                            <img src={sample.path} alt={sample.name} className="w-7 h-7 object-contain" />
-                            <span>{sample.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddColor}
+                      className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" />
+                      <span>Añadir Color</span>
+                    </button>
                   </div>
 
-                  {/* Selector de Color con chips rápidos (Blanco por defecto) */}
-                  <div className="space-y-3 pt-2">
-                    <label className="text-xs font-bold text-neutral-900 block">
-                      Color del Producto
-                    </label>
+                  {/* Lista de Colores Configurados */}
+                  <div className="space-y-4">
+                    {formColors.map((color, idx) => (
+                      <div
+                        key={idx}
+                        className="p-4 rounded-xl border border-neutral-200/90 bg-neutral-50/70 space-y-3 relative transition-all"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="w-5 h-5 rounded-full border border-neutral-300 shadow-2xs"
+                              style={{ backgroundColor: color.hex }}
+                            />
+                            <span className="text-xs font-black text-neutral-900">
+                              Color #{idx + 1}: {color.name || "Sin nombre"}
+                            </span>
+                          </div>
 
-                    {/* Chips de Colores Rápidos */}
-                    <div className="flex items-center gap-2">
-                      {[
-                        { name: "Blanco", hex: "#FFFFFF" },
-                        { name: "Negro", hex: "#111111" },
-                        { name: "Azul", hex: "#1d4ed8" },
-                        { name: "Titanio", hex: "#64748b" },
-                      ].map((c) => (
-                        <button
-                          type="button"
-                          key={c.name}
-                          onClick={() => {
-                            setFormColorName(c.name);
-                            setFormColorHex(c.hex);
-                          }}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${
-                            formColorHex === c.hex
-                              ? "border-black bg-neutral-900 text-white shadow-xs"
-                              : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-400"
-                          }`}
-                        >
-                          <span
-                            className="w-3.5 h-3.5 rounded-full border border-neutral-300"
-                            style={{ backgroundColor: c.hex }}
-                          />
-                          <span>{c.name}</span>
-                        </button>
-                      ))}
+                          {formColors.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveColor(idx)}
+                              className="text-neutral-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-colors"
+                              title="Eliminar este color"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Campos del color */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[11px] font-bold text-neutral-600 block mb-1">
+                              Nombre del Color
+                            </label>
+                            <input
+                              type="text"
+                              value={color.name}
+                              onChange={(e) => handleUpdateColor(idx, "name", e.target.value)}
+                              placeholder="Ej: Negro, Blanco, Beige, Azul..."
+                              className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-200 text-xs font-semibold text-neutral-900"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] font-bold text-neutral-600 block mb-1">
+                              Tono HEX
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={color.hex}
+                                onChange={(e) => handleUpdateColor(idx, "hex", e.target.value)}
+                                className="w-8 h-8 rounded-lg border border-neutral-200 p-0.5 cursor-pointer shrink-0"
+                              />
+                              <input
+                                type="text"
+                                value={color.hex}
+                                onChange={(e) => handleUpdateColor(idx, "hex", e.target.value)}
+                                className="flex-1 px-3 py-2 rounded-xl bg-white border border-neutral-200 text-xs font-mono font-bold text-neutral-900 uppercase"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Paleta rápida de sugerencias */}
+                        <div>
+                          <span className="text-[10px] font-bold text-neutral-400 block mb-1">
+                            Sugerencias de color rápidas:
+                          </span>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {[
+                              { name: "Beige", hex: "#f5f0e6" },
+                              { name: "Negro", hex: "#18181b" },
+                              { name: "Blanco", hex: "#FFFFFF" },
+                              { name: "Azul", hex: "#1e3a8a" },
+                              { name: "Titanio", hex: "#64748b" },
+                              { name: "Verde", hex: "#059669" },
+                              { name: "Rosa", hex: "#f43f5e" },
+                            ].map((preset) => (
+                              <button
+                                type="button"
+                                key={preset.name}
+                                onClick={() => {
+                                  handleUpdateColor(idx, "name", preset.name);
+                                  handleUpdateColor(idx, "hex", preset.hex);
+                                }}
+                                className={`px-2 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 transition-all ${
+                                  color.hex?.toLowerCase() === preset.hex.toLowerCase()
+                                    ? "bg-neutral-900 text-white border-neutral-900 shadow-2xs"
+                                    : "bg-white text-neutral-700 border-neutral-200 hover:border-neutral-400"
+                                }`}
+                              >
+                                <span
+                                  className="w-2.5 h-2.5 rounded-full border border-neutral-300"
+                                  style={{ backgroundColor: preset.hex }}
+                                />
+                                <span>{preset.name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Foto para este color */}
+                        <div className="pt-2 border-t border-neutral-200/80">
+                          <label className="text-[11px] font-bold text-neutral-700 block mb-1.5">
+                            Fotografía para el color {color.name || `#${idx + 1}`}:
+                          </label>
+                          <div className="flex flex-col sm:flex-row items-center gap-3">
+                            <div className="w-14 h-14 rounded-xl bg-white border border-neutral-200 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
+                              {color.image ? (
+                                <img
+                                  src={color.image}
+                                  alt={color.name}
+                                  className="w-full h-full object-contain"
+                                />
+                              ) : (
+                                <ImageIcon className="w-5 h-5 text-neutral-300" />
+                              )}
+                            </div>
+
+                            <div className="flex-1 w-full space-y-2">
+                              <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 text-xs font-bold text-neutral-800 cursor-pointer transition-colors shadow-2xs">
+                                <Upload className="w-3.5 h-3.5 text-neutral-600" />
+                                <span>Subir foto de este color (PC o Celular)</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleColorImageUpload(idx, e)}
+                                  className="hidden"
+                                />
+                              </label>
+
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-neutral-400">O elegir muestra:</span>
+                                {[
+                                  { name: "Buds 6 Play", path: getAssetUrl("/images/products/redmi-buds-6-play.png") },
+                                  { name: "Buds 8 Lite", path: getAssetUrl("/images/products/redmi-buds-8-lite.png") },
+                                  { name: "Buds 7S", path: getAssetUrl("/images/products/redmi-buds-7s.png") },
+                                ].map((sample) => (
+                                  <button
+                                    type="button"
+                                    key={sample.name}
+                                    onClick={() => handleUpdateColor(idx, "image", sample.path)}
+                                    className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
+                                      color.image === sample.path
+                                        ? "bg-neutral-900 text-white border-neutral-900"
+                                        : "bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50"
+                                    }`}
+                                  >
+                                    {sample.name}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Imagen Secundaria (Efecto de transición al pasar el cursor) */}
+                  <div className="p-4 rounded-xl border border-blue-200/80 bg-blue-50/30 space-y-3 mt-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="text-xs font-extrabold text-neutral-900 flex items-center gap-1.5">
+                          <Eye className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Foto Secundaria (Efecto Hover / Transición al pasar el cursor)</span>
+                        </span>
+                        <p className="text-[11px] text-neutral-500 mt-0.5">
+                          Esta fotografía aparecerá suavemente cuando el cliente pase el cursor por encima del producto en el catálogo.
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-[11px] font-bold text-neutral-600 block mb-1">
-                          Nombre del Color
-                        </label>
-                        <input
-                          type="text"
-                          value={formColorName}
-                          onChange={(e) => setFormColorName(e.target.value)}
-                          placeholder="Blanco Glaciar"
-                          className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900"
-                        />
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                      <div className="w-14 h-14 rounded-xl bg-white border border-neutral-200 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
+                        {formSecondaryImage ? (
+                          <img
+                            src={formSecondaryImage}
+                            alt="Secondary Preview"
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <ImageIcon className="w-5 h-5 text-neutral-300" />
+                        )}
                       </div>
 
-                      <div>
-                        <label className="text-[11px] font-bold text-neutral-600 block mb-1">
-                          Personalizar Hex
+                      <div className="flex-1 w-full space-y-2">
+                        <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-xs font-bold text-white cursor-pointer transition-colors shadow-2xs">
+                          <Upload className="w-3.5 h-3.5 text-white" />
+                          <span>Subir foto secundaria (auriculares fuera del estuche)</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleSecondaryImageUpload}
+                            className="hidden"
+                          />
                         </label>
+
                         <div className="flex items-center gap-2">
-                          <input
-                            type="color"
-                            value={formColorHex}
-                            onChange={(e) => setFormColorHex(e.target.value)}
-                            className="w-9 h-9 rounded-lg border border-neutral-200 p-0.5 cursor-pointer"
-                          />
-                          <input
-                            type="text"
-                            value={formColorHex}
-                            onChange={(e) => setFormColorHex(e.target.value)}
-                            className="flex-1 px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 font-mono"
-                          />
+                          <span className="text-[10px] text-neutral-400">O muestras de catálogo:</span>
+                          {[
+                            { name: "Buds 6 Earbuds", path: getAssetUrl("/images/products/redmi-buds-6-play-earbuds.png") },
+                            { name: "Buds 8 Features", path: getAssetUrl("/images/products/redmi-buds-8-lite-features.png") },
+                            { name: "Buds 7S Earbuds", path: getAssetUrl("/images/products/redmi-buds-7s-earbuds.png") },
+                          ].map((sample) => (
+                            <button
+                              type="button"
+                              key={sample.name}
+                              onClick={() => setFormSecondaryImage(sample.path)}
+                              className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
+                                formSecondaryImage === sample.path
+                                  ? "bg-neutral-900 text-white border-neutral-900"
+                                  : "bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50"
+                              }`}
+                            >
+                              {sample.name}
+                            </button>
+                          ))}
                         </div>
                       </div>
                     </div>
@@ -1075,25 +1302,58 @@ export default function AdminPage() {
                     </span>
                   </div>
 
-                  {/* Imagen */}
-                  <div className="relative w-full aspect-square rounded-xl bg-neutral-50 flex items-center justify-center p-2 overflow-hidden border border-neutral-100 mb-4">
-                    {formImage ? (
+                  {/* Imagen con Transición en Hover */}
+                  <div className="relative w-full aspect-square rounded-xl bg-white flex items-center justify-center p-2 overflow-hidden border border-neutral-100 mb-3 group">
+                    <div className="relative w-full h-full flex items-center justify-center">
                       <img
-                        src={formImage}
+                        src={formColors[previewColorIndex]?.image || formColors[0]?.image || getAssetUrl("/images/products/redmi-buds-6-play.png")}
                         alt="Preview"
-                        className="w-full h-full object-contain p-2"
+                        className={`absolute inset-0 w-full h-full object-contain p-1 transition-all duration-500 ease-out ${
+                          formSecondaryImage
+                            ? "opacity-100 group-hover:opacity-0 group-hover:scale-95"
+                            : "group-hover:scale-105"
+                        }`}
                       />
-                    ) : (
-                      <div className="text-neutral-400 text-xs flex flex-col items-center gap-1">
-                        <ImageIcon className="w-8 h-8 text-neutral-300" />
-                        <span>Sin foto</span>
-                      </div>
-                    )}
+                      {formSecondaryImage && (
+                        <img
+                          src={formSecondaryImage}
+                          alt="Hover Preview"
+                          className="absolute inset-0 w-full h-full object-contain p-1 transition-all duration-500 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 pointer-events-none"
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Selector de Colores en la Vista Previa */}
+                  <div className="min-h-[26px] flex items-center gap-1.5 pb-2">
+                    {formColors.map((color, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setPreviewColorIndex(idx)}
+                        className={`relative rounded-full transition-all duration-200 cursor-pointer flex items-center justify-center ${
+                          previewColorIndex === idx
+                            ? "w-5 h-5 ring-2 ring-offset-2 ring-neutral-900"
+                            : "w-4 h-4 hover:scale-110 opacity-75 hover:opacity-100"
+                        }`}
+                        title={color.name}
+                      >
+                        <span
+                          className={`w-full h-full rounded-full border border-neutral-300 block ${
+                            color.hex?.toLowerCase() === "#ffffff" ? "bg-white" : ""
+                          }`}
+                          style={{ backgroundColor: color.hex }}
+                        />
+                      </button>
+                    ))}
+                    <span className="text-[10px] font-semibold text-neutral-400 ml-1">
+                      {formColors[previewColorIndex]?.name}
+                    </span>
                   </div>
 
                   {/* Textos */}
-                  <div className="space-y-1.5 mb-3">
-                    <h3 className="text-lg font-extrabold text-neutral-950 leading-snug">
+                  <div className="space-y-1 mb-2">
+                    <h3 className="text-base font-extrabold text-neutral-950 leading-snug">
                       {formName || "Nombre del Producto"}
                     </h3>
                     <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed">
@@ -1102,21 +1362,23 @@ export default function AdminPage() {
                   </div>
 
                   {/* Badges de specs */}
-                  <div className="flex flex-wrap gap-1.5 mb-4 text-[11px] font-semibold text-neutral-600">
+                  <div className="flex flex-wrap gap-1.5 mb-3 text-[10px] font-semibold text-neutral-600">
                     <span className="px-2 py-0.5 rounded-md bg-neutral-100 border border-neutral-200/50">
-                      {formSpecBattery}
+                      {formSpecBattery} batería
                     </span>
                     <span className="px-2 py-0.5 rounded-md bg-neutral-100 border border-neutral-200/50">
                       {formSpecAnc}
                     </span>
                   </div>
 
-                  {/* Precio y CTA */}
-                  <div className="pt-3 border-t border-neutral-100 flex items-center justify-between">
+                  {/* Precio y Botones 50/50 */}
+                  <div className="pt-3 border-t border-neutral-100 flex flex-col gap-2.5">
                     <div>
-                      <div className="text-[10px] uppercase font-bold text-neutral-400">Precio PulsoTech</div>
+                      <div className="text-[10px] uppercase font-bold text-neutral-400 leading-none mb-1">
+                        Precio Directo
+                      </div>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-black text-neutral-950">
+                        <span className="text-xl font-black text-neutral-950">
                           {STORE_SETTINGS.currencySymbol}{formPrice.toFixed(2)}
                         </span>
                         {formHasPromo && formOriginalPrice > formPrice && (
@@ -1127,9 +1389,15 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    <div className="px-4 py-2.5 rounded-xl bg-neutral-950 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm">
-                      <ShoppingBag className="w-3.5 h-3.5" />
-                      <span>Comprar</span>
+                    <div className="grid grid-cols-2 gap-2 w-full">
+                      <div className="w-full py-2 px-2.5 rounded-xl border border-neutral-200 bg-white text-neutral-800 font-bold text-xs flex items-center justify-center gap-1 shadow-2xs">
+                        <span>Ver Ficha</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-neutral-400" />
+                      </div>
+                      <div className="w-full py-2 px-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm">
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        <span>Añadir</span>
+                      </div>
                     </div>
                   </div>
                 </div>

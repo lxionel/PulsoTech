@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Product } from "@/types";
@@ -10,8 +10,21 @@ import { ShoppingBag, ArrowRight, Heart } from "lucide-react";
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem, toggleFavorite, isFavorite } = useCart();
-  const currentColor = product.colors[0];
+  const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const isFav = isFavorite(product.id);
+
+  const colors = product.colors || [];
+  const currentColor = colors[selectedColorIndex] || colors[0] || {
+    name: "Original",
+    hex: "#18181b",
+    image: product.images?.[0] || "/products/buds-6-black.jpg",
+  };
+
+  const primaryImage = currentColor?.image || product.images?.[0] || "/products/buds-6-black.jpg";
+  const secondaryImage =
+    product.images?.[1] && product.images[1] !== primaryImage
+      ? product.images[1]
+      : null;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -61,32 +74,73 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
         </div>
 
-        {/* Large Product Image Frame */}
+        {/* Large Product Image Frame with Hover Transition */}
         <div className="relative w-full aspect-square rounded-xl bg-white flex items-center justify-center p-2 overflow-hidden border border-neutral-100">
-          <div className="relative w-full h-full transition-transform duration-300 group-hover:scale-105 flex items-center justify-center">
-            {currentColor?.image?.startsWith("data:") ||
-            currentColor?.image?.startsWith("blob:") ||
-            currentColor?.image?.startsWith("http") ? (
+          <div className="relative w-full h-full flex items-center justify-center">
+            {/* Imagen Principal (Color seleccionado) */}
+            <img
+              src={primaryImage}
+              alt={product.name}
+              className={`absolute inset-0 w-full h-full object-contain p-1 transition-all duration-500 ease-out ${
+                secondaryImage
+                  ? "opacity-100 group-hover:opacity-0 group-hover:scale-95"
+                  : "group-hover:scale-105"
+              }`}
+            />
+
+            {/* Imagen Secundaria (Aparece en hover) */}
+            {secondaryImage && (
               <img
-                src={currentColor.image}
-                alt={product.name}
-                className="w-full h-full object-contain p-1"
-              />
-            ) : (
-              <Image
-                src={currentColor?.image || "/products/buds-6-black.jpg"}
-                alt={product.name}
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                className="object-contain p-1"
-                priority
+                src={secondaryImage}
+                alt={`${product.name} detalle`}
+                className="absolute inset-0 w-full h-full object-contain p-1 transition-all duration-500 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 pointer-events-none"
               />
             )}
           </div>
         </div>
 
+        {/* Selector de Colores Disponibles (Swatches con aro activo) */}
+        <div className="min-h-[28px] flex items-center gap-1.5 pt-3 pb-0.5">
+          {colors.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              {colors.map((color, idx) => {
+                const isSelected = selectedColorIndex === idx;
+                return (
+                  <button
+                    key={color.name + idx}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedColorIndex(idx);
+                    }}
+                    onMouseEnter={() => setSelectedColorIndex(idx)}
+                    aria-label={`Color ${color.name}`}
+                    title={color.name}
+                    className={`relative rounded-full transition-all duration-200 cursor-pointer flex items-center justify-center ${
+                      isSelected
+                        ? "w-5 h-5 ring-2 ring-offset-2 ring-neutral-900"
+                        : "w-4 h-4 hover:scale-110 opacity-75 hover:opacity-100"
+                    }`}
+                  >
+                    <span
+                      className={`w-full h-full rounded-full border border-neutral-300 block ${
+                        color.hex?.toLowerCase() === "#ffffff" ? "bg-white" : ""
+                      }`}
+                      style={{ backgroundColor: color.hex }}
+                    />
+                  </button>
+                );
+              })}
+              <span className="text-[10px] font-semibold text-neutral-400 ml-1">
+                {currentColor?.name}
+              </span>
+            </div>
+          )}
+        </div>
+
         {/* Title & Subtitle with fixed minimum heights so they align across cards */}
-        <div className="pt-3.5 sm:pt-4">
+        <div className="pt-1">
           <h3 className="text-base sm:text-lg font-extrabold text-neutral-950 group-hover:text-blue-600 transition-colors leading-snug line-clamp-1 min-h-[1.75rem]">
             {product.name}
           </h3>

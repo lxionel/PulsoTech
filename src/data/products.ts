@@ -44,8 +44,18 @@ export const PRODUCTS: Product[] = [
     reviewsCount: 0,
     colors: [
       {
-        name: "Original",
+        name: "Negro",
         hex: "#18181b",
+        image: getAssetUrl("/images/products/redmi-buds-6-play.png"),
+      },
+      {
+        name: "Blanco",
+        hex: "#FFFFFF",
+        image: getAssetUrl("/images/products/redmi-buds-6-play.png"),
+      },
+      {
+        name: "Azul",
+        hex: "#1d4ed8",
         image: getAssetUrl("/images/products/redmi-buds-6-play.png"),
       },
     ],
@@ -96,8 +106,23 @@ export const PRODUCTS: Product[] = [
     reviewsCount: 0,
     colors: [
       {
-        name: "Original",
+        name: "Beige",
+        hex: "#f5f0e6",
+        image: getAssetUrl("/images/products/redmi-buds-8-lite.png"),
+      },
+      {
+        name: "Negro",
         hex: "#18181b",
+        image: getAssetUrl("/images/products/redmi-buds-8-lite.png"),
+      },
+      {
+        name: "Blanco",
+        hex: "#FFFFFF",
+        image: getAssetUrl("/images/products/redmi-buds-8-lite.png"),
+      },
+      {
+        name: "Azul",
+        hex: "#1e3a8a",
         image: getAssetUrl("/images/products/redmi-buds-8-lite.png"),
       },
     ],
@@ -148,8 +173,13 @@ export const PRODUCTS: Product[] = [
     reviewsCount: 0,
     colors: [
       {
-        name: "Original",
+        name: "Negro",
         hex: "#18181b",
+        image: getAssetUrl("/images/products/redmi-buds-7s.png"),
+      },
+      {
+        name: "Blanco",
+        hex: "#FFFFFF",
         image: getAssetUrl("/images/products/redmi-buds-7s.png"),
       },
     ],
