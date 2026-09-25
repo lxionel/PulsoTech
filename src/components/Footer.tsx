@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { STORE_SETTINGS } from "@/data/products";
 import { ArrowUpRight } from "lucide-react";
 import { useCart } from "@/context/CartContext";
@@ -63,9 +64,9 @@ export default function Footer() {
         </div>
 
         <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs font-semibold text-neutral-600">
-          <a href="/#catalogo" className="hover:text-black transition-colors">
+          <Link href="/#catalogo" className="hover:text-black transition-colors">
             Catálogo
-          </a>
+          </Link>
           <a
             href={`https://wa.me/${whatsappNumber}`}
             target="_blank"
@@ -75,9 +76,9 @@ export default function Footer() {
             <span>WhatsApp Directo</span>
             <ArrowUpRight className="w-3 h-3" />
           </a>
-          <a href="/admin/" className="hover:text-black transition-colors text-neutral-400 hover:text-neutral-700">
-            Panel Admin
-          </a>
+          <Link href="/#garantia" className="hover:text-black transition-colors">
+            Garantía &amp; Envíos
+          </Link>
         </div>
       </div>
 
@@ -85,7 +86,14 @@ export default function Footer() {
       <div className="border-t border-neutral-100 py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-neutral-400">
           <div>
-            © {new Date().getFullYear()} {STORE_SETTINGS.name}. Todos los derechos reservados.
+            <Link
+              href="/admin"
+              className="text-neutral-400 hover:text-neutral-600 transition-colors"
+              title="Acceso administrativo"
+            >
+              ©
+            </Link>{" "}
+            {new Date().getFullYear()} {STORE_SETTINGS.name}. Todos los derechos reservados.
           </div>
           <div className="flex items-center gap-4">
             <span>Privacidad</span>
