@@ -310,7 +310,7 @@ export default function AdminPage() {
   // Estados de WhatsApp y Ajustes
   const [phoneInput, setPhoneInput] = useState(whatsappNumber);
   const [phoneSaved, setPhoneSaved] = useState(false);
-  const [settingsViewTab, setSettingsViewTab] = useState<"all" | "whatsapp" | "security" | "backup">("all");
+  const [settingsViewTab, setSettingsViewTab] = useState<"whatsapp" | "security" | "backup">("whatsapp");
   const [showCurrentPinToggle, setShowCurrentPinToggle] = useState(false);
   const [showNewPinToggle, setShowNewPinToggle] = useState(false);
   const [showConfirmPinToggle, setShowConfirmPinToggle] = useState(false);
@@ -337,7 +337,7 @@ export default function AdminPage() {
   // Estados para gestión de filtros (marcas y categorías)
   const [newBrandInput, setNewBrandInput] = useState("");
   const [newCategoryInput, setNewCategoryInput] = useState("");
-  const [filtersViewTab, setFiltersViewTab] = useState<"all" | "brands" | "categories">("all");
+  const [filtersViewTab, setFiltersViewTab] = useState<"brands" | "categories">("brands");
   const [filterSearchQuery, setFilterSearchQuery] = useState("");
   const [filterStatusFilter, setFilterStatusFilter] = useState<"all" | "with-products" | "empty">("all");
   const [editingBrandName, setEditingBrandName] = useState<{ original: string; current: string } | null>(null);
@@ -3705,15 +3705,14 @@ export default function AdminPage() {
                 {/* Segmented Control de Subvistas */}
                 <div className="flex items-center gap-1.5 bg-neutral-100 p-1 rounded-xl border border-neutral-200/80 shrink-0">
                   {[
-                    { id: "all", label: "Vista General" },
                     { id: "brands", label: `Marcas (${brands.length})` },
                     { id: "categories", label: `Categorías (${categories.length})` },
                   ].map((tab) => (
                     <button
                       key={tab.id}
                       type="button"
-                      onClick={() => setFiltersViewTab(tab.id as any)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      onClick={() => setFiltersViewTab(tab.id as "brands" | "categories")}
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                         filtersViewTab === tab.id
                           ? "bg-white text-neutral-950 shadow-xs"
                           : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/50"
@@ -3837,12 +3836,10 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Contenedor de Paneles (Side-by-side o pestañas individuales) */}
-              <div className={`grid gap-5 items-start ${
-                filtersViewTab === "all" ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"
-              }`}>
+              {/* Contenedor de Paneles Individuales */}
+              <div className="w-full">
                 {/* ================= PANEL DE MARCAS ================= */}
-                {(filtersViewTab === "all" || filtersViewTab === "brands") && (
+                {filtersViewTab === "brands" && (
                   <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-4">
                     <div className="flex items-center justify-between gap-2 pb-2 border-b border-neutral-100">
                       <div className="flex items-center gap-2">
@@ -4116,7 +4113,7 @@ export default function AdminPage() {
                 )}
 
                 {/* ================= PANEL DE CATEGORÍAS ================= */}
-                {(filtersViewTab === "all" || filtersViewTab === "categories") && (
+                {filtersViewTab === "categories" && (
                   <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-4">
                     <div className="flex items-center justify-between gap-2 pb-2 border-b border-neutral-100">
                       <div className="flex items-center gap-2">
@@ -5734,7 +5731,6 @@ export default function AdminPage() {
                 {/* Sub-views / Segmented Pills */}
                 <div className="flex items-center gap-1.5 bg-neutral-100 p-1 rounded-xl border border-neutral-200/80 shrink-0 overflow-x-auto max-w-full">
                   {[
-                    { id: "all", label: "Vista General" },
                     { id: "whatsapp", label: "WhatsApp" },
                     { id: "security", label: "Seguridad & PIN" },
                     { id: "backup", label: "Respaldos & Datos" },
@@ -5742,7 +5738,7 @@ export default function AdminPage() {
                     <button
                       key={tab.id}
                       type="button"
-                      onClick={() => setSettingsViewTab(tab.id as any)}
+                      onClick={() => setSettingsViewTab(tab.id as "whatsapp" | "security" | "backup")}
                       className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                         settingsViewTab === tab.id
                           ? "bg-white text-neutral-950 shadow-xs"
@@ -5831,15 +5827,10 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Grid de Secciones */}
-              <div className={`grid gap-5 items-start ${
-                settingsViewTab === "all" ? "grid-cols-1 lg:grid-cols-12" : "grid-cols-1"
-              }`}>
-                {/* ================= COLUMNA IZQUIERDA: WHATSAPP & SEGURIDAD ================= */}
-                {(settingsViewTab === "all" || settingsViewTab === "whatsapp" || settingsViewTab === "security") && (
-                  <div className={`space-y-5 ${settingsViewTab === "all" ? "lg:col-span-6" : "w-full"}`}>
-                    {/* CARD 1: WHATSAPP */}
-                    {(settingsViewTab === "all" || settingsViewTab === "whatsapp") && (
+              {/* Contenedor de Secciones Individuales */}
+              <div className="w-full">
+                {/* CARD 1: WHATSAPP */}
+                {settingsViewTab === "whatsapp" && (
                       <form
                         onSubmit={handleSavePhone}
                         className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-4"
@@ -5902,8 +5893,8 @@ export default function AdminPage() {
                       </form>
                     )}
 
-                    {/* CARD 2: SEGURIDAD Y PIN */}
-                    {(settingsViewTab === "all" || settingsViewTab === "security") && (
+                {/* CARD 2: SEGURIDAD Y PIN */}
+                {settingsViewTab === "security" && (
                       <form
                         onSubmit={handleChangePin}
                         className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-4"
@@ -6032,13 +6023,9 @@ export default function AdminPage() {
                         </div>
                       </form>
                     )}
-                  </div>
-                )}
-
-                {/* ================= COLUMNA DERECHA: RESPALDOS & EXPORTACIÓN ================= */}
-                {(settingsViewTab === "all" || settingsViewTab === "backup") && (
-                  <div className={`space-y-5 ${settingsViewTab === "all" ? "lg:col-span-6" : "w-full"}`}>
-                    <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-4">
+                {/* CARD 3: RESPALDOS Y EXPORTACIÓN */}
+                {settingsViewTab === "backup" && (
+                  <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-4">
                       <div className="flex items-center justify-between gap-2 pb-3 border-b border-neutral-100">
                         <div className="flex items-center gap-2">
                           <Download className="w-4 h-4 text-neutral-900" />
@@ -6117,7 +6104,6 @@ export default function AdminPage() {
                           </label>
                         </div>
                       </div>
-                    </div>
                   </div>
                 )}
               </div>
