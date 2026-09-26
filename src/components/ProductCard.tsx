@@ -27,9 +27,12 @@ export default function ProductCard({ product }: { product: Product }) {
       ? product.images[1]
       : null;
 
+  const isOutOfStock = (product.stockCount ?? 0) <= 0 || product.inStock === false;
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (isOutOfStock) return;
     addItem(product, currentColor, 1);
   };
 
@@ -57,10 +60,16 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Etiqueta Stock: Fondo negro y letras blancas */}
-            <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-neutral-950 text-white tracking-wide">
-              En Stock
-            </span>
+            {/* Etiqueta Stock */}
+            {isOutOfStock ? (
+              <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-neutral-100 text-neutral-500 border border-neutral-200 tracking-wide">
+                Agotado
+              </span>
+            ) : (
+              <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-neutral-950 text-white tracking-wide">
+                En Stock
+              </span>
+            )}
 
             {/* Favorite button */}
             <button
@@ -162,14 +171,25 @@ export default function ProductCard({ product }: { product: Product }) {
           </span>
         </div>
 
-        {/* Row 2: Botón Añadir largo, ordenado y destacado */}
-        <button
-          onClick={handleAddToCart}
-          className="w-full py-2.5 sm:py-3 px-4 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs active:scale-[0.98] transition-all cursor-pointer"
-        >
-          <ShoppingBag className="w-4 h-4 shrink-0" />
-          <span>Añadir al Carrito</span>
-        </button>
+        {/* Row 2: Botón Añadir / Agotado */}
+        {isOutOfStock ? (
+          <button
+            type="button"
+            disabled
+            className="w-full py-2.5 sm:py-3 px-4 rounded-xl bg-neutral-100 border border-neutral-200 text-neutral-400 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-not-allowed"
+          >
+            <span>Agotado</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className="w-full py-2.5 sm:py-3 px-4 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs active:scale-[0.98] transition-all cursor-pointer"
+          >
+            <ShoppingBag className="w-4 h-4 shrink-0" />
+            <span>Añadir al Carrito</span>
+          </button>
+        )}
       </div>
     </div>
   );

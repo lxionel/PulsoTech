@@ -20,9 +20,16 @@ export default function ProductCatalog() {
   const [maxPrice, setMaxPrice] = useState<number>(180);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"featured" | "price-asc" | "price-desc">("featured");
-  const [onlyInStock, setOnlyInStock] = useState(false);
+  const [showOutOfStock, setShowOutOfStock] = useState(false);
   const [onlyNew, setOnlyNew] = useState(false);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+
+  // Lista de productos base según el filtro de disponibilidad (los de stock 0 se ocultan por defecto)
+  const baseProducts = useMemo(() => {
+    return showOutOfStock
+      ? products
+      : products.filter((p) => (p.stockCount ?? 0) > 0 && p.inStock !== false);
+  }, [products, showOutOfStock]);
 
   // Lista dinámica combinada de marcas (sin duplicados por mayúsculas/minúsculas)
   const allBrands = useMemo(() => {
@@ -30,11 +37,11 @@ export default function ProductCatalog() {
     (brands || []).forEach((b) => {
       if (b && b.trim()) map.set(b.trim().toLowerCase(), b.trim());
     });
-    products.forEach((p) => {
+    baseProducts.forEach((p) => {
       if (p.brand && p.brand.trim()) map.set(p.brand.trim().toLowerCase(), p.brand.trim());
     });
     return Array.from(map.values());
-  }, [brands, products]);
+  }, [brands, baseProducts]);
 
   // Lista dinámica combinada de categorías (sin duplicados por mayúsculas/minúsculas)
   const allCategories = useMemo(() => {
@@ -42,11 +49,11 @@ export default function ProductCatalog() {
     (categories || []).forEach((c) => {
       if (c && c.trim()) map.set(c.trim().toLowerCase(), c.trim());
     });
-    products.forEach((p) => {
+    baseProducts.forEach((p) => {
       if (p.category && p.category.trim()) map.set(p.category.trim().toLowerCase(), p.category.trim());
     });
     return Array.from(map.values());
-  }, [categories, products]);
+  }, [categories, baseProducts]);
 
   // Lock body scroll when mobile filters drawer is open
   React.useEffect(() => {
@@ -62,7 +69,7 @@ export default function ProductCatalog() {
 
   // Filter products logic
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
+    return baseProducts.filter((product) => {
       // Category filter
       if (selectedCategory !== "todos") {
         const prodCat = (product.category || "").toLowerCase();
@@ -88,8 +95,7 @@ export default function ProductCatalog() {
       if (priceRange === "over100" && product.price <= 100) return false;
       if (priceRange === "custom" && product.price > maxPrice) return false;
 
-      // Stock and New
-      if (onlyInStock && !product.inStock) return false;
+      // New releases
       if (onlyNew && !product.isNew) return false;
 
       // Search query: busca por ID, nombre, marca o subtítulo
@@ -107,12 +113,11 @@ export default function ProductCatalog() {
       return true;
     });
   }, [
-    products,
+    baseProducts,
     selectedCategory,
     selectedBrand,
     priceRange,
     maxPrice,
-    onlyInStock,
     onlyNew,
     searchQuery,
   ]);
@@ -132,7 +137,7 @@ export default function ProductCatalog() {
     selectedCategory !== "todos" ||
     selectedBrand !== "todas" ||
     priceRange !== "all" ||
-    onlyInStock ||
+    showOutOfStock ||
     onlyNew ||
     searchQuery !== "";
 
@@ -141,18 +146,18 @@ export default function ProductCatalog() {
     if (selectedCategory !== "todos") count++;
     if (selectedBrand !== "todas") count++;
     if (priceRange !== "all") count++;
-    if (onlyInStock) count++;
+    if (showOutOfStock) count++;
     if (onlyNew) count++;
     if (searchQuery.trim() !== "") count++;
     return count;
-  }, [selectedCategory, selectedBrand, priceRange, onlyInStock, onlyNew, searchQuery]);
+  }, [selectedCategory, selectedBrand, priceRange, showOutOfStock, onlyNew, searchQuery]);
 
   const clearAllFilters = () => {
     setSelectedCategory("todos");
     setSelectedBrand("todas");
     setPriceRange("all");
     setMaxPrice(180);
-    setOnlyInStock(false);
+    setShowOutOfStock(false);
     setOnlyNew(false);
     setSearchQuery("");
     setSortBy("featured");
@@ -340,11 +345,11 @@ export default function ProductCatalog() {
                 }`}
               >
                 <span>Todos los productos</span>
-                <span className="text-[10px] font-bold opacity-75">{products.length}</span>
+                <span className="text-[10px] font-bold opacity-75">{baseProducts.length}</span>
               </button>
 
               {allCategories.map((catName) => {
-                const count = products.filter(
+                const count = baseProducts.filter(
                   (p) => (p.category || "").toLowerCase() === catName.toLowerCase()
                 ).length;
                 const isSelected = selectedCategory.toLowerCase() === catName.toLowerCase();
@@ -369,16 +374,16 @@ export default function ProductCatalog() {
           {/* 4. Availability Filter */}
           <div className="space-y-2">
             <h4 className="text-xs font-black text-neutral-950 uppercase tracking-wider">
-              Estado
+              Disponibilidad
             </h4>
             <label className="flex items-center gap-2.5 text-xs font-medium text-neutral-700 cursor-pointer select-none">
               <input
                 type="checkbox"
-                checked={onlyInStock}
-                onChange={(e) => setOnlyInStock(e.target.checked)}
+                checked={showOutOfStock}
+                onChange={(e) => setShowOutOfStock(e.target.checked)}
                 className="w-4 h-4 rounded border-neutral-300 accent-neutral-950"
               />
-              <span>Solo en stock inmediato</span>
+              <span>Mostrar productos agotados</span>
             </label>
             <label className="flex items-center gap-2.5 text-xs font-medium text-neutral-700 cursor-pointer select-none">
               <input
@@ -414,12 +419,12 @@ export default function ProductCatalog() {
                       : "bg-neutral-100 text-neutral-600"
                   }`}
                 >
-                  {products.length}
+                  {baseProducts.length}
                 </span>
               </button>
               {allCategories.map((catName) => {
                 const isSelected = selectedCategory.toLowerCase() === catName.toLowerCase();
-                const count = products.filter(
+                const count = baseProducts.filter(
                   (p) => (p.category || "").toLowerCase() === catName.toLowerCase()
                 ).length;
                 return (
@@ -519,12 +524,12 @@ export default function ProductCatalog() {
                     />
                   </span>
                 )}
-                {onlyInStock && (
+                {showOutOfStock && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-100 text-neutral-800 text-[11px] font-bold">
-                    En Stock
+                    Incluye Agotados
                     <X
                       className="w-3 h-3 cursor-pointer hover:text-black"
-                      onClick={() => setOnlyInStock(false)}
+                      onClick={() => setShowOutOfStock(false)}
                     />
                   </span>
                 )}
@@ -674,12 +679,12 @@ export default function ProductCatalog() {
                     {selectedBrand === "todas" ? (
                       <Check className="w-3.5 h-3.5" />
                     ) : (
-                      <span className="text-[10px] text-neutral-400 font-bold">{products.length}</span>
+                      <span className="text-[10px] text-neutral-400 font-bold">{baseProducts.length}</span>
                     )}
                   </button>
 
                   {allBrands.map((brandName) => {
-                    const count = products.filter(
+                    const count = baseProducts.filter(
                       (p) => p.brand?.toLowerCase() === brandName.toLowerCase()
                     ).length;
                     const isSelected = selectedBrand.toLowerCase() === brandName.toLowerCase();
@@ -720,11 +725,11 @@ export default function ProductCatalog() {
                     }`}
                   >
                     <span>Todos los productos</span>
-                    <span className="text-[10px] font-bold opacity-75">{products.length}</span>
+                    <span className="text-[10px] font-bold opacity-75">{baseProducts.length}</span>
                   </button>
 
                   {allCategories.map((catName) => {
-                    const count = products.filter(
+                    const count = baseProducts.filter(
                       (p) => (p.category || "").toLowerCase() === catName.toLowerCase()
                     ).length;
                     const isSelected = selectedCategory.toLowerCase() === catName.toLowerCase();
@@ -749,16 +754,16 @@ export default function ProductCatalog() {
               {/* Availability Filter Mobile */}
               <div className="space-y-2.5 pt-2 border-t border-neutral-100">
                 <h4 className="text-xs font-black text-neutral-950 uppercase tracking-wider">
-                  Estado
+                  Disponibilidad
                 </h4>
                 <label className="flex items-center gap-2.5 text-xs font-medium text-neutral-700 cursor-pointer select-none">
                   <input
                     type="checkbox"
-                    checked={onlyInStock}
-                    onChange={(e) => setOnlyInStock(e.target.checked)}
+                    checked={showOutOfStock}
+                    onChange={(e) => setShowOutOfStock(e.target.checked)}
                     className="w-4 h-4 rounded border-neutral-300 accent-neutral-950"
                   />
-                  <span>Solo en stock inmediato</span>
+                  <span>Mostrar productos agotados</span>
                 </label>
                 <label className="flex items-center gap-2.5 text-xs font-medium text-neutral-700 cursor-pointer select-none">
                   <input

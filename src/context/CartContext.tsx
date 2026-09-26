@@ -158,6 +158,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items, favorites, whatsappNumber, coupons, isLoaded]);
 
   const addItem = (product: Product, color?: ProductColor, quantity = 1) => {
+    const isOutOfStock = (product.stockCount ?? 0) <= 0 || product.inStock === false;
+    if (isOutOfStock) {
+      alert(`El producto "${product.name}" se encuentra agotado.`);
+      return;
+    }
+
     const validColor: ProductColor = color || (product.colors && product.colors[0]) || {
       name: "Original",
       hex: "#18181b",
@@ -173,11 +179,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
       if (existingIndex > -1) {
         const next = [...prev];
-        next[existingIndex].quantity += quantity;
+        const newQty = next[existingIndex].quantity + quantity;
+        if (product.stockCount && newQty > product.stockCount) {
+          alert(`Solo quedan ${product.stockCount} unidades disponibles de este producto.`);
+          next[existingIndex].quantity = product.stockCount;
+        } else {
+          next[existingIndex].quantity = newQty;
+        }
         return next;
       }
 
-      return [...prev, { product, selectedColor: validColor, quantity }];
+      const initialQty = product.stockCount && quantity > product.stockCount ? product.stockCount : quantity;
+      return [...prev, { product, selectedColor: validColor, quantity: initialQty }];
     });
     setIsCartOpen(true);
   };

@@ -1702,12 +1702,14 @@ export default function AdminPage() {
                         <div className="flex items-center gap-1.5">
                           <span
                             className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                              item.stockCount <= 5
-                                ? "bg-amber-100 text-amber-900"
+                              item.stockCount <= 0
+                                ? "bg-red-50 text-red-700 border border-red-200"
+                                : item.stockCount <= 5
+                                ? "bg-amber-100 text-amber-900 border border-amber-200"
                                 : "bg-neutral-100 text-neutral-800"
                             }`}
                           >
-                            {item.stockCount} uds
+                            {item.stockCount <= 0 ? "Agotado (0 uds)" : `${item.stockCount} uds`}
                           </span>
                           <div className="inline-flex items-center border border-neutral-200 rounded-lg p-0.5 bg-neutral-50">
                             <button
@@ -1853,15 +1855,24 @@ export default function AdminPage() {
 
                           <td className="py-3.5 px-3">
                             <div className="flex items-center gap-2">
-                              <span
-                                className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold ${
-                                  item.stockCount <= 5
-                                    ? "bg-amber-100 text-amber-900"
-                                    : "bg-neutral-100 text-neutral-800"
-                                }`}
-                              >
-                                {item.stockCount} uds
-                              </span>
+                              <div className="flex flex-col">
+                                <span
+                                  className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold ${
+                                    item.stockCount <= 0
+                                      ? "bg-red-50 text-red-700 border border-red-200"
+                                      : item.stockCount <= 5
+                                      ? "bg-amber-100 text-amber-900 border border-amber-200"
+                                      : "bg-neutral-100 text-neutral-800"
+                                  }`}
+                                >
+                                  {item.stockCount <= 0 ? "Agotado (0)" : `${item.stockCount} uds`}
+                                </span>
+                                {item.stockCount <= 0 && (
+                                  <span className="text-[9px] text-neutral-400 font-semibold mt-0.5 whitespace-nowrap">
+                                    Oculto en tienda
+                                  </span>
+                                )}
+                              </div>
 
                               <div className="inline-flex items-center border border-neutral-200 rounded-lg p-0.5 bg-neutral-50">
                                 <button

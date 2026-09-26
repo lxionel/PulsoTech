@@ -78,6 +78,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isVideoActive, setIsVideoActive] = useState(false);
   const isFav = isFavorite(product.id);
+  const isOutOfStock = (product.stockCount ?? 0) <= 0 || product.inStock === false;
 
   // Consolidar especificaciones técnicas oficiales (customSpecs + specs estándar)
   const allSpecsList = React.useMemo(() => {
@@ -400,10 +401,16 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                   {product.brand}
                 </span>
 
-                {/* Etiqueta Stock: Fondo negro y letras blancas */}
-                <span className="px-3 py-1 rounded-md text-xs font-bold bg-neutral-950 text-white tracking-wide">
-                  En Stock
-                </span>
+                {/* Etiqueta Stock */}
+                {isOutOfStock ? (
+                  <span className="px-3 py-1 rounded-md text-xs font-bold bg-neutral-100 text-neutral-500 border border-neutral-200 tracking-wide">
+                    Agotado
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 rounded-md text-xs font-bold bg-neutral-950 text-white tracking-wide">
+                    En Stock
+                  </span>
+                )}
               </div>
 
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-neutral-950 tracking-tight leading-tight">
@@ -492,69 +499,103 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
 
             {/* Quantity Selector, Cart Buttons & Favorites */}
             <div className="space-y-3 pt-1">
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-semibold text-neutral-700">Cantidad:</span>
-                <div className="flex items-center border border-neutral-200 rounded-xl bg-white shadow-2xs">
-                  <button
-                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="px-3.5 py-2 text-neutral-600 hover:text-black font-bold text-sm cursor-pointer"
-                  >
-                    -
-                  </button>
-                  <span className="px-3 py-2 text-xs font-bold text-neutral-900 min-w-8 text-center">
-                    {quantity}
-                  </span>
-                  <button
-                    onClick={() => setQuantity((q) => q + 1)}
-                    className="px-3.5 py-2 text-neutral-600 hover:text-black font-bold text-sm cursor-pointer"
-                  >
-                    +
-                  </button>
+              {!isOutOfStock && (
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-semibold text-neutral-700">Cantidad:</span>
+                  <div className="flex items-center border border-neutral-200 rounded-xl bg-white shadow-2xs">
+                    <button
+                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      className="px-3.5 py-2 text-neutral-600 hover:text-black font-bold text-sm cursor-pointer"
+                    >
+                      -
+                    </button>
+                    <span className="px-3 py-2 text-xs font-bold text-neutral-900 min-w-8 text-center">
+                      {quantity}
+                    </span>
+                    <button
+                      onClick={() => setQuantity((q) => Math.min(product.stockCount || 99, q + 1))}
+                      className="px-3.5 py-2 text-neutral-600 hover:text-black font-bold text-sm cursor-pointer"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Action Buttons: Add to Cart + Buy Now + Favorite */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 pt-1">
-                <div className="flex items-center gap-2 flex-1">
-                  <button
-                    onClick={handleAddToCart}
-                    className="flex-1 py-3.5 px-4 rounded-xl border border-neutral-300 hover:border-black bg-white text-neutral-900 font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xs cursor-pointer"
-                  >
-                    <ShoppingBag className="w-4 h-4" />
-                    <span>Añadir al Carrito</span>
-                  </button>
+                {isOutOfStock ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <div className="flex-1 py-3.5 px-4 rounded-xl bg-neutral-100 border border-neutral-200 text-neutral-400 font-bold text-xs flex items-center justify-center gap-2 cursor-not-allowed">
+                      <span>Producto Agotado Temporalmente</span>
+                    </div>
+                    <button
+                      onClick={() => toggleFavorite(product.id)}
+                      aria-label="Guardar en favoritos"
+                      className={`p-3.5 rounded-xl border transition-all active:scale-90 cursor-pointer shrink-0 ${
+                        isFav
+                          ? "border-red-200 bg-red-50 text-red-500 shadow-xs"
+                          : "border-neutral-200 bg-white text-neutral-400 hover:text-red-500 hover:border-neutral-300"
+                      }`}
+                      title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
+                    >
+                      <Heart className={`w-5 h-5 ${isFav ? "fill-red-500" : ""}`} />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 flex-1">
+                      <button
+                        onClick={handleAddToCart}
+                        className="flex-1 py-3.5 px-4 rounded-xl border border-neutral-300 hover:border-black bg-white text-neutral-900 font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xs cursor-pointer"
+                      >
+                        <ShoppingBag className="w-4 h-4" />
+                        <span>Añadir al Carrito</span>
+                      </button>
 
-                  <button
-                    onClick={() => toggleFavorite(product.id)}
-                    aria-label="Guardar en favoritos"
-                    className={`p-3.5 rounded-xl border transition-all active:scale-90 cursor-pointer shrink-0 ${
-                      isFav
-                        ? "border-red-200 bg-red-50 text-red-500 shadow-xs"
-                        : "border-neutral-200 bg-white text-neutral-400 hover:text-red-500 hover:border-neutral-300"
-                    }`}
-                    title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
-                  >
-                    <Heart className={`w-5 h-5 ${isFav ? "fill-red-500" : ""}`} />
-                  </button>
-                </div>
+                      <button
+                        onClick={() => toggleFavorite(product.id)}
+                        aria-label="Guardar en favoritos"
+                        className={`p-3.5 rounded-xl border transition-all active:scale-90 cursor-pointer shrink-0 ${
+                          isFav
+                            ? "border-red-200 bg-red-50 text-red-500 shadow-xs"
+                            : "border-neutral-200 bg-white text-neutral-400 hover:text-red-500 hover:border-neutral-300"
+                        }`}
+                        title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
+                      >
+                        <Heart className={`w-5 h-5 ${isFav ? "fill-red-500" : ""}`} />
+                      </button>
+                    </div>
 
-                <button
-                  onClick={handleBuyNow}
-                  className="w-full sm:flex-1 py-3.5 px-4 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-98 shadow-sm cursor-pointer"
-                >
-                  <span>Comprar Ahora</span>
-                </button>
+                    <button
+                      onClick={handleBuyNow}
+                      className="w-full sm:flex-1 py-3.5 px-4 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-98 shadow-sm cursor-pointer"
+                    >
+                      <span>Comprar Ahora</span>
+                    </button>
+                  </>
+                )}
               </div>
 
               {/* Primary WhatsApp Action */}
               <a
-                href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(waMessage)}`}
+                href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+                  isOutOfStock
+                    ? `¡Hola PulsoTech! Veo que el producto ${product.name} (ID: #${product.id}) está agotado en la web. ¿Cuándo volverán a tener unidades disponibles?`
+                    : waMessage
+                )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full py-3.5 sm:py-4 px-4 rounded-xl bg-[#15803d] hover:bg-[#166534] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-98 cursor-pointer"
+                className={`w-full py-3.5 sm:py-4 px-4 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-98 cursor-pointer ${
+                  isOutOfStock ? "bg-neutral-900 hover:bg-neutral-800" : "bg-[#15803d] hover:bg-[#166534]"
+                }`}
               >
                 <MessageSquare className="w-4 h-4 fill-white text-white" />
-                <span>Contactar con un asesor por WhatsApp</span>
+                <span>
+                  {isOutOfStock
+                    ? "Consultar próxima llegada por WhatsApp"
+                    : "Contactar con un asesor por WhatsApp"}
+                </span>
               </a>
             </div>
 
