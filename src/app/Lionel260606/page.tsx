@@ -59,6 +59,10 @@ import {
   ChevronDown,
   ChevronUp,
   ExternalLink,
+  Database,
+  Smartphone,
+  HardDrive,
+  Settings,
 } from "lucide-react";
 
 export type { SaleRecord };
@@ -180,6 +184,8 @@ export default function AdminPage() {
     addCategory,
     updateCategory,
     deleteCategory,
+    isCloudConnected,
+    refreshFromCloud,
   } = useProducts();
 
   // Navegación por pestañas
@@ -301,9 +307,15 @@ export default function AdminPage() {
     }
   };
 
-  // Estados de WhatsApp
+  // Estados de WhatsApp y Ajustes
   const [phoneInput, setPhoneInput] = useState(whatsappNumber);
   const [phoneSaved, setPhoneSaved] = useState(false);
+  const [settingsViewTab, setSettingsViewTab] = useState<"all" | "whatsapp" | "security" | "backup" | "system">("all");
+  const [showCurrentPinToggle, setShowCurrentPinToggle] = useState(false);
+  const [showNewPinToggle, setShowNewPinToggle] = useState(false);
+  const [showConfirmPinToggle, setShowConfirmPinToggle] = useState(false);
+  const [isSyncingCloud, setIsSyncingCloud] = useState(false);
+  const [syncSuccessMessage, setSyncSuccessMessage] = useState("");
 
   // Estados de Cupones
   const [newCouponCode, setNewCouponCode] = useState("");
@@ -673,8 +685,67 @@ export default function AdminPage() {
 
   const handleSavePhone = (e: React.FormEvent) => {
     e.preventDefault();
-    setWhatsappNumber(phoneInput);
+    const cleanPhone = phoneInput.replace(/\D/g, "");
+    setWhatsappNumber(cleanPhone);
     setPhoneSaved(true);
+    setSuccessNotice("Número de WhatsApp actualizado correctamente.");
+    setTimeout(() => {
+      setPhoneSaved(false);
+      setSuccessNotice("");
+    }, 3500);
+  };
+
+  const handleForceCloudSync = async () => {
+    setIsSyncingCloud(true);
+    setSyncSuccessMessage("");
+    try {
+      await refreshFromCloud();
+      setSyncSuccessMessage("Sincronización con la nube completada exitosamente.");
+    } catch {
+      setSyncSuccessMessage("Modo local activo. Tus datos permanecen resguardados.");
+    } finally {
+      setIsSyncingCloud(false);
+      setTimeout(() => setSyncSuccessMessage(""), 4000);
+    }
+  };
+
+  const handleRestoreBackupJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const raw = event.target?.result;
+        if (typeof raw !== "string") return;
+        const parsed = JSON.parse(raw);
+        if (!parsed || !Array.isArray(parsed.products)) {
+          alert("El archivo seleccionado no tiene el formato de respaldo de PulsoTech.");
+          return;
+        }
+        if (
+          confirm(
+            `Se detectaron ${parsed.products.length} productos en el respaldo.\n\n¿Deseas restaurar este catálogo ahora? Esta acción actualizará los datos locales.`
+          )
+        ) {
+          localStorage.setItem("pulsotech_custom_products", JSON.stringify(parsed.products));
+          if (Array.isArray(parsed.brands) && parsed.brands.length > 0) {
+            localStorage.setItem("pulsotech_custom_brands", JSON.stringify(parsed.brands));
+          }
+          if (Array.isArray(parsed.categories) && parsed.categories.length > 0) {
+            localStorage.setItem("pulsotech_custom_categories", JSON.stringify(parsed.categories));
+          }
+          if (Array.isArray(parsed.sales)) {
+            localStorage.setItem("pulsotech_sales_records", JSON.stringify(parsed.sales));
+          }
+          alert("Copia de seguridad restaurada correctamente. Recargando el panel...");
+          window.location.reload();
+        }
+      } catch {
+        alert("Ocurrió un error al procesar el archivo JSON.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
   };
 
   const handleRecordManualSale = (e: React.FormEvent) => {
@@ -5638,221 +5709,527 @@ export default function AdminPage() {
         )}
 
         {/* ================= PESTAÑA: AJUSTES & WHATSAPP ================= */}
-        {activeTab === "settings" && (
-          <div className="space-y-6 max-w-3xl">
-            {/* WhatsApp Card */}
-            <form
-              onSubmit={handleSavePhone}
-              className="p-6 rounded-2xl border border-emerald-200 bg-white shadow-xs space-y-4"
-            >
-              <div className="flex items-center gap-3.5">
-                <div className="p-3 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 shrink-0">
-                  <Phone className="w-5 h-5" />
-                </div>
+        {activeTab === "settings" && (() => {
+          const cleanPhoneDisplay = phoneInput ? phoneInput.replace(/^51/, "") : "";
+          const testWhatsAppUrl = `https://wa.me/51${cleanPhoneDisplay}?text=${encodeURIComponent(
+            "Hola PulsoTech, prueba de conexión desde el Panel Administrativo POS."
+          )}`;
+
+          return (
+            <div className="space-y-5">
+              {/* Header del Módulo */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200/90 shadow-2xs">
                 <div>
-                  <h3 className="text-sm font-bold text-neutral-950">
-                    Número de WhatsApp Receptor de Pedidos
-                  </h3>
-                  <p className="text-xs text-neutral-500 mt-0.5">
-                    Todos los botones de compra de la tienda abrirán WhatsApp enviando el mensaje a este número.
-                  </p>
+                  <div className="flex items-center gap-2 text-xs font-mono text-neutral-400 font-bold uppercase tracking-wider mb-0.5">
+                    <span>Configuración</span>
+                    <span>/</span>
+                    <span className="text-neutral-700">Terminal &amp; Canales</span>
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-extrabold text-neutral-950 flex items-center gap-2">
+                    <Settings className="w-5 h-5 text-neutral-900" />
+                    <span>Ajustes del Sistema y WhatsApp</span>
+                  </h2>
+                </div>
+
+                {/* Sub-views / Segmented Pills */}
+                <div className="flex items-center gap-1.5 bg-neutral-100 p-1 rounded-xl border border-neutral-200/80 shrink-0 overflow-x-auto max-w-full">
+                  {[
+                    { id: "all", label: "Vista General" },
+                    { id: "whatsapp", label: "WhatsApp" },
+                    { id: "security", label: "Seguridad & PIN" },
+                    { id: "backup", label: "Respaldos & Datos" },
+                    { id: "system", label: "Diagnóstico" },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setSettingsViewTab(tab.id as any)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                        settingsViewTab === tab.id
+                          ? "bg-white text-neutral-950 shadow-xs"
+                          : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/50"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={phoneInput}
-                  onChange={(e) => setPhoneInput(e.target.value)}
-                  placeholder="51902377567"
-                  className="px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono text-neutral-900 focus:outline-none focus:border-emerald-600 focus:bg-white flex-1 shadow-2xs"
-                />
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer shadow-xs"
-                >
-                  <Save className="w-3.5 h-3.5" />
-                  <span>Guardar Teléfono</span>
-                </button>
-              </div>
-
-              {phoneSaved && (
-                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-emerald-600" />
-                  <span>¡Número actualizado con éxito!</span>
-                </div>
-              )}
-            </form>
-
-            {/* Seguridad & PIN de Acceso al Panel */}
-            <form
-              onSubmit={handleChangePin}
-              className="p-6 rounded-2xl border border-neutral-200 bg-white shadow-xs space-y-4"
-            >
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-3.5">
-                  <div className="p-3 rounded-xl bg-neutral-100 text-neutral-900 border border-neutral-200 shrink-0">
-                    <Shield className="w-5 h-5" />
+              {/* 4 Tarjetas KPI / Estado Ejecutivo */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                {/* KPI 1: WhatsApp Receptor */}
+                <div className="bg-white p-4 rounded-2xl border border-neutral-200/90 shadow-2xs flex flex-col justify-between">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Canal WhatsApp</span>
+                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+                      <Phone className="w-4 h-4" />
+                    </div>
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-neutral-950">
-                      Seguridad & PIN de Acceso al Panel
-                    </h3>
-                    <p className="text-xs text-neutral-500 mt-0.5">
-                      Protege tu panel administrativo. Se solicitará este código cada vez que abras la página en una nueva pestaña o navegador.
-                    </p>
+                    <div className="text-base sm:text-lg font-black text-neutral-950 font-mono tracking-tight truncate">
+                      {phoneInput ? `+51 ${cleanPhoneDisplay}` : "Sin registrar"}
+                    </div>
+                    <div className="text-[11px] text-emerald-600 font-bold mt-0.5 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <span>Receptor de pedidos activo</span>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span>Protección Activa</span>
+
+                {/* KPI 2: Seguridad del Panel */}
+                <div className="bg-white p-4 rounded-2xl border border-neutral-200/90 shadow-2xs flex flex-col justify-between">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Seguridad PIN</span>
+                    <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-800 flex items-center justify-center shrink-0">
+                      <ShieldCheck className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-base sm:text-lg font-black text-neutral-950 font-mono tracking-tight">
+                      Activa ({adminPin ? adminPin.length : 6} dígitos)
+                    </div>
+                    <div className="text-[11px] text-neutral-500 mt-0.5">
+                      Bloqueo automático en 5 intentos
+                    </div>
+                  </div>
+                </div>
+
+                {/* KPI 3: Estado de Conexión Nube */}
+                <div className="bg-white p-4 rounded-2xl border border-neutral-200/90 shadow-2xs flex flex-col justify-between">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Base de Datos</span>
+                    <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-800 flex items-center justify-center shrink-0">
+                      <Database className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-base sm:text-lg font-black text-neutral-950 font-mono tracking-tight">
+                      {isCloudConnected ? "Supabase Cloud" : "LocalStorage"}
+                    </div>
+                    <div className="text-[11px] text-neutral-500 mt-0.5">
+                      {products.length} productos en memoria
+                    </div>
+                  </div>
+                </div>
+
+                {/* KPI 4: Registros Totales */}
+                <div className="bg-white p-4 rounded-2xl border border-neutral-200/90 shadow-2xs flex flex-col justify-between">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Registros del Sistema</span>
+                    <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-800 flex items-center justify-center shrink-0">
+                      <HardDrive className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-base sm:text-lg font-black text-neutral-950 font-mono tracking-tight">
+                      {products.length + sales.length}
+                    </div>
+                    <div className="text-[11px] text-neutral-500 mt-0.5">
+                      {products.length} catálogo · {sales.length} órdenes
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                <div>
-                  <label className="text-xs font-bold text-neutral-700 block mb-1">
-                    PIN Actual
-                  </label>
-                  <input
-                    type="password"
-                    value={currentPinInput}
-                    onChange={(e) => setCurrentPinInput(e.target.value)}
-                    placeholder="PIN actual"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white"
-                    required
-                  />
-                </div>
+              {/* Grid de Secciones */}
+              <div className={`grid gap-5 items-start ${
+                settingsViewTab === "all" ? "grid-cols-1 lg:grid-cols-12" : "grid-cols-1"
+              }`}>
+                {/* ================= COLUMNA IZQUIERDA: WHATSAPP & SEGURIDAD ================= */}
+                {(settingsViewTab === "all" || settingsViewTab === "whatsapp" || settingsViewTab === "security") && (
+                  <div className={`space-y-5 ${settingsViewTab === "all" ? "lg:col-span-6" : "w-full"}`}>
+                    {/* CARD 1: WHATSAPP */}
+                    {(settingsViewTab === "all" || settingsViewTab === "whatsapp") && (
+                      <form
+                        onSubmit={handleSavePhone}
+                        className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-4"
+                      >
+                        <div className="flex items-center justify-between gap-2 pb-3 border-b border-neutral-100">
+                          <div className="flex items-center gap-2">
+                            <Smartphone className="w-4 h-4 text-emerald-600" />
+                            <h3 className="text-sm font-extrabold text-neutral-950">Canal Comercial WhatsApp</h3>
+                          </div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Receptor Oficial
+                          </span>
+                        </div>
 
-                <div>
-                  <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
-                    Nuevo PIN (4 a 12 dígitos):
-                  </label>
-                  <input
-                    type="password"
-                    value={newPinInput}
-                    onChange={(e) => setNewPinInput(e.target.value)}
-                    placeholder="Nuevo PIN"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white"
-                    required
-                  />
-                </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-neutral-900 block">
+                            Número Receptor de Pedidos
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center px-3 py-2 rounded-xl bg-neutral-100 border border-neutral-300 text-xs font-mono font-bold text-neutral-700 shrink-0">
+                              <span>PE (+51)</span>
+                            </div>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              value={phoneInput}
+                              onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, "").slice(0, 15))}
+                              placeholder="51902377567"
+                              className="flex-1 px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-xs font-mono font-bold text-neutral-950 focus:outline-none focus:bg-white focus:border-neutral-900"
+                            />
+                          </div>
+                        </div>
 
-                <div>
-                  <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
-                    Confirmar Nuevo PIN:
-                  </label>
-                  <input
-                    type="password"
-                    value={confirmPinInput}
-                    onChange={(e) => setConfirmPinInput(e.target.value)}
-                    placeholder="Confirmar PIN"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white"
-                    required
-                  />
-                </div>
-              </div>
+                        <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+                          <a
+                            href={testWhatsAppUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3.5 py-2 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-100 text-neutral-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>Probar Chat en WhatsApp</span>
+                          </a>
 
-              {pinChangeNotice && (
-                <div
-                  className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
-                    pinChangeNotice.isError
-                      ? "bg-red-50 text-red-700 border border-red-200"
-                      : "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                  }`}
-                >
-                  {pinChangeNotice.isError ? (
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                  ) : (
-                    <CheckCircle className="w-4 h-4 shrink-0" />
-                  )}
-                  <span>{pinChangeNotice.text}</span>
-                </div>
-              )}
+                          <button
+                            type="submit"
+                            className="px-5 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                          >
+                            <Save className="w-3.5 h-3.5" />
+                            <span>Guardar Teléfono</span>
+                          </button>
+                        </div>
 
-              <div className="flex items-center justify-between pt-2 border-t border-neutral-100 flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="px-4 py-2.5 rounded-xl border border-neutral-200 hover:border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900 font-semibold text-xs flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
-                >
-                  <LogOut className="w-3.5 h-3.5 text-neutral-400" />
-                  <span>Bloquear y Salir</span>
-                </button>
+                        {phoneSaved && (
+                          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>Número de WhatsApp actualizado exitosamente.</span>
+                          </div>
+                        )}
 
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-                >
-                  <KeyRound className="w-3.5 h-3.5" />
-                  <span>Actualizar PIN de Seguridad</span>
-                </button>
-              </div>
-            </form>
+                        {/* Vista Previa del Mensaje Automatizado */}
+                        <div className="pt-2 border-t border-neutral-100 space-y-2">
+                          <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
+                            Formato de Orden en WhatsApp
+                          </span>
+                          <div className="rounded-xl bg-[#0b141a] p-3 text-white space-y-2 border border-neutral-800">
+                            <div className="flex items-center justify-between pb-1.5 border-b border-neutral-800/80 text-[10px] text-neutral-400">
+                              <div className="flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                <span className="font-bold text-neutral-200">Mensaje generado por la tienda</span>
+                              </div>
+                              <span className="font-mono text-[9px] text-neutral-400">WhatsApp</span>
+                            </div>
 
-            {/* Backup & Export Card */}
-            <div className="p-6 rounded-2xl border border-neutral-200 bg-white shadow-xs space-y-4">
-              <div className="flex items-center gap-3.5">
-                <div className="p-3 rounded-xl bg-blue-50 text-blue-700 border border-blue-100 shrink-0">
-                  <Download className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-neutral-950">
-                    Copias de Seguridad & Exportación de Datos
-                  </h3>
-                  <p className="text-xs text-neutral-500 mt-0.5">
-                    Descarga respaldos de tu catálogo en JSON o exporta tus productos y ventas a hojas de cálculo (Excel / Google Sheets).
-                  </p>
-                </div>
-              </div>
+                            <div className="bg-[#1f2c34] p-3 rounded-xl rounded-tl-none max-w-sm space-y-1 text-xs text-neutral-100 shadow-sm font-mono text-[11px]">
+                              <div className="font-bold text-emerald-400 flex items-center justify-between pb-1 border-b border-neutral-700/60">
+                                <span>NUEVO PEDIDO #904821</span>
+                                <span className="text-[9px] text-neutral-400">12:30 PM</span>
+                              </div>
+                              <div className="text-[10px] text-neutral-300 pt-1 space-y-0.5">
+                                <div>Cliente: Carlos Méndez</div>
+                                <div>Teléfono: 987 654 321</div>
+                                <div>Destino: Av. Javier Prado 1420, Lima</div>
+                                <div>Ítem: Redmi Buds 6 Play x1</div>
+                                <div className="text-emerald-300 font-bold pt-1">Total a Cobrar: S/ 149.00</div>
+                                <div className="text-neutral-400 text-[9px]">Método: Pago Contra Entrega</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </form>
+                    )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={handleExportProductsCSV}
-                  className="p-3.5 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-left transition-colors cursor-pointer group"
-                >
-                  <div className="flex items-center justify-between text-neutral-900 font-bold text-xs mb-1">
-                    <span>Inventario (.CSV)</span>
-                    <Download className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors" />
+                    {/* CARD 2: SEGURIDAD Y PIN */}
+                    {(settingsViewTab === "all" || settingsViewTab === "security") && (
+                      <form
+                        onSubmit={handleChangePin}
+                        className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-4"
+                      >
+                        <div className="flex items-center justify-between gap-2 pb-3 border-b border-neutral-100">
+                          <div className="flex items-center gap-2">
+                            <Shield className="w-4 h-4 text-neutral-900" />
+                            <h3 className="text-sm font-extrabold text-neutral-950">Seguridad &amp; PIN de Acceso</h3>
+                          </div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200">
+                            Terminal Protegido
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div>
+                            <label className="text-[11px] font-bold text-neutral-700 block mb-1">
+                              PIN Actual
+                            </label>
+                            <div className="relative">
+                              <input
+                                type={showCurrentPinToggle ? "text" : "password"}
+                                inputMode="numeric"
+                                maxLength={12}
+                                value={currentPinInput}
+                                onChange={(e) => setCurrentPinInput(e.target.value.replace(/\D/g, ""))}
+                                placeholder="••••••"
+                                required
+                                className="w-full pl-3 pr-8 py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowCurrentPinToggle(!showCurrentPinToggle)}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-0.5 cursor-pointer"
+                              >
+                                {showCurrentPinToggle ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] font-bold text-neutral-700 block mb-1">
+                              Nuevo PIN
+                            </label>
+                            <div className="relative">
+                              <input
+                                type={showNewPinToggle ? "text" : "password"}
+                                inputMode="numeric"
+                                maxLength={12}
+                                value={newPinInput}
+                                onChange={(e) => setNewPinInput(e.target.value.replace(/\D/g, ""))}
+                                placeholder="••••••"
+                                required
+                                className="w-full pl-3 pr-8 py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowNewPinToggle(!showNewPinToggle)}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-0.5 cursor-pointer"
+                              >
+                                {showNewPinToggle ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] font-bold text-neutral-700 block mb-1">
+                              Confirmar PIN
+                            </label>
+                            <div className="relative">
+                              <input
+                                type={showConfirmPinToggle ? "text" : "password"}
+                                inputMode="numeric"
+                                maxLength={12}
+                                value={confirmPinInput}
+                                onChange={(e) => setConfirmPinInput(e.target.value.replace(/\D/g, ""))}
+                                placeholder="••••••"
+                                required
+                                className="w-full pl-3 pr-8 py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowConfirmPinToggle(!showConfirmPinToggle)}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-0.5 cursor-pointer"
+                              >
+                                {showConfirmPinToggle ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {pinChangeNotice && (
+                          <div
+                            className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
+                              pinChangeNotice.isError
+                                ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                            }`}
+                          >
+                            {pinChangeNotice.isError ? (
+                              <AlertCircle className="w-4 h-4 shrink-0" />
+                            ) : (
+                              <CheckCircle className="w-4 h-4 shrink-0" />
+                            )}
+                            <span>{pinChangeNotice.text}</span>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between pt-2 border-t border-neutral-100 flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="px-4 py-2 rounded-xl border border-neutral-200 hover:border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                          >
+                            <LogOut className="w-3.5 h-3.5 text-neutral-500" />
+                            <span>Bloquear Terminal</span>
+                          </button>
+
+                          <button
+                            type="submit"
+                            className="px-5 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                          >
+                            <KeyRound className="w-3.5 h-3.5" />
+                            <span>Actualizar PIN</span>
+                          </button>
+                        </div>
+                      </form>
+                    )}
                   </div>
-                  <p className="text-[11px] text-neutral-500">
-                    Descarga {products.length} productos con precios y stock para Excel.
-                  </p>
-                </button>
+                )}
 
-                <button
-                  type="button"
-                  onClick={handleExportSalesCSV}
-                  className="p-3.5 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-left transition-colors cursor-pointer group"
-                >
-                  <div className="flex items-center justify-between text-neutral-900 font-bold text-xs mb-1">
-                    <span>Ventas (.CSV)</span>
-                    <Download className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors" />
-                  </div>
-                  <p className="text-[11px] text-neutral-500">
-                    Descarga historial de {sales.length} órdenes registradas.
-                  </p>
-                </button>
+                {/* ================= COLUMNA DERECHA: RESPALDOS & DIAGNÓSTICO ================= */}
+                {(settingsViewTab === "all" || settingsViewTab === "backup" || settingsViewTab === "system") && (
+                  <div className={`space-y-5 ${settingsViewTab === "all" ? "lg:col-span-6" : "w-full"}`}>
+                    {/* CARD 3: RESPALDOS Y EXPORTACIÓN */}
+                    {(settingsViewTab === "all" || settingsViewTab === "backup") && (
+                      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-4">
+                        <div className="flex items-center justify-between gap-2 pb-3 border-b border-neutral-100">
+                          <div className="flex items-center gap-2">
+                            <Download className="w-4 h-4 text-neutral-900" />
+                            <h3 className="text-sm font-extrabold text-neutral-950">Copias de Seguridad &amp; Exportación</h3>
+                          </div>
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-700">
+                            {products.length} productos · {sales.length} órdenes
+                          </span>
+                        </div>
 
-                <button
-                  type="button"
-                  onClick={handleExportBackupJSON}
-                  className="p-3.5 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-left transition-colors cursor-pointer group"
-                >
-                  <div className="flex items-center justify-between text-neutral-900 font-bold text-xs mb-1">
-                    <span>Backup JSON</span>
-                    <FileText className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors" />
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                          <button
+                            type="button"
+                            onClick={handleExportProductsCSV}
+                            className="p-3 rounded-xl border border-neutral-200 bg-neutral-50/60 hover:bg-neutral-100 text-left transition-colors cursor-pointer group shadow-2xs"
+                          >
+                            <div className="flex items-center justify-between text-neutral-950 font-extrabold text-xs mb-1">
+                              <span>Inventario (.CSV)</span>
+                              <Download className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors" />
+                            </div>
+                            <p className="text-[10px] text-neutral-500 font-medium">
+                              Excel / Google Sheets ({products.length} ítems)
+                            </p>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={handleExportSalesCSV}
+                            className="p-3 rounded-xl border border-neutral-200 bg-neutral-50/60 hover:bg-neutral-100 text-left transition-colors cursor-pointer group shadow-2xs"
+                          >
+                            <div className="flex items-center justify-between text-neutral-950 font-extrabold text-xs mb-1">
+                              <span>Ventas (.CSV)</span>
+                              <Download className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors" />
+                            </div>
+                            <p className="text-[10px] text-neutral-500 font-medium">
+                              Reporte de órdenes ({sales.length} registros)
+                            </p>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={handleExportBackupJSON}
+                            className="p-3 rounded-xl border border-neutral-200 bg-neutral-50/60 hover:bg-neutral-100 text-left transition-colors cursor-pointer group shadow-2xs"
+                          >
+                            <div className="flex items-center justify-between text-neutral-950 font-extrabold text-xs mb-1">
+                              <span>Backup JSON</span>
+                              <FileText className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors" />
+                            </div>
+                            <p className="text-[10px] text-neutral-500 font-medium">
+                              Copia íntegra con taxonomía
+                            </p>
+                          </button>
+                        </div>
+
+                        {/* Restaurar Respaldo JSON */}
+                        <div className="pt-2 border-t border-neutral-100">
+                          <div className="p-3 rounded-xl bg-neutral-50/80 border border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                              <span className="text-xs font-bold text-neutral-900 block">
+                                Restaurar desde Respaldo JSON
+                              </span>
+                              <span className="text-[10px] text-neutral-500">
+                                Carga un archivo de respaldo previo para restablecer el catálogo.
+                              </span>
+                            </div>
+
+                            <label className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-neutral-300 hover:border-neutral-900 text-neutral-900 text-xs font-bold cursor-pointer transition-colors shadow-2xs shrink-0">
+                              <Upload className="w-3.5 h-3.5 text-neutral-600" />
+                              <span>Cargar Archivo</span>
+                              <input
+                                type="file"
+                                accept=".json,application/json"
+                                onChange={handleRestoreBackupJSON}
+                                className="hidden"
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* CARD 4: DIAGNÓSTICO Y PARÁMETROS DEL SISTEMA */}
+                    {(settingsViewTab === "all" || settingsViewTab === "system") && (
+                      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-4">
+                        <div className="flex items-center justify-between gap-2 pb-3 border-b border-neutral-100">
+                          <div className="flex items-center gap-2">
+                            <Database className="w-4 h-4 text-neutral-900" />
+                            <h3 className="text-sm font-extrabold text-neutral-950">Diagnóstico &amp; Nube</h3>
+                          </div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            <span>Sistema Operativo</span>
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2.5 text-xs">
+                          <div className="p-2.5 rounded-xl bg-neutral-50 border border-neutral-200/80">
+                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                              Software
+                            </span>
+                            <strong className="text-neutral-950 text-xs">PulsoTech POS v2.6</strong>
+                          </div>
+
+                          <div className="p-2.5 rounded-xl bg-neutral-50 border border-neutral-200/80">
+                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                              Moneda Activa
+                            </span>
+                            <strong className="text-neutral-950 text-xs">{STORE_SETTINGS.currencyCode} ({STORE_SETTINGS.currencySymbol})</strong>
+                          </div>
+
+                          <div className="p-2.5 rounded-xl bg-neutral-50 border border-neutral-200/80">
+                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                              Sincronización Cloud
+                            </span>
+                            <strong className={`text-xs ${isCloudConnected ? "text-emerald-700" : "text-neutral-800"}`}>
+                              {isCloudConnected ? "Supabase Listo" : "LocalStorage Local"}
+                            </strong>
+                          </div>
+
+                          <div className="p-2.5 rounded-xl bg-neutral-50 border border-neutral-200/80">
+                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                              Versión de Esquema
+                            </span>
+                            <strong className="text-neutral-950 text-xs font-mono">2026_09_25_v8</strong>
+                          </div>
+                        </div>
+
+                        {syncSuccessMessage && (
+                          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>{syncSuccessMessage}</span>
+                          </div>
+                        )}
+
+                        <div className="pt-2 border-t border-neutral-100 flex items-center justify-between">
+                          <span className="text-[11px] text-neutral-400 font-medium">
+                            Sincronización bidireccional automática activa.
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={handleForceCloudSync}
+                            disabled={isSyncingCloud}
+                            className="px-4 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-900 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                          >
+                            <RefreshCw className={`w-3.5 h-3.5 ${isSyncingCloud ? "animate-spin" : ""}`} />
+                            <span>{isSyncingCloud ? "Sincronizando..." : "Forzar Sincronización"}</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <p className="text-[11px] text-neutral-500">
-                    Copia de seguridad íntegra con marcas y categorías.
-                  </p>
-                </button>
+                )}
               </div>
             </div>
-
-          </div>
-        )}
+          );
+        })()}
 
         {/* Modal de Código QR para Vitrina y Redes */}
         {qrModalProduct && (
