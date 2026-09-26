@@ -83,13 +83,13 @@ export default function CartDrawer() {
     }
 
     const lines: string[] = [
-      `🛍️ *PEDIDO EN PULSOTECH*`,
+      `*PEDIDO EN PULSOTECH*`,
       `━━━━━━━━━━━━━━━━━━━━━━`,
-      `👤 *Cliente:* ${customerName.trim()}`,
-      `📍 *Dirección de Entrega:* ${customerAddress.trim()}`,
-      `💳 *Pago:* ${paymentMethod === "contra_entrega" ? "Contra Entrega" : "Transferencia Bancaria"}`,
+      `• *Cliente:* ${customerName.trim()}`,
+      `• *Dirección de Entrega:* ${customerAddress.trim()}`,
+      `• *Pago:* ${paymentMethod === "contra_entrega" ? "Contra Entrega" : "Transferencia Bancaria"}`,
       ``,
-      `📦 *ARTÍCULOS:*`,
+      `*ARTÍCULOS:*`,
     ];
 
     items.forEach((item) => {
@@ -102,13 +102,13 @@ export default function CartDrawer() {
     });
 
     lines.push(``);
-    lines.push(`🚚 *Entrega:* A coordinar por WhatsApp (Contra Entrega)`);
+    lines.push(`• *Entrega:* A coordinar por WhatsApp (Contra Entrega)`);
     if (appliedCoupon && discountAmount > 0) {
       lines.push(
-        `🎟️ *Cupón Aplicado:* ${appliedCoupon.code} (-${STORE_SETTINGS.currencySymbol}${discountAmount.toFixed(2)})`
+        `• *Cupón Aplicado:* ${appliedCoupon.code} (-${STORE_SETTINGS.currencySymbol}${discountAmount.toFixed(2)})`
       );
     }
-    lines.push(`💰 *TOTAL:* ${STORE_SETTINGS.currencySymbol}${total.toFixed(2)}`);
+    lines.push(`• *TOTAL:* ${STORE_SETTINGS.currencySymbol}${total.toFixed(2)}`);
     lines.push(`━━━━━━━━━━━━━━━━━━━━━━`);
     lines.push(`¡Hola PulsoTech! Armé este pedido en la web. ¿Tienen disponibilidad para coordinar la entrega?`);
 
@@ -278,7 +278,7 @@ export default function CartDrawer() {
                           : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300"
                       }`}
                     >
-                      💵 Contra Entrega
+                      Contra Entrega
                     </button>
                     <button
                       type="button"
@@ -289,7 +289,7 @@ export default function CartDrawer() {
                           : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300"
                       }`}
                     >
-                      🏦 Transferencia
+                      Transferencia
                     </button>
                   </div>
                 </div>

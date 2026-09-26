@@ -100,4 +100,8 @@ export interface SaleRecord {
   timestamp: number;
   paymentMethod?: string;
   notes?: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  deliveryStatus?: "pending" | "shipped" | "delivered" | "cancelled";
+  trackingNumber?: string;
 }

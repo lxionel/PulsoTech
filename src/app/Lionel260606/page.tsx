@@ -52,6 +52,11 @@ import {
   ShieldCheck,
   LogOut,
   KeyRound,
+  Printer,
+  MessageSquare,
+  Truck,
+  Send,
+  MapPin,
 } from "lucide-react";
 
 export type { SaleRecord };
@@ -414,6 +419,18 @@ export default function AdminPage() {
     return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
   });
   const [newSaleNotes, setNewSaleNotes] = useState("");
+  const [newSaleCustomerPhone, setNewSaleCustomerPhone] = useState("");
+  const [newSaleCustomerAddress, setNewSaleCustomerAddress] = useState("");
+  const [newSaleDeliveryStatus, setNewSaleDeliveryStatus] = useState<"pending" | "shipped" | "delivered" | "cancelled">("pending");
+  const [newSaleTrackingNumber, setNewSaleTrackingNumber] = useState("");
+  const [salesStatusFilter, setSalesStatusFilter] = useState<string>("all");
+
+  // Modales de Logística & Despacho
+  const [receiptModalSale, setReceiptModalSale] = useState<SaleRecord | null>(null);
+  const [whatsappTemplateSale, setWhatsappTemplateSale] = useState<SaleRecord | null>(null);
+  const [customMsgPhone, setCustomMsgPhone] = useState("");
+  const [copiedTemplateIndex, setCopiedTemplateIndex] = useState<number | null>(null);
+
   const [successNotice, setSuccessNotice] = useState("");
 
   // ====== ESTADO DEL FORMULARIO DE AGREGAR / EDITAR PRODUCTO (INICIALMENTE LIMPIO) ======
@@ -508,10 +525,14 @@ export default function AdminPage() {
     return true;
   });
 
-  // Ventas mostradas en la tabla (aplica además filtro por canal y buscador)
+  // Ventas mostradas en la tabla (aplica filtro por canal, estado de despacho y buscador)
   const displayedSales = periodSales.filter((s) => {
     if (salesChannelFilter !== "all" && s.channel !== salesChannelFilter) {
       return false;
+    }
+    if (salesStatusFilter !== "all") {
+      const currentStatus = s.deliveryStatus || "pending";
+      if (currentStatus !== salesStatusFilter) return false;
     }
     if (salesSearchQuery.trim()) {
       const q = salesSearchQuery.toLowerCase();
@@ -519,7 +540,18 @@ export default function AdminPage() {
       const matchCustomer = (s.customerName || "").toLowerCase().includes(q);
       const matchId = (s.id || "").toLowerCase().includes(q);
       const matchPayment = (s.paymentMethod || "").toLowerCase().includes(q);
-      return matchProduct || matchCustomer || matchId || matchPayment;
+      const matchPhone = (s.customerPhone || "").toLowerCase().includes(q);
+      const matchAddress = (s.customerAddress || "").toLowerCase().includes(q);
+      const matchTracking = (s.trackingNumber || "").toLowerCase().includes(q);
+      return (
+        matchProduct ||
+        matchCustomer ||
+        matchId ||
+        matchPayment ||
+        matchPhone ||
+        matchAddress ||
+        matchTracking
+      );
     }
     return true;
   });
@@ -641,6 +673,10 @@ export default function AdminPage() {
       channel: newSaleChannel,
       paymentMethod: newSalePayment,
       customerName: newSaleCustomer.trim() || "Cliente WhatsApp",
+      customerPhone: newSaleCustomerPhone.trim() || undefined,
+      customerAddress: newSaleCustomerAddress.trim() || undefined,
+      deliveryStatus: newSaleDeliveryStatus,
+      trackingNumber: newSaleTrackingNumber.trim() || undefined,
       date: dateFormatted,
       timestamp,
       notes: newSaleNotes.trim() || undefined,
@@ -648,13 +684,29 @@ export default function AdminPage() {
 
     saveSalesToStorage([newRecord, ...sales]);
     setNewSaleCustomer("");
+    setNewSaleCustomerPhone("");
+    setNewSaleCustomerAddress("");
+    setNewSaleTrackingNumber("");
+    setNewSaleDeliveryStatus("pending");
     setNewSaleQty(1);
     setNewSaleCustomPrice("");
     setNewSaleNotes("");
     setSuccessNotice(
-      `¡Venta #${newRecord.id} registrada con éxito! Total: ${STORE_SETTINGS.currencySymbol}${newRecord.total.toFixed(2)}.`
+      `Venta #${newRecord.id} registrada con éxito. Total: ${STORE_SETTINGS.currencySymbol}${newRecord.total.toFixed(2)}.`
     );
     setTimeout(() => setSuccessNotice(""), 4000);
+  };
+
+  const handleUpdateDeliveryStatus = (
+    saleId: string,
+    status: "pending" | "shipped" | "delivered" | "cancelled"
+  ) => {
+    const updated = sales.map((s) =>
+      s.id === saleId ? { ...s, deliveryStatus: status } : s
+    );
+    saveSalesToStorage(updated);
+    setSuccessNotice(`Estado de la orden #${saleId} actualizado.`);
+    setTimeout(() => setSuccessNotice(""), 3000);
   };
 
   const handleDeleteSale = (saleId: string) => {
@@ -1376,7 +1428,7 @@ export default function AdminPage() {
             }`}
           >
             <Filter className="w-4 h-4 text-blue-600" />
-            <span>🏷️ Marcas &amp; Filtros</span>
+            <span>Marcas &amp; Filtros</span>
           </button>
 
           <button
@@ -1388,7 +1440,7 @@ export default function AdminPage() {
             }`}
           >
             <Tag className="w-4 h-4 text-purple-600" />
-            <span>🎟️ Cupones ({coupons.length})</span>
+            <span>Cupones ({coupons.length})</span>
           </button>
 
           <button
@@ -1400,7 +1452,7 @@ export default function AdminPage() {
             }`}
           >
             <BarChart3 className="w-4 h-4 text-emerald-600" />
-            <span>📊 Ventas &amp; Analíticas ({sales.length})</span>
+            <span>Ventas &amp; Analíticas ({sales.length})</span>
           </button>
 
           <button
@@ -1412,7 +1464,7 @@ export default function AdminPage() {
             }`}
           >
             <Phone className="w-4 h-4 text-emerald-600" />
-            <span>⚙️ Ajustes &amp; WhatsApp</span>
+            <span>Ajustes &amp; WhatsApp</span>
           </button>
         </div>
       </header>
@@ -1934,7 +1986,7 @@ export default function AdminPage() {
                             className="text-[10px] font-bold text-neutral-700 hover:text-black flex items-center gap-1 cursor-pointer bg-neutral-100 hover:bg-neutral-200 px-2 py-0.5 rounded transition-colors"
                             title="Generar nuevo número de 6 dígitos aleatorio"
                           >
-                            🎲 Generar ID
+                            Generar ID
                           </button>
                         </div>
                         <div className="relative">
@@ -2585,7 +2637,7 @@ export default function AdminPage() {
 
                           {Number(formOriginalPrice) > Number(formPrice) && Number(formPrice) > 0 && (
                             <div className="sm:col-span-2 text-xs font-bold text-emerald-800 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
-                              ✓ Descuento del {Math.round(((Number(formOriginalPrice) - Number(formPrice)) / Number(formOriginalPrice)) * 100)}% (Ahorro de {STORE_SETTINGS.currencySymbol}{(Number(formOriginalPrice) - Number(formPrice)).toFixed(2)})
+                              Descuento del {Math.round(((Number(formOriginalPrice) - Number(formPrice)) / Number(formOriginalPrice)) * 100)}% (Ahorro de {STORE_SETTINGS.currencySymbol}{(Number(formOriginalPrice) - Number(formPrice)).toFixed(2)})
                             </div>
                           )}
                         </div>
@@ -2623,7 +2675,7 @@ export default function AdminPage() {
                         className="px-6 py-3 rounded-xl bg-neutral-950 text-white font-extrabold text-xs hover:bg-neutral-800 transition-all flex items-center gap-2 shadow-md active:scale-95 cursor-pointer"
                       >
                         <Save className="w-4 h-4 text-white" />
-                        <span>{editingProductId ? "✓ Actualizar y Guardar Cambios" : "✓ Guardar y Publicar en Tienda"}</span>
+                        <span>{editingProductId ? "Actualizar y Guardar Cambios" : "Guardar y Publicar en Tienda"}</span>
                       </button>
                     </div>
                   </div>
@@ -3713,22 +3765,85 @@ export default function AdminPage() {
                           className="px-2 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold transition-colors cursor-pointer border border-emerald-300"
                           title="Fijar fecha al día 15 del mes pasado para pruebas o registros atrasados"
                         >
-                          📅 Mes Pasado ({lastMonthName.slice(0, 3)})
+                          Mes Pasado ({lastMonthName.slice(0, 3)})
                         </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                          Nombre del Cliente:
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Ej: Sofia Martínez"
+                          value={newSaleCustomer}
+                          onChange={(e) => setNewSaleCustomer(e.target.value)}
+                          className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none placeholder-neutral-400"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                          Teléfono / WhatsApp:
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Ej: 987654321"
+                          value={newSaleCustomerPhone}
+                          onChange={(e) => setNewSaleCustomerPhone(e.target.value)}
+                          className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none placeholder-neutral-400"
+                        />
                       </div>
                     </div>
 
                     <div>
                       <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
-                        Nombre o Teléfono del Cliente:
+                        Dirección de Entrega / Despacho:
                       </label>
                       <input
                         type="text"
-                        placeholder="Ej: Sofia Martínez (+51 987 654 321)"
-                        value={newSaleCustomer}
-                        onChange={(e) => setNewSaleCustomer(e.target.value)}
+                        placeholder="Ej: Av. Benavides 1230 Dpto 402, Miraflores (o Agencia Shalom Chimbote)"
+                        value={newSaleCustomerAddress}
+                        onChange={(e) => setNewSaleCustomerAddress(e.target.value)}
                         className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none placeholder-neutral-400"
                       />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                          Estado de Despacho:
+                        </label>
+                        <select
+                          value={newSaleDeliveryStatus}
+                          onChange={(e) =>
+                            setNewSaleDeliveryStatus(
+                              e.target.value as "pending" | "shipped" | "delivered" | "cancelled"
+                            )
+                          }
+                          className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none font-semibold"
+                        >
+                          <option value="pending">Pendiente de Despacho</option>
+                          <option value="shipped">En Camino (Motorizado / Agencia)</option>
+                          <option value="delivered">Entregado y Cobrado</option>
+                          <option value="cancelled">Cancelado</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                          Guía / Motorizado (Opcional):
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Ej: Motorizado Carlos / Guía Shalom 045-8123"
+                          value={newSaleTrackingNumber}
+                          onChange={(e) => setNewSaleTrackingNumber(e.target.value)}
+                          className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none placeholder-neutral-400"
+                        />
+                      </div>
                     </div>
 
                     <div>
@@ -3737,7 +3852,7 @@ export default function AdminPage() {
                       </label>
                       <input
                         type="text"
-                        placeholder="Ej: Entregado en estación Javier Prado / Envío Lima Metropolitana"
+                        placeholder="Ej: Cobrar S/ 89 en efectivo exacto / Llamar al llegar"
                         value={newSaleNotes}
                         onChange={(e) => setNewSaleNotes(e.target.value)}
                         className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none placeholder-neutral-400"
@@ -3765,23 +3880,49 @@ export default function AdminPage() {
                       <span>Órdenes en {periodLabel} ({displayedSales.length})</span>
                     </span>
 
-                    {/* Filtro por Canal de Venta */}
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] text-neutral-400 font-semibold mr-1">Canal:</span>
-                      {["all", "WhatsApp", "Presencial", "Web"].map((channel) => (
-                        <button
-                          key={channel}
-                          type="button"
-                          onClick={() => setSalesChannelFilter(channel)}
-                          className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-colors cursor-pointer ${
-                            salesChannelFilter === channel
-                              ? "bg-neutral-900 text-white"
-                              : "bg-neutral-100 hover:bg-neutral-200 text-neutral-600"
-                          }`}
-                        >
-                          {channel === "all" ? "Todos" : channel}
-                        </button>
-                      ))}
+                    <div className="flex items-center gap-3 flex-wrap">
+                      {/* Filtro por Canal de Venta */}
+                      <div className="flex items-center gap-1 flex-wrap">
+                        <span className="text-[10px] text-neutral-400 font-semibold mr-1">Canal:</span>
+                        {["all", "WhatsApp", "Presencial", "Web"].map((channel) => (
+                          <button
+                            key={channel}
+                            type="button"
+                            onClick={() => setSalesChannelFilter(channel)}
+                            className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-colors cursor-pointer ${
+                              salesChannelFilter === channel
+                                ? "bg-neutral-900 text-white"
+                                : "bg-neutral-100 hover:bg-neutral-200 text-neutral-600"
+                            }`}
+                          >
+                            {channel === "all" ? "Todos" : channel}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Filtro por Estado de Despacho */}
+                      <div className="flex items-center gap-1 flex-wrap">
+                        <span className="text-[10px] text-neutral-400 font-semibold mr-1">Estado:</span>
+                        {[
+                          { id: "all", label: "Todos" },
+                          { id: "pending", label: "Pendiente" },
+                          { id: "shipped", label: "En Camino" },
+                          { id: "delivered", label: "Entregado" },
+                        ].map((st) => (
+                          <button
+                            key={st.id}
+                            type="button"
+                            onClick={() => setSalesStatusFilter(st.id)}
+                            className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-colors cursor-pointer ${
+                              salesStatusFilter === st.id
+                                ? "bg-neutral-900 text-white"
+                                : "bg-neutral-100 hover:bg-neutral-200 text-neutral-600"
+                            }`}
+                          >
+                            {st.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
@@ -3790,7 +3931,7 @@ export default function AdminPage() {
                     <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
-                      placeholder="Buscar por producto, cliente, #ID de venta o método de pago..."
+                      placeholder="Buscar por producto, cliente, teléfono, dirección, guía o ID..."
                       value={salesSearchQuery}
                       onChange={(e) => setSalesSearchQuery(e.target.value)}
                       className="w-full pl-9 pr-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-400"
@@ -3799,9 +3940,9 @@ export default function AdminPage() {
                       <button
                         type="button"
                         onClick={() => setSalesSearchQuery("")}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 text-xs font-bold"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-0.5"
                       >
-                        ✕
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
@@ -3810,7 +3951,7 @@ export default function AdminPage() {
                 {/* Lista de Órdenes */}
                 {displayedSales.length === 0 ? (
                   <div className="p-10 text-center rounded-2xl border border-dashed border-neutral-300 bg-white space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-neutral-50 border border-neutral-200 flex items-center justify-center mx-auto text-neutral-400 shadow-2xs">
+                    <div className="w-12 h-12 rounded-2xl bg-neutral-100 border border-neutral-200 flex items-center justify-center mx-auto text-neutral-400 shadow-2xs">
                       <ShoppingBag className="w-6 h-6" />
                     </div>
                     <div>
@@ -3828,70 +3969,146 @@ export default function AdminPage() {
                   </div>
                 ) : (
                   <div className="space-y-2.5 max-h-[620px] overflow-y-auto pr-1">
-                    {displayedSales.map((s) => (
-                      <div
-                        key={s.id}
-                        className="p-4 rounded-xl border border-neutral-200/90 bg-white shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs hover:border-neutral-300 transition-colors"
-                      >
-                        <div className="space-y-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-extrabold text-neutral-950 text-sm truncate">
-                              {s.productName}
-                            </span>
-                            <span className="text-[10px] font-mono font-bold bg-neutral-100 text-neutral-700 px-1.5 py-0.5 rounded border border-neutral-200">
-                              #{s.id}
-                            </span>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-800 border border-neutral-200">
-                              {s.channel}
-                            </span>
-                            {s.paymentMethod && (
-                              <span className="text-[10px] font-medium bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded">
-                                💳 {s.paymentMethod}
+                    {displayedSales.map((s) => {
+                      const currentStatus = s.deliveryStatus || "pending";
+                      return (
+                        <div
+                          key={s.id}
+                          className="p-4 rounded-xl border border-neutral-200/90 bg-white shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs hover:border-neutral-300 transition-colors"
+                        >
+                          <div className="space-y-1.5 min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-extrabold text-neutral-950 text-sm truncate">
+                                {s.productName}
                               </span>
+                              <span className="text-[10px] font-mono font-bold bg-neutral-100 text-neutral-700 px-1.5 py-0.5 rounded border border-neutral-200">
+                                #{s.id}
+                              </span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-800 border border-neutral-200">
+                                {s.channel}
+                              </span>
+                              {s.paymentMethod && (
+                                <span className="text-[10px] font-medium bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded">
+                                  {s.paymentMethod}
+                                </span>
+                              )}
+
+                              {/* Selector de Estado Logístico */}
+                              <select
+                                value={currentStatus}
+                                onChange={(e) =>
+                                  handleUpdateDeliveryStatus(
+                                    s.id,
+                                    e.target.value as "pending" | "shipped" | "delivered" | "cancelled"
+                                  )
+                                }
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-md border cursor-pointer outline-none transition-colors ${
+                                  currentStatus === "delivered"
+                                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                    : currentStatus === "shipped"
+                                    ? "bg-blue-50 text-blue-800 border-blue-200"
+                                    : currentStatus === "cancelled"
+                                    ? "bg-neutral-100 text-neutral-400 border-neutral-200 line-through"
+                                    : "bg-amber-50 text-amber-800 border-amber-200"
+                                }`}
+                                title="Cambiar estado de despacho"
+                              >
+                                <option value="pending">Pendiente</option>
+                                <option value="shipped">En Camino</option>
+                                <option value="delivered">Entregado</option>
+                                <option value="cancelled">Cancelado</option>
+                              </select>
+                            </div>
+
+                            <div className="text-[11px] text-neutral-500 flex items-center gap-2 flex-wrap">
+                              <span>
+                                Cliente: <strong className="text-neutral-800">{s.customerName}</strong>
+                              </span>
+                              <span>•</span>
+                              <span>
+                                Cant: <strong className="text-neutral-900 font-mono">{s.quantity} un.</strong>
+                              </span>
+                              <span>•</span>
+                              <span className="text-neutral-400 font-mono text-[10px]">
+                                {s.date}
+                              </span>
+                            </div>
+
+                            {/* Datos de Entrega (Teléfono y Dirección) */}
+                            {(s.customerPhone || s.customerAddress || s.trackingNumber) && (
+                              <div className="text-[11px] text-neutral-600 flex items-center gap-2 flex-wrap pt-0.5">
+                                {s.customerPhone && (
+                                  <span className="font-mono">Tel: {s.customerPhone}</span>
+                                )}
+                                {s.customerPhone && s.customerAddress && <span>•</span>}
+                                {s.customerAddress && (
+                                  <span className="truncate max-w-sm">Dir: {s.customerAddress}</span>
+                                )}
+                                {s.trackingNumber && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-blue-700 font-medium">Guía: {s.trackingNumber}</span>
+                                  </>
+                                )}
+                              </div>
+                            )}
+
+                            {s.notes && (
+                              <div className="text-[10px] text-neutral-500 bg-neutral-50 px-2 py-1 rounded border border-neutral-100 inline-block mt-0.5">
+                                Nota: {s.notes}
+                              </div>
                             )}
                           </div>
 
-                          <div className="text-[11px] text-neutral-500 flex items-center gap-2 flex-wrap">
-                            <span>
-                              Cliente: <strong className="text-neutral-800">{s.customerName}</strong>
-                            </span>
-                            <span>•</span>
-                            <span>
-                              Cant: <strong className="text-neutral-900 font-mono">{s.quantity} un.</strong>
-                            </span>
-                            <span>•</span>
-                            <span className="text-neutral-400 font-mono text-[10px]">
-                              {s.date}
-                            </span>
-                          </div>
+                          <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-neutral-100">
+                            <div className="text-right">
+                              <div className="font-black text-neutral-950 text-base font-mono">
+                                {STORE_SETTINGS.currencySymbol}{s.total.toFixed(2)}
+                              </div>
+                              <div className="text-[10px] text-neutral-400 font-semibold">
+                                {currentStatus === "delivered" ? "Cobrado" : "Por cobrar"}
+                              </div>
+                            </div>
 
-                          {s.notes && (
-                            <div className="text-[10px] text-neutral-500 bg-neutral-50 px-2 py-1 rounded border border-neutral-100 inline-block mt-0.5">
-                              💬 {s.notes}
-                            </div>
-                          )}
-                        </div>
+                            <div className="flex items-center gap-1.5">
+                              {/* Botón Imprimir Comprobante de Despacho */}
+                              <button
+                                type="button"
+                                onClick={() => setReceiptModalSale(s)}
+                                className="p-2 text-neutral-600 hover:text-black hover:bg-neutral-100 rounded-xl transition-colors cursor-pointer border border-neutral-200"
+                                title="Generar e imprimir Comprobante de Despacho / Nota de Venta"
+                              >
+                                <Printer className="w-3.5 h-3.5" />
+                              </button>
 
-                        <div className="flex items-center justify-between sm:justify-end gap-3 text-right shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-neutral-100">
-                          <div>
-                            <div className="font-black text-neutral-950 text-base font-mono">
-                              {STORE_SETTINGS.currencySymbol}{s.total.toFixed(2)}
-                            </div>
-                            <div className="text-[10px] text-emerald-600 font-semibold">
-                              Completado
+                              {/* Botón Plantillas WhatsApp */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setWhatsappTemplateSale(s);
+                                  setCustomMsgPhone(s.customerPhone || "");
+                                  setCopiedTemplateIndex(null);
+                                }}
+                                className="p-2 text-emerald-700 hover:text-emerald-950 hover:bg-emerald-50 rounded-xl transition-colors cursor-pointer border border-emerald-200"
+                                title="Mensajes de despacho para WhatsApp"
+                              >
+                                <MessageSquare className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* Botón Eliminar Registro */}
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteSale(s.id)}
+                                className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-red-200"
+                                title="Eliminar este registro de venta"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteSale(s.id)}
-                            className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-red-200"
-                            title="Eliminar este registro de venta"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -4177,7 +4394,7 @@ export default function AdminPage() {
                   {copiedQrLink ? (
                     <>
                       <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      <span className="text-emerald-700">¡Enlace Copiado al Portapapeles!</span>
+                      <span className="text-emerald-700">Enlace Copiado al Portapapeles</span>
                     </>
                   ) : (
                     <>
@@ -4201,6 +4418,333 @@ export default function AdminPage() {
                   <Download className="w-3.5 h-3.5" />
                   <span>Descargar Imagen QR (PNG)</span>
                 </a>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Comprobante de Despacho & Nota de Venta (Imprimible / PDF) */}
+        {receiptModalSale && (
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in">
+            <style>{`
+              @media print {
+                body * {
+                  visibility: hidden;
+                }
+                #printable-receipt-card,
+                #printable-receipt-card * {
+                  visibility: visible;
+                }
+                #printable-receipt-card {
+                  position: fixed !important;
+                  left: 0 !important;
+                  top: 0 !important;
+                  width: 100% !important;
+                  max-width: 100% !important;
+                  border: none !important;
+                  padding: 24px !important;
+                  margin: 0 !important;
+                  box-shadow: none !important;
+                  background: white !important;
+                }
+                .no-print {
+                  display: none !important;
+                }
+              }
+            `}</style>
+            <div
+              className="absolute inset-0 no-print"
+              onClick={() => setReceiptModalSale(null)}
+            />
+
+            <div
+              id="printable-receipt-card"
+              className="relative bg-white rounded-3xl border border-neutral-200 p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 text-neutral-900 z-10 animate-in zoom-in-95 duration-150"
+            >
+              {/* Encabezado del Comprobante */}
+              <div className="flex items-start justify-between border-b border-neutral-200 pb-4 gap-4">
+                <div>
+                  <div className="text-xl font-black tracking-tight text-neutral-950">
+                    PULSOTECH
+                  </div>
+                  <div className="text-[11px] text-neutral-500 font-medium">
+                    Accesorios Tecnológicos & Audio Original
+                  </div>
+                  <div className="text-[10px] text-neutral-400 mt-0.5">
+                    Lima, Perú • WhatsApp: +{STORE_SETTINGS.whatsappNumber}
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <div className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+                    Comprobante de Despacho
+                  </div>
+                  <div className="text-sm font-mono font-black text-neutral-950 mt-0.5">
+                    #{receiptModalSale.id}
+                  </div>
+                  <div className="text-[10px] text-neutral-500 font-mono">
+                    {receiptModalSale.date}
+                  </div>
+                </div>
+              </div>
+
+              {/* Datos del Cliente y Despacho */}
+              <div className="p-3.5 rounded-xl bg-neutral-50 border border-neutral-200 space-y-2 text-xs">
+                <div className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider">
+                  Datos de Entrega al Cliente
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-neutral-700">
+                  <div>
+                    <span className="text-neutral-400 block text-[10px]">Cliente:</span>
+                    <strong className="text-neutral-950 font-bold">{receiptModalSale.customerName}</strong>
+                  </div>
+                  <div>
+                    <span className="text-neutral-400 block text-[10px]">Teléfono:</span>
+                    <strong className="text-neutral-950 font-mono">
+                      {receiptModalSale.customerPhone || "Coordinado por WhatsApp"}
+                    </strong>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <span className="text-neutral-400 block text-[10px]">Dirección de Entrega:</span>
+                    <span className="text-neutral-900 font-medium">
+                      {receiptModalSale.customerAddress || "Entrega en mano / Coordinar por chat"}
+                    </span>
+                  </div>
+                  {receiptModalSale.trackingNumber && (
+                    <div className="sm:col-span-2">
+                      <span className="text-neutral-400 block text-[10px]">Guía / Motorizado Asignado:</span>
+                      <span className="text-blue-700 font-semibold font-mono">
+                        {receiptModalSale.trackingNumber}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Detalle del Pedido */}
+              <div className="border border-neutral-200 rounded-xl overflow-hidden">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-neutral-100 text-neutral-600 font-bold uppercase text-[10px] border-b border-neutral-200">
+                    <tr>
+                      <th className="py-2.5 px-3">Cant</th>
+                      <th className="py-2.5 px-3">Descripción</th>
+                      <th className="py-2.5 px-3 text-right">P. Unit</th>
+                      <th className="py-2.5 px-3 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100 text-neutral-800">
+                    <tr>
+                      <td className="py-2.5 px-3 font-mono font-bold text-center">
+                        {receiptModalSale.quantity}
+                      </td>
+                      <td className="py-2.5 px-3 font-medium">
+                        {receiptModalSale.productName}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-mono text-neutral-500">
+                        {STORE_SETTINGS.currencySymbol}
+                        {(receiptModalSale.total / receiptModalSale.quantity).toFixed(2)}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-mono font-bold text-neutral-950">
+                        {STORE_SETTINGS.currencySymbol}
+                        {receiptModalSale.total.toFixed(2)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Recuadro Destacado para el Motorizado / Repartidor */}
+              <div className="p-4 rounded-xl bg-neutral-900 text-white flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider">
+                    Total a Cobrar en Destino (Contra Entrega)
+                  </div>
+                  <div className="text-xs text-neutral-300 mt-0.5">
+                    Método: {receiptModalSale.paymentMethod || "Efectivo / Yape"}
+                  </div>
+                </div>
+                <div className="text-2xl font-black font-mono text-emerald-400">
+                  {STORE_SETTINGS.currencySymbol}{receiptModalSale.total.toFixed(2)}
+                </div>
+              </div>
+
+              {/* Notas de Despacho */}
+              {receiptModalSale.notes && (
+                <div className="text-[11px] text-neutral-600 bg-neutral-50 p-3 rounded-xl border border-neutral-200">
+                  <strong className="text-neutral-900 font-semibold block text-[10px] uppercase text-neutral-400 mb-0.5">
+                    Instrucciones Especiales:
+                  </strong>
+                  {receiptModalSale.notes}
+                </div>
+              )}
+
+              {/* Conformidad de Entrega */}
+              <div className="pt-4 border-t border-dashed border-neutral-300 grid grid-cols-2 gap-4 text-[10px] text-neutral-500">
+                <div className="border-t border-neutral-300 pt-1 text-center mt-6">
+                  Firma del Cliente al Recibir
+                </div>
+                <div className="border-t border-neutral-300 pt-1 text-center mt-6">
+                  DNI / Fecha de Recepción
+                </div>
+              </div>
+
+              <div className="text-[10px] text-neutral-400 text-center leading-relaxed">
+                Garantía oficial de 12 meses por defectos de fábrica. Conservar este comprobante para cualquier soporte técnico.
+              </div>
+
+              {/* Botones de Acción (no-print) */}
+              <div className="pt-2 flex items-center justify-between gap-2 no-print border-t border-neutral-100">
+                <button
+                  type="button"
+                  onClick={() => setReceiptModalSale(null)}
+                  className="px-4 py-2.5 rounded-xl border border-neutral-200 hover:bg-neutral-50 text-neutral-700 font-bold text-xs cursor-pointer"
+                >
+                  Cerrar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-5 py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-xs"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Imprimir / Guardar en PDF</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Plantillas Rápidas de WhatsApp para Despacho */}
+        {whatsappTemplateSale && (
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in">
+            <div
+              className="absolute inset-0"
+              onClick={() => setWhatsappTemplateSale(null)}
+            />
+
+            <div className="relative bg-white rounded-3xl border border-neutral-200 p-6 sm:p-8 max-w-xl w-full shadow-2xl space-y-5 text-neutral-900 z-10 animate-in zoom-in-95 duration-150">
+              <div className="flex items-start justify-between border-b border-neutral-200 pb-4">
+                <div>
+                  <h3 className="text-base font-extrabold text-neutral-950 flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5 text-emerald-600" />
+                    <span>Mensajes de Despacho para WhatsApp</span>
+                  </h3>
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    Notifica al cliente con 1 clic el estado de su orden #{whatsappTemplateSale.id}.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setWhatsappTemplateSale(null)}
+                  className="p-1.5 text-neutral-400 hover:text-black rounded-lg hover:bg-neutral-100 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Teléfono de Envío */}
+              <div>
+                <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                  Número de WhatsApp del Cliente:
+                </label>
+                <input
+                  type="text"
+                  value={customMsgPhone}
+                  onChange={(e) => setCustomMsgPhone(e.target.value)}
+                  placeholder="Ej: 987654321 (o +51 987 654 321)"
+                  className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white"
+                />
+              </div>
+
+              {/* Opciones de Plantillas */}
+              <div className="space-y-3.5 max-h-[460px] overflow-y-auto pr-1">
+                {[
+                  {
+                    title: "1. Notificación de Salida a Ruta (Motorizado / Contra Entrega)",
+                    desc: "Para avisar que el pedido ya fue despachado y el monto a preparar.",
+                    text: `Hola ${whatsappTemplateSale.customerName}, te saluda PulsoTech. Tu pedido #${whatsappTemplateSale.id} (${whatsappTemplateSale.quantity}x ${whatsappTemplateSale.productName}) ya salió en camino con nuestro motorizado hacia ${whatsappTemplateSale.customerAddress || "tu dirección"}. El monto exacto a pagar en contra entrega es de S/ ${whatsappTemplateSale.total.toFixed(2)}. Por favor mantén tu celular atento para coordinar la llegada del repartidor. ¡Muchas gracias!`,
+                  },
+                  {
+                    title: "2. Envío por Agencia a Provincia (Shalom / Olva Courier)",
+                    desc: "Para clientes fuera de Lima con número de seguimiento.",
+                    text: `Hola ${whatsappTemplateSale.customerName}, te saluda PulsoTech. Confirmamos que tu pedido #${whatsappTemplateSale.id} (${whatsappTemplateSale.productName}) ya fue depositado en agencia para el envío a provincia. ${whatsappTemplateSale.trackingNumber ? "Número de guía / seguimiento: " + whatsappTemplateSale.trackingNumber + "." : "Te estaremos adjuntando la fotografía del remito en breve."} Te mantendremos informado hasta que llegue a tus manos. ¡Muchas gracias por tu compra!`,
+                  },
+                  {
+                    title: "3. Confirmación de Entrega y Garantía Oficial de 12 Meses",
+                    desc: "Para cerrar la venta con social proof y activar su garantía.",
+                    text: `Hola ${whatsappTemplateSale.customerName}, te saluda PulsoTech. Confirmamos la entrega exitosa de tu pedido #${whatsappTemplateSale.id}. ¡Muchas gracias por confiar en nosotros! Recuerda que tus ${whatsappTemplateSale.productName} cuentan con garantía oficial de 12 meses ante cualquier defecto de fábrica. Si tienes alguna duda con la configuración o el uso, estamos atentos a responderte por este mismo canal. ¡Que disfrutes tu música!`,
+                  },
+                ].map((template, idx) => {
+                  const cleanPhone = customMsgPhone.replace(/\D/g, "");
+                  const waUrl = `https://wa.me/${cleanPhone.startsWith("51") ? cleanPhone : `51${cleanPhone}`}?text=${encodeURIComponent(
+                    template.text
+                  )}`;
+
+                  return (
+                    <div
+                      key={idx}
+                      className="p-3.5 rounded-2xl border border-neutral-200 bg-neutral-50/70 space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="font-bold text-xs text-neutral-900">
+                          {template.title}
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-neutral-500">
+                        {template.desc}
+                      </p>
+
+                      <div className="p-3 rounded-xl bg-white border border-neutral-200 text-xs text-neutral-700 font-sans leading-relaxed whitespace-pre-wrap select-all">
+                        {template.text}
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(template.text);
+                            setCopiedTemplateIndex(idx);
+                            setTimeout(() => setCopiedTemplateIndex(null), 2500);
+                          }}
+                          className="px-3 py-1.5 rounded-lg border border-neutral-200 hover:bg-neutral-100 text-neutral-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          {copiedTemplateIndex === idx ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              <span className="text-emerald-700 font-bold">Copiado</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5 text-neutral-500" />
+                              <span>Copiar Texto</span>
+                            </>
+                          )}
+                        </button>
+
+                        <a
+                          href={waUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Enviar por WhatsApp</span>
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="pt-2 border-t border-neutral-100 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setWhatsappTemplateSale(null)}
+                  className="px-4 py-2 rounded-xl border border-neutral-200 hover:bg-neutral-50 text-neutral-700 font-bold text-xs cursor-pointer"
+                >
+                  Cerrar
+                </button>
               </div>
             </div>
           </div>
