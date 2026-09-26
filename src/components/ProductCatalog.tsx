@@ -400,7 +400,7 @@ export default function ProductCatalog() {
               <button
                 type="button"
                 onClick={() => setSelectedCategory("todos")}
-                className={`h-8 px-3.5 rounded-full text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`h-8 px-3.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 ${
                   selectedCategory === "todos"
                     ? "bg-neutral-950 text-white shadow-xs"
                     : "bg-white text-neutral-700 border border-neutral-200/90 hover:bg-neutral-50 shadow-2xs"
@@ -408,7 +408,7 @@ export default function ProductCatalog() {
               >
                 <span>Todos</span>
                 <span
-                  className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
+                  className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md font-bold ${
                     selectedCategory === "todos"
                       ? "bg-white/20 text-white"
                       : "bg-neutral-100 text-neutral-600"
@@ -427,7 +427,7 @@ export default function ProductCatalog() {
                     key={catName}
                     type="button"
                     onClick={() => setSelectedCategory(catName.toLowerCase())}
-                    className={`h-8 px-3.5 rounded-full text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 ${
+                    className={`h-8 px-3.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 ${
                       isSelected
                         ? "bg-neutral-950 text-white shadow-xs"
                         : "bg-white text-neutral-700 border border-neutral-200/90 hover:bg-neutral-50 shadow-2xs"
@@ -435,7 +435,7 @@ export default function ProductCatalog() {
                   >
                     <span>{catName}</span>
                     <span
-                      className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
+                      className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md font-bold ${
                         isSelected
                           ? "bg-white/20 text-white"
                           : "bg-neutral-100 text-neutral-600"

@@ -1120,7 +1120,7 @@ export default function AdminPage() {
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Volver a la Tienda</span>
           </Link>
-          <span className="text-[10px] font-mono text-emerald-400/90 font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-emerald-950/40 border border-emerald-500/20">
+          <span className="text-[10px] font-mono text-neutral-400 font-bold uppercase tracking-widest px-2.5 py-1 rounded-md bg-neutral-900 border border-neutral-800">
             Seguridad PulsoTech
           </span>
         </div>
@@ -1323,10 +1323,10 @@ export default function AdminPage() {
             <button
               type="button"
               onClick={handleLogout}
-              className="px-2.5 sm:px-3 py-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-2xs"
+              className="px-2.5 sm:px-3 py-2 rounded-xl border border-neutral-200 hover:border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-xs"
               title="Cerrar sesión y bloquear panel"
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="w-3.5 h-3.5 text-neutral-400" />
               <span className="hidden md:inline">Cerrar Sesión</span>
             </button>
 
@@ -1584,7 +1584,7 @@ export default function AdminPage() {
                               </span>
                             )}
                             {hasDiscount && (
-                              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-red-50 text-red-600 border border-red-200">
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-neutral-900 text-white">
                                 -{Math.round(((item.originalPrice! - item.price) / item.originalPrice!) * 100)}%
                               </span>
                             )}
@@ -1597,10 +1597,10 @@ export default function AdminPage() {
                         {/* Control de Stock con botones táctiles grandes */}
                         <div className="flex items-center gap-1.5">
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
                               item.stockCount <= 5
-                                ? "bg-amber-50 text-amber-700 border border-amber-200"
-                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                ? "bg-amber-100 text-amber-900"
+                                : "bg-neutral-100 text-neutral-800"
                             }`}
                           >
                             {item.stockCount} uds
@@ -1739,8 +1739,8 @@ export default function AdminPage() {
 
                           <td className="py-3.5 px-3">
                             {hasDiscount ? (
-                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-50 text-red-600 border border-red-200">
-                                -{Math.round(((item.originalPrice! - item.price) / item.originalPrice!) * 100)}% OFF
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-neutral-900 text-white">
+                                -{Math.round(((item.originalPrice! - item.price) / item.originalPrice!) * 100)}%
                               </span>
                             ) : (
                               <span className="text-[11px] text-neutral-400">Regular</span>
@@ -1750,10 +1750,10 @@ export default function AdminPage() {
                           <td className="py-3.5 px-3">
                             <div className="flex items-center gap-2">
                               <span
-                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold ${
                                   item.stockCount <= 5
-                                    ? "bg-amber-50 text-amber-700 border border-amber-200"
-                                    : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                    ? "bg-amber-100 text-amber-900"
+                                    : "bg-neutral-100 text-neutral-800"
                                 }`}
                               >
                                 {item.stockCount} uds
@@ -2845,8 +2845,8 @@ export default function AdminPage() {
                         <div className="flex items-center gap-2.5">
                           <span className="w-2 h-2 rounded-full bg-blue-600" />
                           <span className="text-xs font-black text-neutral-900">{b}</span>
-                          <span className="text-[10px] font-semibold text-neutral-400 bg-white border border-neutral-200 px-2 py-0.5 rounded-full">
-                            {count} {count === 1 ? "producto" : "productos"}
+                          <span className="text-[11px] font-medium text-neutral-400">
+                            ({count})
                           </span>
                         </div>
 
@@ -2916,8 +2916,8 @@ export default function AdminPage() {
                         <div className="flex items-center gap-2.5">
                           <span className="w-2 h-2 rounded-full bg-emerald-600" />
                           <span className="text-xs font-black text-neutral-900">{c}</span>
-                          <span className="text-[10px] font-semibold text-neutral-400 bg-white border border-neutral-200 px-2 py-0.5 rounded-full">
-                            {count} {count === 1 ? "producto" : "productos"}
+                          <span className="text-[11px] font-medium text-neutral-400">
+                            ({count})
                           </span>
                         </div>
 
@@ -3066,9 +3066,9 @@ export default function AdminPage() {
                               {coupon.code}
                             </span>
                             <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
                                 coupon.isActive
-                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  ? "bg-neutral-950 text-white"
                                   : "bg-neutral-100 text-neutral-500 border border-neutral-200"
                               }`}
                             >
@@ -3568,7 +3568,7 @@ export default function AdminPage() {
                       <PlusCircle className="w-4 h-4 text-emerald-600" />
                       <span>Registrar Venta Manual</span>
                     </h3>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-600 border border-neutral-200">
                       Descuenta Stock
                     </span>
                   </div>
@@ -3841,15 +3841,7 @@ export default function AdminPage() {
                             <span className="text-[10px] font-mono font-bold bg-neutral-100 text-neutral-700 px-1.5 py-0.5 rounded border border-neutral-200">
                               #{s.id}
                             </span>
-                            <span
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                s.channel === "WhatsApp"
-                                  ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                                  : s.channel === "Presencial"
-                                  ? "bg-blue-50 text-blue-800 border border-blue-200"
-                                  : "bg-purple-50 text-purple-800 border border-purple-200"
-                              }`}
-                            >
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-800 border border-neutral-200">
                               {s.channel}
                             </span>
                             {s.paymentMethod && (
@@ -3973,8 +3965,8 @@ export default function AdminPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
-                  <ShieldCheck className="w-3.5 h-3.5" />
+                <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   <span>Protección Activa</span>
                 </div>
               </div>
@@ -4044,10 +4036,10 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="px-4 py-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl border border-neutral-200 hover:border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900 font-semibold text-xs flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Bloquear y Salir Ahora</span>
+                  <LogOut className="w-3.5 h-3.5 text-neutral-400" />
+                  <span>Bloquear y Salir</span>
                 </button>
 
                 <button

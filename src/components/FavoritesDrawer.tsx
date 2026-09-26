@@ -45,13 +45,12 @@ export default function FavoritesDrawer() {
           <div>
             <div className="flex items-center justify-between pb-3.5 sm:pb-4 border-b border-neutral-200">
               <div className="flex items-center gap-2">
-                <Heart className="w-5 h-5 text-red-500 fill-red-500" />
+                <Heart className="w-5 h-5 text-neutral-900" />
                 <h2 className="text-base font-bold tracking-tight text-neutral-950">
                   Mis Favoritos
                 </h2>
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-50 text-red-600 font-semibold border border-red-100">
-                  {favoriteProducts.length}{" "}
-                  {favoriteProducts.length === 1 ? "producto" : "productos"}
+                <span className="text-xs font-semibold text-neutral-400">
+                  ({favoriteProducts.length})
                 </span>
               </div>
               <button
@@ -68,8 +67,8 @@ export default function FavoritesDrawer() {
           <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1">
             {favoriteProducts.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-3">
-                <div className="w-14 h-14 rounded-full bg-red-50 text-red-500 flex items-center justify-center">
-                  <Heart className="w-7 h-7" />
+                <div className="w-12 h-12 rounded-2xl bg-neutral-100 text-neutral-400 flex items-center justify-center">
+                  <Heart className="w-6 h-6" />
                 </div>
                 <h3 className="text-sm font-bold text-neutral-900">
                   Aún no tienes favoritos guardados

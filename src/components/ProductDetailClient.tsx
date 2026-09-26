@@ -282,12 +282,12 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
 
               {/* Image counter or Video indicator */}
               {isVideoActive ? (
-                <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 px-2.5 py-1 rounded-full bg-red-600 text-white text-[10px] font-bold shadow-sm flex items-center gap-1">
+                <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 px-2.5 py-1 rounded-lg bg-red-600 text-white text-[10px] font-bold shadow-sm flex items-center gap-1">
                   <Play className="w-3 h-3 fill-white" />
                   <span>Video Oficial</span>
                 </div>
               ) : galleryImages.length > 1 ? (
-                <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 px-2.5 py-1 rounded-full bg-neutral-900/70 text-white text-[10px] font-semibold backdrop-blur-xs">
+                <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 px-2.5 py-1 rounded-lg bg-neutral-900/80 text-white text-[10px] font-semibold backdrop-blur-xs">
                   {selectedImageIndex + 1} / {galleryImages.length}
                 </div>
               ) : null}
