@@ -56,6 +56,9 @@ import {
   Send,
   Menu,
   Truck,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
 } from "lucide-react";
 
 export type { SaleRecord };
@@ -171,9 +174,11 @@ export default function AdminPage() {
     updateStock,
     brands,
     addBrand,
+    updateBrand,
     deleteBrand,
     categories,
     addCategory,
+    updateCategory,
     deleteCategory,
   } = useProducts();
 
@@ -320,6 +325,18 @@ export default function AdminPage() {
   // Estados para gestión de filtros (marcas y categorías)
   const [newBrandInput, setNewBrandInput] = useState("");
   const [newCategoryInput, setNewCategoryInput] = useState("");
+  const [filtersViewTab, setFiltersViewTab] = useState<"all" | "brands" | "categories">("all");
+  const [filterSearchQuery, setFilterSearchQuery] = useState("");
+  const [filterStatusFilter, setFilterStatusFilter] = useState<"all" | "with-products" | "empty">("all");
+  const [editingBrandName, setEditingBrandName] = useState<{ original: string; current: string } | null>(null);
+  const [editingCategoryName, setEditingCategoryName] = useState<{ original: string; current: string } | null>(null);
+  const [expandedBrands, setExpandedBrands] = useState<string[]>([]);
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const [deleteConfirmItem, setDeleteConfirmItem] = useState<{
+    type: "brand" | "category";
+    name: string;
+    productCount: number;
+  } | null>(null);
 
   // Registro de ventas en localStorage (persistente y con soporte para analíticas)
   const SALES_STORAGE_KEY = "pulsotech_sales_records";
@@ -983,19 +1000,90 @@ export default function AdminPage() {
   // Handlers para Marcas y Categorías
   const handleAddBrandSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newBrandInput.trim()) return;
-    addBrand(newBrandInput.trim());
-    setSuccessNotice(`¡Marca "${newBrandInput.trim()}" agregada exitosamente!`);
+    const val = newBrandInput.trim();
+    if (!val) return;
+    if (brands.some((b) => b.toLowerCase() === val.toLowerCase())) {
+      alert("Ya existe una marca con este nombre.");
+      return;
+    }
+    addBrand(val);
+    setSuccessNotice(`Marca "${val}" agregada exitosamente.`);
     setNewBrandInput("");
     setTimeout(() => setSuccessNotice(""), 3500);
   };
 
   const handleAddCategorySubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCategoryInput.trim()) return;
-    addCategory(newCategoryInput.trim());
-    setSuccessNotice(`¡Categoría "${newCategoryInput.trim()}" agregada exitosamente!`);
+    const val = newCategoryInput.trim();
+    if (!val) return;
+    if (categories.some((c) => c.toLowerCase() === val.toLowerCase())) {
+      alert("Ya existe una categoría con este nombre.");
+      return;
+    }
+    addCategory(val);
+    setSuccessNotice(`Categoría "${val}" agregada exitosamente.`);
     setNewCategoryInput("");
+    setTimeout(() => setSuccessNotice(""), 3500);
+  };
+
+  const handleSaveBrandRename = () => {
+    if (!editingBrandName) return;
+    const { original, current } = editingBrandName;
+    const trimmed = current.trim();
+    if (!trimmed || trimmed.toLowerCase() === original.toLowerCase()) {
+      setEditingBrandName(null);
+      return;
+    }
+    if (brands.some((b) => b.toLowerCase() === trimmed.toLowerCase() && b.toLowerCase() !== original.toLowerCase())) {
+      alert("Ya existe otra marca con este nombre.");
+      return;
+    }
+    updateBrand(original, trimmed);
+    setSuccessNotice(`Marca actualizada a "${trimmed}".`);
+    setEditingBrandName(null);
+    setTimeout(() => setSuccessNotice(""), 3500);
+  };
+
+  const handleSaveCategoryRename = () => {
+    if (!editingCategoryName) return;
+    const { original, current } = editingCategoryName;
+    const trimmed = current.trim();
+    if (!trimmed || trimmed.toLowerCase() === original.toLowerCase()) {
+      setEditingCategoryName(null);
+      return;
+    }
+    if (categories.some((c) => c.toLowerCase() === trimmed.toLowerCase() && c.toLowerCase() !== original.toLowerCase())) {
+      alert("Ya existe otra categoría con este nombre.");
+      return;
+    }
+    updateCategory(original, trimmed);
+    setSuccessNotice(`Categoría actualizada a "${trimmed}".`);
+    setEditingCategoryName(null);
+    setTimeout(() => setSuccessNotice(""), 3500);
+  };
+
+  const toggleExpandBrand = (b: string) => {
+    setExpandedBrands((prev) =>
+      prev.includes(b) ? prev.filter((item) => item !== b) : [...prev, b]
+    );
+  };
+
+  const toggleExpandCategory = (c: string) => {
+    setExpandedCategories((prev) =>
+      prev.includes(c) ? prev.filter((item) => item !== c) : [...prev, c]
+    );
+  };
+
+  const executeDeleteItem = () => {
+    if (!deleteConfirmItem) return;
+    if (deleteConfirmItem.type === "brand") {
+      deleteBrand(deleteConfirmItem.name);
+      setSuccessNotice(`Marca "${deleteConfirmItem.name}" eliminada.`);
+    } else {
+      deleteCategory(deleteConfirmItem.name);
+      setSuccessNotice(`Categoría "${deleteConfirmItem.name}" eliminada.`);
+    }
+    setDeleteConfirmItem(null);
     setTimeout(() => setSuccessNotice(""), 3500);
   };
 
@@ -3486,160 +3574,805 @@ export default function AdminPage() {
         )}
 
         {/* ================= PESTAÑA: GESTIÓN DE MARCAS & FILTROS ================= */}
-        {activeTab === "filters" && (
-          <div className="space-y-6">
-            <div className="border-b border-neutral-200 pb-4">
-              <h2 className="text-xl font-black text-neutral-950 flex items-center gap-2">
-                <Filter className="w-5 h-5 text-blue-600" />
-                <span>Gestión de Marcas &amp; Filtros de Categorías</span>
-              </h2>
-              <p className="text-xs text-neutral-500 mt-1">
-                Agrega o elimina marcas y categorías disponibles en la tienda. Los cambios se actualizan automáticamente en el catálogo para los clientes y en el formulario de nuevos productos.
-              </p>
-            </div>
+        {activeTab === "filters" && (() => {
+          // Métricas de Clasificación
+          const totalProducts = products.length;
+          const brandsWithProducts = brands.filter((b) =>
+            products.some((p) => p.brand?.toLowerCase() === b.toLowerCase())
+          ).length;
+          const categoriesWithProducts = categories.filter((c) =>
+            products.some((p) => p.category?.toLowerCase() === c.toLowerCase())
+          ).length;
+          const unusedBrandsCount = brands.length - brandsWithProducts;
+          const unusedCategoriesCount = categories.length - categoriesWithProducts;
+          const totalAssignedProducts = products.filter((p) => p.brand && p.category).length;
+          const coveragePercent = totalProducts > 0 ? Math.round((totalAssignedProducts / totalProducts) * 100) : 100;
+          const totalStockAll = products.reduce((acc, p) => acc + (p.stockCount || 0), 0);
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Columna 1: Marcas */}
-              <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-5">
+          // Filtrado de Marcas
+          const query = filterSearchQuery.toLowerCase().trim();
+          const filteredBrands = brands.filter((b) => {
+            const matchesSearch = !query || b.toLowerCase().includes(query);
+            const count = products.filter((p) => p.brand?.toLowerCase() === b.toLowerCase()).length;
+            if (!matchesSearch) return false;
+            if (filterStatusFilter === "with-products") return count > 0;
+            if (filterStatusFilter === "empty") return count === 0;
+            return true;
+          });
+
+          // Filtrado de Categorías
+          const filteredCategories = categories.filter((c) => {
+            const matchesSearch = !query || c.toLowerCase().includes(query);
+            const count = products.filter(
+              (p) =>
+                p.category?.toLowerCase() === c.toLowerCase() ||
+                p.category?.toLowerCase().includes(c.toLowerCase()) ||
+                c.toLowerCase().includes((p.category || "").toLowerCase())
+            ).length;
+            if (!matchesSearch) return false;
+            if (filterStatusFilter === "with-products") return count > 0;
+            if (filterStatusFilter === "empty") return count === 0;
+            return true;
+          });
+
+          return (
+            <div className="space-y-5">
+              {/* Header Principal del Módulo */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200/90 shadow-2xs">
                 <div>
-                  <h3 className="text-sm font-extrabold text-neutral-950 flex items-center gap-2">
-                    <Tag className="w-4 h-4 text-neutral-700" />
-                    <span>Marcas Registradas ({brands.length})</span>
-                  </h3>
-                  <p className="text-xs text-neutral-500 mt-0.5">
-                    Marcas que aparecerán en el filtro lateral y tarjetas del catálogo.
-                  </p>
+                  <div className="flex items-center gap-2 text-xs font-mono text-neutral-400 font-bold uppercase tracking-wider mb-0.5">
+                    <span>Catálogo</span>
+                    <span>/</span>
+                    <span className="text-neutral-700">Taxonomía</span>
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-extrabold text-neutral-950 flex items-center gap-2">
+                    <Layers className="w-5 h-5 text-neutral-900" />
+                    <span>Marcas y Categorías</span>
+                  </h2>
                 </div>
 
-                {/* Formulario Agregar Marca */}
-                <form onSubmit={handleAddBrandSubmit} className="flex gap-2">
-                  <input
-                    type="text"
-                    required
-                    placeholder="Nombre de la marca..."
-                    value={newBrandInput}
-                    onChange={(e) => setNewBrandInput(e.target.value)}
-                    className="flex-1 px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 font-semibold"
-                  />
-                  <button
-                    type="submit"
-                    className="px-4 py-2 rounded-xl bg-neutral-950 text-white font-bold text-xs hover:bg-neutral-800 transition-colors flex items-center gap-1.5 shrink-0 shadow-xs cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Agregar</span>
-                  </button>
-                </form>
-
-                {/* Lista de Marcas */}
-                <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
-                  {brands.map((b) => {
-                    const count = products.filter(
-                      (p) => p.brand?.toLowerCase() === b.toLowerCase()
-                    ).length;
-                    return (
-                      <div
-                        key={b}
-                        className="flex items-center justify-between p-3 rounded-xl border border-neutral-200 bg-neutral-50/60 hover:bg-neutral-100/60 transition-colors"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <span className="w-2 h-2 rounded-full bg-blue-600" />
-                          <span className="text-xs font-black text-neutral-900">{b}</span>
-                          <span className="text-[11px] font-medium text-neutral-400">
-                            ({count})
-                          </span>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (confirm(`¿Estás seguro de eliminar la marca "${b}"?`)) {
-                              deleteBrand(b);
-                            }
-                          }}
-                          className="text-neutral-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                          title={`Eliminar marca ${b}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    );
-                  })}
+                {/* Segmented Control de Subvistas */}
+                <div className="flex items-center gap-1.5 bg-neutral-100 p-1 rounded-xl border border-neutral-200/80 shrink-0">
+                  {[
+                    { id: "all", label: "Vista General" },
+                    { id: "brands", label: `Marcas (${brands.length})` },
+                    { id: "categories", label: `Categorías (${categories.length})` },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setFiltersViewTab(tab.id as any)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        filtersViewTab === tab.id
+                          ? "bg-white text-neutral-950 shadow-xs"
+                          : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/50"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Columna 2: Categorías */}
-              <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-5">
-                <div>
-                  <h3 className="text-sm font-extrabold text-neutral-950 flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-neutral-700" />
-                    <span>Categorías del Catálogo ({categories.length})</span>
-                  </h3>
-                  <p className="text-xs text-neutral-500 mt-0.5">
-                    Categorías para organizar y filtrar las líneas de productos.
-                  </p>
+              {/* 4 Tarjetas KPI Ejecutivas */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                {/* KPI 1: Marcas */}
+                <div className="bg-white p-4 rounded-2xl border border-neutral-200/90 shadow-2xs flex flex-col justify-between">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Marcas</span>
+                    <div className="w-8 h-8 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-700 shrink-0">
+                      <Tag className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black text-neutral-950 font-mono tracking-tight">{brands.length}</div>
+                    <div className="text-[11px] text-neutral-500 mt-0.5">
+                      {brandsWithProducts} con productos ({unusedBrandsCount} vacías)
+                    </div>
+                  </div>
                 </div>
 
-                {/* Formulario Agregar Categoría */}
-                <form onSubmit={handleAddCategorySubmit} className="flex gap-2">
-                  <input
-                    type="text"
-                    required
-                    placeholder="Nombre de la categoría..."
-                    value={newCategoryInput}
-                    onChange={(e) => setNewCategoryInput(e.target.value)}
-                    className="flex-1 px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 font-semibold"
-                  />
-                  <button
-                    type="submit"
-                    className="px-4 py-2 rounded-xl bg-neutral-950 text-white font-bold text-xs hover:bg-neutral-800 transition-colors flex items-center gap-1.5 shrink-0 shadow-xs cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Agregar</span>
-                  </button>
-                </form>
+                {/* KPI 2: Categorías */}
+                <div className="bg-white p-4 rounded-2xl border border-neutral-200/90 shadow-2xs flex flex-col justify-between">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Categorías</span>
+                    <div className="w-8 h-8 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-700 shrink-0">
+                      <Layers className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black text-neutral-950 font-mono tracking-tight">{categories.length}</div>
+                    <div className="text-[11px] text-neutral-500 mt-0.5">
+                      {categoriesWithProducts} con productos ({unusedCategoriesCount} vacías)
+                    </div>
+                  </div>
+                </div>
 
-                {/* Lista de Categorías */}
-                <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
-                  {categories.map((c) => {
-                    const count = products.filter(
-                      (p) =>
-                        p.category?.toLowerCase() === c.toLowerCase() ||
-                        p.category?.toLowerCase().includes(c.toLowerCase()) ||
-                        c.toLowerCase().includes((p.category || "").toLowerCase())
-                    ).length;
-                    return (
-                      <div
-                        key={c}
-                        className="flex items-center justify-between p-3 rounded-xl border border-neutral-200 bg-neutral-50/60 hover:bg-neutral-100/60 transition-colors"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <span className="w-2 h-2 rounded-full bg-emerald-600" />
-                          <span className="text-xs font-black text-neutral-900">{c}</span>
-                          <span className="text-[11px] font-medium text-neutral-400">
-                            ({count})
-                          </span>
-                        </div>
+                {/* KPI 3: Cobertura */}
+                <div className="bg-white p-4 rounded-2xl border border-neutral-200/90 shadow-2xs flex flex-col justify-between">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Cobertura</span>
+                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+                      <CheckCircle className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black text-neutral-950 font-mono tracking-tight">{coveragePercent}%</div>
+                    <div className="text-[11px] text-neutral-500 mt-0.5">
+                      {totalAssignedProducts} de {totalProducts} asignados
+                    </div>
+                  </div>
+                </div>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (confirm(`¿Estás seguro de eliminar la categoría "${c}"?`)) {
-                              deleteCategory(c);
-                            }
-                          }}
-                          className="text-neutral-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                          title={`Eliminar categoría ${c}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    );
-                  })}
+                {/* KPI 4: Stock Total */}
+                <div className="bg-white p-4 rounded-2xl border border-neutral-200/90 shadow-2xs flex flex-col justify-between">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Stock Total</span>
+                    <div className="w-8 h-8 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-700 shrink-0">
+                      <Package className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black text-neutral-950 font-mono tracking-tight">{totalStockAll}</div>
+                    <div className="text-[11px] text-neutral-500 mt-0.5">
+                      Unidades físicas en catálogo
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              {/* Barra de Búsqueda y Filtro Rápido */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-neutral-200/90 shadow-2xs">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Buscar marca o categoría..."
+                    value={filterSearchQuery}
+                    onChange={(e) => setFilterSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-8 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 font-semibold"
+                  />
+                  {filterSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setFilterSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-900 p-0.5 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider pl-1">Filtrar:</span>
+                  {[
+                    { id: "all", label: "Todos" },
+                    { id: "with-products", label: "Con productos" },
+                    { id: "empty", label: "Sin productos" },
+                  ].map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setFilterStatusFilter(f.id as any)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        filterStatusFilter === f.id
+                          ? "bg-neutral-950 text-white shadow-2xs"
+                          : "bg-neutral-50 hover:bg-neutral-100 text-neutral-600 border border-neutral-200/80"
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Contenedor de Paneles (Side-by-side o pestañas individuales) */}
+              <div className={`grid gap-5 items-start ${
+                filtersViewTab === "all" ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"
+              }`}>
+                {/* ================= PANEL DE MARCAS ================= */}
+                {(filtersViewTab === "all" || filtersViewTab === "brands") && (
+                  <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-4">
+                    <div className="flex items-center justify-between gap-2 pb-2 border-b border-neutral-100">
+                      <div className="flex items-center gap-2">
+                        <Tag className="w-4 h-4 text-neutral-900" />
+                        <h3 className="text-sm font-extrabold text-neutral-950">Marcas Registradas</h3>
+                        <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-700">
+                          {brands.length}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Formulario Agregar Marca */}
+                    <form onSubmit={handleAddBrandSubmit} className="flex gap-2">
+                      <input
+                        type="text"
+                        required
+                        placeholder="Nueva marca..."
+                        value={newBrandInput}
+                        onChange={(e) => setNewBrandInput(e.target.value)}
+                        className="flex-1 px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 font-semibold"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!newBrandInput.trim()}
+                        className="px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shrink-0 shadow-xs cursor-pointer disabled:cursor-not-allowed"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Agregar</span>
+                      </button>
+                    </form>
+
+                    {/* Lista de Marcas */}
+                    <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
+                      {filteredBrands.map((b) => {
+                        const brandProducts = products.filter(
+                          (p) => p.brand?.toLowerCase() === b.toLowerCase()
+                        );
+                        const count = brandProducts.length;
+                        const stockSum = brandProducts.reduce((sum, p) => sum + (p.stockCount || 0), 0);
+                        const isExpanded = expandedBrands.includes(b);
+                        const isEditing = editingBrandName?.original === b;
+
+                        return (
+                          <div
+                            key={b}
+                            className="p-3 rounded-xl border border-neutral-200/90 bg-neutral-50/50 hover:bg-white transition-all space-y-2 shadow-2xs"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              {/* Izquierda: Nombre o Input de Edición */}
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                <span
+                                  className={`w-2 h-2 rounded-full shrink-0 ${
+                                    count > 0 ? "bg-emerald-500" : "bg-neutral-300"
+                                  }`}
+                                />
+
+                                {isEditing ? (
+                                  <div className="flex items-center gap-1.5 flex-1 max-w-sm">
+                                    <input
+                                      type="text"
+                                      autoFocus
+                                      value={editingBrandName.current}
+                                      onChange={(e) =>
+                                        setEditingBrandName({
+                                          ...editingBrandName,
+                                          current: e.target.value,
+                                        })
+                                      }
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter") handleSaveBrandRename();
+                                        if (e.key === "Escape") setEditingBrandName(null);
+                                      }}
+                                      className="px-2.5 py-1 rounded-lg bg-white border border-neutral-900 text-xs font-extrabold text-neutral-900 focus:outline-none w-full"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={handleSaveBrandRename}
+                                      className="p-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+                                      title="Guardar nombre"
+                                    >
+                                      <Check className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingBrandName(null)}
+                                      className="p-1 rounded-lg bg-neutral-200 hover:bg-neutral-300 text-neutral-700 cursor-pointer"
+                                      title="Cancelar"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                                    <span className="text-xs font-extrabold text-neutral-900 truncate">
+                                      {b}
+                                    </span>
+                                    <span
+                                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                                        count > 0
+                                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                          : "bg-neutral-100 text-neutral-500 border border-neutral-200"
+                                      }`}
+                                    >
+                                      {count} {count === 1 ? "producto" : "productos"}
+                                    </span>
+                                    {count > 0 && (
+                                      <span className="text-[10px] font-mono text-neutral-400">
+                                        {stockSum} unids.
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Derecha: Botones de Acción */}
+                              {!isEditing && (
+                                <div className="flex items-center gap-1 shrink-0">
+                                  {count > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleExpandBrand(b)}
+                                      className={`px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer ${
+                                        isExpanded
+                                          ? "bg-neutral-900 text-white"
+                                          : "bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200"
+                                      }`}
+                                      title={isExpanded ? "Ocultar productos" : "Ver productos asociados"}
+                                    >
+                                      <span>Ver</span>
+                                      {isExpanded ? (
+                                        <ChevronUp className="w-3 h-3" />
+                                      ) : (
+                                        <ChevronDown className="w-3 h-3" />
+                                      )}
+                                    </button>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingBrandName({ original: b, current: b })}
+                                    className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-950 hover:bg-white border border-transparent hover:border-neutral-200 transition-colors cursor-pointer"
+                                    title="Renombrar marca"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setInventoryBrandFilter(b);
+                                      setInventoryCategoryFilter("all");
+                                      setActiveTab("inventory");
+                                    }}
+                                    className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-950 hover:bg-white border border-transparent hover:border-neutral-200 transition-colors cursor-pointer"
+                                    title="Filtrar en Inventario"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (count > 0) {
+                                        setDeleteConfirmItem({
+                                          type: "brand",
+                                          name: b,
+                                          productCount: count,
+                                        });
+                                      } else {
+                                        deleteBrand(b);
+                                        setSuccessNotice(`Marca "${b}" eliminada.`);
+                                        setTimeout(() => setSuccessNotice(""), 3500);
+                                      }
+                                    }}
+                                    className="text-neutral-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                                    title="Eliminar marca"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Desplegable de Productos Asociados */}
+                            {isExpanded && brandProducts.length > 0 && (
+                              <div className="pt-2 border-t border-neutral-200/70 space-y-2 animate-in fade-in duration-150">
+                                <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider flex items-center justify-between">
+                                  <span>Productos vinculados ({brandProducts.length})</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setInventoryBrandFilter(b);
+                                      setInventoryCategoryFilter("all");
+                                      setActiveTab("inventory");
+                                    }}
+                                    className="text-[10px] text-neutral-900 font-extrabold hover:underline flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <span>Ver en Inventario</span>
+                                    <ArrowRight className="w-3 h-3" />
+                                  </button>
+                                </div>
+
+                                <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                                  {brandProducts.map((p) => (
+                                    <div
+                                      key={p.id}
+                                      className="flex items-center justify-between p-2 rounded-xl bg-white border border-neutral-200/80 shadow-2xs hover:border-neutral-300 transition-colors"
+                                    >
+                                      <div className="flex items-center gap-2.5 min-w-0">
+                                        <div className="w-8 h-8 rounded-lg bg-neutral-100 border border-neutral-200/80 p-0.5 shrink-0 overflow-hidden flex items-center justify-center">
+                                          {(p.images?.[0] || p.colors?.[0]?.image) ? (
+                                            <img
+                                              src={p.images?.[0] || p.colors?.[0]?.image}
+                                              alt={p.name}
+                                              className="w-full h-full object-contain"
+                                            />
+                                          ) : (
+                                            <Package className="w-3.5 h-3.5 text-neutral-400" />
+                                          )}
+                                        </div>
+                                        <div className="min-w-0">
+                                          <div className="text-xs font-bold text-neutral-950 truncate">
+                                            {p.name}
+                                          </div>
+                                          <div className="text-[10px] font-mono text-neutral-400">
+                                            #{p.id} · {p.category}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-center gap-2 shrink-0">
+                                        <span className="font-mono text-xs font-extrabold text-neutral-900">
+                                          {STORE_SETTINGS.currencySymbol}{p.price.toFixed(2)}
+                                        </span>
+                                        <span
+                                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                                            p.stockCount > 5
+                                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                              : p.stockCount > 0
+                                              ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                              : "bg-rose-50 text-rose-700 border border-rose-200"
+                                          }`}
+                                        >
+                                          {p.stockCount} unids.
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleEditClick(p)}
+                                          className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-600 hover:text-neutral-950 transition-colors cursor-pointer"
+                                          title="Editar este producto"
+                                        >
+                                          <Edit3 className="w-3 h-3" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {filteredBrands.length === 0 && (
+                        <div className="text-center py-8 text-neutral-400 text-xs">
+                          No se encontraron marcas con el filtro actual.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ================= PANEL DE CATEGORÍAS ================= */}
+                {(filtersViewTab === "all" || filtersViewTab === "categories") && (
+                  <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-4">
+                    <div className="flex items-center justify-between gap-2 pb-2 border-b border-neutral-100">
+                      <div className="flex items-center gap-2">
+                        <Layers className="w-4 h-4 text-neutral-900" />
+                        <h3 className="text-sm font-extrabold text-neutral-950">Categorías del Catálogo</h3>
+                        <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-700">
+                          {categories.length}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Formulario Agregar Categoría */}
+                    <form onSubmit={handleAddCategorySubmit} className="flex gap-2">
+                      <input
+                        type="text"
+                        required
+                        placeholder="Nueva categoría..."
+                        value={newCategoryInput}
+                        onChange={(e) => setNewCategoryInput(e.target.value)}
+                        className="flex-1 px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 font-semibold"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!newCategoryInput.trim()}
+                        className="px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shrink-0 shadow-xs cursor-pointer disabled:cursor-not-allowed"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Agregar</span>
+                      </button>
+                    </form>
+
+                    {/* Lista de Categorías */}
+                    <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
+                      {filteredCategories.map((c) => {
+                        const categoryProducts = products.filter(
+                          (p) =>
+                            p.category?.toLowerCase() === c.toLowerCase() ||
+                            p.category?.toLowerCase().includes(c.toLowerCase()) ||
+                            c.toLowerCase().includes((p.category || "").toLowerCase())
+                        );
+                        const count = categoryProducts.length;
+                        const stockSum = categoryProducts.reduce((sum, p) => sum + (p.stockCount || 0), 0);
+                        const isExpanded = expandedCategories.includes(c);
+                        const isEditing = editingCategoryName?.original === c;
+
+                        return (
+                          <div
+                            key={c}
+                            className="p-3 rounded-xl border border-neutral-200/90 bg-neutral-50/50 hover:bg-white transition-all space-y-2 shadow-2xs"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              {/* Izquierda: Nombre o Input de Edición */}
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                <span
+                                  className={`w-2 h-2 rounded-full shrink-0 ${
+                                    count > 0 ? "bg-emerald-500" : "bg-neutral-300"
+                                  }`}
+                                />
+
+                                {isEditing ? (
+                                  <div className="flex items-center gap-1.5 flex-1 max-w-sm">
+                                    <input
+                                      type="text"
+                                      autoFocus
+                                      value={editingCategoryName.current}
+                                      onChange={(e) =>
+                                        setEditingCategoryName({
+                                          ...editingCategoryName,
+                                          current: e.target.value,
+                                        })
+                                      }
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter") handleSaveCategoryRename();
+                                        if (e.key === "Escape") setEditingCategoryName(null);
+                                      }}
+                                      className="px-2.5 py-1 rounded-lg bg-white border border-neutral-900 text-xs font-extrabold text-neutral-900 focus:outline-none w-full"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={handleSaveCategoryRename}
+                                      className="p-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+                                      title="Guardar nombre"
+                                    >
+                                      <Check className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingCategoryName(null)}
+                                      className="p-1 rounded-lg bg-neutral-200 hover:bg-neutral-300 text-neutral-700 cursor-pointer"
+                                      title="Cancelar"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                                    <span className="text-xs font-extrabold text-neutral-900 truncate">
+                                      {c}
+                                    </span>
+                                    <span
+                                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                                        count > 0
+                                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                          : "bg-neutral-100 text-neutral-500 border border-neutral-200"
+                                      }`}
+                                    >
+                                      {count} {count === 1 ? "producto" : "productos"}
+                                    </span>
+                                    {count > 0 && (
+                                      <span className="text-[10px] font-mono text-neutral-400">
+                                        {stockSum} unids.
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Derecha: Botones de Acción */}
+                              {!isEditing && (
+                                <div className="flex items-center gap-1 shrink-0">
+                                  {count > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleExpandCategory(c)}
+                                      className={`px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer ${
+                                        isExpanded
+                                          ? "bg-neutral-900 text-white"
+                                          : "bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200"
+                                      }`}
+                                      title={isExpanded ? "Ocultar productos" : "Ver productos asociados"}
+                                    >
+                                      <span>Ver</span>
+                                      {isExpanded ? (
+                                        <ChevronUp className="w-3 h-3" />
+                                      ) : (
+                                        <ChevronDown className="w-3 h-3" />
+                                      )}
+                                    </button>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingCategoryName({ original: c, current: c })}
+                                    className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-950 hover:bg-white border border-transparent hover:border-neutral-200 transition-colors cursor-pointer"
+                                    title="Renombrar categoría"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setInventoryCategoryFilter(c);
+                                      setInventoryBrandFilter("all");
+                                      setActiveTab("inventory");
+                                    }}
+                                    className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-950 hover:bg-white border border-transparent hover:border-neutral-200 transition-colors cursor-pointer"
+                                    title="Filtrar en Inventario"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (count > 0) {
+                                        setDeleteConfirmItem({
+                                          type: "category",
+                                          name: c,
+                                          productCount: count,
+                                        });
+                                      } else {
+                                        deleteCategory(c);
+                                        setSuccessNotice(`Categoría "${c}" eliminada.`);
+                                        setTimeout(() => setSuccessNotice(""), 3500);
+                                      }
+                                    }}
+                                    className="text-neutral-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                                    title="Eliminar categoría"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Desplegable de Productos Asociados */}
+                            {isExpanded && categoryProducts.length > 0 && (
+                              <div className="pt-2 border-t border-neutral-200/70 space-y-2 animate-in fade-in duration-150">
+                                <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider flex items-center justify-between">
+                                  <span>Productos vinculados ({categoryProducts.length})</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setInventoryCategoryFilter(c);
+                                      setInventoryBrandFilter("all");
+                                      setActiveTab("inventory");
+                                    }}
+                                    className="text-[10px] text-neutral-900 font-extrabold hover:underline flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <span>Ver en Inventario</span>
+                                    <ArrowRight className="w-3 h-3" />
+                                  </button>
+                                </div>
+
+                                <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                                  {categoryProducts.map((p) => (
+                                    <div
+                                      key={p.id}
+                                      className="flex items-center justify-between p-2 rounded-xl bg-white border border-neutral-200/80 shadow-2xs hover:border-neutral-300 transition-colors"
+                                    >
+                                      <div className="flex items-center gap-2.5 min-w-0">
+                                        <div className="w-8 h-8 rounded-lg bg-neutral-100 border border-neutral-200/80 p-0.5 shrink-0 overflow-hidden flex items-center justify-center">
+                                          {(p.images?.[0] || p.colors?.[0]?.image) ? (
+                                            <img
+                                              src={p.images?.[0] || p.colors?.[0]?.image}
+                                              alt={p.name}
+                                              className="w-full h-full object-contain"
+                                            />
+                                          ) : (
+                                            <Package className="w-3.5 h-3.5 text-neutral-400" />
+                                          )}
+                                        </div>
+                                        <div className="min-w-0">
+                                          <div className="text-xs font-bold text-neutral-950 truncate">
+                                            {p.name}
+                                          </div>
+                                          <div className="text-[10px] font-mono text-neutral-400">
+                                            #{p.id} · {p.brand}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-center gap-2 shrink-0">
+                                        <span className="font-mono text-xs font-extrabold text-neutral-900">
+                                          {STORE_SETTINGS.currencySymbol}{p.price.toFixed(2)}
+                                        </span>
+                                        <span
+                                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                                            p.stockCount > 5
+                                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                              : p.stockCount > 0
+                                              ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                              : "bg-rose-50 text-rose-700 border border-rose-200"
+                                          }`}
+                                        >
+                                          {p.stockCount} unids.
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleEditClick(p)}
+                                          className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-600 hover:text-neutral-950 transition-colors cursor-pointer"
+                                          title="Editar este producto"
+                                        >
+                                          <Edit3 className="w-3 h-3" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {filteredCategories.length === 0 && (
+                        <div className="text-center py-8 text-neutral-400 text-xs">
+                          No se encontraron categorías con el filtro actual.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal de Confirmación Segura de Eliminación */}
+              {deleteConfirmItem && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+                  <div className="bg-white rounded-2xl border border-neutral-200 p-5 sm:p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                        <AlertCircle className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-extrabold text-neutral-950">
+                          Eliminar {deleteConfirmItem.type === "brand" ? "Marca" : "Categoría"}
+                        </h4>
+                        <div className="text-xs font-mono font-bold text-neutral-500">
+                          {deleteConfirmItem.name}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 space-y-1">
+                      <div className="font-extrabold flex items-center gap-1.5">
+                        <span>Advertencia de clasificación</span>
+                      </div>
+                      <p className="text-[11px] leading-relaxed text-amber-800">
+                        Esta {deleteConfirmItem.type === "brand" ? "marca" : "categoría"} está asociada actualmente a{" "}
+                        <strong>{deleteConfirmItem.productCount} {deleteConfirmItem.productCount === 1 ? "producto" : "productos"}</strong>.
+                        Si la eliminas, los productos permanecerán en el catálogo pero sin {deleteConfirmItem.type === "brand" ? "marca" : "categoría"} asignada.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-100">
+                      <button
+                        type="button"
+                        onClick={() => setDeleteConfirmItem(null)}
+                        className="px-4 py-2 rounded-xl border border-neutral-200 text-neutral-700 hover:text-black font-bold text-xs cursor-pointer transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={executeDeleteItem}
+                        className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs cursor-pointer shadow-xs transition-colors"
+                      >
+                        Sí, Eliminar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ================= PESTAÑA: CUPONES DE DESCUENTO ================= */}
         {activeTab === "coupons" && (

@@ -24,9 +24,11 @@ interface ProductsContextType {
   exportProductsJson: () => string;
   brands: string[];
   addBrand: (brand: string) => void;
+  updateBrand: (oldBrand: string, newBrand: string) => void;
   deleteBrand: (brand: string) => void;
   categories: string[];
   addCategory: (category: string) => void;
+  updateCategory: (oldCategory: string, newCategory: string) => void;
   deleteCategory: (category: string) => void;
   isCloudConnected: boolean;
   refreshFromCloud: () => Promise<void>;
@@ -308,6 +310,41 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const updateBrand = useCallback((oldBrand: string, newBrand: string) => {
+    const trimmed = newBrand.trim();
+    if (!trimmed || trimmed.toLowerCase() === oldBrand.toLowerCase()) return;
+    setBrands((prev) => {
+      const next = prev.map((b) => (b.toLowerCase() === oldBrand.toLowerCase() ? trimmed : b));
+      if (typeof window !== "undefined") {
+        localStorage.setItem(BRANDS_STORAGE_KEY, JSON.stringify(next));
+      }
+      if (isSupabaseReady()) {
+        saveStoreSettingsToSupabase("brands", next).catch(console.error);
+      }
+      return next;
+    });
+
+    setProducts((prev) => {
+      let changed = false;
+      const next = prev.map((p) => {
+        if (p.brand?.toLowerCase() === oldBrand.toLowerCase()) {
+          changed = true;
+          return { ...p, brand: trimmed };
+        }
+        return p;
+      });
+      if (changed) {
+        saveProductsLocal(next);
+        if (isSupabaseReady()) {
+          next.filter((p) => p.brand === trimmed).forEach((p) => {
+            upsertProductToSupabase(p).catch(console.error);
+          });
+        }
+      }
+      return next;
+    });
+  }, [saveProductsLocal]);
+
   const addCategory = useCallback((newCategory: string) => {
     const trimmed = newCategory.trim();
     if (!trimmed) return;
@@ -337,6 +374,41 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const updateCategory = useCallback((oldCategory: string, newCategory: string) => {
+    const trimmed = newCategory.trim();
+    if (!trimmed || trimmed.toLowerCase() === oldCategory.toLowerCase()) return;
+    setCategories((prev) => {
+      const next = prev.map((c) => (c.toLowerCase() === oldCategory.toLowerCase() ? trimmed : c));
+      if (typeof window !== "undefined") {
+        localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(next));
+      }
+      if (isSupabaseReady()) {
+        saveStoreSettingsToSupabase("categories", next).catch(console.error);
+      }
+      return next;
+    });
+
+    setProducts((prev) => {
+      let changed = false;
+      const next = prev.map((p) => {
+        if (p.category?.toLowerCase() === oldCategory.toLowerCase()) {
+          changed = true;
+          return { ...p, category: trimmed };
+        }
+        return p;
+      });
+      if (changed) {
+        saveProductsLocal(next);
+        if (isSupabaseReady()) {
+          next.filter((p) => p.category === trimmed).forEach((p) => {
+            upsertProductToSupabase(p).catch(console.error);
+          });
+        }
+      }
+      return next;
+    });
+  }, [saveProductsLocal]);
+
   const resetToDefault = useCallback(() => {
     saveProductsLocal([]);
     if (isSupabaseReady()) {
@@ -360,9 +432,11 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         exportProductsJson,
         brands,
         addBrand,
+        updateBrand,
         deleteBrand,
         categories,
         addCategory,
+        updateCategory,
         deleteCategory,
         isCloudConnected,
         refreshFromCloud,
