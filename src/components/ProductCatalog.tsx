@@ -554,6 +554,15 @@ export default function ProductCatalog() {
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
+          ) : products.length === 0 ? (
+            <div className="text-center py-20 rounded-2xl border border-dashed border-neutral-200 bg-white p-8 space-y-2">
+              <p className="text-neutral-900 font-extrabold text-base">
+                Catálogo en preparación
+              </p>
+              <p className="text-neutral-500 text-xs">
+                Pronto agregaremos nuevos productos y stock disponible.
+              </p>
+            </div>
           ) : (
             <div className="text-center py-20 rounded-2xl border border-dashed border-neutral-200 bg-white p-8">
               <p className="text-neutral-800 font-black text-base">

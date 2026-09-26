@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Product } from "@/types";
-import { PRODUCTS as DEFAULT_PRODUCTS } from "@/data/products";
 import {
   isSupabaseReady,
   fetchProductsFromSupabase,
@@ -11,10 +10,8 @@ import {
   updateStockInSupabase,
   fetchStoreSettingsFromSupabase,
   saveStoreSettingsToSupabase,
-  saveSupabaseConfig,
   getSupabaseClient,
   clearAllProductsFromSupabase,
-  testSupabaseConnection,
 } from "@/lib/supabase";
 
 interface ProductsContextType {
@@ -31,16 +28,8 @@ interface ProductsContextType {
   categories: string[];
   addCategory: (category: string) => void;
   deleteCategory: (category: string) => void;
-  // Supabase Cloud Integration
-  isCloudConfigured: boolean;
   isCloudConnected: boolean;
-  cloudStatus: string;
-  connectSupabase: (url: string, anonKey: string) => Promise<{ success: boolean; message: string }>;
-  disconnectSupabase: () => void;
-  syncLocalToCloud: () => Promise<{ success: boolean; count: number; message: string }>;
-  restoreOfficialCatalogToCloud: () => Promise<{ success: boolean; message: string }>;
   refreshFromCloud: () => Promise<void>;
-  testConnection: () => Promise<{ ok: boolean; latencyMs: number; error?: string }>;
 }
 
 const ProductsContext = createContext<ProductsContextType | undefined>(undefined);
@@ -106,10 +95,8 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const [brands, setBrands] = useState<string[]>(getInitialBrands);
   const [categories, setCategories] = useState<string[]>(getInitialCategories);
 
-  // Estados de Supabase Cloud
-  const [isCloudConfigured, setIsCloudConfigured] = useState<boolean>(false);
+  // Estado de Supabase Cloud
   const [isCloudConnected, setIsCloudConnected] = useState<boolean>(false);
-  const [cloudStatus, setCloudStatus] = useState<string>("Iniciando...");
 
   // Guardar en localStorage de respaldo
   const saveProductsLocal = useCallback((newProducts: Product[]) => {
@@ -127,20 +114,14 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   // Función para refrescar desde Supabase
   const refreshFromCloud = useCallback(async () => {
     if (!isSupabaseReady()) {
-      setIsCloudConfigured(false);
       setIsCloudConnected(false);
-      setCloudStatus("Modo local (Sin Supabase configurado)");
       return;
     }
-
-    setIsCloudConfigured(true);
-    setCloudStatus("Conectando con Supabase...");
 
     try {
       const cloudProds = await fetchProductsFromSupabase();
       if (cloudProds !== null) {
         setIsCloudConnected(true);
-        setCloudStatus("🟢 Conectado en tiempo real a Supabase");
 
         // Respetar fielmente los productos de Supabase (incluso si está vacío porque se borraron)
         setProducts(cloudProds);
@@ -160,125 +141,11 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         setIsCloudConnected(false);
-        setCloudStatus("⚠️ Credenciales configuradas pero no se pudo conectar. Verifica la tabla 'products'.");
       }
     } catch (e) {
       console.error("Error en refreshFromCloud:", e);
       setIsCloudConnected(false);
-      setCloudStatus("❌ Error al comunicar con Supabase");
     }
-  }, []);
-
-  // Conectar Supabase dinámicamente desde el panel Admin
-  const connectSupabase = useCallback(async (url: string, anonKey: string): Promise<{ success: boolean; message: string }> => {
-    if (!url.trim() || !anonKey.trim()) {
-      return { success: false, message: "La URL y la Anon Key de Supabase son obligatorias." };
-    }
-
-    saveSupabaseConfig(url.trim(), anonKey.trim());
-    setIsCloudConfigured(true);
-    setCloudStatus("Verificando conexión...");
-
-    const testResult = await fetchProductsFromSupabase();
-    if (testResult !== null) {
-      setIsCloudConnected(true);
-      setCloudStatus("🟢 Conectado exitosamente en tiempo real");
-      setProducts(testResult);
-      if (typeof window !== "undefined") {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(testResult));
-      }
-      return {
-        success: true,
-        message: `¡Conexión establecida con éxito! Se sincronizaron ${testResult.length} productos desde Supabase.`,
-      };
-    } else {
-      setIsCloudConnected(false);
-      setCloudStatus("❌ Falló la conexión con Supabase");
-      return {
-        success: false,
-        message: "No se pudo conectar a Supabase. Verifica que la URL y Anon Key sean correctas y que hayas ejecutado el script SQL.",
-      };
-    }
-  }, []);
-
-  // Desconectar Supabase
-  const disconnectSupabase = useCallback(() => {
-    saveSupabaseConfig("", "");
-    setIsCloudConfigured(false);
-    setIsCloudConnected(false);
-    setCloudStatus("Modo local (Desconectado de Supabase)");
-  }, []);
-
-  // Subir el catálogo actual completo a Supabase
-  const syncLocalToCloud = useCallback(async (): Promise<{ success: boolean; count: number; message: string }> => {
-    if (!isSupabaseReady()) {
-      return { success: false, count: 0, message: "Supabase no está configurado." };
-    }
-
-    let successCount = 0;
-    for (const prod of products) {
-      const ok = await upsertProductToSupabase(prod);
-      if (ok) successCount++;
-    }
-
-    // Subir marcas y categorías también
-    await saveStoreSettingsToSupabase("brands", brands);
-    await saveStoreSettingsToSupabase("categories", categories);
-
-    if (successCount > 0) {
-      return {
-        success: true,
-        count: successCount,
-        message: `¡${successCount} de ${products.length} productos y configuraciones se subieron exitosamente a Supabase!`,
-      };
-    } else {
-      return {
-        success: false,
-        count: 0,
-        message: "Ocurrió un error al subir los productos. Revisa la consola o las políticas RLS en Supabase.",
-      };
-    }
-  }, [products, brands, categories]);
-
-  // Restaurar el catálogo oficial por defecto en Supabase
-  const restoreOfficialCatalogToCloud = useCallback(async (): Promise<{ success: boolean; message: string }> => {
-    if (!isSupabaseReady()) {
-      return { success: false, message: "Supabase no está configurado." };
-    }
-
-    try {
-      setCloudStatus("Restaurando catálogo oficial en Supabase...");
-      await clearAllProductsFromSupabase();
-
-      for (const prod of DEFAULT_PRODUCTS) {
-        await upsertProductToSupabase(prod);
-      }
-
-      await saveStoreSettingsToSupabase("brands", DEFAULT_BRANDS);
-      await saveStoreSettingsToSupabase("categories", DEFAULT_CATEGORIES);
-
-      setProducts(DEFAULT_PRODUCTS);
-      setBrands(DEFAULT_BRANDS);
-      setCategories(DEFAULT_CATEGORIES);
-      if (typeof window !== "undefined") {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_PRODUCTS));
-        localStorage.setItem(BRANDS_STORAGE_KEY, JSON.stringify(DEFAULT_BRANDS));
-        localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(DEFAULT_CATEGORIES));
-      }
-
-      setCloudStatus("🟢 Catálogo oficial sincronizado en tiempo real");
-      return {
-        success: true,
-        message: `¡Catálogo oficial de PulsoTech restaurado exitosamente en la nube con ${DEFAULT_PRODUCTS.length} modelos originales!`,
-      };
-    } catch (err) {
-      console.error("Error al restaurar catálogo oficial:", err);
-      return { success: false, message: "Error al restaurar catálogo oficial en Supabase." };
-    }
-  }, []);
-
-  const testConnection = useCallback(async () => {
-    return await testSupabaseConnection();
   }, []);
 
   // Inicialización y suscripción en tiempo real
@@ -468,11 +335,11 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const resetToDefault = useCallback(() => {
-    saveProductsLocal(DEFAULT_PRODUCTS);
+    saveProductsLocal([]);
     if (isSupabaseReady()) {
-      syncLocalToCloud().catch(console.error);
+      clearAllProductsFromSupabase().catch(console.error);
     }
-  }, [saveProductsLocal, syncLocalToCloud]);
+  }, [saveProductsLocal]);
 
   const exportProductsJson = useCallback(() => {
     return JSON.stringify(products, null, 2);
@@ -494,15 +361,8 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         categories,
         addCategory,
         deleteCategory,
-        isCloudConfigured,
         isCloudConnected,
-        cloudStatus,
-        connectSupabase,
-        disconnectSupabase,
-        syncLocalToCloud,
-        restoreOfficialCatalogToCloud,
         refreshFromCloud,
-        testConnection,
       }}
     >
       {children}
