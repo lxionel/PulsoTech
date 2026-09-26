@@ -309,8 +309,10 @@ export default function AdminPage() {
   const [qrModalProduct, setQrModalProduct] = useState<Product | null>(null);
   const [copiedQrLink, setCopiedQrLink] = useState(false);
 
-  // Filtros de búsqueda en inventario
+  // Filtros de búsqueda e interacción en inventario
   const [searchFilter, setSearchFilter] = useState("");
+  const [stockQuickFilter, setStockQuickFilter] = useState<"all" | "low" | "out">("all");
+  const [inventoryCategoryFilter, setInventoryCategoryFilter] = useState<string>("all");
 
   // Estados para gestión de filtros (marcas y categorías)
   const [newBrandInput, setNewBrandInput] = useState("");
@@ -1193,12 +1195,27 @@ export default function AdminPage() {
     setActiveTab("inventory");
   };
 
-  const filteredInventory = products.filter((item) =>
-    item.id.toLowerCase().includes(searchFilter.toLowerCase()) ||
-    item.name.toLowerCase().includes(searchFilter.toLowerCase()) ||
-    item.brand.toLowerCase().includes(searchFilter.toLowerCase()) ||
-    (item.category && item.category.toLowerCase().includes(searchFilter.toLowerCase()))
-  );
+  const filteredInventory = products.filter((item) => {
+    if (searchFilter.trim()) {
+      const q = searchFilter.toLowerCase();
+      const match =
+        item.id.toLowerCase().includes(q) ||
+        item.name.toLowerCase().includes(q) ||
+        item.brand.toLowerCase().includes(q) ||
+        (item.category && item.category.toLowerCase().includes(q));
+      if (!match) return false;
+    }
+    if (inventoryCategoryFilter !== "all" && item.category !== inventoryCategoryFilter) {
+      return false;
+    }
+    if (stockQuickFilter === "low" && item.stockCount > 5) {
+      return false;
+    }
+    if (stockQuickFilter === "out" && item.stockCount > 0) {
+      return false;
+    }
+    return true;
+  });
 
   if (isAuthChecking) {
     return (
@@ -1429,7 +1446,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-[#f8fafc] text-neutral-900 antialiased font-sans flex">
       {/* ================= BARRA LATERAL VERTICAL DESKTOP (POS REAL) ================= */}
       <aside className="hidden md:flex w-64 bg-neutral-950 text-neutral-300 border-r border-neutral-800/80 fixed inset-y-0 left-0 z-40 flex-col justify-between select-none">
-        {/* Superior: Branding, Botón de Acción y Navegación Vertical */}
+        {/* Superior: Branding y Navegación Vertical */}
         <div className="flex flex-col">
           {/* Logo y Encabezado del Sistema POS */}
           <div className="h-16 px-5 border-b border-neutral-800/80 flex items-center justify-between">
@@ -1443,27 +1460,15 @@ export default function AdminPage() {
                   </span>
                 </div>
                 <div className="text-[10px] text-neutral-400 font-medium">
-                  Sistema de Ventas &amp; Stock
+                  Terminal de Control Operativo
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Acción Rápida: Agregar Producto */}
-          <div className="p-3.5 border-b border-neutral-800/60">
-            <button
-              type="button"
-              onClick={handleNewProductClick}
-              className="w-full py-2.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-98 text-neutral-950 font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
-            >
-              <PlusCircle className="w-4 h-4 text-neutral-950" />
-              <span>Registrar Producto</span>
-            </button>
-          </div>
-
           {/* Menú Vertical de Módulos */}
-          <nav className="p-3 space-y-1">
-            <div className="px-3 pt-2 pb-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400">
+          <nav className="p-3 space-y-1.5 pt-4">
+            <div className="px-3 pb-1 text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400">
               Módulos del Sistema
             </div>
 
@@ -1474,28 +1479,43 @@ export default function AdminPage() {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  onClick={() => {
+                    if (item.id === "add_product" && !editingProductId) {
+                      handleNewProductClick();
+                    } else {
+                      setActiveTab(item.id);
+                    }
+                  }}
+                  onMouseUp={(e) => e.currentTarget.blur()}
+                  onPointerUp={(e) => e.currentTarget.blur()}
+                  className={`group relative w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-colors duration-150 cursor-pointer select-none outline-none focus:outline-none focus:ring-0 ${
                     isActive
-                      ? "bg-neutral-900 text-white border border-neutral-800 shadow-inner"
-                      : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
+                      ? "bg-white/[0.08] text-white font-bold border border-white/10 shadow-xs"
+                      : "text-neutral-400 font-medium hover:text-neutral-100 hover:bg-white/[0.03] border border-transparent"
                   }`}
                 >
-                  <div className="flex items-center gap-3">
+                  {/* Barra Indicadora Esmeralda Exclusiva del Ítem Activo */}
+                  {isActive && (
+                    <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-emerald-400 shadow-xs shadow-emerald-400/50" />
+                  )}
+
+                  <div className="flex items-center gap-3 min-w-0">
                     <Icon
-                      className={`w-4 h-4 transition-colors ${
-                        isActive ? "text-emerald-400" : "text-neutral-500"
+                      className={`w-4 h-4 shrink-0 transition-colors ${
+                        isActive
+                          ? "text-emerald-400"
+                          : "text-neutral-500 group-hover:text-neutral-300"
                       }`}
                     />
-                    <span>{item.label}</span>
+                    <span className="truncate">{item.label}</span>
                   </div>
 
                   {typeof item.count === "number" && (
                     <span
-                      className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold ${
+                      className={`text-[10px] font-mono font-bold shrink-0 transition-colors ${
                         isActive
-                          ? "bg-neutral-800 text-emerald-300"
-                          : "bg-neutral-900 text-neutral-500"
+                          ? "px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/25"
+                          : "text-neutral-500 px-1.5"
                       }`}
                     >
                       {item.count}
@@ -1503,7 +1523,7 @@ export default function AdminPage() {
                   )}
 
                   {item.tag && (
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
                       {item.tag}
                     </span>
                   )}
@@ -1513,21 +1533,11 @@ export default function AdminPage() {
           </nav>
         </div>
 
-        {/* Inferior: Conexión Cloud, Perfil y Cerrar Sesión */}
-        <div className="p-3 border-t border-neutral-800/80 space-y-3 bg-neutral-950/80">
-          <div className="px-3 py-2 rounded-xl bg-neutral-900/90 border border-neutral-800/80 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[11px] font-semibold text-neutral-300">Base de Datos</span>
-            </div>
-            <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase">
-              En Línea
-            </span>
-          </div>
-
-          <div className="px-3 py-2.5 rounded-xl bg-neutral-900/50 flex items-center justify-between">
+        {/* Inferior: Perfil de Operador y Cerrar Sesión (Limpio, sin Base de Datos) */}
+        <div className="p-3 border-t border-neutral-800/80 bg-neutral-950/80">
+          <div className="px-3 py-2.5 rounded-xl bg-neutral-900/60 border border-neutral-800/60 flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-black text-xs shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-black text-xs shrink-0">
                 L
               </div>
               <div className="truncate">
@@ -1612,21 +1622,7 @@ export default function AdminPage() {
                 </button>
               </div>
 
-              <div className="py-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleNewProductClick();
-                    setIsMobileNavOpen(false);
-                  }}
-                  className="w-full py-2.5 px-3 rounded-xl bg-emerald-500 text-neutral-950 font-bold text-xs flex items-center justify-center gap-2 shadow-xs cursor-pointer"
-                >
-                  <PlusCircle className="w-4 h-4 text-neutral-950" />
-                  <span>Registrar Producto</span>
-                </button>
-              </div>
-
-              <nav className="space-y-1 py-2">
+              <nav className="space-y-1.5 py-4">
                 <div className="px-3 pb-1 text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400">
                   Módulos
                 </div>
@@ -1638,21 +1634,34 @@ export default function AdminPage() {
                       key={item.id}
                       type="button"
                       onClick={() => {
-                        setActiveTab(item.id);
+                        if (item.id === "add_product" && !editingProductId) {
+                          handleNewProductClick();
+                        } else {
+                          setActiveTab(item.id);
+                        }
                         setIsMobileNavOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      onPointerUp={(e) => e.currentTarget.blur()}
+                      className={`relative w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-colors duration-150 cursor-pointer select-none outline-none focus:outline-none focus:ring-0 ${
                         isActive
-                          ? "bg-neutral-900 text-white border border-neutral-800"
-                          : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
+                          ? "bg-white/[0.08] text-white font-bold border border-white/10 shadow-xs"
+                          : "text-neutral-400 font-medium hover:text-neutral-100 hover:bg-white/[0.03] border border-transparent"
                       }`}
                     >
+                      {isActive && (
+                        <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-emerald-400 shadow-xs shadow-emerald-400/50" />
+                      )}
+
                       <div className="flex items-center gap-3">
                         <Icon className={`w-4 h-4 ${isActive ? "text-emerald-400" : "text-neutral-500"}`} />
                         <span>{item.label}</span>
                       </div>
                       {typeof item.count === "number" && (
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-neutral-900 text-neutral-400">
+                        <span className={`text-[10px] font-mono font-bold ${
+                          isActive
+                            ? "px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/25"
+                            : "text-neutral-500 px-1.5"
+                        }`}>
                           {item.count}
                         </span>
                       )}
@@ -1665,7 +1674,7 @@ export default function AdminPage() {
             <div className="pt-4 border-t border-neutral-800 space-y-2">
               <div className="flex items-center justify-between px-2 text-xs">
                 <span className="text-neutral-400">Lionel (Admin)</span>
-                <span className="text-[10px] font-mono text-emerald-400 font-bold">● En Línea</span>
+                <span className="text-[10px] font-mono text-neutral-400">Terminal Activo</span>
               </div>
               <button
                 type="button"
@@ -1705,16 +1714,18 @@ export default function AdminPage() {
                 onClick={handleNewProductClick}
                 className="px-3.5 py-1.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
               >
-                <PlusCircle className="w-3.5 h-3.5 text-white" />
+                <PlusCircle className="w-3.5 h-3.5 text-emerald-400" />
                 <span>＋ Agregar Producto</span>
               </button>
             )}
 
             <div className="h-5 w-px bg-neutral-200" />
 
-            <div className="flex items-center gap-2 text-xs font-medium text-neutral-500">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span>Base de Datos Conectada</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-neutral-100 border border-neutral-200/80 text-xs font-medium text-neutral-600">
+              <Calendar className="w-3.5 h-3.5 text-neutral-500" />
+              <span className="font-mono">
+                {new Date().toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" })}
+              </span>
             </div>
           </div>
         </header>
@@ -1742,73 +1753,173 @@ export default function AdminPage() {
           {/* ================= PESTAÑA 1: INVENTARIO ================= */}
           {activeTab === "inventory" && (
           <div className="space-y-6">
-            {/* KPIs */}
+            {/* KPIs Interactivos */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-5 rounded-2xl border border-neutral-200/90 bg-white shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setActiveTab("sales")}
+                className="p-5 rounded-2xl border border-neutral-200/90 bg-white hover:border-emerald-300 hover:shadow-xs active:scale-[0.99] transition-all text-left group cursor-pointer shadow-2xs relative overflow-hidden"
+                title="Ir al módulo de Ventas y Despacho"
+              >
                 <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
-                  <span>INGRESOS REGISTRADOS</span>
-                  <DollarSign className="w-4 h-4 text-emerald-600" />
+                  <span className="group-hover:text-emerald-700 transition-colors uppercase tracking-wider">Ingresos Registrados</span>
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+                    <DollarSign className="w-4 h-4" />
+                  </div>
                 </div>
-                <div className="text-3xl font-extrabold text-neutral-950">
+                <div className="text-3xl font-extrabold text-neutral-950 tracking-tight">
                   {STORE_SETTINGS.currencySymbol}{totalRevenue.toFixed(2)}
                 </div>
-                <span className="text-[11px] text-neutral-400 mt-1 block">
-                  Ventas acumuladas por WhatsApp y Presencial
-                </span>
-              </div>
-
-              <div className="p-5 rounded-2xl border border-neutral-200/90 bg-white shadow-2xs">
-                <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
-                  <span>TOTAL REFERENCIAS ACTIVAS</span>
-                  <Package className="w-4 h-4 text-blue-600" />
+                <div className="flex items-center justify-between text-[11px] text-neutral-400 mt-2">
+                  <span>Ventas acumuladas</span>
+                  <span className="text-emerald-600 font-bold group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
+                    Ver ventas &rarr;
+                  </span>
                 </div>
-                <div className="text-3xl font-extrabold text-neutral-950">
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setStockQuickFilter("all");
+                  setInventoryCategoryFilter("all");
+                  setSearchFilter("");
+                }}
+                className={`p-5 rounded-2xl border text-left group cursor-pointer transition-all active:scale-[0.99] shadow-2xs relative overflow-hidden ${
+                  stockQuickFilter === "all" && inventoryCategoryFilter === "all" && !searchFilter
+                    ? "border-neutral-200/90 bg-white hover:border-blue-300 hover:shadow-xs"
+                    : "border-blue-300 bg-blue-50/20 hover:bg-blue-50/40"
+                }`}
+                title="Ver todo el catálogo (restablecer filtros)"
+              >
+                <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
+                  <span className="group-hover:text-blue-700 transition-colors uppercase tracking-wider">Total Referencias</span>
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                    <Package className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="text-3xl font-extrabold text-neutral-950 tracking-tight">
                   {products.length} <span className="text-sm font-semibold text-neutral-500">modelos</span>
                 </div>
-                <span className="text-[11px] text-neutral-400 mt-1 block">
-                  Disponibles en el catálogo público
-                </span>
-              </div>
-
-              <div className="p-5 rounded-2xl border border-neutral-200/90 bg-white shadow-2xs">
-                <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
-                  <span>ALERTAS DE STOCK</span>
-                  <AlertCircle className="w-4 h-4 text-amber-600" />
+                <div className="flex items-center justify-between text-[11px] text-neutral-400 mt-2">
+                  <span>Catálogo activo</span>
+                  {stockQuickFilter !== "all" || inventoryCategoryFilter !== "all" || searchFilter ? (
+                    <span className="text-blue-600 font-bold">Restablecer &rarr;</span>
+                  ) : (
+                    <span className="text-neutral-400 font-mono">100% visible</span>
+                  )}
                 </div>
-                <div className="text-3xl font-extrabold text-amber-600">
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStockQuickFilter(stockQuickFilter === "low" ? "all" : "low")}
+                className={`p-5 rounded-2xl border text-left group cursor-pointer transition-all active:scale-[0.99] shadow-2xs relative overflow-hidden ${
+                  stockQuickFilter === "low"
+                    ? "border-amber-400 bg-amber-50/30 shadow-xs ring-2 ring-amber-400/20"
+                    : "border-neutral-200/90 bg-white hover:border-amber-300 hover:shadow-xs"
+                }`}
+                title={stockQuickFilter === "low" ? "Quitar filtro de bajo stock" : "Filtrar productos con stock <= 5"}
+              >
+                <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
+                  <span className="group-hover:text-amber-700 transition-colors uppercase tracking-wider">Alertas de Stock</span>
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
+                    stockQuickFilter === "low" ? "bg-amber-500 text-white" : "bg-amber-50 text-amber-600 group-hover:bg-amber-100"
+                  }`}>
+                    <AlertCircle className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="text-3xl font-extrabold text-amber-600 tracking-tight">
                   {lowStockCount} <span className="text-sm font-semibold text-neutral-500">productos</span>
                 </div>
-                <span className="text-[11px] text-neutral-400 mt-1 block">
-                  Con 5 o menos unidades en bodega
-                </span>
-              </div>
+                <div className="flex items-center justify-between text-[11px] text-neutral-400 mt-2">
+                  <span>Stock &le; 5 unidades</span>
+                  <span className={`font-bold text-xs ${stockQuickFilter === "low" ? "text-amber-700 underline" : "text-amber-600 group-hover:translate-x-0.5 transition-transform"}`}>
+                    {stockQuickFilter === "low" ? "Filtro Activo (quitar)" : "Filtrar &rarr;"}
+                  </span>
+                </div>
+              </button>
             </div>
 
-            {/* Tabla de Productos */}
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-lg font-black text-neutral-950 flex items-center gap-2">
-                    <Package className="w-5 h-5 text-neutral-700" />
-                    <span>Catálogo de Productos en Vivo</span>
-                  </h2>
-                  <p className="text-xs text-neutral-500 mt-0.5">
-                    Modifica precios, promociones, stock o edita cualquier producto en tiempo real.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-                  <div className="relative flex-1 sm:w-56">
+            {/* Barra de Filtros y Acciones del Inventario */}
+            <div className="space-y-3">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-neutral-200/90 shadow-2xs">
+                {/* Lado Izquierdo: Buscador + Categoría + Filtros Rápidos */}
+                <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
+                  {/* Buscador */}
+                  <div className="relative w-full sm:w-64">
                     <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       placeholder="Buscar por ID, modelo, marca..."
                       value={searchFilter}
                       onChange={(e) => setSearchFilter(e.target.value)}
-                      className="w-full pl-8 pr-3 py-2 rounded-xl bg-white border border-neutral-200 text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-400 shadow-2xs"
+                      className="w-full pl-8 pr-7 py-2 rounded-xl bg-neutral-50 hover:bg-neutral-100/70 focus:bg-white border border-neutral-200 text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-400 transition-colors"
                     />
+                    {searchFilter && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchFilter("")}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-neutral-400 hover:text-neutral-700 rounded-md cursor-pointer"
+                        title="Borrar búsqueda"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
 
+                  {/* Selector de Categoría */}
+                  <select
+                    value={inventoryCategoryFilter}
+                    onChange={(e) => setInventoryCategoryFilter(e.target.value)}
+                    className="px-3 py-2 rounded-xl bg-neutral-50 hover:bg-neutral-100/70 border border-neutral-200 text-xs font-semibold text-neutral-800 focus:outline-none focus:border-neutral-400 transition-colors cursor-pointer"
+                  >
+                    <option value="all">Todas las Categorías</option>
+                    {categories.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+
+                  {/* Filtro Rápido de Stock */}
+                  <div className="inline-flex items-center p-1 rounded-xl bg-neutral-100 border border-neutral-200/80">
+                    <button
+                      type="button"
+                      onClick={() => setStockQuickFilter("all")}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        stockQuickFilter === "all" ? "bg-white text-neutral-950 shadow-2xs" : "text-neutral-500 hover:text-neutral-900"
+                      }`}
+                    >
+                      Todos ({products.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStockQuickFilter(stockQuickFilter === "low" ? "all" : "low")}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        stockQuickFilter === "low" ? "bg-amber-500 text-white shadow-2xs" : "text-neutral-500 hover:text-amber-600"
+                      }`}
+                    >
+                      <span>Bajo Stock</span>
+                      <span className={`text-[10px] font-mono px-1 rounded ${stockQuickFilter === "low" ? "bg-white/20 text-white" : "bg-neutral-200 text-neutral-700"}`}>
+                        {lowStockCount}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStockQuickFilter(stockQuickFilter === "out" ? "all" : "out")}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        stockQuickFilter === "out" ? "bg-red-600 text-white shadow-2xs" : "text-neutral-500 hover:text-red-600"
+                      }`}
+                    >
+                      <span>Agotados</span>
+                      <span className={`text-[10px] font-mono px-1 rounded ${stockQuickFilter === "out" ? "bg-white/20 text-white" : "bg-neutral-200 text-neutral-700"}`}>
+                        {products.filter((p) => p.stockCount <= 0).length}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Lado Derecho: Acciones */}
+                <div className="flex items-center gap-2 self-end lg:self-auto shrink-0">
                   <button
                     type="button"
                     onClick={handleExportProductsCSV}
@@ -1828,16 +1939,53 @@ export default function AdminPage() {
                     <FileText className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline">Backup JSON</span>
                   </button>
-
-                  <button
-                    onClick={handleNewProductClick}
-                    className="px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs shrink-0 flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-                  >
-                    <PlusCircle className="w-3.5 h-3.5" />
-                    <span>Nuevo</span>
-                  </button>
                 </div>
               </div>
+
+              {/* Cinta Informativa de Filtros Activos */}
+              {(stockQuickFilter !== "all" || inventoryCategoryFilter !== "all" || searchFilter) && (
+                <div className="px-4 py-2.5 rounded-xl bg-neutral-100 border border-neutral-200 text-xs flex items-center justify-between gap-3 text-neutral-700 animate-in fade-in">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-neutral-900">
+                      Mostrando {filteredInventory.length} de {products.length} productos
+                    </span>
+                    <span className="text-neutral-400">|</span>
+                    {searchFilter && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-neutral-200 text-[11px] font-mono">
+                        Búsqueda: &ldquo;{searchFilter}&rdquo;
+                      </span>
+                    )}
+                    {inventoryCategoryFilter !== "all" && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-neutral-200 text-[11px] font-mono">
+                        Categoría: {inventoryCategoryFilter}
+                      </span>
+                    )}
+                    {stockQuickFilter === "low" && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold">
+                        Bajo stock (&le; 5)
+                      </span>
+                    )}
+                    {stockQuickFilter === "out" && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-100 text-red-900 border border-red-300 text-[11px] font-bold">
+                        Agotados (0)
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStockQuickFilter("all");
+                      setInventoryCategoryFilter("all");
+                      setSearchFilter("");
+                    }}
+                    className="text-xs font-bold text-neutral-900 hover:text-red-600 underline shrink-0 cursor-pointer"
+                  >
+                    Restablecer filtros
+                  </button>
+                </div>
+              )}
+            </div>
 
               {/* Vista Móvil: Tarjetas Nativas para Celulares (sm:hidden) */}
               <div className="block sm:hidden space-y-3">
@@ -1910,11 +2058,12 @@ export default function AdminPage() {
                           >
                             {item.stockCount <= 0 ? "Agotado (0 uds)" : `${item.stockCount} uds`}
                           </span>
-                          <div className="inline-flex items-center border border-neutral-200 rounded-lg p-0.5 bg-neutral-50">
+                          <div className="inline-flex items-center border border-neutral-200 rounded-lg p-0.5 bg-neutral-50 shadow-2xs">
                             <button
                               type="button"
                               onClick={() => updateStock(item.id, -1, true)}
-                              className="w-7 h-7 rounded flex items-center justify-center hover:bg-neutral-200 text-neutral-700 font-black text-sm active:scale-95 cursor-pointer"
+                              disabled={item.stockCount <= 0}
+                              className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-neutral-200 active:scale-90 text-neutral-800 font-black text-sm transition-all cursor-pointer disabled:opacity-25 disabled:cursor-not-allowed select-none"
                               title="Restar 1 unidad"
                             >
                               -
@@ -1922,7 +2071,7 @@ export default function AdminPage() {
                             <button
                               type="button"
                               onClick={() => updateStock(item.id, 1, true)}
-                              className="w-7 h-7 rounded flex items-center justify-center hover:bg-neutral-200 text-neutral-700 font-black text-sm active:scale-95 cursor-pointer"
+                              className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-neutral-200 active:scale-90 text-neutral-800 font-black text-sm transition-all cursor-pointer select-none"
                               title="Sumar 1 unidad"
                             >
                               +
@@ -2073,17 +2222,20 @@ export default function AdminPage() {
                                 )}
                               </div>
 
-                              <div className="inline-flex items-center border border-neutral-200 rounded-lg p-0.5 bg-neutral-50">
+                              <div className="inline-flex items-center border border-neutral-200 rounded-lg p-0.5 bg-neutral-50 shadow-2xs">
                                 <button
+                                  type="button"
                                   onClick={() => updateStock(item.id, -1, true)}
-                                  className="w-5 h-5 rounded flex items-center justify-center hover:bg-neutral-200 text-neutral-600 font-bold"
+                                  disabled={item.stockCount <= 0}
+                                  className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-neutral-200 active:scale-90 text-neutral-800 font-black text-sm transition-all cursor-pointer disabled:opacity-25 disabled:cursor-not-allowed select-none"
                                   title="Restar 1 unidad"
                                 >
                                   -
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => updateStock(item.id, 1, true)}
-                                  className="w-5 h-5 rounded flex items-center justify-center hover:bg-neutral-200 text-neutral-600 font-bold"
+                                  className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-neutral-200 active:scale-90 text-neutral-800 font-black text-sm transition-all cursor-pointer select-none"
                                   title="Sumar 1 unidad"
                                 >
                                   +
@@ -2137,8 +2289,7 @@ export default function AdminPage() {
                 </table>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* ================= PESTAÑA 2: AGREGAR / EDITAR PRODUCTO ================= */}
         {activeTab === "add_product" && (
@@ -2201,9 +2352,10 @@ export default function AdminPage() {
                           key={step.id}
                           type="button"
                           onClick={() => setFormActiveStep(step.id as 1 | 2 | 3 | 4)}
-                          className={`p-2.5 sm:p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+                          onPointerUp={(e) => e.currentTarget.blur()}
+                          className={`p-2.5 sm:p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 select-none outline-none focus:outline-none focus:ring-0 ${
                             isActive
-                              ? "bg-neutral-950 text-white border-neutral-950 shadow-sm ring-2 ring-neutral-950/20"
+                              ? "bg-neutral-950 text-white border-neutral-950 shadow-sm"
                               : isCompleted
                               ? "bg-neutral-50 border-neutral-300 text-neutral-900 hover:bg-neutral-100"
                               : "bg-white border-neutral-200 text-neutral-400 hover:border-neutral-300 hover:text-neutral-700"
@@ -3497,7 +3649,8 @@ export default function AdminPage() {
                       key={tab.id}
                       type="button"
                       onClick={() => setSalesPeriod(tab.id as SalesPeriod)}
-                      className={`h-9 px-3.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 whitespace-nowrap border select-none ${
+                      onPointerUp={(e) => e.currentTarget.blur()}
+                      className={`h-9 px-3.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 whitespace-nowrap border select-none outline-none focus:outline-none focus:ring-0 ${
                         isActive
                           ? tab.id === "last_month"
                             ? "bg-emerald-600 border-emerald-600 text-white shadow-xs"
