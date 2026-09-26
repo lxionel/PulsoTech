@@ -408,6 +408,10 @@ export default function AdminPage() {
 
   // Registro de Venta Manual
   const [newSaleProduct, setNewSaleProduct] = useState(products[0]?.id || "");
+  const [isManualProductEntry, setIsManualProductEntry] = useState(false);
+  const [manualProductName, setManualProductName] = useState("");
+  const [saleFormError, setSaleFormError] = useState("");
+  const [lastRegisteredSale, setLastRegisteredSale] = useState<SaleRecord | null>(null);
   const [newSaleQty, setNewSaleQty] = useState(1);
   const [newSaleCustomer, setNewSaleCustomer] = useState("");
   const [newSaleChannel, setNewSaleChannel] = useState<"WhatsApp" | "Presencial" | "Web">("WhatsApp");
@@ -424,6 +428,17 @@ export default function AdminPage() {
   const [newSaleDeliveryStatus, setNewSaleDeliveryStatus] = useState<"pending" | "shipped" | "delivered" | "cancelled">("pending");
   const [newSaleTrackingNumber, setNewSaleTrackingNumber] = useState("");
   const [salesStatusFilter, setSalesStatusFilter] = useState<string>("all");
+
+  // Mantener sincronizado el producto seleccionado en el formulario de ventas
+  useEffect(() => {
+    if (products.length > 0) {
+      if (!newSaleProduct || !products.some((p) => p.id === newSaleProduct)) {
+        setNewSaleProduct(products[0].id);
+      }
+    } else {
+      setIsManualProductEntry(true);
+    }
+  }, [products, newSaleProduct]);
 
   // Modales de Logística & Despacho
   const [receiptModalSale, setReceiptModalSale] = useState<SaleRecord | null>(null);
@@ -629,15 +644,42 @@ export default function AdminPage() {
 
   const handleRecordManualSale = (e: React.FormEvent) => {
     e.preventDefault();
-    const prod = products.find((i) => i.id === newSaleProduct);
-    if (!prod) return;
+    setSaleFormError("");
 
-    if (prod.stockCount < newSaleQty) {
-      alert("No hay suficiente stock para registrar esta venta.");
-      return;
+    let productName = "";
+    let unitPrice = 0;
+    let selectedProd: Product | undefined;
+
+    if (isManualProductEntry || products.length === 0) {
+      if (!manualProductName.trim()) {
+        setSaleFormError("Por favor ingresa el nombre del producto vendido.");
+        return;
+      }
+      productName = manualProductName.trim();
+      const customPriceParsed = parseFloat(newSaleCustomPrice);
+      if (isNaN(customPriceParsed) || customPriceParsed <= 0) {
+        setSaleFormError("Por favor ingresa el precio total en Soles (ej: 89.00).");
+        return;
+      }
+      unitPrice = customPriceParsed / (newSaleQty || 1);
+    } else {
+      selectedProd = products.find((i) => i.id === newSaleProduct) || products[0];
+      if (!selectedProd) {
+        setSaleFormError("No se encontró el producto. Puedes usar la opción 'Escribir producto manual'.");
+        return;
+      }
+      productName = selectedProd.name;
+      unitPrice = selectedProd.price;
+
+      if (selectedProd.stockCount < newSaleQty) {
+        const confirmSell = window.confirm(
+          `Atención: El producto "${selectedProd.name}" solo tiene ${selectedProd.stockCount} unidad(es) en inventario. ¿Deseas procesar la venta de ${newSaleQty} unidad(es) de todos modos?`
+        );
+        if (!confirmSell) return;
+      }
+
+      updateStock(selectedProd.id, -newSaleQty, true);
     }
-
-    updateStock(prod.id, -newSaleQty, true);
 
     const nowRef = new Date();
     const [yStr, mStr, dStr] = (newSaleDate || getLocalDateString()).split("-");
@@ -663,16 +705,16 @@ export default function AdminPage() {
     const computedTotal =
       newSaleCustomPrice !== ""
         ? parseFloat(newSaleCustomPrice) || 0
-        : prod.price * newSaleQty;
+        : unitPrice * newSaleQty;
 
     const newRecord: SaleRecord = {
       id: `VTA-${Math.floor(1000 + Math.random() * 9000)}`,
-      productName: prod.name,
+      productName,
       quantity: newSaleQty,
       total: computedTotal,
       channel: newSaleChannel,
       paymentMethod: newSalePayment,
-      customerName: newSaleCustomer.trim() || "Cliente WhatsApp",
+      customerName: newSaleCustomer.trim() || "Cliente",
       customerPhone: newSaleCustomerPhone.trim() || undefined,
       customerAddress: newSaleCustomerAddress.trim() || undefined,
       deliveryStatus: newSaleDeliveryStatus,
@@ -683,6 +725,7 @@ export default function AdminPage() {
     };
 
     saveSalesToStorage([newRecord, ...sales]);
+    setLastRegisteredSale(newRecord);
     setNewSaleCustomer("");
     setNewSaleCustomerPhone("");
     setNewSaleCustomerAddress("");
@@ -691,10 +734,19 @@ export default function AdminPage() {
     setNewSaleQty(1);
     setNewSaleCustomPrice("");
     setNewSaleNotes("");
+    if (isManualProductEntry) {
+      setManualProductName("");
+    }
+    // Asegurar que la nueva orden se muestre inmediatamente en el listado
+    setSalesPeriod("all");
+    setSalesChannelFilter("all");
+    setSalesStatusFilter("all");
+    setSalesSearchQuery("");
+
     setSuccessNotice(
       `Venta #${newRecord.id} registrada con éxito. Total: ${STORE_SETTINGS.currencySymbol}${newRecord.total.toFixed(2)}.`
     );
-    setTimeout(() => setSuccessNotice(""), 4000);
+    setTimeout(() => setSuccessNotice(""), 6000);
   };
 
   const handleUpdateDeliveryStatus = (
@@ -3630,20 +3682,54 @@ export default function AdminPage() {
 
                   <form onSubmit={handleRecordManualSale} className="space-y-3.5">
                     <div>
-                      <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
-                        Producto vendido:
-                      </label>
-                      <select
-                        value={newSaleProduct}
-                        onChange={(e) => setNewSaleProduct(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none"
-                      >
-                        {products.map((item) => (
-                          <option key={item.id} value={item.id}>
-                            {item.name} ({STORE_SETTINGS.currencySymbol}{item.price.toFixed(2)}) - Stock: {item.stockCount}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] font-bold text-neutral-600 uppercase">
+                          Producto vendido:
+                        </label>
+                        {products.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsManualProductEntry(!isManualProductEntry);
+                              setSaleFormError("");
+                            }}
+                            className="text-[10px] font-bold text-neutral-600 hover:text-black underline cursor-pointer"
+                          >
+                            {isManualProductEntry
+                              ? "Elegir del catálogo"
+                              : "Escribir producto manual"}
+                          </button>
+                        )}
+                      </div>
+
+                      {isManualProductEntry || products.length === 0 ? (
+                        <div>
+                          <input
+                            type="text"
+                            placeholder="Nombre del producto vendido (ej: Auriculares Soundcore)"
+                            value={manualProductName}
+                            onChange={(e) => setManualProductName(e.target.value)}
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none placeholder-neutral-400 font-medium"
+                          />
+                          {products.length === 0 && (
+                            <p className="text-[10px] text-neutral-500 mt-1">
+                              Aún no has agregado productos al inventario. Puedes escribir el producto vendido directamente.
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <select
+                          value={newSaleProduct}
+                          onChange={(e) => setNewSaleProduct(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none font-medium"
+                        >
+                          {products.map((item) => (
+                            <option key={item.id} value={item.id}>
+                              {item.name} ({STORE_SETTINGS.currencySymbol}{item.price.toFixed(2)}) - Stock: {item.stockCount}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
@@ -3667,7 +3753,11 @@ export default function AdminPage() {
                         <input
                           type="number"
                           step="0.01"
-                          placeholder={`Auto: ${STORE_SETTINGS.currencySymbol}${((products.find((p) => p.id === newSaleProduct)?.price || 0) * newSaleQty).toFixed(2)}`}
+                          placeholder={
+                            !isManualProductEntry && products.find((p) => p.id === newSaleProduct)
+                              ? `Auto: ${STORE_SETTINGS.currencySymbol}${((products.find((p) => p.id === newSaleProduct)?.price || 0) * newSaleQty).toFixed(2)}`
+                              : "Ej: 89.00"
+                          }
                           value={newSaleCustomPrice}
                           onChange={(e) => setNewSaleCustomPrice(e.target.value)}
                           className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono text-neutral-900 focus:outline-none font-bold placeholder-neutral-400"
@@ -3859,6 +3949,13 @@ export default function AdminPage() {
                       />
                     </div>
 
+                    {saleFormError && (
+                      <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-bold text-red-700 flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                        <span>{saleFormError}</span>
+                      </div>
+                    )}
+
                     <button
                       type="submit"
                       className="w-full py-3 rounded-xl bg-neutral-950 text-white font-bold text-xs hover:bg-neutral-800 transition-colors flex items-center justify-center gap-2 shadow-md active:scale-95 cursor-pointer"
@@ -3867,6 +3964,54 @@ export default function AdminPage() {
                       <span>Procesar Venta y Descontar Stock</span>
                     </button>
                   </form>
+
+                  {/* Banner de Acceso Inmediato a la Nota de Venta / Despacho */}
+                  {lastRegisteredSale && (
+                    <div className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 space-y-2.5 animate-in fade-in">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-emerald-600" />
+                          <span className="text-xs font-bold text-emerald-950">
+                            Venta #{lastRegisteredSale.id} guardada con éxito
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setLastRegisteredSale(null)}
+                          className="text-neutral-400 hover:text-neutral-700 p-0.5 cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-emerald-900 leading-snug">
+                        {lastRegisteredSale.quantity}x {lastRegisteredSale.productName} para{" "}
+                        <strong>{lastRegisteredSale.customerName}</strong> ({STORE_SETTINGS.currencySymbol}
+                        {lastRegisteredSale.total.toFixed(2)})
+                      </p>
+                      <div className="flex items-center gap-2 pt-1 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => setReceiptModalSale(lastRegisteredSale)}
+                          className="px-3.5 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                        >
+                          <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Imprimir Nota de Venta</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setWhatsappTemplateSale(lastRegisteredSale);
+                            setCustomMsgPhone(lastRegisteredSale.customerPhone || "");
+                            setCopiedTemplateIndex(null);
+                          }}
+                          className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          <span>Avisar por WhatsApp</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -3950,7 +4095,7 @@ export default function AdminPage() {
 
                 {/* Lista de Órdenes */}
                 {displayedSales.length === 0 ? (
-                  <div className="p-10 text-center rounded-2xl border border-dashed border-neutral-300 bg-white space-y-3">
+                  <div className="p-8 text-center rounded-2xl border border-dashed border-neutral-300 bg-white space-y-3">
                     <div className="w-12 h-12 rounded-2xl bg-neutral-100 border border-neutral-200 flex items-center justify-center mx-auto text-neutral-400 shadow-2xs">
                       <ShoppingBag className="w-6 h-6" />
                     </div>
@@ -3962,7 +4107,7 @@ export default function AdminPage() {
                       </h4>
                       <p className="text-[11px] text-neutral-500 mt-1 max-w-sm mx-auto leading-relaxed">
                         {sales.length === 0
-                          ? "Usa el formulario de la izquierda para registrar una venta manual. El stock se descontará automáticamente y alimentará tus gráficos de facturación."
+                          ? "Ingresa un pedido en el formulario de la izquierda y presiona 'Procesar Venta'. Cada orden registrada mostrará de inmediato sus botones para 'Imprimir Nota' oficial y avisar por WhatsApp."
                           : "Intenta cambiando el filtro de período o limpiando la búsqueda para ver más órdenes."}
                       </p>
                     </div>
@@ -4075,10 +4220,11 @@ export default function AdminPage() {
                               <button
                                 type="button"
                                 onClick={() => setReceiptModalSale(s)}
-                                className="p-2 text-neutral-600 hover:text-black hover:bg-neutral-100 rounded-xl transition-colors cursor-pointer border border-neutral-200"
+                                className="px-2.5 py-1.5 text-neutral-800 hover:text-black hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer border border-neutral-300 flex items-center gap-1.5 font-bold text-xs shadow-2xs"
                                 title="Generar e imprimir Comprobante de Despacho / Nota de Venta"
                               >
-                                <Printer className="w-3.5 h-3.5" />
+                                <Printer className="w-3.5 h-3.5 text-neutral-700" />
+                                <span>Imprimir Nota</span>
                               </button>
 
                               {/* Botón Plantillas WhatsApp */}
@@ -4089,17 +4235,18 @@ export default function AdminPage() {
                                   setCustomMsgPhone(s.customerPhone || "");
                                   setCopiedTemplateIndex(null);
                                 }}
-                                className="p-2 text-emerald-700 hover:text-emerald-950 hover:bg-emerald-50 rounded-xl transition-colors cursor-pointer border border-emerald-200"
+                                className="px-2.5 py-1.5 text-emerald-800 hover:text-emerald-950 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer border border-emerald-300 flex items-center gap-1.5 font-bold text-xs shadow-2xs"
                                 title="Mensajes de despacho para WhatsApp"
                               >
-                                <MessageSquare className="w-3.5 h-3.5" />
+                                <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>WhatsApp</span>
                               </button>
 
                               {/* Botón Eliminar Registro */}
                               <button
                                 type="button"
                                 onClick={() => handleDeleteSale(s.id)}
-                                className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-red-200"
+                                className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-red-200"
                                 title="Eliminar este registro de venta"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
