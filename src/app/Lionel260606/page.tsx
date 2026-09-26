@@ -2591,30 +2591,24 @@ export default function AdminPage() {
 
         {/* ================= PESTAÑA 2: AGREGAR / EDITAR PRODUCTO ================= */}
         {activeTab === "add_product" && (
-          <div className="space-y-6">
-            {/* Header del Módulo de Publicación */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-neutral-200/90 shadow-2xs">
+          <div className="space-y-5">
+            {/* Header del Módulo */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200/90 shadow-2xs">
               <div>
-                <div className="text-[11px] font-mono uppercase tracking-wider text-neutral-400 font-bold mb-1">
-                  Catálogo / Gestión de Productos
-                </div>
-                <h2 className="text-xl font-extrabold text-neutral-950 flex items-center gap-2">
+                <h2 className="text-lg sm:text-xl font-extrabold text-neutral-950 flex items-center gap-2">
                   <Package className="w-5 h-5 text-neutral-900" />
-                  <span>{editingProductId ? "Editar Información del Producto" : "Publicar Nuevo Producto"}</span>
+                  <span>{editingProductId ? "Editar Producto" : "Publicar Nuevo Producto"}</span>
                 </h2>
-                <p className="text-xs text-neutral-500 mt-0.5">
-                  Completa los datos técnicos, define el precio de venta y revisa la vista previa en vivo a la derecha.
-                </p>
               </div>
 
-              <div className="flex items-center gap-2.5 shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => setActiveTab("inventory")}
                   className="px-3.5 py-2 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-100 text-neutral-700 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>Volver al Inventario</span>
+                  <span>Volver</span>
                 </button>
 
                 {editingProductId && (
@@ -2623,7 +2617,7 @@ export default function AdminPage() {
                     onClick={handleNewProductClick}
                     className="px-3.5 py-2 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-100 text-neutral-700 text-xs font-bold transition-colors cursor-pointer"
                   >
-                    Crear Nuevo
+                    Nuevo
                   </button>
                 )}
 
@@ -2642,79 +2636,58 @@ export default function AdminPage() {
             </div>
 
             {/* Split Formulario + Live Preview */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
               {/* Formulario Principal (7 Cols) */}
-              <form onSubmit={handleSaveProduct} className="lg:col-span-7 space-y-5 bg-white p-5 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs">
-                {/* Selector de Pasos en Segmented Control */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
-                      Paso {formActiveStep} de 4
-                    </span>
-                    <span className="text-xs text-neutral-400 font-medium">
-                      Puedes hacer click en cualquier sección
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {[
-                      { id: 1, title: "1. Info General", icon: Package },
-                      { id: 2, title: "2. Colores & Fotos", icon: ImageIcon },
-                      { id: 3, title: "3. Precios & Stock", icon: DollarSign },
-                      { id: 4, title: "4. Ficha Técnica", icon: Layers },
-                    ].map((step) => {
-                      const Icon = step.icon;
-                      const isActive = formActiveStep === step.id;
-                      const isCompleted = formActiveStep > step.id;
-                      return (
-                        <button
-                          key={step.id}
-                          type="button"
-                          onClick={() => setFormActiveStep(step.id as 1 | 2 | 3 | 4)}
-                          className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between gap-2 select-none ${
-                            isActive
-                              ? "bg-neutral-950 text-white border-neutral-950 shadow-xs"
-                              : isCompleted
-                              ? "bg-neutral-50 border-neutral-300 text-neutral-900 hover:bg-neutral-100"
-                              : "bg-white border-neutral-200 text-neutral-500 hover:border-neutral-300 hover:text-neutral-800"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : isCompleted ? "text-emerald-600" : "text-neutral-400"}`} />
-                            <span className="text-xs font-bold truncate">{step.title}</span>
-                          </div>
-                          {isCompleted && <Check className="w-3 h-3 text-emerald-600 shrink-0" />}
-                        </button>
-                      );
-                    })}
-                  </div>
+              <form onSubmit={handleSaveProduct} className="lg:col-span-7 space-y-4 bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs">
+                {/* Selector de Pasos */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { id: 1, title: "1. Información", icon: Package },
+                    { id: 2, title: "2. Colores y Fotos", icon: ImageIcon },
+                    { id: 3, title: "3. Precios y Stock", icon: DollarSign },
+                    { id: 4, title: "4. Ficha Técnica", icon: Layers },
+                  ].map((step) => {
+                    const Icon = step.icon;
+                    const isActive = formActiveStep === step.id;
+                    const isCompleted = formActiveStep > step.id;
+                    return (
+                      <button
+                        key={step.id}
+                        type="button"
+                        onClick={() => setFormActiveStep(step.id as 1 | 2 | 3 | 4)}
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between gap-1.5 select-none ${
+                          isActive
+                            ? "bg-neutral-950 text-white border-neutral-950 shadow-xs"
+                            : isCompleted
+                            ? "bg-neutral-50 border-neutral-300 text-neutral-900 hover:bg-neutral-100"
+                            : "bg-white border-neutral-200 text-neutral-500 hover:border-neutral-300 hover:text-neutral-800"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : isCompleted ? "text-emerald-600" : "text-neutral-400"}`} />
+                          <span className="text-xs font-bold truncate">{step.title}</span>
+                        </div>
+                        {isCompleted && <Check className="w-3 h-3 text-emerald-600 shrink-0" />}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* ===== PASO 1: INFORMACIÓN GENERAL ===== */}
                 {formActiveStep === 1 && (
-                  <div className="space-y-4 pt-3 border-t border-neutral-100 animate-in fade-in duration-200">
-                    <div>
-                      <h3 className="text-sm font-extrabold text-neutral-950 flex items-center gap-2">
-                        <Package className="w-4 h-4 text-neutral-900" />
-                        <span>Información Básica del Producto</span>
-                      </h3>
-                      <p className="text-xs text-neutral-500 mt-0.5">
-                        Define el código SKU, nombre comercial, marca, categoría y descripción.
-                      </p>
-                    </div>
-
+                  <div className="space-y-4 pt-2 border-t border-neutral-100 animate-in fade-in duration-150">
                     {/* ID y Nombre */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
-                        <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center justify-between mb-1">
                           <label className="text-xs font-bold text-neutral-900">
-                            ID / SKU (6 dígitos) *
+                            ID / SKU *
                           </label>
                           <button
                             type="button"
                             onClick={() => setFormCustomId(generate6DigitId())}
                             className="text-[10px] font-bold text-neutral-700 hover:text-black flex items-center gap-1 cursor-pointer bg-neutral-100 hover:bg-neutral-200 px-2 py-0.5 rounded-md transition-colors"
-                            title="Generar nuevo número de 6 dígitos aleatorio"
+                            title="Generar ID"
                           >
                             <RefreshCw className="w-2.5 h-2.5" />
                             <span>Generar</span>
@@ -2728,19 +2701,16 @@ export default function AdminPage() {
                             type="text"
                             inputMode="numeric"
                             maxLength={6}
-                            placeholder="Código de 6 dígitos"
+                            placeholder="000000"
                             value={formCustomId}
                             onChange={(e) => setFormCustomId(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                            className="w-full pl-7 pr-3 py-2.5 rounded-xl bg-neutral-50 border border-neutral-300 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 tracking-wider"
+                            className="w-full pl-7 pr-3 py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 tracking-wider"
                           />
                         </div>
-                        <span className="text-[10px] text-neutral-400 mt-1 block">
-                          Identificador para catálogo y pedidos WhatsApp
-                        </span>
                       </div>
 
                       <div className="sm:col-span-2">
-                        <label className="text-xs font-bold text-neutral-900 block mb-1.5">
+                        <label className="text-xs font-bold text-neutral-900 block mb-1">
                           Nombre del Producto *
                         </label>
                         <input
@@ -2749,164 +2719,82 @@ export default function AdminPage() {
                           placeholder="Nombre del modelo o producto"
                           value={formName}
                           onChange={(e) => setFormName(e.target.value)}
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-300 text-sm font-bold text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900"
+                          className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-sm font-bold text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900"
                         />
                       </div>
                     </div>
 
-                    {/* Marca & Categoría */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                      {/* Marca con creación inline */}
+                    {/* Marca & Categoría (Sin enlaces redundantes) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <label className="text-xs font-bold text-neutral-900">
-                            Marca
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowAddBrandInline(!showAddBrandInline);
-                              setInlineBrandName("");
-                            }}
-                            className="text-[11px] font-bold text-neutral-700 hover:text-neutral-950 cursor-pointer underline"
-                          >
-                            {showAddBrandInline ? "Cancelar" : "＋ Nueva Marca"}
-                          </button>
-                        </div>
-
-                        {showAddBrandInline ? (
-                          <div className="flex items-center gap-1.5">
-                            <input
-                              type="text"
-                              placeholder="Nombre de la nueva marca"
-                              value={inlineBrandName}
-                              onChange={(e) => setInlineBrandName(e.target.value)}
-                              className="flex-1 px-3 py-2 rounded-xl bg-white border border-neutral-300 text-xs font-semibold text-neutral-900 focus:outline-none focus:border-neutral-900"
-                              autoFocus
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (inlineBrandName.trim()) {
-                                  addBrand(inlineBrandName.trim());
-                                  setFormBrand(inlineBrandName.trim());
-                                  setShowAddBrandInline(false);
-                                  setInlineBrandName("");
-                                }
-                              }}
-                              className="px-3 py-2 rounded-xl bg-neutral-950 text-white font-bold text-xs hover:bg-neutral-800 cursor-pointer"
-                            >
-                              Guardar
-                            </button>
-                          </div>
-                        ) : (
-                          <select
-                            value={formBrand}
-                            onChange={(e) => setFormBrand(e.target.value)}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-300 text-xs font-semibold text-neutral-900 focus:outline-none focus:bg-white cursor-pointer"
-                          >
-                            {brands.map((b) => (
-                              <option key={b} value={b}>
-                                {b}
-                              </option>
-                            ))}
-                          </select>
-                        )}
+                        <label className="text-xs font-bold text-neutral-900 block mb-1">
+                          Marca
+                        </label>
+                        <select
+                          value={formBrand}
+                          onChange={(e) => setFormBrand(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-xs font-semibold text-neutral-900 focus:outline-none focus:bg-white cursor-pointer"
+                        >
+                          {brands.map((b) => (
+                            <option key={b} value={b}>
+                              {b}
+                            </option>
+                          ))}
+                        </select>
                       </div>
 
-                      {/* Categoría con creación inline */}
                       <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <label className="text-xs font-bold text-neutral-900">
-                            Categoría
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowAddCategoryInline(!showAddCategoryInline);
-                              setInlineCategoryName("");
-                            }}
-                            className="text-[11px] font-bold text-neutral-700 hover:text-neutral-950 cursor-pointer underline"
-                          >
-                            {showAddCategoryInline ? "Cancelar" : "＋ Nueva Categoría"}
-                          </button>
-                        </div>
-
-                        {showAddCategoryInline ? (
-                          <div className="flex items-center gap-1.5">
-                            <input
-                              type="text"
-                              placeholder="Nombre de la categoría"
-                              value={inlineCategoryName}
-                              onChange={(e) => setInlineCategoryName(e.target.value)}
-                              className="flex-1 px-3 py-2 rounded-xl bg-white border border-neutral-300 text-xs font-semibold text-neutral-900 focus:outline-none focus:border-neutral-900"
-                              autoFocus
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (inlineCategoryName.trim()) {
-                                  addCategory(inlineCategoryName.trim());
-                                  handleCategoryChange(inlineCategoryName.trim());
-                                  setShowAddCategoryInline(false);
-                                  setInlineCategoryName("");
-                                }
-                              }}
-                              className="px-3 py-2 rounded-xl bg-neutral-950 text-white font-bold text-xs hover:bg-neutral-800 cursor-pointer"
-                            >
-                              Guardar
-                            </button>
-                          </div>
-                        ) : (
-                          <select
-                            value={formCategory}
-                            onChange={(e) => handleCategoryChange(e.target.value)}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-300 text-xs font-semibold text-neutral-900 focus:outline-none focus:bg-white cursor-pointer"
-                          >
-                            {categories.map((c) => (
-                              <option key={c} value={c}>
-                                {c}
-                              </option>
-                            ))}
-                          </select>
-                        )}
+                        <label className="text-xs font-bold text-neutral-900 block mb-1">
+                          Categoría
+                        </label>
+                        <select
+                          value={formCategory}
+                          onChange={(e) => handleCategoryChange(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-xs font-semibold text-neutral-900 focus:outline-none focus:bg-white cursor-pointer"
+                        >
+                          {categories.map((c) => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
 
                     {/* Subtítulo Breve */}
                     <div>
-                      <label className="text-xs font-bold text-neutral-900 block mb-1.5">
-                        Resumen Breve (visible en la tarjeta de producto)
+                      <label className="text-xs font-bold text-neutral-900 block mb-1">
+                        Subtítulo o Resumen
                       </label>
                       <input
                         type="text"
-                        placeholder="Características destacadas en una línea"
+                        placeholder="Resumen breve del producto"
                         value={formSubtitle}
                         onChange={(e) => setFormSubtitle(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900"
+                        className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900"
                       />
                     </div>
 
                     {/* Descripción Comercial */}
                     <div>
-                      <label className="text-xs font-bold text-neutral-900 block mb-1.5">
-                        Descripción Comercial Detallada
+                      <label className="text-xs font-bold text-neutral-900 block mb-1">
+                        Descripción del Producto
                       </label>
                       <textarea
                         rows={3}
-                        placeholder="Descripción del producto, beneficios clave y contenido de la caja..."
+                        placeholder="Descripción del producto..."
                         value={formDescription}
                         onChange={(e) => setFormDescription(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 leading-relaxed"
+                        className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 leading-relaxed"
                       />
                     </div>
 
                     {/* Botones de Navegación del Paso 1 */}
-                    <div className="pt-4 border-t border-neutral-100 flex items-center justify-between">
+                    <div className="pt-3 border-t border-neutral-100 flex items-center justify-between">
                       <button
                         type="button"
                         onClick={() => setActiveTab("inventory")}
-                        className="px-4 py-2.5 rounded-xl border border-neutral-200 text-neutral-700 hover:text-black text-xs font-semibold cursor-pointer"
+                        className="px-4 py-2 rounded-xl border border-neutral-200 text-neutral-700 hover:text-black text-xs font-semibold cursor-pointer"
                       >
                         Cancelar
                       </button>
@@ -2919,9 +2807,9 @@ export default function AdminPage() {
                           }
                           setFormActiveStep(2);
                         }}
-                        className="px-5 py-2.5 rounded-xl bg-neutral-950 text-white text-xs font-bold flex items-center gap-2 hover:bg-neutral-800 transition-colors shadow-xs cursor-pointer"
+                        className="px-5 py-2 rounded-xl bg-neutral-950 text-white text-xs font-bold flex items-center gap-2 hover:bg-neutral-800 transition-colors shadow-xs cursor-pointer"
                       >
-                        <span>Siguiente: Colores &amp; Fotos</span>
+                        <span>Siguiente</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -2930,22 +2818,16 @@ export default function AdminPage() {
 
                 {/* ===== PASO 2: COLORES & FOTOGRAFÍAS ===== */}
                 {formActiveStep === 2 && (
-                  <div className="space-y-5 pt-3 border-t border-neutral-100 animate-in fade-in duration-200">
+                  <div className="space-y-4 pt-2 border-t border-neutral-100 animate-in fade-in duration-150">
                     <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-sm font-extrabold text-neutral-950 flex items-center gap-2">
-                          <ImageIcon className="w-4 h-4 text-neutral-900" />
-                          <span>Variantes de Color &amp; Fotografías</span>
-                        </h3>
-                        <p className="text-xs text-neutral-500 mt-0.5">
-                          Configura cada color disponible con su tono HEX y su fotografía representativa.
-                        </p>
-                      </div>
+                      <h3 className="text-sm font-extrabold text-neutral-950">
+                        Colores y Fotos
+                      </h3>
 
                       <button
                         type="button"
                         onClick={handleAddColor}
-                        className="px-3.5 py-1.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+                        className="px-3 py-1.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>Añadir Color</span>
@@ -2953,20 +2835,20 @@ export default function AdminPage() {
                     </div>
 
                     {/* Lista de Colores Configurados */}
-                    <div className="space-y-3.5">
+                    <div className="space-y-3">
                       {formColors.map((color, idx) => (
                         <div
                           key={idx}
-                          className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/60 space-y-3 relative transition-all"
+                          className="p-3.5 rounded-xl border border-neutral-200 bg-neutral-50/60 space-y-2.5 relative transition-all"
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <span
-                                className="w-5 h-5 rounded-full border border-neutral-300 shadow-2xs shrink-0"
+                                className="w-4 h-4 rounded-full border border-neutral-300 shadow-2xs shrink-0"
                                 style={{ backgroundColor: color.hex }}
                               />
                               <span className="text-xs font-extrabold text-neutral-900">
-                                Variante #{idx + 1}: {color.name || "Sin nombre"}
+                                Color #{idx + 1}: {color.name || "Sin nombre"}
                               </span>
                             </div>
 
@@ -2974,16 +2856,16 @@ export default function AdminPage() {
                               <button
                                 type="button"
                                 onClick={() => handleRemoveColor(idx)}
-                                className="text-neutral-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                                title="Eliminar esta variante"
+                                className="text-neutral-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                                title="Eliminar este color"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             )}
                           </div>
 
                           {/* Campos del color */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                             <div>
                               <label className="text-[11px] font-bold text-neutral-700 block mb-1">
                                 Nombre del Color
@@ -2999,7 +2881,7 @@ export default function AdminPage() {
 
                             <div>
                               <label className="text-[11px] font-bold text-neutral-700 block mb-1">
-                                Tono HEX
+                                Color HEX
                               </label>
                               <div className="flex items-center gap-2">
                                 <input
@@ -3019,50 +2901,45 @@ export default function AdminPage() {
                           </div>
 
                           {/* Paleta rápida de sugerencias */}
-                          <div>
-                            <span className="text-[10px] font-bold text-neutral-500 block mb-1">
-                              Muestras de color rápido:
-                            </span>
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              {[
-                                { name: "Negro", hex: "#18181b" },
-                                { name: "Blanco", hex: "#FFFFFF" },
-                                { name: "Beige", hex: "#f5f0e6" },
-                                { name: "Azul", hex: "#1e3a8a" },
-                                { name: "Titanio", hex: "#64748b" },
-                                { name: "Verde", hex: "#059669" },
-                                { name: "Rosa", hex: "#f43f5e" },
-                              ].map((preset) => (
-                                <button
-                                  type="button"
-                                  key={preset.name}
-                                  onClick={() => {
-                                    handleUpdateColor(idx, "name", preset.name);
-                                    handleUpdateColor(idx, "hex", preset.hex);
-                                  }}
-                                  className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                                    color.hex?.toLowerCase() === preset.hex.toLowerCase()
-                                      ? "bg-neutral-950 text-white border-neutral-950 shadow-2xs"
-                                      : "bg-white text-neutral-700 border-neutral-200 hover:border-neutral-400"
-                                  }`}
-                                >
-                                  <span
-                                    className="w-2.5 h-2.5 rounded-full border border-neutral-300 shrink-0"
-                                    style={{ backgroundColor: preset.hex }}
-                                  />
-                                  <span>{preset.name}</span>
-                                </button>
-                              ))}
-                            </div>
+                          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                            {[
+                              { name: "Negro", hex: "#18181b" },
+                              { name: "Blanco", hex: "#FFFFFF" },
+                              { name: "Beige", hex: "#f5f0e6" },
+                              { name: "Azul", hex: "#1e3a8a" },
+                              { name: "Titanio", hex: "#64748b" },
+                              { name: "Verde", hex: "#059669" },
+                              { name: "Rosa", hex: "#f43f5e" },
+                            ].map((preset) => (
+                              <button
+                                type="button"
+                                key={preset.name}
+                                onClick={() => {
+                                  handleUpdateColor(idx, "name", preset.name);
+                                  handleUpdateColor(idx, "hex", preset.hex);
+                                }}
+                                className={`px-2 py-0.5 rounded-lg border text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                                  color.hex?.toLowerCase() === preset.hex.toLowerCase()
+                                    ? "bg-neutral-950 text-white border-neutral-950 shadow-2xs"
+                                    : "bg-white text-neutral-700 border-neutral-200 hover:border-neutral-400"
+                                }`}
+                              >
+                                <span
+                                  className="w-2 h-2 rounded-full border border-neutral-300 shrink-0"
+                                  style={{ backgroundColor: preset.hex }}
+                                />
+                                <span>{preset.name}</span>
+                              </button>
+                            ))}
                           </div>
 
-                          {/* Foto para este color */}
-                          <div className="pt-2 border-t border-neutral-200/80">
-                            <label className="text-[11px] font-bold text-neutral-700 block mb-1.5">
-                              Fotografía para el color {color.name || `#${idx + 1}`}:
+                          {/* Foto para este color (SIN muestras predeterminadas) */}
+                          <div className="pt-2 border-t border-neutral-200">
+                            <label className="text-[11px] font-bold text-neutral-700 block mb-1">
+                              Fotografía
                             </label>
-                            <div className="flex flex-col sm:flex-row items-center gap-3">
-                              <div className="w-14 h-14 rounded-xl bg-white border border-neutral-200 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-xl bg-white border border-neutral-200 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
                                 {color.image ? (
                                   <img
                                     src={color.image}
@@ -3074,60 +2951,30 @@ export default function AdminPage() {
                                 )}
                               </div>
 
-                              <div className="flex-1 w-full space-y-2">
-                                <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-neutral-300 hover:border-neutral-900 text-xs font-bold text-neutral-900 cursor-pointer transition-colors shadow-2xs">
-                                  <Upload className="w-3.5 h-3.5 text-neutral-600" />
-                                  <span>Subir foto (JPG, PNG, WebP)</span>
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => handleColorImageUpload(idx, e)}
-                                    className="hidden"
-                                  />
-                                </label>
-
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="text-[10px] text-neutral-400">O muestras predeterminadas:</span>
-                                  {[
-                                    { name: "Buds 6 Play", path: getAssetUrl("/images/products/redmi-buds-6-play.png") },
-                                    { name: "Buds 8 Lite", path: getAssetUrl("/images/products/redmi-buds-8-lite.png") },
-                                    { name: "Buds 7S", path: getAssetUrl("/images/products/redmi-buds-7s.png") },
-                                  ].map((sample) => (
-                                    <button
-                                      type="button"
-                                      key={sample.name}
-                                      onClick={() => handleUpdateColor(idx, "image", sample.path)}
-                                      className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border cursor-pointer ${
-                                        color.image === sample.path
-                                          ? "bg-neutral-900 text-white border-neutral-900"
-                                          : "bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50"
-                                      }`}
-                                    >
-                                      {sample.name}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
+                              <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-neutral-300 hover:border-neutral-900 text-xs font-bold text-neutral-900 cursor-pointer transition-colors shadow-2xs">
+                                <Upload className="w-3.5 h-3.5 text-neutral-600" />
+                                <span>Subir imagen</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleColorImageUpload(idx, e)}
+                                  className="hidden"
+                                />
+                              </label>
                             </div>
                           </div>
                         </div>
                       ))}
                     </div>
 
-                    {/* Imagen Secundaria (Efecto Hover en Tienda) */}
-                    <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/60 space-y-3">
-                      <div>
-                        <span className="text-xs font-extrabold text-neutral-900 flex items-center gap-1.5">
-                          <Eye className="w-3.5 h-3.5 text-neutral-700" />
-                          <span>Foto Secundaria (Efecto Hover al pasar el cursor)</span>
-                        </span>
-                        <p className="text-[11px] text-neutral-500 mt-0.5">
-                          Esta fotografía aparecerá al pasar el cursor sobre la tarjeta del producto en la tienda.
-                        </p>
-                      </div>
+                    {/* Foto Secundaria (Simple, conciso, sin muestras) */}
+                    <div className="p-3.5 rounded-xl border border-neutral-200 bg-neutral-50/60 space-y-2">
+                      <span className="text-xs font-bold text-neutral-900 block">
+                        Foto Secundaria
+                      </span>
 
-                      <div className="flex flex-col sm:flex-row items-center gap-3">
-                        <div className="w-14 h-14 rounded-xl bg-white border border-neutral-200 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-white border border-neutral-200 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
                           {formSecondaryImage ? (
                             <img
                               src={formSecondaryImage}
@@ -3139,78 +2986,50 @@ export default function AdminPage() {
                           )}
                         </div>
 
-                        <div className="flex-1 w-full space-y-2">
-                          <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-xs font-bold text-white cursor-pointer transition-colors shadow-2xs">
-                            <Upload className="w-3.5 h-3.5 text-white" />
-                            <span>Subir foto secundaria</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleSecondaryImageUpload}
-                              className="hidden"
-                            />
-                          </label>
-
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[10px] text-neutral-400">Muestras de catálogo:</span>
-                            {[
-                              { name: "Buds 6 Earbuds", path: getAssetUrl("/images/products/redmi-buds-6-play-earbuds.png") },
-                              { name: "Buds 8 Features", path: getAssetUrl("/images/products/redmi-buds-8-lite-features.png") },
-                              { name: "Buds 7S Earbuds", path: getAssetUrl("/images/products/redmi-buds-7s-earbuds.png") },
-                            ].map((sample) => (
-                              <button
-                                type="button"
-                                key={sample.name}
-                                onClick={() => setFormSecondaryImage(sample.path)}
-                                className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border cursor-pointer ${
-                                  formSecondaryImage === sample.path
-                                    ? "bg-neutral-900 text-white border-neutral-900"
-                                    : "bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50"
-                                }`}
-                              >
-                                {sample.name}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
+                        <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-xs font-bold text-white cursor-pointer transition-colors shadow-2xs">
+                          <Upload className="w-3.5 h-3.5 text-white" />
+                          <span>Subir foto secundaria</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleSecondaryImageUpload}
+                            className="hidden"
+                          />
+                        </label>
                       </div>
                     </div>
 
-                    {/* Video Demostrativo del Producto */}
-                    <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/60 space-y-2">
-                      <span className="text-xs font-bold text-neutral-900 flex items-center gap-1.5">
-                        <VideoIcon className="w-3.5 h-3.5 text-neutral-700" />
-                        <span>Video Multimedia Oficial (YouTube o MP4 - Opcional)</span>
+                    {/* Video del Producto (Simple y conciso) */}
+                    <div className="p-3.5 rounded-xl border border-neutral-200 bg-neutral-50/60 space-y-1.5">
+                      <span className="text-xs font-bold text-neutral-900 block">
+                        Video del Producto (Opcional)
                       </span>
 
                       <input
                         type="url"
-                        placeholder="URL de YouTube o enlace de video .mp4"
+                        placeholder="URL de YouTube o enlace .mp4"
                         value={formVideoUrl}
                         onChange={(e) => setFormVideoUrl(e.target.value)}
-                        className="w-full px-3.5 py-2 rounded-xl bg-white border border-neutral-300 text-xs font-mono text-neutral-900 focus:outline-none focus:border-neutral-900"
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-300 text-xs font-mono text-neutral-900 focus:outline-none focus:border-neutral-900"
                       />
-                      <p className="text-[11px] text-neutral-400">
-                        Se reproducirá en la galería interactiva en la página de detalle del producto.
-                      </p>
                     </div>
 
                     {/* Botones de Navegación del Paso 2 */}
-                    <div className="pt-4 border-t border-neutral-100 flex items-center justify-between">
+                    <div className="pt-3 border-t border-neutral-100 flex items-center justify-between">
                       <button
                         type="button"
                         onClick={() => setFormActiveStep(1)}
-                        className="px-4 py-2.5 rounded-xl border border-neutral-200 text-neutral-700 hover:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                        className="px-4 py-2 rounded-xl border border-neutral-200 text-neutral-700 hover:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                       >
                         <ArrowLeft className="w-3.5 h-3.5" />
-                        <span>Anterior: Info General</span>
+                        <span>Anterior</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setFormActiveStep(3)}
-                        className="px-5 py-2.5 rounded-xl bg-neutral-950 text-white text-xs font-bold flex items-center gap-2 hover:bg-neutral-800 transition-colors shadow-xs cursor-pointer"
+                        className="px-5 py-2 rounded-xl bg-neutral-950 text-white text-xs font-bold flex items-center gap-2 hover:bg-neutral-800 transition-colors shadow-xs cursor-pointer"
                       >
-                        <span>Siguiente: Precios &amp; Stock</span>
+                        <span>Siguiente</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -3219,24 +3038,14 @@ export default function AdminPage() {
 
                 {/* ===== PASO 3: PRECIOS, DESCUENTOS & STOCK ===== */}
                 {formActiveStep === 3 && (
-                  <div className="space-y-4 pt-3 border-t border-neutral-100 animate-in fade-in duration-200">
-                    <div>
-                      <h3 className="text-sm font-extrabold text-neutral-950 flex items-center gap-2">
-                        <DollarSign className="w-4 h-4 text-neutral-900" />
-                        <span>Precios, Descuentos &amp; Control de Stock</span>
-                      </h3>
-                      <p className="text-xs text-neutral-500 mt-0.5">
-                        Define el valor de venta al público, cantidad inicial en almacén y ofertas promocionales.
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-4 pt-2 border-t border-neutral-100 animate-in fade-in duration-150">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                       <div>
-                        <label className="text-xs font-bold text-neutral-900 block mb-1.5">
+                        <label className="text-xs font-bold text-neutral-900 block mb-1">
                           Precio de Venta ({STORE_SETTINGS.currencySymbol}) *
                         </label>
                         <div className="relative">
-                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-mono font-bold text-neutral-500 text-sm">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-neutral-500 text-sm">
                             {STORE_SETTINGS.currencySymbol}
                           </span>
                           <input
@@ -3247,21 +3056,21 @@ export default function AdminPage() {
                             placeholder="0.00"
                             value={formPrice}
                             onChange={(e) => setFormPrice(parseFloat(e.target.value) || 0)}
-                            className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-300 text-base font-extrabold text-neutral-950 focus:outline-none focus:bg-white focus:border-neutral-900 font-mono"
+                            className="w-full pl-8 pr-3 py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-base font-extrabold text-neutral-950 focus:outline-none focus:bg-white focus:border-neutral-900 font-mono"
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className="text-xs font-bold text-neutral-900 block mb-1.5">
-                          Stock Inicial en Almacén (unidades)
+                        <label className="text-xs font-bold text-neutral-900 block mb-1">
+                          Stock Inicial
                         </label>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                           <button
                             type="button"
                             onClick={() => setFormStock(Math.max(0, (formStock || 0) - 1))}
                             disabled={formStock <= 0}
-                            className="w-10 h-10 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 active:scale-95 text-neutral-800 font-black text-sm flex items-center justify-center cursor-pointer disabled:opacity-30 shadow-2xs"
+                            className="w-9 h-9 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 active:scale-95 text-neutral-800 font-black text-sm flex items-center justify-center cursor-pointer disabled:opacity-30 shadow-2xs"
                           >
                             -
                           </button>
@@ -3270,49 +3079,49 @@ export default function AdminPage() {
                             min={0}
                             value={formStock}
                             onChange={(e) => setFormStock(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                            className="flex-1 text-center py-2.5 rounded-xl bg-neutral-50 border border-neutral-300 text-base font-extrabold text-neutral-950 focus:outline-none focus:bg-white focus:border-neutral-900 font-mono"
+                            className="flex-1 text-center py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-base font-extrabold text-neutral-950 focus:outline-none focus:bg-white focus:border-neutral-900 font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            style={{ MozAppearance: 'textfield' }}
                           />
                           <button
                             type="button"
                             onClick={() => setFormStock((formStock || 0) + 1)}
-                            className="w-10 h-10 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 active:scale-95 text-neutral-800 font-black text-sm flex items-center justify-center cursor-pointer shadow-2xs"
+                            className="w-9 h-9 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 active:scale-95 text-neutral-800 font-black text-sm flex items-center justify-center cursor-pointer shadow-2xs"
                           >
                             +
                           </button>
                         </div>
-                        <div className="text-[11px] text-neutral-500 mt-1 flex items-center gap-1.5">
+                        <div className="text-[11px] font-bold text-neutral-700 mt-1 flex items-center gap-1.5">
                           <span className={`w-2 h-2 rounded-full ${formStock > 5 ? "bg-emerald-500" : formStock > 0 ? "bg-amber-500" : "bg-rose-500"}`} />
                           <span>
                             {formStock > 5
-                              ? "Stock normal (disponible en tienda web)"
+                              ? "En Stock"
                               : formStock > 0
-                              ? "Bajo stock (aviso de pocas unidades)"
-                              : "Agotado (se mantendrá oculto en la tienda web)"}
+                              ? "Bajo stock"
+                              : "Agotado"}
                           </span>
                         </div>
                       </div>
                     </div>
 
                     {/* Switch Promoción Especial */}
-                    <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/60 space-y-3">
-                      <label className="flex items-center gap-3 cursor-pointer select-none">
+                    <div className="p-3.5 rounded-xl border border-neutral-200 bg-neutral-50/60 space-y-2.5">
+                      <label className="flex items-center gap-2.5 cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={formHasPromo}
                           onChange={(e) => setFormHasPromo(e.target.checked)}
                           className="w-4 h-4 rounded text-neutral-900 focus:ring-0 bg-white border-neutral-300 cursor-pointer"
                         />
-                        <span className="text-xs font-extrabold text-neutral-900 flex items-center gap-1.5">
-                          <Tag className="w-3.5 h-3.5 text-neutral-700" />
-                          <span>Activar Precio de Oferta o Descuento Especial</span>
+                        <span className="text-xs font-bold text-neutral-900">
+                          Precio de Oferta
                         </span>
                       </label>
 
                       {formHasPromo && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-3 border-t border-neutral-200 animate-in fade-in duration-150">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-neutral-200 animate-in fade-in duration-150">
                           <div>
                             <label className="text-[11px] font-bold text-neutral-700 block mb-1">
-                              Precio Original Tachado ({STORE_SETTINGS.currencySymbol})
+                              Precio Regular ({STORE_SETTINGS.currencySymbol})
                             </label>
                             <input
                               type="number"
@@ -3320,18 +3129,18 @@ export default function AdminPage() {
                               placeholder="0.00"
                               value={formOriginalPrice}
                               onChange={(e) => setFormOriginalPrice(parseFloat(e.target.value) || 0)}
-                              className="w-full px-3.5 py-2 rounded-xl bg-white border border-neutral-300 text-xs font-bold text-neutral-900 font-mono focus:outline-none focus:border-neutral-900"
+                              className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-300 text-xs font-bold text-neutral-900 font-mono focus:outline-none focus:border-neutral-900"
                             />
                           </div>
 
                           <div>
                             <label className="text-[11px] font-bold text-neutral-700 block mb-1">
-                              Insignia en Tarjeta
+                              Etiqueta
                             </label>
                             <select
                               value={formPromoTag}
                               onChange={(e) => setFormPromoTag(e.target.value)}
-                              className="w-full px-3.5 py-2 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 font-semibold focus:outline-none focus:border-neutral-900 cursor-pointer"
+                              className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 font-semibold focus:outline-none focus:border-neutral-900 cursor-pointer"
                             >
                               <option value="OFERTA FLASH">OFERTA FLASH</option>
                               <option value="MÁS VENDIDO">MÁS VENDIDO</option>
@@ -3341,12 +3150,12 @@ export default function AdminPage() {
                           </div>
 
                           {Number(formOriginalPrice) > Number(formPrice) && Number(formPrice) > 0 && (
-                            <div className="sm:col-span-2 text-xs font-bold text-neutral-900 bg-white p-3 rounded-xl border border-neutral-200 flex items-center justify-between">
+                            <div className="sm:col-span-2 text-xs font-bold text-neutral-900 bg-white p-2.5 rounded-xl border border-neutral-200 flex items-center justify-between">
                               <span>
                                 Descuento del {Math.round(((Number(formOriginalPrice) - Number(formPrice)) / Number(formOriginalPrice)) * 100)}%
                               </span>
                               <span className="font-mono text-emerald-600">
-                                Ahorro de {STORE_SETTINGS.currencySymbol}{(Number(formOriginalPrice) - Number(formPrice)).toFixed(2)}
+                                Ahorro {STORE_SETTINGS.currencySymbol}{(Number(formOriginalPrice) - Number(formPrice)).toFixed(2)}
                               </span>
                             </div>
                           )}
@@ -3355,40 +3164,34 @@ export default function AdminPage() {
                     </div>
 
                     {/* Botones de Navegación del Paso 3 */}
-                    <div className="pt-4 border-t border-neutral-100 flex items-center justify-between">
+                    <div className="pt-3 border-t border-neutral-100 flex items-center justify-between">
                       <button
                         type="button"
                         onClick={() => setFormActiveStep(2)}
-                        className="px-4 py-2.5 rounded-xl border border-neutral-200 text-neutral-700 hover:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                        className="px-4 py-2 rounded-xl border border-neutral-200 text-neutral-700 hover:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                       >
                         <ArrowLeft className="w-3.5 h-3.5" />
-                        <span>Anterior: Colores &amp; Fotos</span>
+                        <span>Anterior</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setFormActiveStep(4)}
-                        className="px-5 py-2.5 rounded-xl bg-neutral-950 text-white text-xs font-bold flex items-center gap-2 hover:bg-neutral-800 transition-colors shadow-xs cursor-pointer"
+                        className="px-5 py-2 rounded-xl bg-neutral-950 text-white text-xs font-bold flex items-center gap-2 hover:bg-neutral-800 transition-colors shadow-xs cursor-pointer"
                       >
-                        <span>Siguiente: Ficha Técnica</span>
+                        <span>Siguiente</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
                 )}
 
-                {/* ===== PASO 4: FICHA TÉCNICA OFICIAL ===== */}
+                {/* ===== PASO 4: FICHA TÉCNICA ===== */}
                 {formActiveStep === 4 && (
-                  <div className="space-y-4 pt-3 border-t border-neutral-100 animate-in fade-in duration-200">
+                  <div className="space-y-4 pt-2 border-t border-neutral-100 animate-in fade-in duration-150">
                     <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-sm font-extrabold text-neutral-950 flex items-center gap-2">
-                          <Layers className="w-4 h-4 text-neutral-900" />
-                          <span>Ficha Técnica Oficial ({formCategory})</span>
-                        </h3>
-                        <p className="text-xs text-neutral-500 mt-0.5">
-                          Especificaciones detalladas que se mostrarán en la ficha técnica del producto.
-                        </p>
-                      </div>
+                      <h3 className="text-sm font-extrabold text-neutral-950">
+                        Ficha Técnica ({formCategory})
+                      </h3>
 
                       <div className="flex items-center gap-2">
                         <button
@@ -3398,7 +3201,6 @@ export default function AdminPage() {
                             setFormCustomSpecs(tpl.map((t) => ({ label: t.label, value: "" })));
                           }}
                           className="px-3 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-xs font-bold text-neutral-800 flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
-                          title="Cargar especificaciones por defecto de la categoría"
                         >
                           <RefreshCw className="w-3 h-3" />
                           <span>Plantilla</span>
@@ -3412,38 +3214,38 @@ export default function AdminPage() {
                           className="px-3 py-1.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-xs font-bold text-white flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
                         >
                           <Plus className="w-3 h-3" />
-                          <span>+ Característica</span>
+                          <span>+ Fila</span>
                         </button>
                       </div>
                     </div>
 
-                    <div className="space-y-2.5 bg-neutral-50/60 p-4 rounded-xl border border-neutral-200">
+                    <div className="space-y-2 bg-neutral-50/60 p-3.5 rounded-xl border border-neutral-200">
                       {formCustomSpecs.map((spec, sIdx) => (
                         <div key={sIdx} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
                           <div className="sm:col-span-5">
                             <input
                               type="text"
-                              placeholder="Especificación técnica"
+                              placeholder="Parámetro (ej. Batería)"
                               value={spec.label}
                               onChange={(e) => {
                                 const next = [...formCustomSpecs];
                                 next[sIdx].label = e.target.value;
                                 setFormCustomSpecs(next);
                               }}
-                              className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-300 text-xs font-bold text-neutral-900 focus:outline-none focus:border-neutral-900"
+                              className="w-full px-3 py-1.5 rounded-xl bg-white border border-neutral-300 text-xs font-bold text-neutral-900 focus:outline-none focus:border-neutral-900"
                             />
                           </div>
                           <div className="sm:col-span-6">
                             <input
                               type="text"
-                              placeholder="Detalle o valor"
+                              placeholder="Valor"
                               value={spec.value}
                               onChange={(e) => {
                                 const next = [...formCustomSpecs];
                                 next[sIdx].value = e.target.value;
                                 setFormCustomSpecs(next);
                               }}
-                              className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-800 focus:outline-none focus:border-neutral-900"
+                              className="w-full px-3 py-1.5 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-800 focus:outline-none focus:border-neutral-900"
                             />
                           </div>
                           <div className="sm:col-span-1 flex justify-end">
@@ -3452,97 +3254,91 @@ export default function AdminPage() {
                               onClick={() => {
                                 setFormCustomSpecs(formCustomSpecs.filter((_, i) => i !== sIdx));
                               }}
-                              className="p-1.5 text-neutral-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                              title="Eliminar esta fila"
+                              className="p-1 text-neutral-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                              title="Eliminar fila"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
                       ))}
 
                       {formCustomSpecs.length === 0 && (
-                        <div className="text-center py-4 text-xs text-neutral-400">
-                          No hay características agregadas. Pulsa &quot;+ Característica&quot; para añadir especificaciones técnicas.
+                        <div className="text-center py-3 text-xs text-neutral-400">
+                          Sin características. Haz click en &quot;+ Fila&quot; para agregar.
                         </div>
                       )}
                     </div>
 
-                    {/* Resumen Final del Registro */}
-                    <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/70 text-xs space-y-2">
+                    {/* Resumen Final */}
+                    <div className="p-3.5 rounded-xl border border-neutral-200 bg-neutral-50/70 text-xs space-y-1.5">
                       <div className="font-bold text-neutral-900 flex items-center justify-between">
-                        <span>Resumen de Publicación</span>
+                        <span>Resumen</span>
                         <span className="font-mono bg-white px-2 py-0.5 rounded-md border border-neutral-200 font-bold text-neutral-800">
                           #{formCustomId}
                         </span>
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-neutral-600 pt-1">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-neutral-600 pt-1">
                         <div>
-                          <span className="text-[11px] text-neutral-400 block">Producto</span>
+                          <span className="text-[10px] text-neutral-400 block uppercase">Producto</span>
                           <strong className="text-neutral-950 truncate block">{formName || "Sin nombre"}</strong>
                         </div>
                         <div>
-                          <span className="text-[11px] text-neutral-400 block">Marca &amp; Categoría</span>
+                          <span className="text-[10px] text-neutral-400 block uppercase">Marca &amp; Categoría</span>
                           <strong className="text-neutral-950 truncate block">{formBrand} · {formCategory}</strong>
                         </div>
                         <div>
-                          <span className="text-[11px] text-neutral-400 block">Variantes</span>
-                          <strong className="text-neutral-950 block">{formColors.length} colores</strong>
-                        </div>
-                        <div>
-                          <span className="text-[11px] text-neutral-400 block">Precio de Venta</span>
+                          <span className="text-[10px] text-neutral-400 block uppercase">Precio</span>
                           <strong className="text-neutral-950 font-mono text-sm block">
                             {STORE_SETTINGS.currencySymbol}{Number(formPrice || 0).toFixed(2)}
                           </strong>
                         </div>
                         <div>
-                          <span className="text-[11px] text-neutral-400 block">Stock en Almacén</span>
+                          <span className="text-[10px] text-neutral-400 block uppercase">Stock</span>
                           <strong className="text-neutral-950 block">{formStock} unidades</strong>
                         </div>
                         <div>
-                          <span className="text-[11px] text-neutral-400 block">Estado Web</span>
-                          <strong className="text-neutral-950 block">
-                            {formStock > 0 ? "Visible en catálogo" : "Oculto (Agotado)"}
-                          </strong>
+                          <span className="text-[10px] text-neutral-400 block uppercase">Colores</span>
+                          <strong className="text-neutral-950 block">{formColors.length}</strong>
                         </div>
                       </div>
                     </div>
 
                     {/* Botones de Finalización */}
-                    <div className="pt-4 border-t border-neutral-100 flex items-center justify-between gap-3">
+                    <div className="pt-3 border-t border-neutral-100 flex items-center justify-between gap-3">
                       <button
                         type="button"
                         onClick={() => setFormActiveStep(3)}
-                        className="px-4 py-2.5 rounded-xl border border-neutral-200 text-neutral-700 hover:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                        className="px-4 py-2 rounded-xl border border-neutral-200 text-neutral-700 hover:text-black text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                       >
                         <ArrowLeft className="w-3.5 h-3.5" />
-                        <span>Anterior: Precios &amp; Stock</span>
+                        <span>Anterior</span>
                       </button>
 
                       <button
                         type="submit"
-                        className="px-6 py-3 rounded-xl bg-neutral-950 text-white font-extrabold text-xs hover:bg-neutral-800 transition-all flex items-center gap-2 shadow-sm active:scale-95 cursor-pointer"
+                        className="px-6 py-2.5 rounded-xl bg-neutral-950 text-white font-extrabold text-xs hover:bg-neutral-800 transition-all flex items-center gap-2 shadow-sm active:scale-95 cursor-pointer"
                       >
                         <Save className="w-4 h-4 text-white" />
-                        <span>{editingProductId ? "Actualizar y Guardar Cambios" : "Guardar y Publicar en Tienda"}</span>
+                        <span>{editingProductId ? "Actualizar Producto" : "Publicar Producto"}</span>
                       </button>
                     </div>
                   </div>
                 )}
               </form>
 
-              {/* Vista Previa en Vivo de la Tarjeta (5 Cols) */}
-              <div className="lg:col-span-5 space-y-4 sticky top-20">
+              {/* Vista Previa en Vivo (5 Cols) */}
+              <div className="lg:col-span-5 space-y-3 sticky top-20">
                 <div className="flex items-center justify-between text-xs text-neutral-500 font-bold">
                   <span className="flex items-center gap-1.5 uppercase tracking-wider text-neutral-900 font-extrabold">
                     <Eye className="w-3.5 h-3.5" />
-                    <span>Vista Previa en Tiempo Real</span>
+                    <span>Vista Previa</span>
                   </span>
                   <span className="text-[11px] text-neutral-400 font-medium">Tarjeta en catálogo</span>
                 </div>
 
                 {/* Tarjeta de Producto Simulada */}
-                <div className="rounded-2xl bg-white text-neutral-900 border border-neutral-200/90 shadow-lg p-5 overflow-hidden flex flex-col justify-between">
+                <div className="rounded-2xl bg-white text-neutral-900 border border-neutral-200/90 shadow-md p-4 sm:p-5 overflow-hidden flex flex-col justify-between">
                   {/* Encabezado */}
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <div className="flex items-center gap-2">
@@ -3596,7 +3392,6 @@ export default function AdminPage() {
                           <div className="flex flex-col items-center justify-center text-center p-4">
                             <ImageIcon className="w-10 h-10 text-neutral-300 mb-2 stroke-[1.5]" />
                             <span className="text-xs font-bold text-neutral-400">Sin fotografía aún</span>
-                            <span className="text-[10px] text-neutral-400 mt-0.5">Sube una foto en la sección de colores</span>
                           </div>
                         )}
                       </div>
@@ -3644,7 +3439,7 @@ export default function AdminPage() {
                   <div className="pt-3 border-t border-neutral-100 flex flex-col gap-2.5">
                     <div>
                       <div className="text-[10px] uppercase font-bold text-neutral-400 leading-none mb-1">
-                        Precio de Venta
+                        Precio
                       </div>
                       <div className="flex items-baseline gap-2">
                         <span className="text-xl font-black text-neutral-950 font-mono">
@@ -3659,7 +3454,7 @@ export default function AdminPage() {
                     </div>
 
                     <div className="w-full">
-                      <div className="w-full py-2.5 sm:py-3 px-4 rounded-xl bg-neutral-950 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs cursor-default">
+                      <div className="w-full py-2.5 px-4 rounded-xl bg-neutral-950 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs cursor-default">
                         <ShoppingBag className="w-4 h-4 stroke-[2.2]" />
                         <span>Añadir al Carrito</span>
                       </div>
@@ -3669,9 +3464,9 @@ export default function AdminPage() {
 
                 {/* Resumen de Ficha Técnica en la Vista Previa */}
                 {formCustomSpecs.filter((s) => s.label.trim() && s.value.trim()).length > 0 && (
-                  <div className="p-4 rounded-2xl bg-white border border-neutral-200/90 shadow-2xs space-y-2">
+                  <div className="p-3.5 rounded-2xl bg-white border border-neutral-200/90 shadow-2xs space-y-1.5">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
-                      Ficha Técnica en Vivo ({formCustomSpecs.filter((s) => s.label.trim() && s.value.trim()).length} campos)
+                      Ficha Técnica
                     </span>
                     <div className="grid grid-cols-2 gap-2">
                       {formCustomSpecs
