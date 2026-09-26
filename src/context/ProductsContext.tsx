@@ -254,26 +254,29 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   }, [saveProductsLocal]);
 
   const updateStock = useCallback((id: string, value: number, isDelta: boolean = false) => {
-    let finalStock = 0;
     setProducts((prev) => {
+      const target = prev.find((p) => p.id === id);
+      if (!target) return prev;
+      const nextStock = isDelta ? Math.max(0, target.stockCount + value) : Math.max(0, value);
+
       const next = prev.map((p) => {
         if (p.id !== id) return p;
-        finalStock = isDelta ? Math.max(0, p.stockCount + value) : Math.max(0, value);
         return {
           ...p,
-          stockCount: finalStock,
-          inStock: finalStock > 0,
+          stockCount: nextStock,
+          inStock: nextStock > 0,
         };
       });
       saveProductsLocal(next);
+
+      if (isSupabaseReady()) {
+        updateStockInSupabase(id, nextStock).catch((err) => {
+          console.error("Error actualizando stock en Supabase:", err);
+        });
+      }
+
       return next;
     });
-
-    if (isSupabaseReady()) {
-      updateStockInSupabase(id, finalStock).catch((err) => {
-        console.error("Error actualizando stock en Supabase:", err);
-      });
-    }
   }, [saveProductsLocal]);
 
   const addBrand = useCallback((newBrand: string) => {

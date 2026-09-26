@@ -19,7 +19,6 @@ import {
   Save,
   ShoppingBag,
   ArrowLeft,
-  ExternalLink,
   Search,
   Trash2,
   Edit3,
@@ -54,9 +53,8 @@ import {
   KeyRound,
   Printer,
   MessageSquare,
-  Truck,
   Send,
-  MapPin,
+  Menu,
 } from "lucide-react";
 
 export type { SaleRecord };
@@ -182,6 +180,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<
     "inventory" | "add_product" | "filters" | "coupons" | "sales" | "settings"
   >("inventory");
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   // Estados de Autenticación & Seguridad del Panel
   const [isAuthChecking, setIsAuthChecking] = useState(true);
@@ -431,13 +430,16 @@ export default function AdminPage() {
 
   // Mantener sincronizado el producto seleccionado en el formulario de ventas
   useEffect(() => {
-    if (products.length > 0) {
-      if (!newSaleProduct || !products.some((p) => p.id === newSaleProduct)) {
-        setNewSaleProduct(products[0].id);
+    const timer = setTimeout(() => {
+      if (products.length > 0) {
+        if (!newSaleProduct || !products.some((p) => p.id === newSaleProduct)) {
+          setNewSaleProduct(products[0].id);
+        }
+      } else {
+        setIsManualProductEntry(true);
       }
-    } else {
-      setIsManualProductEntry(true);
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [products, newSaleProduct]);
 
   // Modales de Logística & Despacho
@@ -1217,15 +1219,14 @@ export default function AdminPage() {
 
         {/* Top Header */}
         <div className="max-w-md w-full mx-auto flex items-center justify-between z-10">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-xs text-neutral-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-xl border border-white/10"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Volver a la Tienda</span>
-          </Link>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-mono text-neutral-300 font-bold uppercase tracking-wider">
+              Terminal POS PulsoTech
+            </span>
+          </div>
           <span className="text-[10px] font-mono text-neutral-400 font-bold uppercase tracking-widest px-2.5 py-1 rounded-md bg-neutral-900 border border-neutral-800">
-            Seguridad PulsoTech
+            Acceso Restringido
           </span>
         </div>
 
@@ -1387,161 +1388,359 @@ export default function AdminPage() {
     );
   }
 
+  const navItems = [
+    {
+      id: "inventory" as const,
+      label: "Inventario",
+      icon: Package,
+      count: products.length,
+    },
+    {
+      id: "sales" as const,
+      label: "Ventas & Despacho",
+      icon: BarChart3,
+      count: sales.length,
+    },
+    {
+      id: "add_product" as const,
+      label: editingProductId ? "Editar Producto" : "Nuevo Producto",
+      icon: editingProductId ? Edit3 : PlusCircle,
+      tag: editingProductId ? "En Edición" : undefined,
+    },
+    {
+      id: "filters" as const,
+      label: "Marcas & Categorías",
+      icon: Filter,
+    },
+    {
+      id: "coupons" as const,
+      label: "Cupones de Descuento",
+      icon: Tag,
+      count: coupons.length,
+    },
+    {
+      id: "settings" as const,
+      label: "Ajustes & Sistema",
+      icon: ShieldCheck,
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-neutral-900 antialiased font-sans">
-      {/* Top Admin Header - Blanco Puro y Elegante */}
-      <header className="border-b border-neutral-200 bg-white sticky top-0 z-30 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 text-xs text-neutral-600 hover:text-black px-2.5 sm:px-3 py-1.5 rounded-xl border border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 transition-colors font-semibold shrink-0"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Volver a la Tienda</span>
-              <span className="sm:hidden">Tienda</span>
-            </Link>
-
-            <div className="h-4 w-px bg-neutral-200 hidden sm:block" />
-
-            <div className="flex items-center gap-2 min-w-0">
+    <div className="min-h-screen bg-[#f8fafc] text-neutral-900 antialiased font-sans flex">
+      {/* ================= BARRA LATERAL VERTICAL DESKTOP (POS REAL) ================= */}
+      <aside className="hidden lg:flex w-64 bg-neutral-950 text-neutral-300 border-r border-neutral-800/80 fixed inset-y-0 left-0 z-40 flex-col justify-between select-none">
+        {/* Superior: Branding, Botón de Acción y Navegación Vertical */}
+        <div className="flex flex-col">
+          {/* Logo y Encabezado del Sistema POS */}
+          <div className="h-16 px-5 border-b border-neutral-800/80 flex items-center justify-between">
+            <div className="flex items-center gap-3">
               <Logo size="sm" showText={false} />
-              <div className="truncate">
-                <span className="text-xs sm:text-sm font-black text-neutral-950 tracking-tight">
-                  PulsoTech Panel
-                </span>
+              <div>
+                <div className="text-sm font-black text-white tracking-tight flex items-center gap-1.5">
+                  <span>PulsoTech</span>
+                  <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    POS
+                  </span>
+                </div>
+                <div className="text-[10px] text-neutral-400 font-medium">
+                  Sistema de Ventas &amp; Stock
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Acción Rápida: Agregar Producto */}
+          <div className="p-3.5 border-b border-neutral-800/60">
             <button
+              type="button"
               onClick={handleNewProductClick}
-              className="px-3 sm:px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer shrink-0"
+              className="w-full py-2.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-98 text-neutral-950 font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
             >
-              <PlusCircle className="w-4 h-4 text-white" />
-              <span className="hidden sm:inline">＋ Agregar Producto</span>
-              <span className="sm:hidden">Agregar</span>
+              <PlusCircle className="w-4 h-4 text-neutral-950" />
+              <span>Registrar Producto</span>
             </button>
+          </div>
+
+          {/* Menú Vertical de Módulos */}
+          <nav className="p-3 space-y-1">
+            <div className="px-3 pt-2 pb-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400">
+              Módulos del Sistema
+            </div>
+
+            {navItems.map((item) => {
+              const isActive = activeTab === item.id;
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setActiveTab(item.id)}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    isActive
+                      ? "bg-neutral-900 text-white border border-neutral-800 shadow-inner"
+                      : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon
+                      className={`w-4 h-4 transition-colors ${
+                        isActive ? "text-emerald-400" : "text-neutral-500"
+                      }`}
+                    />
+                    <span>{item.label}</span>
+                  </div>
+
+                  {typeof item.count === "number" && (
+                    <span
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold ${
+                        isActive
+                          ? "bg-neutral-800 text-emerald-300"
+                          : "bg-neutral-900 text-neutral-500"
+                      }`}
+                    >
+                      {item.count}
+                    </span>
+                  )}
+
+                  {item.tag && (
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      {item.tag}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Inferior: Conexión Cloud, Perfil y Cerrar Sesión */}
+        <div className="p-3 border-t border-neutral-800/80 space-y-3 bg-neutral-950/80">
+          <div className="px-3 py-2 rounded-xl bg-neutral-900/90 border border-neutral-800/80 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[11px] font-semibold text-neutral-300">Base de Datos</span>
+            </div>
+            <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase">
+              En Línea
+            </span>
+          </div>
+
+          <div className="px-3 py-2.5 rounded-xl bg-neutral-900/50 flex items-center justify-between">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-black text-xs shrink-0">
+                L
+              </div>
+              <div className="truncate">
+                <div className="text-xs font-bold text-white truncate">Lionel (Admin)</div>
+                <div className="text-[10px] font-mono text-neutral-400">Terminal Activo</div>
+              </div>
+            </div>
 
             <button
               type="button"
               onClick={handleLogout}
-              className="px-2.5 sm:px-3 py-2 rounded-xl border border-neutral-200 hover:border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-xs"
+              className="p-1.5 rounded-lg text-neutral-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer shrink-0"
               title="Cerrar sesión y bloquear panel"
             >
-              <LogOut className="w-3.5 h-3.5 text-neutral-400" />
-              <span className="hidden md:inline">Cerrar Sesión</span>
+              <LogOut className="w-4 h-4" />
             </button>
+          </div>
+        </div>
+      </aside>
 
-            <Link
-              href="/"
-              target="_blank"
-              className="hidden sm:inline-flex items-center gap-1.5 text-xs text-neutral-600 hover:text-black font-semibold"
-            >
-              <span>Ver Tienda</span>
-              <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
-            </Link>
+      {/* ================= HEADER SUPERIOR MÓVIL (lg:hidden) ================= */}
+      <div className="lg:hidden fixed top-0 inset-x-0 h-14 bg-neutral-950 text-white border-b border-neutral-800 z-30 flex items-center justify-between px-4">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsMobileNavOpen(true)}
+            className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors cursor-pointer"
+            title="Abrir menú"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-2">
+            <Logo size="sm" showText={false} />
+            <span className="text-sm font-black tracking-tight">PulsoTech POS</span>
           </div>
         </div>
 
-        {/* Sub-nav Tabs */}
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center gap-1 sm:gap-2 border-t border-neutral-100 overflow-x-auto whitespace-nowrap scrollbar-none">
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => setActiveTab("inventory")}
-            className={`px-3 sm:px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0 ${
-              activeTab === "inventory"
-                ? "border-neutral-950 text-neutral-950"
-                : "border-transparent text-neutral-500 hover:text-neutral-900"
-            }`}
+            type="button"
+            onClick={handleNewProductClick}
+            className="px-2.5 py-1.5 rounded-lg bg-emerald-500 text-neutral-950 font-bold text-xs flex items-center gap-1 active:scale-95 cursor-pointer"
           >
-            <Package className="w-4 h-4" />
-            <span>Inventario ({products.length})</span>
+            <PlusCircle className="w-3.5 h-3.5" />
+            <span>Nuevo</span>
           </button>
-
           <button
-            onClick={() => setActiveTab("add_product")}
-            className={`px-3 sm:px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0 ${
-              activeTab === "add_product"
-                ? "border-neutral-950 text-neutral-950"
-                : "border-transparent text-neutral-500 hover:text-neutral-900"
-            }`}
+            type="button"
+            onClick={handleLogout}
+            className="p-1.5 rounded-lg text-neutral-400 hover:text-red-400 transition-colors cursor-pointer"
+            title="Cerrar sesión"
           >
-            <Sparkles className="w-4 h-4 text-amber-500" />
-            <span>{editingProductId ? "Editar Producto" : "＋ Nuevo Producto"}</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("filters")}
-            className={`px-3 sm:px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0 ${
-              activeTab === "filters"
-                ? "border-neutral-950 text-neutral-950"
-                : "border-transparent text-neutral-500 hover:text-neutral-900"
-            }`}
-          >
-            <Filter className="w-4 h-4 text-blue-600" />
-            <span>Marcas &amp; Filtros</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("coupons")}
-            className={`px-3 sm:px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0 ${
-              activeTab === "coupons"
-                ? "border-neutral-950 text-neutral-950"
-                : "border-transparent text-neutral-500 hover:text-neutral-900"
-            }`}
-          >
-            <Tag className="w-4 h-4 text-purple-600" />
-            <span>Cupones ({coupons.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("sales")}
-            className={`px-3 sm:px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0 ${
-              activeTab === "sales"
-                ? "border-neutral-950 text-neutral-950"
-                : "border-transparent text-neutral-500 hover:text-neutral-900"
-            }`}
-          >
-            <BarChart3 className="w-4 h-4 text-emerald-600" />
-            <span>Ventas &amp; Analíticas ({sales.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("settings")}
-            className={`px-3 sm:px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0 ${
-              activeTab === "settings"
-                ? "border-neutral-950 text-neutral-950"
-                : "border-transparent text-neutral-500 hover:text-neutral-900"
-            }`}
-          >
-            <Phone className="w-4 h-4 text-emerald-600" />
-            <span>Ajustes &amp; WhatsApp</span>
+            <LogOut className="w-4 h-4" />
           </button>
         </div>
-      </header>
+      </div>
 
-      {/* Main Dashboard Body */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {/* Banner de Notificación de Éxito */}
-        {successNotice && (
-          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm font-medium flex items-center justify-between gap-3 shadow-xs animate-in fade-in">
-            <div className="flex items-center gap-2.5">
-              <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
-              <span className="font-semibold">{successNotice}</span>
+      {/* ================= GAVETA / DRAWER MÓVIL (lg:hidden) ================= */}
+      {isMobileNavOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 flex">
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-xs transition-opacity"
+            onClick={() => setIsMobileNavOpen(false)}
+          />
+
+          <div className="relative w-72 max-w-[85vw] bg-neutral-950 text-neutral-300 border-r border-neutral-800 h-full flex flex-col justify-between p-4 z-10 shadow-2xl animate-in slide-in-from-left duration-200">
+            <div>
+              <div className="flex items-center justify-between pb-4 border-b border-neutral-800">
+                <div className="flex items-center gap-2.5">
+                  <Logo size="sm" showText={false} />
+                  <div>
+                    <div className="text-sm font-black text-white">PulsoTech POS</div>
+                    <div className="text-[10px] text-neutral-400">Sistema Administrativo</div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileNavOpen(false)}
+                  className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-900 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="py-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleNewProductClick();
+                    setIsMobileNavOpen(false);
+                  }}
+                  className="w-full py-2.5 px-3 rounded-xl bg-emerald-500 text-neutral-950 font-bold text-xs flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                >
+                  <PlusCircle className="w-4 h-4 text-neutral-950" />
+                  <span>Registrar Producto</span>
+                </button>
+              </div>
+
+              <nav className="space-y-1 py-2">
+                <div className="px-3 pb-1 text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400">
+                  Módulos
+                </div>
+                {navItems.map((item) => {
+                  const isActive = activeTab === item.id;
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveTab(item.id);
+                        setIsMobileNavOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        isActive
+                          ? "bg-neutral-900 text-white border border-neutral-800"
+                          : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className={`w-4 h-4 ${isActive ? "text-emerald-400" : "text-neutral-500"}`} />
+                        <span>{item.label}</span>
+                      </div>
+                      {typeof item.count === "number" && (
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-neutral-900 text-neutral-400">
+                          {item.count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </nav>
             </div>
-            <Link
-              href="/#catalogo"
-              target="_blank"
-              className="px-4 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors shrink-0 shadow-xs"
-            >
-              Ver en la Tienda Comercial →
-            </Link>
-          </div>
-        )}
 
-        {/* ================= PESTAÑA 1: INVENTARIO ================= */}
-        {activeTab === "inventory" && (
+            <div className="pt-4 border-t border-neutral-800 space-y-2">
+              <div className="flex items-center justify-between px-2 text-xs">
+                <span className="text-neutral-400">Lionel (Admin)</span>
+                <span className="text-[10px] font-mono text-emerald-400 font-bold">● En Línea</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full py-2.5 px-3 rounded-xl border border-neutral-800 hover:border-red-900/50 hover:bg-red-500/10 text-neutral-300 hover:text-red-400 font-semibold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Cerrar Sesión</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= ÁREA PRINCIPAL DE CONTENIDO ================= */}
+      <div className="lg:pl-64 flex-1 flex flex-col min-w-0 min-h-screen bg-[#f8fafc]">
+        {/* Encabezado Contextual Superior Desktop */}
+        <header className="bg-white border-b border-neutral-200/80 sticky top-0 z-20 px-4 sm:px-8 py-3.5 hidden lg:flex items-center justify-between gap-4 shadow-2xs">
+          <div>
+            <div className="text-[11px] font-mono text-neutral-400 uppercase tracking-wider font-semibold">
+              Sistema POS / {navItems.find((n) => n.id === activeTab)?.label || "Módulo"}
+            </div>
+            <h1 className="text-base font-black text-neutral-950 tracking-tight">
+              {activeTab === "inventory" && "Inventario de Productos"}
+              {activeTab === "sales" && "Ventas & Logística de Despacho"}
+              {activeTab === "add_product" && (editingProductId ? "Edición de Producto" : "Registrar Nuevo Producto")}
+              {activeTab === "filters" && "Marcas y Categorías"}
+              {activeTab === "coupons" && "Cupones Promocionales"}
+              {activeTab === "settings" && "Ajustes del Sistema y WhatsApp"}
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {activeTab !== "add_product" && (
+              <button
+                type="button"
+                onClick={handleNewProductClick}
+                className="px-3.5 py-1.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+              >
+                <PlusCircle className="w-3.5 h-3.5 text-white" />
+                <span>＋ Agregar Producto</span>
+              </button>
+            )}
+
+            <div className="h-5 w-px bg-neutral-200" />
+
+            <div className="flex items-center gap-2 text-xs font-medium text-neutral-500">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span>Base de Datos Conectada</span>
+            </div>
+          </div>
+        </header>
+
+        {/* Contenido del Módulo Activo */}
+        <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full flex-1 pt-16 lg:pt-6">
+          {/* Banner de Notificación de Éxito */}
+          {successNotice && (
+            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm font-medium flex items-center justify-between gap-3 shadow-xs animate-in fade-in">
+              <div className="flex items-center gap-2.5">
+                <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+                <span className="font-semibold">{successNotice}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSuccessNotice("")}
+                className="p-1 rounded-lg text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer"
+                title="Cerrar notificación"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* ================= PESTAÑA 1: INVENTARIO ================= */}
+          {activeTab === "inventory" && (
           <div className="space-y-6">
             {/* KPIs */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -4908,6 +5107,7 @@ export default function AdminPage() {
           </div>
         )}
       </main>
+      </div>
     </div>
   );
 }
