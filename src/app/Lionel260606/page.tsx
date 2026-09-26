@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { useProducts } from "@/context/ProductsContext";
@@ -28,6 +28,7 @@ import {
   RefreshCw,
   Upload,
   Eye,
+  EyeOff,
   Filter,
   Video as VideoIcon,
   Plus,
@@ -44,6 +45,12 @@ import {
   Calendar,
   PieChart,
   Clock,
+  Lock,
+  Unlock,
+  Shield,
+  ShieldCheck,
+  LogOut,
+  KeyRound,
 } from "lucide-react";
 
 export interface SaleRecord {
@@ -180,6 +187,119 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<
     "inventory" | "add_product" | "filters" | "coupons" | "sales" | "settings"
   >("inventory");
+
+  // Estados de Autenticación & Seguridad del Panel
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [adminPin, setAdminPin] = useState("260606");
+  const [pinInput, setPinInput] = useState("");
+  const [showPin, setShowPin] = useState(false);
+  const [pinError, setPinError] = useState("");
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
+
+  // Estados para cambio de PIN en Ajustes
+  const [currentPinInput, setCurrentPinInput] = useState("");
+  const [newPinInput, setNewPinInput] = useState("");
+  const [confirmPinInput, setConfirmPinInput] = useState("");
+  const [pinChangeNotice, setPinChangeNotice] = useState<{ text: string; isError: boolean } | null>(null);
+
+  // Carga inicial segura del estado de sesión y PIN personalizado
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const savedPin = localStorage.getItem("pulsotech_admin_pin");
+        if (savedPin) {
+          setAdminPin(savedPin);
+        }
+        const sessionAuth = sessionStorage.getItem("pulsotech_admin_authenticated");
+        if (sessionAuth === "true") {
+          setIsAuthenticated(true);
+        }
+      } catch {
+        // Ignorar error de acceso
+      } finally {
+        setIsAuthChecking(false);
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Temporizador de enfriamiento ante intentos fallidos
+  useEffect(() => {
+    if (lockoutSeconds <= 0) return;
+    const interval = setInterval(() => {
+      setLockoutSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lockoutSeconds]);
+
+  const handlePinSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (lockoutSeconds > 0) return;
+
+    if (pinInput.trim() === adminPin.trim()) {
+      try {
+        sessionStorage.setItem("pulsotech_admin_authenticated", "true");
+      } catch {}
+      setIsAuthenticated(true);
+      setPinError("");
+      setFailedAttempts(0);
+      setPinInput("");
+    } else {
+      const nextAttempts = failedAttempts + 1;
+      setFailedAttempts(nextAttempts);
+      if (nextAttempts >= 5) {
+        setLockoutSeconds(30);
+        setPinError("Has superado el límite de intentos. Panel bloqueado por 30 segundos.");
+      } else {
+        setPinError(`PIN incorrecto. Intento ${nextAttempts} de 5.`);
+      }
+    }
+  };
+
+  const handleLogout = () => {
+    try {
+      sessionStorage.removeItem("pulsotech_admin_authenticated");
+    } catch {}
+    setIsAuthenticated(false);
+    setPinInput("");
+    setPinError("");
+  };
+
+  const handleChangePin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (currentPinInput.trim() !== adminPin.trim()) {
+      setPinChangeNotice({ text: "El PIN actual ingresado no es correcto.", isError: true });
+      return;
+    }
+    if (newPinInput.trim().length < 4) {
+      setPinChangeNotice({ text: "El nuevo PIN debe tener al menos 4 dígitos.", isError: true });
+      return;
+    }
+    if (newPinInput.trim() !== confirmPinInput.trim()) {
+      setPinChangeNotice({ text: "Los nuevos PINs no coinciden. Verifícalos.", isError: true });
+      return;
+    }
+
+    try {
+      localStorage.setItem("pulsotech_admin_pin", newPinInput.trim());
+      setAdminPin(newPinInput.trim());
+      setCurrentPinInput("");
+      setNewPinInput("");
+      setConfirmPinInput("");
+      setPinChangeNotice({ text: "¡PIN de seguridad actualizado con éxito! Tu nueva clave está activa.", isError: false });
+      setTimeout(() => setPinChangeNotice(null), 4000);
+    } catch {
+      setPinChangeNotice({ text: "Error al guardar el nuevo PIN en el almacenamiento.", isError: true });
+    }
+  };
 
   // Estados de WhatsApp
   const [phoneInput, setPhoneInput] = useState(whatsappNumber);
@@ -942,6 +1062,195 @@ export default function AdminPage() {
     (item.category && item.category.toLowerCase().includes(searchFilter.toLowerCase()))
   );
 
+  if (isAuthChecking) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0c] flex items-center justify-center p-4 select-none">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-mono font-bold text-neutral-400">Verificando acceso de seguridad...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0c] text-white flex flex-col justify-between p-4 sm:p-8 relative overflow-hidden select-none">
+        {/* Glow de fondo */}
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Top Header */}
+        <div className="max-w-md w-full mx-auto flex items-center justify-between z-10">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-xs text-neutral-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-xl border border-white/10"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Volver a la Tienda</span>
+          </Link>
+          <span className="text-[10px] font-mono text-emerald-400/90 font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-emerald-950/40 border border-emerald-500/20">
+            Seguridad PulsoTech
+          </span>
+        </div>
+
+        {/* Main Lock Card */}
+        <div className="max-w-sm w-full mx-auto my-auto py-6 z-10 text-center space-y-5 animate-in fade-in zoom-in-95 duration-200">
+          <div className="space-y-3">
+            <div className="w-16 h-16 rounded-2xl bg-neutral-900 border border-neutral-800 shadow-2xl mx-auto flex items-center justify-center relative">
+              <Lock className="w-7 h-7 text-emerald-400" />
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 absolute -top-1 -right-1 ring-4 ring-[#0a0a0c] animate-pulse" />
+            </div>
+
+            <div>
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                Panel Administrativo
+              </h1>
+              <p className="text-xs text-neutral-400 mt-1 max-w-xs mx-auto">
+                Ingresa tu PIN de seguridad para acceder a la gestión de productos, inventario y ventas.
+              </p>
+            </div>
+          </div>
+
+          {/* Indicador de dígitos ingresados */}
+          <div className="flex items-center justify-center gap-2.5 py-1">
+            {[0, 1, 2, 3, 4, 5].map((idx) => {
+              const hasChar = pinInput.length > idx;
+              return (
+                <div
+                  key={idx}
+                  className={`w-3.5 h-3.5 rounded-full transition-all duration-150 ${
+                    hasChar
+                      ? "bg-emerald-400 scale-110 shadow-xs shadow-emerald-400/60"
+                      : "bg-neutral-800 border border-neutral-700"
+                  }`}
+                />
+              );
+            })}
+          </div>
+
+          {/* Formulario y Teclado Táctil */}
+          <form onSubmit={handlePinSubmit} className="space-y-3">
+            <div className="relative">
+              <input
+                type={showPin ? "text" : "password"}
+                inputMode="numeric"
+                maxLength={12}
+                value={pinInput}
+                onChange={(e) => {
+                  setPinInput(e.target.value.replace(/\D/g, "").slice(0, 12));
+                  setPinError("");
+                }}
+                placeholder="••••••"
+                autoFocus
+                disabled={lockoutSeconds > 0}
+                className={`w-full text-center tracking-[0.25em] font-mono font-black text-xl py-3 px-10 rounded-2xl bg-neutral-900/90 border text-white placeholder-neutral-700 focus:outline-none transition-all shadow-inner ${
+                  pinError
+                    ? "border-red-500 ring-2 ring-red-500/20"
+                    : "border-neutral-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPin(!showPin)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 p-1 cursor-pointer transition-colors"
+                title={showPin ? "Ocultar PIN" : "Mostrar PIN"}
+              >
+                {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+
+            {pinError && (
+              <p className="text-xs font-bold text-red-400 animate-in fade-in">
+                {pinError}
+              </p>
+            )}
+
+            {lockoutSeconds > 0 && (
+              <p className="text-xs font-bold text-amber-400 animate-in fade-in">
+                Demasiados intentos fallidos. Espera {lockoutSeconds} segundos.
+              </p>
+            )}
+
+            {/* Teclado numérico táctil (ideal para celular) */}
+            <div className="grid grid-cols-3 gap-2 pt-1">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                <button
+                  key={num}
+                  type="button"
+                  onClick={() => {
+                    if (lockoutSeconds > 0) return;
+                    if (pinInput.length < 12) {
+                      setPinInput((prev) => prev + num.toString());
+                      setPinError("");
+                    }
+                  }}
+                  disabled={lockoutSeconds > 0}
+                  className="h-11 rounded-xl bg-neutral-900/90 hover:bg-neutral-800 active:scale-95 text-lg font-mono font-bold text-white border border-neutral-800 transition-all flex items-center justify-center cursor-pointer disabled:opacity-40"
+                >
+                  {num}
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setPinInput("");
+                  setPinError("");
+                }}
+                disabled={lockoutSeconds > 0}
+                className="h-11 rounded-xl bg-neutral-900/40 hover:bg-neutral-800 active:scale-95 text-[11px] font-bold text-neutral-400 hover:text-white border border-neutral-800/60 transition-all flex items-center justify-center cursor-pointer disabled:opacity-40 uppercase tracking-wider"
+              >
+                Borrar
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (lockoutSeconds > 0) return;
+                  if (pinInput.length < 12) {
+                    setPinInput((prev) => prev + "0");
+                    setPinError("");
+                  }
+                }}
+                disabled={lockoutSeconds > 0}
+                className="h-11 rounded-xl bg-neutral-900/90 hover:bg-neutral-800 active:scale-95 text-lg font-mono font-bold text-white border border-neutral-800 transition-all flex items-center justify-center cursor-pointer disabled:opacity-40"
+              >
+                0
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setPinInput((prev) => prev.slice(0, -1));
+                  setPinError("");
+                }}
+                disabled={lockoutSeconds > 0}
+                className="h-11 rounded-xl bg-neutral-900/40 hover:bg-neutral-800 active:scale-95 text-base font-bold text-neutral-400 hover:text-white border border-neutral-800/60 transition-all flex items-center justify-center cursor-pointer disabled:opacity-40"
+                title="Retroceder"
+              >
+                ⌫
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              disabled={lockoutSeconds > 0 || pinInput.length < 4}
+              className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:bg-neutral-800 disabled:text-neutral-500 text-neutral-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg active:scale-98 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1"
+            >
+              <Unlock className="w-4 h-4" />
+              <span>Acceder al Panel</span>
+            </button>
+          </form>
+        </div>
+
+        {/* Footer */}
+        <div className="max-w-md w-full mx-auto text-center z-10 text-[11px] text-neutral-600">
+          <span>Acceso restringido únicamente al administrador de PulsoTech.</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f8fafc] text-neutral-900 antialiased font-sans">
       {/* Top Admin Header - Blanco Puro y Elegante */}
@@ -977,6 +1286,16 @@ export default function AdminPage() {
               <PlusCircle className="w-4 h-4 text-white" />
               <span className="hidden sm:inline">＋ Agregar Producto</span>
               <span className="sm:hidden">Agregar</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="px-2.5 sm:px-3 py-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-2xs"
+              title="Cerrar sesión y bloquear panel"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Cerrar Sesión</span>
             </button>
 
             <Link
@@ -3601,6 +3920,112 @@ export default function AdminPage() {
                   <span>¡Número actualizado con éxito!</span>
                 </div>
               )}
+            </form>
+
+            {/* Seguridad & PIN de Acceso al Panel */}
+            <form
+              onSubmit={handleChangePin}
+              className="p-6 rounded-2xl border border-neutral-200 bg-white shadow-xs space-y-4"
+            >
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-3.5">
+                  <div className="p-3 rounded-xl bg-purple-50 text-purple-700 border border-purple-100 shrink-0">
+                    <Shield className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-neutral-950">
+                      Seguridad & PIN de Acceso al Panel
+                    </h3>
+                    <p className="text-xs text-neutral-500 mt-0.5">
+                      Protege tu panel administrativo. Se solicitará este código cada vez que abras la página en una nueva pestaña o navegador.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Protección Activa</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                <div>
+                  <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                    PIN Actual:
+                  </label>
+                  <input
+                    type="password"
+                    value={currentPinInput}
+                    onChange={(e) => setCurrentPinInput(e.target.value)}
+                    placeholder="PIN actual (def: 260606)"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                    Nuevo PIN (4 a 12 dígitos):
+                  </label>
+                  <input
+                    type="password"
+                    value={newPinInput}
+                    onChange={(e) => setNewPinInput(e.target.value)}
+                    placeholder="Nuevo PIN"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
+                    Confirmar Nuevo PIN:
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmPinInput}
+                    onChange={(e) => setConfirmPinInput(e.target.value)}
+                    placeholder="Confirmar PIN"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white"
+                    required
+                  />
+                </div>
+              </div>
+
+              {pinChangeNotice && (
+                <div
+                  className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
+                    pinChangeNotice.isError
+                      ? "bg-red-50 text-red-700 border border-red-200"
+                      : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                  }`}
+                >
+                  {pinChangeNotice.isError ? (
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                  ) : (
+                    <CheckCircle className="w-4 h-4 shrink-0" />
+                  )}
+                  <span>{pinChangeNotice.text}</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-2 border-t border-neutral-100 flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="px-4 py-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Bloquear y Salir Ahora</span>
+                </button>
+
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                >
+                  <KeyRound className="w-3.5 h-3.5" />
+                  <span>Actualizar PIN de Seguridad</span>
+                </button>
+              </div>
             </form>
 
             {/* Backup & Export Card */}
