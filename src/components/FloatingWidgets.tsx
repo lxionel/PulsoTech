@@ -1,10 +1,20 @@
 "use client";
 
 import React from "react";
+import { usePathname } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 
 export default function FloatingWidgets() {
+  const pathname = usePathname();
   const { whatsappNumber } = useCart();
+
+  // No mostrar el botón flotante de atención al cliente dentro del panel de administración
+  if (
+    (pathname && pathname.includes("Lionel260606")) ||
+    (typeof window !== "undefined" && window.location.pathname.includes("Lionel260606"))
+  ) {
+    return null;
+  }
 
   return (
     <aside aria-label="Contacto oficial por WhatsApp" className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40">

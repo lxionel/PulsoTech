@@ -312,8 +312,10 @@ export default function AdminPage() {
 
   // Filtros de búsqueda e interacción en inventario
   const [searchFilter, setSearchFilter] = useState("");
-  const [stockQuickFilter, setStockQuickFilter] = useState<"all" | "low" | "out">("all");
+  const [stockQuickFilter, setStockQuickFilter] = useState<"all" | "in-stock" | "low" | "out">("all");
   const [inventoryCategoryFilter, setInventoryCategoryFilter] = useState<string>("all");
+  const [inventoryBrandFilter, setInventoryBrandFilter] = useState<string>("all");
+  const [inventorySortBy, setInventorySortBy] = useState<"default" | "stock-asc" | "stock-desc" | "price-asc" | "price-desc" | "name">("default");
 
   // Estados para gestión de filtros (marcas y categorías)
   const [newBrandInput, setNewBrandInput] = useState("");
@@ -505,7 +507,11 @@ export default function AdminPage() {
 
   // Métricas Generales
   const totalRevenue = sales.reduce((acc, s) => acc + s.total, 0);
-  const lowStockCount = products.filter((p) => p.stockCount <= 5).length;
+  const lowStockCount = products.filter((p) => (p.stockCount || 0) > 0 && (p.stockCount || 0) <= 5).length;
+  const outOfStockCount = products.filter((p) => (p.stockCount || 0) <= 0).length;
+  const inStockCount = products.filter((p) => (p.stockCount || 0) > 5).length;
+  const totalUnitsInStock = products.reduce((acc, p) => acc + (p.stockCount || 0), 0);
+  const inventoryTotalValue = products.reduce((acc, p) => acc + ((p.stockCount || 0) * (p.price || 0)), 0);
 
   // Cálculos de Períodos Temporales para Analíticas de Ventas
   const now = new Date();
@@ -1200,27 +1206,42 @@ export default function AdminPage() {
     setActiveTab("inventory");
   };
 
-  const filteredInventory = products.filter((item) => {
-    if (searchFilter.trim()) {
-      const q = searchFilter.toLowerCase();
-      const match =
-        item.id.toLowerCase().includes(q) ||
-        item.name.toLowerCase().includes(q) ||
-        item.brand.toLowerCase().includes(q) ||
-        (item.category && item.category.toLowerCase().includes(q));
-      if (!match) return false;
-    }
-    if (inventoryCategoryFilter !== "all" && item.category !== inventoryCategoryFilter) {
-      return false;
-    }
-    if (stockQuickFilter === "low" && item.stockCount > 5) {
-      return false;
-    }
-    if (stockQuickFilter === "out" && item.stockCount > 0) {
-      return false;
-    }
-    return true;
-  });
+  const filteredInventory = products
+    .filter((item) => {
+      if (searchFilter.trim()) {
+        const q = searchFilter.toLowerCase();
+        const match =
+          item.id.toLowerCase().includes(q) ||
+          item.name.toLowerCase().includes(q) ||
+          item.brand.toLowerCase().includes(q) ||
+          (item.category && item.category.toLowerCase().includes(q));
+        if (!match) return false;
+      }
+      if (inventoryCategoryFilter !== "all" && item.category !== inventoryCategoryFilter) {
+        return false;
+      }
+      if (inventoryBrandFilter !== "all" && item.brand !== inventoryBrandFilter) {
+        return false;
+      }
+      if (stockQuickFilter === "in-stock" && (item.stockCount || 0) <= 5) {
+        return false;
+      }
+      if (stockQuickFilter === "low" && ((item.stockCount || 0) <= 0 || (item.stockCount || 0) > 5)) {
+        return false;
+      }
+      if (stockQuickFilter === "out" && (item.stockCount || 0) > 0) {
+        return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      if (inventorySortBy === "stock-asc") return (a.stockCount || 0) - (b.stockCount || 0);
+      if (inventorySortBy === "stock-desc") return (b.stockCount || 0) - (a.stockCount || 0);
+      if (inventorySortBy === "price-asc") return a.price - b.price;
+      if (inventorySortBy === "price-desc") return b.price - a.price;
+      if (inventorySortBy === "name") return a.name.localeCompare(b.name);
+      return 0;
+    });
 
   if (isAuthChecking) {
     return (
@@ -1758,221 +1779,380 @@ export default function AdminPage() {
           {/* ================= PESTAÑA 1: INVENTARIO ================= */}
           {activeTab === "inventory" && (
           <div className="space-y-6">
-            {/* KPIs Interactivos */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <button
-                type="button"
-                onClick={() => setActiveTab("sales")}
-                className="p-5 rounded-2xl border border-neutral-200/90 bg-white hover:border-emerald-300 hover:shadow-xs active:scale-[0.99] transition-all text-left group cursor-pointer shadow-2xs relative overflow-hidden"
-                title="Ir al módulo de Ventas y Despacho"
-              >
-                <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
-                  <span className="group-hover:text-emerald-700 transition-colors uppercase tracking-wider">Ingresos Registrados</span>
-                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
-                    <DollarSign className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="text-3xl font-extrabold text-neutral-950 tracking-tight">
-                  {STORE_SETTINGS.currencySymbol}{totalRevenue.toFixed(2)}
-                </div>
-                <div className="flex items-center justify-between text-[11px] text-neutral-400 mt-2">
-                  <span>Ventas acumuladas</span>
-                  <span className="text-emerald-600 font-bold group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
-                    Ver ventas &rarr;
-                  </span>
-                </div>
-              </button>
-
-              <button
-                type="button"
+            {/* KPIs Ejecutivos del Inventario */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {/* 1. Modelos Únicos */}
+              <div
                 onClick={() => {
                   setStockQuickFilter("all");
                   setInventoryCategoryFilter("all");
+                  setInventoryBrandFilter("all");
                   setSearchFilter("");
                 }}
-                className={`p-5 rounded-2xl border text-left group cursor-pointer transition-all active:scale-[0.99] shadow-2xs relative overflow-hidden ${
-                  stockQuickFilter === "all" && inventoryCategoryFilter === "all" && !searchFilter
-                    ? "border-neutral-200/90 bg-white hover:border-blue-300 hover:shadow-xs"
-                    : "border-blue-300 bg-blue-50/20 hover:bg-blue-50/40"
-                }`}
-                title="Ver todo el catálogo (restablecer filtros)"
+                className="p-4 sm:p-5 rounded-2xl border border-neutral-200/90 bg-white hover:border-neutral-400 hover:shadow-xs transition-all text-left cursor-pointer shadow-2xs relative overflow-hidden group"
+                title="Click para ver todo el catálogo"
               >
                 <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
-                  <span className="group-hover:text-blue-700 transition-colors uppercase tracking-wider">Total Referencias</span>
-                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                  <span className="uppercase tracking-wider">Modelos Registrados</span>
+                  <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-800 flex items-center justify-center group-hover:bg-neutral-950 group-hover:text-white transition-colors">
                     <Package className="w-4 h-4" />
                   </div>
                 </div>
-                <div className="text-3xl font-extrabold text-neutral-950 tracking-tight">
-                  {products.length} <span className="text-sm font-semibold text-neutral-500">modelos</span>
+                <div className="text-2xl sm:text-3xl font-extrabold text-neutral-950 tracking-tight font-mono">
+                  {products.length}
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-neutral-400 mt-2">
-                  <span>Catálogo activo</span>
-                  {stockQuickFilter !== "all" || inventoryCategoryFilter !== "all" || searchFilter ? (
-                    <span className="text-blue-600 font-bold">Restablecer &rarr;</span>
-                  ) : (
-                    <span className="text-neutral-400 font-mono">100% visible</span>
-                  )}
+                <div className="text-[11px] text-neutral-500 mt-1.5 flex items-center justify-between">
+                  <span>{categories.length} categorías activas</span>
+                  <span className="font-bold text-neutral-900 group-hover:translate-x-0.5 transition-transform hidden sm:inline">
+                    Ver todos &rarr;
+                  </span>
                 </div>
-              </button>
+              </div>
 
-              <button
-                type="button"
-                onClick={() => setStockQuickFilter(stockQuickFilter === "low" ? "all" : "low")}
-                className={`p-5 rounded-2xl border text-left group cursor-pointer transition-all active:scale-[0.99] shadow-2xs relative overflow-hidden ${
-                  stockQuickFilter === "low"
-                    ? "border-amber-400 bg-amber-50/30 shadow-xs ring-2 ring-amber-400/20"
-                    : "border-neutral-200/90 bg-white hover:border-amber-300 hover:shadow-xs"
-                }`}
-                title={stockQuickFilter === "low" ? "Quitar filtro de bajo stock" : "Filtrar productos con stock <= 5"}
-              >
+              {/* 2. Unidades Físicas en Almacén */}
+              <div className="p-4 sm:p-5 rounded-2xl border border-neutral-200/90 bg-white shadow-2xs">
                 <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
-                  <span className="group-hover:text-amber-700 transition-colors uppercase tracking-wider">Alertas de Stock</span>
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
-                    stockQuickFilter === "low" ? "bg-amber-500 text-white" : "bg-amber-50 text-amber-600 group-hover:bg-amber-100"
-                  }`}>
+                  <span className="uppercase tracking-wider">Stock Físico Total</span>
+                  <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-800 flex items-center justify-center">
+                    <Layers className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-neutral-950 tracking-tight font-mono">
+                  {totalUnitsInStock} <span className="text-xs font-bold text-neutral-500 font-sans">uds</span>
+                </div>
+                <div className="text-[11px] text-neutral-500 mt-1.5">
+                  Unidades físicas disponibles
+                </div>
+              </div>
+
+              {/* 3. Valorización del Inventario */}
+              <div className="p-4 sm:p-5 rounded-2xl border border-neutral-200/90 bg-white shadow-2xs">
+                <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
+                  <span className="uppercase tracking-wider">Valorización de Stock</span>
+                  <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-800 flex items-center justify-center">
+                    <DollarSign className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-neutral-950 tracking-tight font-mono">
+                  {STORE_SETTINGS.currencySymbol}{inventoryTotalValue.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+                <div className="text-[11px] text-neutral-500 mt-1.5">
+                  Capital activo en mercadería
+                </div>
+              </div>
+
+              {/* 4. Estado de Almacén & Alertas */}
+              <div className="p-4 sm:p-5 rounded-2xl border border-neutral-200/90 bg-white shadow-2xs flex flex-col justify-between">
+                <div className="flex items-center justify-between text-neutral-500 text-xs font-bold mb-2">
+                  <span className="uppercase tracking-wider">Salud del Inventario</span>
+                  <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-800 flex items-center justify-center">
                     <AlertCircle className="w-4 h-4" />
                   </div>
                 </div>
-                <div className="text-3xl font-extrabold text-amber-600 tracking-tight">
-                  {lowStockCount} <span className="text-sm font-semibold text-neutral-500">productos</span>
+                <div className="grid grid-cols-3 gap-1 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setStockQuickFilter(stockQuickFilter === "in-stock" ? "all" : "in-stock")}
+                    className={`p-1.5 rounded-xl border text-center transition-all cursor-pointer ${
+                      stockQuickFilter === "in-stock"
+                        ? "border-neutral-900 bg-neutral-900 text-white"
+                        : "border-neutral-200 bg-neutral-50/70 hover:bg-neutral-100 text-neutral-800"
+                    }`}
+                    title="Filtrar productos con stock normal"
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <span className="text-[10px] font-bold uppercase">Stock</span>
+                    </div>
+                    <div className="text-sm font-extrabold font-mono mt-0.5">{inStockCount}</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStockQuickFilter(stockQuickFilter === "low" ? "all" : "low")}
+                    className={`p-1.5 rounded-xl border text-center transition-all cursor-pointer ${
+                      stockQuickFilter === "low"
+                        ? "border-neutral-900 bg-neutral-900 text-white"
+                        : "border-neutral-200 bg-neutral-50/70 hover:bg-neutral-100 text-neutral-800"
+                    }`}
+                    title="Filtrar productos con bajo stock (1 a 5 uds)"
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      <span className="text-[10px] font-bold uppercase">Bajo</span>
+                    </div>
+                    <div className="text-sm font-extrabold font-mono mt-0.5">{lowStockCount}</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStockQuickFilter(stockQuickFilter === "out" ? "all" : "out")}
+                    className={`p-1.5 rounded-xl border text-center transition-all cursor-pointer ${
+                      stockQuickFilter === "out"
+                        ? "border-neutral-900 bg-neutral-900 text-white"
+                        : "border-neutral-200 bg-neutral-50/70 hover:bg-neutral-100 text-neutral-800"
+                    }`}
+                    title="Filtrar productos agotados (0 uds)"
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                      <span className="text-[10px] font-bold uppercase">Agotado</span>
+                    </div>
+                    <div className="text-sm font-extrabold font-mono mt-0.5">{outOfStockCount}</div>
+                  </button>
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-neutral-400 mt-2">
-                  <span>Stock &le; 5 unidades</span>
-                  <span className={`font-bold text-xs ${stockQuickFilter === "low" ? "text-amber-700 underline" : "text-amber-600 group-hover:translate-x-0.5 transition-transform"}`}>
-                    {stockQuickFilter === "low" ? "Filtro Activo (quitar)" : "Filtrar &rarr;"}
-                  </span>
+                <div className="text-[10px] text-neutral-400 mt-2 text-center">
+                  Click en cualquier estado para filtrar
                 </div>
-              </button>
+              </div>
             </div>
 
-            {/* Barra de Filtros y Acciones del Inventario */}
+            {/* Barra de Filtros, Búsqueda y Herramientas del POS */}
             <div className="space-y-3">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-neutral-200/90 shadow-2xs">
-                {/* Lado Izquierdo: Buscador + Categoría + Filtros Rápidos */}
-                <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
-                  {/* Buscador */}
-                  <div className="relative w-full sm:w-64">
-                    <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      placeholder="Buscar por ID, modelo, marca..."
-                      value={searchFilter}
-                      onChange={(e) => setSearchFilter(e.target.value)}
-                      className="w-full pl-8 pr-7 py-2 rounded-xl bg-neutral-50 hover:bg-neutral-100/70 focus:bg-white border border-neutral-200 text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-400 transition-colors"
-                    />
-                    {searchFilter && (
-                      <button
-                        type="button"
-                        onClick={() => setSearchFilter("")}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-neutral-400 hover:text-neutral-700 rounded-md cursor-pointer"
-                        title="Borrar búsqueda"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+              <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-3">
+                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+                  {/* Búsqueda y Filtros Principales */}
+                  <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
+                    {/* Buscador */}
+                    <div className="relative w-full sm:w-72">
+                      <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        placeholder="Buscar por ID, modelo o marca..."
+                        value={searchFilter}
+                        onChange={(e) => setSearchFilter(e.target.value)}
+                        className="w-full pl-9 pr-7 py-2 rounded-xl bg-neutral-50 hover:bg-neutral-100/70 focus:bg-white border border-neutral-200 text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 transition-colors"
+                      />
+                      {searchFilter && (
+                        <button
+                          type="button"
+                          onClick={() => setSearchFilter("")}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-neutral-400 hover:text-neutral-900 rounded-md cursor-pointer"
+                          title="Borrar búsqueda"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Selector de Categoría */}
+                    <select
+                      value={inventoryCategoryFilter}
+                      onChange={(e) => setInventoryCategoryFilter(e.target.value)}
+                      className="px-3 py-2 rounded-xl bg-neutral-50 hover:bg-neutral-100/70 border border-neutral-200 text-xs font-semibold text-neutral-800 focus:outline-none focus:border-neutral-900 transition-colors cursor-pointer"
+                    >
+                      <option value="all">Todas las Categorías</option>
+                      {categories.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+
+                    {/* Selector de Marca */}
+                    <select
+                      value={inventoryBrandFilter}
+                      onChange={(e) => setInventoryBrandFilter(e.target.value)}
+                      className="px-3 py-2 rounded-xl bg-neutral-50 hover:bg-neutral-100/70 border border-neutral-200 text-xs font-semibold text-neutral-800 focus:outline-none focus:border-neutral-900 transition-colors cursor-pointer"
+                    >
+                      <option value="all">Todas las Marcas</option>
+                      {brands.map((b) => (
+                        <option key={b} value={b}>{b}</option>
+                      ))}
+                    </select>
+
+                    {/* Selector de Orden */}
+                    <select
+                      value={inventorySortBy}
+                      onChange={(e) => setInventorySortBy(e.target.value as any)}
+                      className="px-3 py-2 rounded-xl bg-neutral-50 hover:bg-neutral-100/70 border border-neutral-200 text-xs font-semibold text-neutral-800 focus:outline-none focus:border-neutral-900 transition-colors cursor-pointer"
+                    >
+                      <option value="default">Orden: Más recientes</option>
+                      <option value="stock-asc">Stock: Menor a mayor</option>
+                      <option value="stock-desc">Stock: Mayor a menor</option>
+                      <option value="price-asc">Precio: Menor a mayor</option>
+                      <option value="price-desc">Precio: Mayor a menor</option>
+                      <option value="name">Nombre: A &rarr; Z</option>
+                    </select>
                   </div>
 
-                  {/* Selector de Categoría */}
-                  <select
-                    value={inventoryCategoryFilter}
-                    onChange={(e) => setInventoryCategoryFilter(e.target.value)}
-                    className="px-3 py-2 rounded-xl bg-neutral-50 hover:bg-neutral-100/70 border border-neutral-200 text-xs font-semibold text-neutral-800 focus:outline-none focus:border-neutral-400 transition-colors cursor-pointer"
-                  >
-                    <option value="all">Todas las Categorías</option>
-                    {categories.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
+                  {/* Acciones Rápidas */}
+                  <div className="flex items-center gap-2 self-start xl:self-auto shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleExportProductsCSV}
+                      className="px-3 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer border border-neutral-200"
+                      title="Exportar inventario en formato CSV para Microsoft Excel"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Exportar CSV</span>
+                    </button>
 
-                  {/* Filtro Rápido de Stock */}
-                  <div className="inline-flex items-center p-1 rounded-xl bg-neutral-100 border border-neutral-200/80">
+                    <button
+                      type="button"
+                      onClick={handleExportBackupJSON}
+                      className="px-3 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer border border-neutral-200"
+                      title="Descargar copia de seguridad completa del catálogo en JSON"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Backup JSON</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleNewProductClick}
+                      className="px-3 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-white" />
+                      <span>Nuevo Producto</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Segmented Control de Estados de Stock */}
+                <div className="pt-2 border-t border-neutral-100 flex flex-wrap items-center justify-between gap-2">
+                  <div className="inline-flex items-center p-1 rounded-xl bg-neutral-100 border border-neutral-200/80 gap-1 flex-wrap">
                     <button
                       type="button"
                       onClick={() => setStockQuickFilter("all")}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                        stockQuickFilter === "all" ? "bg-white text-neutral-950 shadow-2xs" : "text-neutral-500 hover:text-neutral-900"
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        stockQuickFilter === "all"
+                          ? "bg-neutral-950 text-white shadow-2xs"
+                          : "text-neutral-600 hover:text-neutral-950 hover:bg-white/60"
                       }`}
                     >
                       Todos ({products.length})
                     </button>
+
                     <button
                       type="button"
-                      onClick={() => setStockQuickFilter(stockQuickFilter === "low" ? "all" : "low")}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                        stockQuickFilter === "low" ? "bg-amber-500 text-white shadow-2xs" : "text-neutral-500 hover:text-amber-600"
+                      onClick={() => setStockQuickFilter("in-stock")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        stockQuickFilter === "in-stock"
+                          ? "bg-neutral-950 text-white shadow-2xs"
+                          : "text-neutral-600 hover:text-neutral-950 hover:bg-white/60"
                       }`}
                     >
-                      <span>Bajo Stock</span>
-                      <span className={`text-[10px] font-mono px-1 rounded ${stockQuickFilter === "low" ? "bg-white/20 text-white" : "bg-neutral-200 text-neutral-700"}`}>
-                        {lowStockCount}
-                      </span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      <span>En Stock ({inStockCount})</span>
                     </button>
+
                     <button
                       type="button"
-                      onClick={() => setStockQuickFilter(stockQuickFilter === "out" ? "all" : "out")}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                        stockQuickFilter === "out" ? "bg-red-600 text-white shadow-2xs" : "text-neutral-500 hover:text-red-600"
+                      onClick={() => setStockQuickFilter("low")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        stockQuickFilter === "low"
+                          ? "bg-neutral-950 text-white shadow-2xs"
+                          : "text-neutral-600 hover:text-neutral-950 hover:bg-white/60"
                       }`}
                     >
-                      <span>Agotados</span>
-                      <span className={`text-[10px] font-mono px-1 rounded ${stockQuickFilter === "out" ? "bg-white/20 text-white" : "bg-neutral-200 text-neutral-700"}`}>
-                        {products.filter((p) => p.stockCount <= 0).length}
-                      </span>
+                      <span className="w-2 h-2 rounded-full bg-amber-500" />
+                      <span>Bajo Stock ({lowStockCount})</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setStockQuickFilter("out")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        stockQuickFilter === "out"
+                          ? "bg-neutral-950 text-white shadow-2xs"
+                          : "text-neutral-600 hover:text-neutral-950 hover:bg-white/60"
+                      }`}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-rose-500" />
+                      <span>Agotados ({outOfStockCount})</span>
                     </button>
                   </div>
-                </div>
 
-                {/* Lado Derecho: Acciones */}
-                <div className="flex items-center gap-2 self-end lg:self-auto shrink-0">
-                  <button
-                    type="button"
-                    onClick={handleExportProductsCSV}
-                    className="px-3 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-bold text-xs shrink-0 flex items-center gap-1.5 transition-colors cursor-pointer border border-neutral-200"
-                    title="Exportar inventario en formato CSV para Microsoft Excel"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Exportar CSV</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleExportBackupJSON}
-                    className="px-3 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-bold text-xs shrink-0 flex items-center gap-1.5 transition-colors cursor-pointer border border-neutral-200"
-                    title="Descargar copia de seguridad completa del catálogo en JSON"
-                  >
-                    <FileText className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Backup JSON</span>
-                  </button>
+                  <span className="text-xs font-semibold text-neutral-500">
+                    Mostrando {filteredInventory.length} de {products.length} productos
+                  </span>
                 </div>
               </div>
 
               {/* Cinta Informativa de Filtros Activos */}
-              {(stockQuickFilter !== "all" || inventoryCategoryFilter !== "all" || searchFilter) && (
-                <div className="px-4 py-2.5 rounded-xl bg-neutral-100 border border-neutral-200 text-xs flex items-center justify-between gap-3 text-neutral-700 animate-in fade-in">
+              {(stockQuickFilter !== "all" ||
+                inventoryCategoryFilter !== "all" ||
+                inventoryBrandFilter !== "all" ||
+                searchFilter ||
+                inventorySortBy !== "default") && (
+                <div className="px-4 py-2.5 rounded-xl bg-white border border-neutral-200 text-xs flex items-center justify-between gap-3 text-neutral-700 shadow-2xs animate-in fade-in flex-wrap">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-neutral-900">
-                      Mostrando {filteredInventory.length} de {products.length} productos
-                    </span>
-                    <span className="text-neutral-400">|</span>
+                    <span className="font-bold text-neutral-950">Filtros aplicados:</span>
+
                     {searchFilter && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-neutral-200 text-[11px] font-mono">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-100 border border-neutral-200 text-neutral-800 text-xs font-medium">
                         Búsqueda: &ldquo;{searchFilter}&rdquo;
+                        <button
+                          type="button"
+                          onClick={() => setSearchFilter("")}
+                          className="hover:text-red-600 cursor-pointer ml-0.5"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
                       </span>
                     )}
+
                     {inventoryCategoryFilter !== "all" && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-neutral-200 text-[11px] font-mono">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-100 border border-neutral-200 text-neutral-800 text-xs font-medium">
                         Categoría: {inventoryCategoryFilter}
+                        <button
+                          type="button"
+                          onClick={() => setInventoryCategoryFilter("all")}
+                          className="hover:text-red-600 cursor-pointer ml-0.5"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
                       </span>
                     )}
-                    {stockQuickFilter === "low" && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold">
-                        Bajo stock (&le; 5)
+
+                    {inventoryBrandFilter !== "all" && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-100 border border-neutral-200 text-neutral-800 text-xs font-medium">
+                        Marca: {inventoryBrandFilter}
+                        <button
+                          type="button"
+                          onClick={() => setInventoryBrandFilter("all")}
+                          className="hover:text-red-600 cursor-pointer ml-0.5"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
                       </span>
                     )}
-                    {stockQuickFilter === "out" && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-100 text-red-900 border border-red-300 text-[11px] font-bold">
-                        Agotados (0)
+
+                    {stockQuickFilter !== "all" && (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-neutral-100 border border-neutral-200 text-neutral-800 text-xs font-medium">
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            stockQuickFilter === "in-stock"
+                              ? "bg-emerald-500"
+                              : stockQuickFilter === "low"
+                              ? "bg-amber-500"
+                              : "bg-rose-500"
+                          }`}
+                        />
+                        <span>
+                          {stockQuickFilter === "in-stock" && "En Stock"}
+                          {stockQuickFilter === "low" && "Bajo Stock"}
+                          {stockQuickFilter === "out" && "Agotados"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setStockQuickFilter("all")}
+                          className="hover:text-red-600 cursor-pointer ml-0.5"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    )}
+
+                    {inventorySortBy !== "default" && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-100 border border-neutral-200 text-neutral-800 text-xs font-medium">
+                        Orden personalizado
+                        <button
+                          type="button"
+                          onClick={() => setInventorySortBy("default")}
+                          className="hover:text-red-600 cursor-pointer ml-0.5"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
                       </span>
                     )}
                   </div>
@@ -1982,7 +2162,9 @@ export default function AdminPage() {
                     onClick={() => {
                       setStockQuickFilter("all");
                       setInventoryCategoryFilter("all");
+                      setInventoryBrandFilter("all");
                       setSearchFilter("");
+                      setInventorySortBy("default");
                     }}
                     className="text-xs font-bold text-neutral-900 hover:text-red-600 underline shrink-0 cursor-pointer"
                   >
@@ -1992,9 +2174,28 @@ export default function AdminPage() {
               )}
             </div>
 
-              {/* Vista Móvil: Tarjetas Nativas para Celulares (sm:hidden) */}
-              <div className="block sm:hidden space-y-3">
-                {filteredInventory.map((item) => {
+            {/* Vista Móvil: Tarjetas Nativas para Celulares (sm:hidden) */}
+            <div className="block sm:hidden space-y-3">
+              {filteredInventory.length === 0 ? (
+                <div className="p-8 rounded-2xl bg-white border border-neutral-200 text-center space-y-3">
+                  <Package className="w-8 h-8 text-neutral-400 mx-auto" />
+                  <div className="text-sm font-bold text-neutral-800">No se encontraron productos</div>
+                  <p className="text-xs text-neutral-500">Prueba ajustando los filtros o el término de búsqueda.</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStockQuickFilter("all");
+                      setInventoryCategoryFilter("all");
+                      setInventoryBrandFilter("all");
+                      setSearchFilter("");
+                    }}
+                    className="px-4 py-2 rounded-xl bg-neutral-950 text-white font-bold text-xs cursor-pointer"
+                  >
+                    Restablecer filtros
+                  </button>
+                </div>
+              ) : (
+                filteredInventory.map((item) => {
                   const hasDiscount = item.originalPrice && item.originalPrice > item.price;
                   return (
                     <div
@@ -2017,13 +2218,13 @@ export default function AdminPage() {
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                            <span className="font-mono text-[10px] font-black text-neutral-800 bg-neutral-100 border border-neutral-200 px-1.5 py-0.5 rounded">
+                            <span className="font-mono text-[10px] font-bold text-neutral-700 bg-neutral-100 border border-neutral-200 px-1.5 py-0.5 rounded">
                               #{item.id}
                             </span>
-                            <span className="text-[10px] font-bold text-neutral-500 uppercase">
+                            <span className="text-[10px] font-black text-neutral-900 uppercase tracking-wider">
                               {item.brand}
                             </span>
-                            <span className="text-[10px] font-medium text-neutral-600 bg-neutral-50 border border-neutral-200 px-1.5 py-0.2 rounded truncate max-w-[120px]">
+                            <span className="text-[10px] text-neutral-500 truncate max-w-[120px]">
                               {item.category}
                             </span>
                           </div>
@@ -2048,40 +2249,61 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      {/* Bottom Bar: Control de Stock + Botones de Acción */}
-                      <div className="flex items-center justify-between pt-2.5 border-t border-neutral-100 gap-2">
-                        {/* Control de Stock con botones táctiles grandes */}
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                              item.stockCount <= 0
-                                ? "bg-red-50 text-red-700 border border-red-200"
-                                : item.stockCount <= 5
-                                ? "bg-amber-100 text-amber-900 border border-amber-200"
-                                : "bg-neutral-100 text-neutral-800"
-                            }`}
-                          >
-                            {item.stockCount <= 0 ? "Agotado (0 uds)" : `${item.stockCount} uds`}
-                          </span>
-                          <div className="inline-flex items-center border border-neutral-200 rounded-lg p-0.5 bg-neutral-50 shadow-2xs">
-                            <button
-                              type="button"
-                              onClick={() => updateStock(item.id, -1, true)}
-                              disabled={item.stockCount <= 0}
-                              className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-neutral-200 active:scale-90 text-neutral-800 font-black text-sm transition-all cursor-pointer disabled:opacity-25 disabled:cursor-not-allowed select-none"
-                              title="Restar 1 unidad"
-                            >
-                              -
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => updateStock(item.id, 1, true)}
-                              className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-neutral-200 active:scale-90 text-neutral-800 font-black text-sm transition-all cursor-pointer select-none"
-                              title="Sumar 1 unidad"
-                            >
-                              +
-                            </button>
+                      {/* Estado de Disponibilidad */}
+                      <div className="flex items-center gap-2 pt-1 border-t border-neutral-100 text-xs">
+                        {item.stockCount <= 0 ? (
+                          <div className="flex items-center gap-1.5 text-neutral-900 font-bold">
+                            <span className="w-2 h-2 rounded-full bg-rose-500" />
+                            <span>Agotado (0 uds)</span>
+                            <span className="text-[10px] text-neutral-400 font-normal">· Oculto en web</span>
                           </div>
+                        ) : item.stockCount <= 5 ? (
+                          <div className="flex items-center gap-1.5 text-neutral-900 font-bold">
+                            <span className="w-2 h-2 rounded-full bg-amber-500" />
+                            <span>Bajo Stock ({item.stockCount} uds)</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 text-neutral-900 font-bold">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                            <span>En Stock ({item.stockCount} uds)</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Bottom Bar: Control de Stock + Botones de Acción */}
+                      <div className="flex items-center justify-between pt-2 border-t border-neutral-100 gap-2">
+                        {/* Control de Stock con Stepper & Entrada Directa */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => updateStock(item.id, -1, true)}
+                            disabled={item.stockCount <= 0}
+                            className="w-7 h-7 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-100 active:scale-90 text-neutral-800 font-black text-sm flex items-center justify-center transition-all cursor-pointer disabled:opacity-25 disabled:cursor-not-allowed select-none shadow-2xs"
+                            title="Restar 1 unidad"
+                          >
+                            -
+                          </button>
+                          <input
+                            type="number"
+                            min="0"
+                            value={item.stockCount}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value, 10);
+                              if (!isNaN(val) && val >= 0) {
+                                updateStock(item.id, val, false);
+                              }
+                            }}
+                            className="w-12 text-center py-1 rounded-lg border border-neutral-300 bg-white text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:border-neutral-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            title="Cantidad en stock"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => updateStock(item.id, 1, true)}
+                            className="w-7 h-7 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-100 active:scale-90 text-neutral-800 font-black text-sm flex items-center justify-center transition-all cursor-pointer select-none shadow-2xs"
+                            title="Sumar 1 unidad"
+                          >
+                            +
+                          </button>
                         </div>
 
                         {/* Botones de Acción */}
@@ -2089,7 +2311,7 @@ export default function AdminPage() {
                           <button
                             type="button"
                             onClick={() => setQrModalProduct(item)}
-                            className="p-2 rounded-xl border border-neutral-200 text-neutral-600 hover:text-purple-600 hover:bg-purple-50 transition-colors cursor-pointer"
+                            className="p-2 rounded-xl border border-neutral-200 text-neutral-600 hover:text-neutral-950 hover:bg-neutral-100 transition-colors cursor-pointer"
                             title="Código QR"
                           >
                             <QrCode className="w-4 h-4" />
@@ -2097,7 +2319,7 @@ export default function AdminPage() {
                           <Link
                             href={`/producto/?id=${item.id}&slug=${item.slug}`}
                             target="_blank"
-                            className="p-2 rounded-xl border border-neutral-200 text-neutral-600 hover:text-black hover:bg-neutral-100 transition-colors"
+                            className="p-2 rounded-xl border border-neutral-200 text-neutral-600 hover:text-neutral-950 hover:bg-neutral-100 transition-colors"
                             title="Ver en tienda"
                           >
                             <Eye className="w-4 h-4" />
@@ -2105,7 +2327,7 @@ export default function AdminPage() {
                           <button
                             type="button"
                             onClick={() => handleEditClick(item)}
-                            className="p-2 rounded-xl border border-neutral-200 text-neutral-600 hover:text-black hover:bg-neutral-100 transition-colors cursor-pointer"
+                            className="p-2 rounded-xl border border-neutral-200 text-neutral-600 hover:text-neutral-950 hover:bg-neutral-100 transition-colors cursor-pointer"
                             title="Editar producto"
                           >
                             <Edit3 className="w-4 h-4" />
@@ -2126,174 +2348,241 @@ export default function AdminPage() {
                       </div>
                     </div>
                   );
-                })}
-              </div>
+                })
+              )}
+            </div>
 
-              {/* Vista Desktop: Tabla Tradicional (hidden sm:block) */}
-              <div className="hidden sm:block rounded-2xl border border-neutral-200/90 overflow-x-auto bg-white shadow-sm">
-                <table className="w-full text-left text-xs min-w-[700px]">
-                  <thead className="bg-neutral-50 text-neutral-600 border-b border-neutral-200 uppercase text-[10px] font-bold tracking-wider">
-                    <tr>
-                      <th className="py-3.5 px-3">ID</th>
-                      <th className="py-3.5 px-4">Producto</th>
-                      <th className="py-3.5 px-3">Marca</th>
-                      <th className="py-3.5 px-3">Categoría</th>
-                      <th className="py-3.5 px-3">Precio</th>
-                      <th className="py-3.5 px-3">Promoción</th>
-                      <th className="py-3.5 px-3">Stock</th>
-                      <th className="py-3.5 px-4 text-right">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-100 text-neutral-700">
-                    {filteredInventory.map((item) => {
-                      const hasDiscount = item.originalPrice && item.originalPrice > item.price;
-                      return (
-                        <tr key={item.id} className="hover:bg-neutral-50/60 transition-colors">
-                          <td className="py-3.5 px-3 whitespace-nowrap">
-                            <span className="font-mono text-xs font-black text-neutral-800 bg-neutral-100 border border-neutral-200 px-2 py-0.5 rounded-md">
-                              #{item.id}
-                            </span>
-                          </td>
-
-                          <td className="py-3.5 px-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-11 h-11 rounded-xl bg-neutral-50 border border-neutral-200 p-1 shrink-0 flex items-center justify-center overflow-hidden">
-                                {item.colors[0]?.image ? (
-                                  <img
-                                    src={item.colors[0].image}
-                                    alt={item.name}
-                                    className="w-full h-full object-contain"
-                                  />
-                                ) : (
-                                  <ImageIcon className="w-5 h-5 text-neutral-400" />
-                                )}
-                              </div>
-                              <div>
-                                <div className="font-extrabold text-neutral-950 text-sm">{item.name}</div>
-                                <div className="text-[11px] text-neutral-500 truncate max-w-xs">{item.subtitle}</div>
-                              </div>
-                            </div>
-                          </td>
-
-                          <td className="py-3.5 px-3 font-bold text-neutral-800 whitespace-nowrap">
-                            {item.brand}
-                          </td>
-
-                          <td className="py-3.5 px-3 whitespace-nowrap">
-                            <span className="text-[11px] font-medium text-neutral-600 bg-neutral-50 border border-neutral-200 px-2 py-0.5 rounded">
-                              {item.category}
-                            </span>
-                          </td>
-
-                          <td className="py-3.5 px-3">
-                            <div className="font-extrabold text-neutral-950 text-sm">
-                              {STORE_SETTINGS.currencySymbol}{item.price.toFixed(2)}
-                            </div>
-                            {hasDiscount && (
-                              <div className="text-[10px] text-neutral-400 line-through">
-                                {STORE_SETTINGS.currencySymbol}{item.originalPrice?.toFixed(2)}
-                              </div>
-                            )}
-                          </td>
-
-                          <td className="py-3.5 px-3">
-                            {hasDiscount ? (
-                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-neutral-900 text-white">
-                                -{Math.round(((item.originalPrice! - item.price) / item.originalPrice!) * 100)}%
+            {/* Vista Desktop: Tabla Tradicional Rediseñada (hidden sm:block) */}
+            <div className="hidden sm:block rounded-2xl border border-neutral-200/90 overflow-hidden bg-white shadow-2xs">
+              {filteredInventory.length === 0 ? (
+                <div className="p-12 text-center space-y-3">
+                  <Package className="w-10 h-10 text-neutral-400 mx-auto" />
+                  <div className="text-base font-bold text-neutral-800">No se encontraron productos en el inventario</div>
+                  <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+                    No hay productos que coincidan con los filtros aplicados. Puedes restablecerlos o registrar un nuevo producto.
+                  </p>
+                  <div className="pt-2 flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStockQuickFilter("all");
+                        setInventoryCategoryFilter("all");
+                        setInventoryBrandFilter("all");
+                        setSearchFilter("");
+                        setInventorySortBy("default");
+                      }}
+                      className="px-4 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold text-xs transition-colors cursor-pointer border border-neutral-200"
+                    >
+                      Restablecer filtros
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleNewProductClick}
+                      className="px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs transition-colors cursor-pointer"
+                    >
+                      ＋ Registrar Producto
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs min-w-[760px]">
+                    <thead className="bg-neutral-50/80 text-neutral-600 border-b border-neutral-200 uppercase text-[10px] font-bold tracking-wider">
+                      <tr>
+                        <th className="py-3 px-3">SKU</th>
+                        <th className="py-3 px-4">Producto &amp; Modelo</th>
+                        <th className="py-3 px-3">Marca &amp; Categoría</th>
+                        <th className="py-3 px-3">Precio Venta</th>
+                        <th className="py-3 px-3">Estado</th>
+                        <th className="py-3 px-3">Control de Stock</th>
+                        <th className="py-3 px-4 text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-100 text-neutral-700">
+                      {filteredInventory.map((item) => {
+                        const hasDiscount = item.originalPrice && item.originalPrice > item.price;
+                        return (
+                          <tr key={item.id} className="hover:bg-neutral-50/70 transition-colors">
+                            {/* SKU */}
+                            <td className="py-3.5 px-3 whitespace-nowrap">
+                              <span className="font-mono text-xs font-bold text-neutral-700 bg-neutral-100 border border-neutral-200/90 px-2 py-0.5 rounded-md">
+                                #{item.id}
                               </span>
-                            ) : (
-                              <span className="text-[11px] text-neutral-400">Regular</span>
-                            )}
-                          </td>
+                            </td>
 
-                          <td className="py-3.5 px-3">
-                            <div className="flex items-center gap-2">
-                              <div className="flex flex-col">
-                                <span
-                                  className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold ${
-                                    item.stockCount <= 0
-                                      ? "bg-red-50 text-red-700 border border-red-200"
-                                      : item.stockCount <= 5
-                                      ? "bg-amber-100 text-amber-900 border border-amber-200"
-                                      : "bg-neutral-100 text-neutral-800"
-                                  }`}
-                                >
-                                  {item.stockCount <= 0 ? "Agotado (0)" : `${item.stockCount} uds`}
-                                </span>
-                                {item.stockCount <= 0 && (
-                                  <span className="text-[9px] text-neutral-400 font-semibold mt-0.5 whitespace-nowrap">
-                                    Oculto en tienda
-                                  </span>
-                                )}
+                            {/* Producto & Modelo */}
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-11 h-11 rounded-xl bg-neutral-50 border border-neutral-200 p-1 shrink-0 flex items-center justify-center overflow-hidden">
+                                  {item.colors[0]?.image ? (
+                                    <img
+                                      src={item.colors[0].image}
+                                      alt={item.name}
+                                      className="w-full h-full object-contain"
+                                    />
+                                  ) : (
+                                    <ImageIcon className="w-5 h-5 text-neutral-400" />
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="font-extrabold text-neutral-950 text-sm truncate max-w-xs">
+                                    {item.name}
+                                  </div>
+                                  <div className="text-[11px] text-neutral-500 truncate max-w-xs mt-0.5">
+                                    {item.subtitle || `${item.colors.length} ${item.colors.length === 1 ? 'color disponible' : 'colores disponibles'}`}
+                                  </div>
+                                </div>
                               </div>
+                            </td>
 
-                              <div className="inline-flex items-center border border-neutral-200 rounded-lg p-0.5 bg-neutral-50 shadow-2xs">
+                            {/* Marca & Categoría */}
+                            <td className="py-3.5 px-3 whitespace-nowrap">
+                              <div className="font-black text-neutral-900 text-xs uppercase tracking-wider">
+                                {item.brand}
+                              </div>
+                              <div className="text-[11px] text-neutral-500 mt-0.5">
+                                {item.category}
+                              </div>
+                            </td>
+
+                            {/* Precio Venta */}
+                            <td className="py-3.5 px-3 whitespace-nowrap">
+                              <div className="font-black text-neutral-950 text-sm font-mono">
+                                {STORE_SETTINGS.currencySymbol}{item.price.toFixed(2)}
+                              </div>
+                              {hasDiscount && (
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <span className="text-[10px] text-neutral-400 line-through font-mono">
+                                    {STORE_SETTINGS.currencySymbol}{item.originalPrice?.toFixed(2)}
+                                  </span>
+                                  <span className="px-1 py-0.2 rounded text-[9px] font-bold bg-neutral-900 text-white">
+                                    -{Math.round(((item.originalPrice! - item.price) / item.originalPrice!) * 100)}%
+                                  </span>
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Estado de Disponibilidad */}
+                            <td className="py-3.5 px-3 whitespace-nowrap">
+                              {item.stockCount <= 0 ? (
+                                <div>
+                                  <div className="flex items-center gap-1.5 text-neutral-900 font-bold">
+                                    <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+                                    <span>Agotado (0)</span>
+                                  </div>
+                                  <div className="text-[10px] text-neutral-400 font-medium mt-0.5">
+                                    Oculto en tienda web
+                                  </div>
+                                </div>
+                              ) : item.stockCount <= 5 ? (
+                                <div>
+                                  <div className="flex items-center gap-1.5 text-neutral-900 font-bold">
+                                    <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                                    <span>Bajo Stock</span>
+                                  </div>
+                                  <div className="text-[10px] text-neutral-500 font-medium mt-0.5">
+                                    Quedan {item.stockCount} uds
+                                  </div>
+                                </div>
+                              ) : (
+                                <div>
+                                  <div className="flex items-center gap-1.5 text-neutral-900 font-bold">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                    <span>En Stock</span>
+                                  </div>
+                                  <div className="text-[10px] text-neutral-500 font-medium mt-0.5">
+                                    {item.stockCount} uds disponibles
+                                  </div>
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Control de Stock con Stepper & Entrada Directa */}
+                            <td className="py-3.5 px-3 whitespace-nowrap">
+                              <div className="inline-flex items-center gap-1">
                                 <button
                                   type="button"
                                   onClick={() => updateStock(item.id, -1, true)}
                                   disabled={item.stockCount <= 0}
-                                  className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-neutral-200 active:scale-90 text-neutral-800 font-black text-sm transition-all cursor-pointer disabled:opacity-25 disabled:cursor-not-allowed select-none"
+                                  className="w-7 h-7 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-100 active:scale-90 text-neutral-800 font-black text-sm flex items-center justify-center transition-all cursor-pointer disabled:opacity-25 disabled:cursor-not-allowed select-none shadow-2xs"
                                   title="Restar 1 unidad"
                                 >
                                   -
                                 </button>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={item.stockCount}
+                                  onChange={(e) => {
+                                    const val = parseInt(e.target.value, 10);
+                                    if (!isNaN(val) && val >= 0) {
+                                      updateStock(item.id, val, false);
+                                    }
+                                  }}
+                                  className="w-12 text-center py-1 rounded-lg border border-neutral-300 bg-white text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:border-neutral-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  title="Escribe directamente la cantidad de stock"
+                                />
                                 <button
                                   type="button"
                                   onClick={() => updateStock(item.id, 1, true)}
-                                  className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-neutral-200 active:scale-90 text-neutral-800 font-black text-sm transition-all cursor-pointer select-none"
+                                  className="w-7 h-7 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-100 active:scale-90 text-neutral-800 font-black text-sm flex items-center justify-center transition-all cursor-pointer select-none shadow-2xs"
                                   title="Sumar 1 unidad"
                                 >
                                   +
                                 </button>
                               </div>
-                            </div>
-                          </td>
+                            </td>
 
-                          <td className="py-3.5 px-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => setQrModalProduct(item)}
-                                className="p-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:text-purple-600 hover:bg-purple-50 transition-colors cursor-pointer"
-                                title="Generar Código QR para vitrina o folletos"
-                              >
-                                <QrCode className="w-4 h-4" />
-                              </button>
-                              <Link
-                                href={`/producto/?id=${item.id}&slug=${item.slug}`}
-                                target="_blank"
-                                className="p-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:text-black hover:bg-neutral-100 transition-colors"
-                                title="Ver página de detalle"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Link>
-                              <button
-                                onClick={() => handleEditClick(item)}
-                                className="p-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:text-black hover:bg-neutral-100 transition-colors cursor-pointer"
-                                title="Editar producto"
-                              >
-                                <Edit3 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  if (confirm(`¿Estás seguro de eliminar "${item.name}" del catálogo?`)) {
-                                    deleteProduct(item.id);
-                                  }
-                                }}
-                                className="p-1.5 rounded-lg border border-neutral-200 text-neutral-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors cursor-pointer"
-                                title="Eliminar producto"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                            {/* Acciones */}
+                            <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setQrModalProduct(item)}
+                                  className="p-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:text-neutral-950 hover:bg-neutral-100 transition-colors cursor-pointer"
+                                  title="Generar Código QR para vitrina o folletos"
+                                >
+                                  <QrCode className="w-4 h-4" />
+                                </button>
+                                <Link
+                                  href={`/producto/?id=${item.id}&slug=${item.slug}`}
+                                  target="_blank"
+                                  className="p-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:text-neutral-950 hover:bg-neutral-100 transition-colors"
+                                  title="Ver página de detalle en tienda"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Link>
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditClick(item)}
+                                  className="p-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:text-neutral-950 hover:bg-neutral-100 transition-colors cursor-pointer"
+                                  title="Editar producto"
+                                >
+                                  <Edit3 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (confirm(`¿Estás seguro de eliminar "${item.name}" del catálogo?`)) {
+                                      deleteProduct(item.id);
+                                    }
+                                  }}
+                                  className="p-1.5 rounded-lg border border-neutral-200 text-neutral-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors cursor-pointer"
+                                  title="Eliminar producto"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
+          </div>
           )}
 
         {/* ================= PESTAÑA 2: AGREGAR / EDITAR PRODUCTO ================= */}
