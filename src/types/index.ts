@@ -88,3 +88,16 @@ export interface Coupon {
   minPurchase: number;
   isActive: boolean;
 }
+
+export interface SaleRecord {
+  id: string;
+  productName: string;
+  quantity: number;
+  total: number;
+  channel: "WhatsApp" | "Presencial" | "Web";
+  customerName: string;
+  date: string;
+  timestamp: number;
+  paymentMethod?: string;
+  notes?: string;
+}

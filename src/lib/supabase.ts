@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { Product, ProductColor, ProductSpecs, ProductSpecItem, SoundProfile } from "@/types";
+import { Product, ProductColor, ProductSpecs, ProductSpecItem, SoundProfile, Coupon, SaleRecord } from "@/types";
 
 const LOCAL_STORAGE_URL_KEY = "pulsotech_supabase_url";
 const LOCAL_STORAGE_KEY_KEY = "pulsotech_supabase_anon_key";
@@ -258,7 +258,7 @@ export async function updateStockInSupabase(id: string, newStock: number): Promi
   }
 }
 
-export async function fetchStoreSettingsFromSupabase(): Promise<{ brands?: string[]; categories?: string[] } | null> {
+export async function fetchStoreSettingsFromSupabase(): Promise<{ brands?: string[]; categories?: string[]; whatsappNumber?: string } | null> {
   const client = getSupabaseClient();
   if (!client) return null;
 
@@ -269,10 +269,11 @@ export async function fetchStoreSettingsFromSupabase(): Promise<{ brands?: strin
       return null;
     }
 
-    const result: { brands?: string[]; categories?: string[] } = {};
+    const result: { brands?: string[]; categories?: string[]; whatsappNumber?: string } = {};
     (data || []).forEach((item: DbStoreSettingRow) => {
       if (item.key === "brands" && Array.isArray(item.value)) result.brands = item.value as string[];
       if (item.key === "categories" && Array.isArray(item.value)) result.categories = item.value as string[];
+      if (item.key === "whatsapp_number" && typeof item.value === "string") result.whatsappNumber = item.value;
     });
 
     return result;
@@ -282,7 +283,7 @@ export async function fetchStoreSettingsFromSupabase(): Promise<{ brands?: strin
   }
 }
 
-export async function saveStoreSettingsToSupabase(key: "brands" | "categories", value: string[]): Promise<boolean> {
+export async function saveStoreSettingsToSupabase(key: "brands" | "categories" | "whatsapp_number", value: unknown): Promise<boolean> {
   const client = getSupabaseClient();
   if (!client) return false;
 
@@ -306,5 +307,149 @@ export async function saveStoreSettingsToSupabase(key: "brands" | "categories", 
   } catch (err) {
     console.error("Exception saving store settings:", err);
     return false;
+  }
+}
+
+// ================= SINCRONIZACIÓN DE VENTAS EN LA NUBE =================
+
+export async function fetchSalesRecordsFromSupabase(): Promise<SaleRecord[] | null> {
+  const client = getSupabaseClient();
+  if (!client) return null;
+
+  try {
+    const { data, error } = await client
+      .from("store_settings")
+      .select("value")
+      .eq("key", "sales_records")
+      .maybeSingle();
+
+    if (error) {
+      console.warn("Error fetching sales from Supabase:", error.message);
+      return null;
+    }
+
+    if (data && Array.isArray(data.value)) {
+      return data.value as SaleRecord[];
+    }
+    return [];
+  } catch (err) {
+    console.error("Exception fetching sales from Supabase:", err);
+    return null;
+  }
+}
+
+export async function saveSalesRecordsToSupabase(sales: SaleRecord[]): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+
+  try {
+    const { error } = await client.from("store_settings").upsert(
+      {
+        key: "sales_records",
+        value: sales,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "key" }
+    );
+
+    if (error) {
+      console.error("Error saving sales records to Supabase:", error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Exception saving sales records to Supabase:", err);
+    return false;
+  }
+}
+
+// ================= SINCRONIZACIÓN DE CUPONES EN LA NUBE =================
+
+export async function fetchCouponsFromSupabase(): Promise<Coupon[] | null> {
+  const client = getSupabaseClient();
+  if (!client) return null;
+
+  try {
+    const { data, error } = await client
+      .from("store_settings")
+      .select("value")
+      .eq("key", "coupons")
+      .maybeSingle();
+
+    if (error) {
+      console.warn("Error fetching coupons from Supabase:", error.message);
+      return null;
+    }
+
+    if (data && Array.isArray(data.value)) {
+      return data.value as Coupon[];
+    }
+    return [];
+  } catch (err) {
+    console.error("Exception fetching coupons from Supabase:", err);
+    return null;
+  }
+}
+
+export async function saveCouponsToSupabase(coupons: Coupon[]): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+
+  try {
+    const { error } = await client.from("store_settings").upsert(
+      {
+        key: "coupons",
+        value: coupons,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "key" }
+    );
+
+    if (error) {
+      console.error("Error saving coupons to Supabase:", error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Exception saving coupons to Supabase:", err);
+    return false;
+  }
+}
+
+// ================= LIMPIEZA & TEST DE CONEXIÓN =================
+
+export async function clearAllProductsFromSupabase(): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+
+  try {
+    const { error } = await client.from("products").delete().neq("id", "___keep_alive___");
+    if (error) {
+      console.error("Error clearing products from Supabase:", error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Exception clearing products from Supabase:", err);
+    return false;
+  }
+}
+
+export async function testSupabaseConnection(): Promise<{ ok: boolean; latencyMs: number; error?: string }> {
+  const client = getSupabaseClient();
+  if (!client) {
+    return { ok: false, latencyMs: 0, error: "No se ha configurado la URL o clave de Supabase." };
+  }
+
+  const start = Date.now();
+  try {
+    const { error } = await client.from("store_settings").select("key").limit(1);
+    const latencyMs = Date.now() - start;
+    if (error) {
+      return { ok: false, latencyMs, error: error.message };
+    }
+    return { ok: true, latencyMs };
+  } catch (err) {
+    return { ok: false, latencyMs: Date.now() - start, error: err instanceof Error ? err.message : "Error desconocido" };
   }
 }

@@ -13,6 +13,8 @@ import {
   saveStoreSettingsToSupabase,
   saveSupabaseConfig,
   getSupabaseClient,
+  clearAllProductsFromSupabase,
+  testSupabaseConnection,
 } from "@/lib/supabase";
 
 interface ProductsContextType {
@@ -36,7 +38,9 @@ interface ProductsContextType {
   connectSupabase: (url: string, anonKey: string) => Promise<{ success: boolean; message: string }>;
   disconnectSupabase: () => void;
   syncLocalToCloud: () => Promise<{ success: boolean; count: number; message: string }>;
+  restoreOfficialCatalogToCloud: () => Promise<{ success: boolean; message: string }>;
   refreshFromCloud: () => Promise<void>;
+  testConnection: () => Promise<{ ok: boolean; latencyMs: number; error?: string }>;
 }
 
 const ProductsContext = createContext<ProductsContextType | undefined>(undefined);
@@ -235,6 +239,47 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       };
     }
   }, [products, brands, categories]);
+
+  // Restaurar el catálogo oficial por defecto en Supabase
+  const restoreOfficialCatalogToCloud = useCallback(async (): Promise<{ success: boolean; message: string }> => {
+    if (!isSupabaseReady()) {
+      return { success: false, message: "Supabase no está configurado." };
+    }
+
+    try {
+      setCloudStatus("Restaurando catálogo oficial en Supabase...");
+      await clearAllProductsFromSupabase();
+
+      for (const prod of DEFAULT_PRODUCTS) {
+        await upsertProductToSupabase(prod);
+      }
+
+      await saveStoreSettingsToSupabase("brands", DEFAULT_BRANDS);
+      await saveStoreSettingsToSupabase("categories", DEFAULT_CATEGORIES);
+
+      setProducts(DEFAULT_PRODUCTS);
+      setBrands(DEFAULT_BRANDS);
+      setCategories(DEFAULT_CATEGORIES);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_PRODUCTS));
+        localStorage.setItem(BRANDS_STORAGE_KEY, JSON.stringify(DEFAULT_BRANDS));
+        localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(DEFAULT_CATEGORIES));
+      }
+
+      setCloudStatus("🟢 Catálogo oficial sincronizado en tiempo real");
+      return {
+        success: true,
+        message: `¡Catálogo oficial de PulsoTech restaurado exitosamente en la nube con ${DEFAULT_PRODUCTS.length} modelos originales!`,
+      };
+    } catch (err) {
+      console.error("Error al restaurar catálogo oficial:", err);
+      return { success: false, message: "Error al restaurar catálogo oficial en Supabase." };
+    }
+  }, []);
+
+  const testConnection = useCallback(async () => {
+    return await testSupabaseConnection();
+  }, []);
 
   // Inicialización y suscripción en tiempo real
   useEffect(() => {
@@ -455,7 +500,9 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         connectSupabase,
         disconnectSupabase,
         syncLocalToCloud,
+        restoreOfficialCatalogToCloud,
         refreshFromCloud,
+        testConnection,
       }}
     >
       {children}

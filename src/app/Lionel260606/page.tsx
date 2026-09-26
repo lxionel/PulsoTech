@@ -6,7 +6,8 @@ import { useCart } from "@/context/CartContext";
 import { useProducts } from "@/context/ProductsContext";
 import { STORE_SETTINGS } from "@/data/products";
 import { getAssetUrl } from "@/utils/paths";
-import { Product, ProductColor } from "@/types";
+import { Product, ProductColor, SaleRecord } from "@/types";
+import { fetchSalesRecordsFromSupabase, saveSalesRecordsToSupabase } from "@/lib/supabase";
 import Logo from "@/components/Logo";
 import {
   Package,
@@ -51,20 +52,12 @@ import {
   ShieldCheck,
   LogOut,
   KeyRound,
+  Database,
+  Zap,
+  RotateCcw,
 } from "lucide-react";
 
-export interface SaleRecord {
-  id: string;
-  productName: string;
-  quantity: number;
-  total: number;
-  channel: "WhatsApp" | "Presencial" | "Web";
-  customerName: string;
-  date: string;
-  timestamp: number;
-  paymentMethod?: string;
-  notes?: string;
-}
+export type { SaleRecord };
 
 export type SalesPeriod = "all" | "today" | "this_week" | "this_month" | "last_month";
 
@@ -168,6 +161,7 @@ export default function AdminPage() {
     addCoupon,
     deleteCoupon,
     toggleCoupon,
+    syncCouponsToCloud,
   } = useCart();
   const {
     products,
@@ -181,6 +175,14 @@ export default function AdminPage() {
     categories,
     addCategory,
     deleteCategory,
+    isCloudConnected,
+    cloudStatus,
+    connectSupabase,
+    disconnectSupabase,
+    syncLocalToCloud,
+    restoreOfficialCatalogToCloud,
+    refreshFromCloud,
+    testConnection,
   } = useProducts();
 
   // Navegación por pestañas
@@ -354,6 +356,45 @@ export default function AdminPage() {
     return [];
   });
 
+  // Sincronizar ventas con Supabase al montar el panel
+  useEffect(() => {
+    let isCancelled = false;
+    const loadCloudSales = async () => {
+      try {
+        const cloudSales = await fetchSalesRecordsFromSupabase();
+        if (!isCancelled && cloudSales && cloudSales.length > 0) {
+          const sanitized = cloudSales
+            .filter((s: SaleRecord) => !["VTA-1001", "VTA-1002", "VTA-1003"].includes(s.id))
+            .map((s: SaleRecord) => {
+              let ts = s.timestamp;
+              if (typeof ts !== "number" || isNaN(ts)) {
+                const parsedDate = Date.parse(s.date);
+                ts = !isNaN(parsedDate) ? parsedDate : Date.now();
+              }
+              return {
+                ...s,
+                timestamp: ts,
+                paymentMethod: s.paymentMethod || "Yape / Plin",
+                channel: s.channel || "WhatsApp",
+              };
+            });
+          setSales(sanitized);
+          try {
+            localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(sanitized));
+          } catch {
+            // Ignorar
+          }
+        }
+      } catch (err) {
+        console.error("Error al cargar ventas desde Supabase:", err);
+      }
+    };
+    void loadCloudSales();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
   const saveSalesToStorage = (updatedSales: SaleRecord[]) => {
     setSales(updatedSales);
     try {
@@ -361,6 +402,10 @@ export default function AdminPage() {
     } catch {
       // Ignorar error de guardado
     }
+    // Guardar en la nube automáticamente
+    saveSalesRecordsToSupabase(updatedSales).catch((err) => {
+      console.error("Error guardando ventas en Supabase:", err);
+    });
   };
 
   // Filtros de visualización para Analíticas y Reportes de Ventas
@@ -561,6 +606,151 @@ export default function AdminPage() {
     setWhatsappNumber(phoneInput);
     setPhoneSaved(true);
     setTimeout(() => setPhoneSaved(false), 3000);
+  };
+
+  // Estados para sincronización en la Nube (Supabase)
+  const [cloudLoadingAction, setCloudLoadingAction] = useState<string | null>(null);
+  const [cloudPingResult, setCloudPingResult] = useState<{ ok: boolean; latencyMs: number; error?: string } | null>(null);
+  const [cloudFeedback, setCloudFeedback] = useState<{ text: string; isError: boolean } | null>(null);
+  const [showAdvancedSupabase, setShowAdvancedSupabase] = useState(false);
+  const [customSupabaseUrl, setCustomSupabaseUrl] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("pulsotech_supabase_url") || "https://upovmpudzgtafobtxnfr.supabase.co";
+    }
+    return "https://upovmpudzgtafobtxnfr.supabase.co";
+  });
+  const [customSupabaseKey, setCustomSupabaseKey] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("pulsotech_supabase_anon_key") || "sb_publishable_xvdDq0pAicQ-0C4PYkvlVQ_wN_Xqakm";
+    }
+    return "sb_publishable_xvdDq0pAicQ-0C4PYkvlVQ_wN_Xqakm";
+  });
+
+  const handleTestPing = async () => {
+    setCloudLoadingAction("ping");
+    try {
+      const res = await testConnection();
+      setCloudPingResult(res);
+      if (res.ok) {
+        setCloudFeedback({
+          text: `⚡ Latencia de conexión: ${res.latencyMs}ms con el servidor de Supabase.`,
+          isError: false,
+        });
+      } else {
+        setCloudFeedback({
+          text: `Error de ping: ${res.error || "No se pudo comunicar con Supabase"}`,
+          isError: true,
+        });
+      }
+    } catch {
+      setCloudFeedback({ text: "Error al realizar ping con Supabase.", isError: true });
+    } finally {
+      setCloudLoadingAction(null);
+    }
+  };
+
+  const handleRestoreCatalog = async () => {
+    const confirmed = window.confirm(
+      "¿Deseas restaurar el catálogo oficial de PulsoTech en la nube?\n\nEsta acción limpiará productos de prueba y publicará los 3 modelos oficiales Xiaomi (Redmi Buds 6 Play, 8 Lite y 7S) con sus fotos HD, colores y especificaciones completas."
+    );
+    if (!confirmed) return;
+
+    setCloudLoadingAction("restore");
+    try {
+      const res = await restoreOfficialCatalogToCloud();
+      if (res.success) {
+        setCloudFeedback({ text: res.message, isError: false });
+        setSuccessNotice(res.message);
+      } else {
+        setCloudFeedback({ text: res.message, isError: true });
+      }
+    } catch {
+      setCloudFeedback({ text: "Error inesperado al restaurar catálogo oficial.", isError: true });
+    } finally {
+      setCloudLoadingAction(null);
+    }
+  };
+
+  const handleFullSyncToCloud = async () => {
+    setCloudLoadingAction("sync");
+    try {
+      const prodRes = await syncLocalToCloud();
+      await syncCouponsToCloud(coupons);
+      await saveSalesRecordsToSupabase(sales);
+      if (prodRes.success) {
+        setCloudFeedback({
+          text: `¡Catálogo (${products.length}), marcas, cupones (${coupons.length}) y ventas (${sales.length}) sincronizados exitosamente en Supabase!`,
+          isError: false,
+        });
+      } else {
+        setCloudFeedback({ text: prodRes.message, isError: true });
+      }
+    } catch {
+      setCloudFeedback({ text: "Error inesperado durante la sincronización a la nube.", isError: true });
+    } finally {
+      setCloudLoadingAction(null);
+    }
+  };
+
+  const handleFullRefreshFromCloud = async () => {
+    setCloudLoadingAction("refresh");
+    try {
+      await refreshFromCloud();
+      const cloudSales = await fetchSalesRecordsFromSupabase();
+      if (cloudSales) {
+        setSales(cloudSales);
+        try {
+          localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(cloudSales));
+        } catch {
+          // Ignorar
+        }
+      }
+      setCloudFeedback({
+        text: "¡Catálogo y ventas descargados y actualizados desde Supabase con éxito!",
+        isError: false,
+      });
+    } catch {
+      setCloudFeedback({ text: "Error al descargar datos de Supabase.", isError: true });
+    } finally {
+      setCloudLoadingAction(null);
+    }
+  };
+
+  const handleSaveCustomCredentials = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCloudLoadingAction("credentials");
+    try {
+      const res = await connectSupabase(customSupabaseUrl, customSupabaseKey);
+      setCloudFeedback({ text: res.message, isError: !res.success });
+    } catch {
+      setCloudFeedback({ text: "Error al guardar credenciales de Supabase.", isError: true });
+    } finally {
+      setCloudLoadingAction(null);
+    }
+  };
+
+  const handleResetDefaultCredentials = async () => {
+    const defUrl = "https://upovmpudzgtafobtxnfr.supabase.co";
+    const defKey = "sb_publishable_xvdDq0pAicQ-0C4PYkvlVQ_wN_Xqakm";
+    setCustomSupabaseUrl(defUrl);
+    setCustomSupabaseKey(defKey);
+    setCloudLoadingAction("credentials");
+    try {
+      const res = await connectSupabase(defUrl, defKey);
+      setCloudFeedback({ text: `Credenciales oficiales de PulsoTech restablecidas. ${res.message}`, isError: !res.success });
+    } catch {
+      setCloudFeedback({ text: "Error al restablecer credenciales.", isError: true });
+    } finally {
+      setCloudLoadingAction(null);
+    }
+  };
+
+  const handleDisconnectCloud = () => {
+    disconnectSupabase();
+    setCloudFeedback({
+      text: "Desconectado de Supabase. El panel ahora opera en modo exclusivamente local.",
+      isError: false,
+    });
   };
 
   const handleRecordManualSale = (e: React.FormEvent) => {
@@ -1279,6 +1469,28 @@ export default function AdminPage() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Cloud Status Pill */}
+            <button
+              type="button"
+              onClick={() => setActiveTab("settings")}
+              className={`px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-2xs ${
+                isCloudConnected
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100"
+                  : "bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100"
+              }`}
+              title={cloudStatus || "Estado de sincronización en la nube"}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isCloudConnected ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                }`}
+              />
+              <Database className="w-3.5 h-3.5 text-neutral-600 hidden sm:inline" />
+              <span className="hidden md:inline font-bold">
+                {isCloudConnected ? "Nube Activa" : "Sin Conexión"}
+              </span>
+            </button>
+
             <button
               onClick={handleNewProductClick}
               className="px-3 sm:px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer shrink-0"
@@ -3921,6 +4133,225 @@ export default function AdminPage() {
                 </div>
               )}
             </form>
+
+            {/* ================= BASE DE DATOS & SINCRONIZACIÓN EN LA NUBE (SUPABASE) ================= */}
+            <div className="p-6 rounded-2xl border border-blue-200 bg-white shadow-xs space-y-5">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3.5">
+                  <div className="p-3 rounded-xl bg-blue-50 text-blue-700 border border-blue-100 shrink-0">
+                    <Database className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm font-bold text-neutral-950">
+                        Base de Datos & Sincronización en la Nube
+                      </h3>
+                      <span className="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-extrabold uppercase tracking-wide">
+                        Supabase PostgreSQL
+                      </span>
+                    </div>
+                    <p className="text-xs text-neutral-500 mt-0.5">
+                      Sincroniza en tiempo real tu catálogo, marcas, cupones y ventas entre tu laptop, celulares y clientes.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Estado de Conexión en Vivo y Ping */}
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 border shadow-2xs ${
+                      isCloudConnected
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        isCloudConnected ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                      }`}
+                    />
+                    <span>{isCloudConnected ? "Conectado a la Nube" : "Sin Conexión"}</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleTestPing}
+                    disabled={cloudLoadingAction === "ping"}
+                    className="px-3 py-1.5 rounded-full border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-neutral-700 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50 shadow-2xs"
+                    title="Probar velocidad de conexión (Ping)"
+                  >
+                    <Zap className="w-3.5 h-3.5 text-amber-500" />
+                    <span>
+                      {cloudLoadingAction === "ping"
+                        ? "Probando..."
+                        : cloudPingResult && cloudPingResult.ok
+                        ? `${cloudPingResult.latencyMs}ms`
+                        : "Test Ping"}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Feedback Banner */}
+              {cloudFeedback && (
+                <div
+                  className={`p-3.5 rounded-xl text-xs font-medium flex items-center justify-between gap-2 animate-in fade-in ${
+                    cloudFeedback.isError
+                      ? "bg-red-50 text-red-700 border border-red-200"
+                      : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {cloudFeedback.isError ? (
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                    ) : (
+                      <CheckCircle className="w-4 h-4 shrink-0" />
+                    )}
+                    <span>{cloudFeedback.text}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCloudFeedback(null)}
+                    className="text-neutral-400 hover:text-neutral-700 cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
+              {/* Tarjetas de Acción de Sincronización */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                {/* 1. Restaurar Catálogo Oficial Xiaomi */}
+                <div className="p-4 rounded-xl border border-indigo-100 bg-linear-to-b from-indigo-50/40 to-white flex flex-col justify-between space-y-3">
+                  <div>
+                    <div className="flex items-center gap-2 text-indigo-950 font-bold text-xs mb-1">
+                      <Sparkles className="w-4 h-4 text-indigo-600" />
+                      <span>Restaurar Catálogo Oficial</span>
+                    </div>
+                    <p className="text-[11px] text-neutral-500 leading-relaxed">
+                      Limpia pruebas y restaura los 3 audífonos oficiales Xiaomi originales con todas sus fotos HD, especificaciones y precios en Supabase.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRestoreCatalog}
+                    disabled={cloudLoadingAction === "restore"}
+                    className="w-full py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                  >
+                    <RotateCcw className={`w-3.5 h-3.5 ${cloudLoadingAction === "restore" ? "animate-spin" : ""}`} />
+                    <span>{cloudLoadingAction === "restore" ? "Restaurando..." : "Restaurar Xiaomi Oficial"}</span>
+                  </button>
+                </div>
+
+                {/* 2. Subir Catálogo Local a la Nube */}
+                <div className="p-4 rounded-xl border border-neutral-200 bg-linear-to-b from-neutral-50/40 to-white flex flex-col justify-between space-y-3">
+                  <div>
+                    <div className="flex items-center gap-2 text-neutral-900 font-bold text-xs mb-1">
+                      <Upload className="w-4 h-4 text-emerald-600" />
+                      <span>Subir Todo a la Nube</span>
+                    </div>
+                    <p className="text-[11px] text-neutral-500 leading-relaxed">
+                      Sube {products.length} productos, marcas, {coupons.length} cupones y {sales.length} ventas locales a Supabase para sincronizar otros navegadores.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleFullSyncToCloud}
+                    disabled={cloudLoadingAction === "sync"}
+                    className="w-full py-2 px-3 rounded-lg bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                  >
+                    <Upload className={`w-3.5 h-3.5 ${cloudLoadingAction === "sync" ? "animate-bounce" : ""}`} />
+                    <span>{cloudLoadingAction === "sync" ? "Sincronizando..." : "Subir Todo a Supabase"}</span>
+                  </button>
+                </div>
+
+                {/* 3. Descargar de la Nube */}
+                <div className="p-4 rounded-xl border border-neutral-200 bg-linear-to-b from-neutral-50/40 to-white flex flex-col justify-between space-y-3">
+                  <div>
+                    <div className="flex items-center gap-2 text-neutral-900 font-bold text-xs mb-1">
+                      <RefreshCw className="w-4 h-4 text-blue-600" />
+                      <span>Descargar de la Nube</span>
+                    </div>
+                    <p className="text-[11px] text-neutral-500 leading-relaxed">
+                      Descarga los últimos productos y cambios guardados en Supabase hacia este navegador de forma inmediata.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleFullRefreshFromCloud}
+                    disabled={cloudLoadingAction === "refresh"}
+                    className="w-full py-2 px-3 rounded-lg border border-neutral-300 hover:bg-neutral-100 text-neutral-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${cloudLoadingAction === "refresh" ? "animate-spin" : ""}`} />
+                    <span>{cloudLoadingAction === "refresh" ? "Descargando..." : "Descargar de la Nube"}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Opciones avanzadas de credenciales Supabase */}
+              <div className="pt-2 border-t border-neutral-100">
+                <button
+                  type="button"
+                  onClick={() => setShowAdvancedSupabase(!showAdvancedSupabase)}
+                  className="text-xs text-neutral-500 hover:text-neutral-900 font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <span>{showAdvancedSupabase ? "▾ Ocultar Credenciales Supabase" : "▸ Configuración Avanzada de Credenciales (URL & Anon Key)"}</span>
+                </button>
+
+                {showAdvancedSupabase && (
+                  <form onSubmit={handleSaveCustomCredentials} className="mt-4 p-4 rounded-xl bg-neutral-50 border border-neutral-200 space-y-3">
+                    <div>
+                      <label className="text-[11px] font-bold text-neutral-600 block mb-1">Supabase Project URL:</label>
+                      <input
+                        type="text"
+                        value={customSupabaseUrl}
+                        onChange={(e) => setCustomSupabaseUrl(e.target.value)}
+                        className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-neutral-200 bg-white"
+                        placeholder="https://xyzcompany.supabase.co"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-neutral-600 block mb-1">Supabase Anon Key:</label>
+                      <input
+                        type="text"
+                        value={customSupabaseKey}
+                        onChange={(e) => setCustomSupabaseKey(e.target.value)}
+                        className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-neutral-200 bg-white"
+                        placeholder="eyJhbGciOi..."
+                        required
+                      />
+                    </div>
+                    <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={handleResetDefaultCredentials}
+                          className="text-xs text-neutral-500 hover:text-neutral-800 underline font-medium cursor-pointer"
+                        >
+                          Restablecer credenciales originales
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleDisconnectCloud}
+                          className="text-xs text-red-600 hover:text-red-700 underline font-medium cursor-pointer"
+                        >
+                          Desconectar Nube (Modo Local)
+                        </button>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={cloudLoadingAction === "credentials"}
+                        className="px-4 py-2 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        <span>Guardar & Conectar</span>
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            </div>
 
             {/* Seguridad & PIN de Acceso al Panel */}
             <form

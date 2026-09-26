@@ -4,6 +4,12 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { Product, ProductColor, CartItem, Coupon } from "@/types";
 import { STORE_SETTINGS } from "@/data/products";
 import { getAssetUrl } from "@/utils/paths";
+import {
+  fetchCouponsFromSupabase,
+  saveCouponsToSupabase,
+  fetchStoreSettingsFromSupabase,
+  saveStoreSettingsToSupabase,
+} from "@/lib/supabase";
 
 export const DEFAULT_COUPONS: Coupon[] = [
   {
@@ -57,6 +63,7 @@ interface CartContextType {
   addCoupon: (coupon: Omit<Coupon, "id">) => void;
   deleteCoupon: (id: string) => void;
   toggleCoupon: (id: string) => void;
+  syncCouponsToCloud: (overrideCoupons?: Coupon[]) => Promise<boolean>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -74,9 +81,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [coupons, setCoupons] = useState<Coupon[]>(DEFAULT_COUPONS);
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
 
-  // Cargar datos de localStorage una sola vez tras montar en el cliente (evita Hydration Mismatch)
+  // Cargar datos de localStorage una sola vez tras montar en el cliente y sincronizar cupones de Supabase
   useEffect(() => {
-    const timer = setTimeout(() => {
+    let isCancelled = false;
+    const timer = setTimeout(async () => {
       try {
         const savedCart = localStorage.getItem("pulsotech_cart");
         if (savedCart) {
@@ -96,18 +104,44 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }
 
         const savedCoupons = localStorage.getItem("pulsotech_coupons");
+        let initialCoupons = DEFAULT_COUPONS;
         if (savedCoupons) {
           const parsedCoupons = JSON.parse(savedCoupons);
-          if (Array.isArray(parsedCoupons)) setCoupons(parsedCoupons);
+          if (Array.isArray(parsedCoupons)) initialCoupons = parsedCoupons;
+        }
+        if (!isCancelled) setCoupons(initialCoupons);
+
+        // Cargar cupones y teléfono receptor persistentes desde Supabase
+        const cloudCoupons = await fetchCouponsFromSupabase();
+        if (!isCancelled && cloudCoupons && cloudCoupons.length > 0) {
+          setCoupons(cloudCoupons);
+          try {
+            localStorage.setItem("pulsotech_coupons", JSON.stringify(cloudCoupons));
+          } catch {
+            // Ignorar error de almacenamiento
+          }
+        }
+
+        const cloudSettings = await fetchStoreSettingsFromSupabase();
+        if (!isCancelled && cloudSettings?.whatsappNumber) {
+          setWhatsappNumber(cloudSettings.whatsappNumber);
+          try {
+            localStorage.setItem("pulsotech_phone", cloudSettings.whatsappNumber);
+          } catch {
+            // Ignorar
+          }
         }
       } catch {
         // Ignorar error de parsing
       } finally {
-        setIsLoaded(true);
+        if (!isCancelled) setIsLoaded(true);
       }
     }, 0);
 
-    return () => clearTimeout(timer);
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
   }, []);
 
   // Guardar en localStorage únicamente después de haber completado la carga inicial
@@ -214,26 +248,46 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setAppliedCoupon(null);
   };
 
+  const syncCouponsToCloud = async (overrideCoupons?: Coupon[]): Promise<boolean> => {
+    try {
+      const toSync = overrideCoupons || coupons;
+      return await saveCouponsToSupabase(toSync);
+    } catch (err) {
+      console.error("Error al sincronizar cupones a la nube:", err);
+      return false;
+    }
+  };
+
   const addCoupon = (couponData: Omit<Coupon, "id">) => {
     const newCoupon: Coupon = {
       ...couponData,
       id: `cp-${Date.now().toString().slice(-5)}`,
       code: couponData.code.trim().toUpperCase(),
     };
-    setCoupons((prev) => [newCoupon, ...prev]);
+    setCoupons((prev) => {
+      const next = [newCoupon, ...prev];
+      void saveCouponsToSupabase(next);
+      return next;
+    });
   };
 
   const deleteCoupon = (id: string) => {
-    setCoupons((prev) => prev.filter((c) => c.id !== id));
+    setCoupons((prev) => {
+      const next = prev.filter((c) => c.id !== id);
+      void saveCouponsToSupabase(next);
+      return next;
+    });
     if (appliedCoupon?.id === id) {
       setAppliedCoupon(null);
     }
   };
 
   const toggleCoupon = (id: string) => {
-    setCoupons((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, isActive: !c.isActive } : c))
-    );
+    setCoupons((prev) => {
+      const next = prev.map((c) => (c.id === id ? { ...c, isActive: !c.isActive } : c));
+      void saveCouponsToSupabase(next);
+      return next;
+    });
   };
 
   // Cálculos de Totales - El total es exactamente subtotal menos descuento (sin cargos ocultos de envío)
@@ -257,6 +311,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const freeShippingRemaining = 0;
   const favoritesCount = favorites.length;
 
+  const handleSetWhatsappNumber = (num: string) => {
+    setWhatsappNumber(num);
+    try {
+      localStorage.setItem("pulsotech_phone", num);
+    } catch {
+      // Ignorar error de almacenamiento
+    }
+    void saveStoreSettingsToSupabase("whatsapp_number", num);
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -276,7 +340,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         itemsCount,
         freeShippingRemaining,
         whatsappNumber,
-        setWhatsappNumber,
+        setWhatsappNumber: handleSetWhatsappNumber,
         favorites,
         toggleFavorite,
         isFavorite,
@@ -290,6 +354,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         addCoupon,
         deleteCoupon,
         toggleCoupon,
+        syncCouponsToCloud,
       }}
     >
       {children}
