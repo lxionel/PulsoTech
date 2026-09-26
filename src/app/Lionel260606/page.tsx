@@ -310,7 +310,7 @@ export default function AdminPage() {
   // Estados de WhatsApp y Ajustes
   const [phoneInput, setPhoneInput] = useState(whatsappNumber);
   const [phoneSaved, setPhoneSaved] = useState(false);
-  const [settingsViewTab, setSettingsViewTab] = useState<"all" | "whatsapp" | "security" | "backup" | "system">("all");
+  const [settingsViewTab, setSettingsViewTab] = useState<"all" | "whatsapp" | "security" | "backup">("all");
   const [showCurrentPinToggle, setShowCurrentPinToggle] = useState(false);
   const [showNewPinToggle, setShowNewPinToggle] = useState(false);
   const [showConfirmPinToggle, setShowConfirmPinToggle] = useState(false);
@@ -5738,13 +5738,12 @@ export default function AdminPage() {
                     { id: "whatsapp", label: "WhatsApp" },
                     { id: "security", label: "Seguridad & PIN" },
                     { id: "backup", label: "Respaldos & Datos" },
-                    { id: "system", label: "Diagnóstico" },
                   ].map((tab) => (
                     <button
                       key={tab.id}
                       type="button"
                       onClick={() => setSettingsViewTab(tab.id as any)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                         settingsViewTab === tab.id
                           ? "bg-white text-neutral-950 shadow-xs"
                           : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/50"
@@ -5756,7 +5755,7 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* 4 Tarjetas KPI / Estado Ejecutivo */}
+              {/* 4 Tarjetas KPI Comerciales y Operativas */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {/* KPI 1: WhatsApp Receptor */}
                 <div className="bg-white p-4 rounded-2xl border border-neutral-200/90 shadow-2xs flex flex-col justify-between">
@@ -5787,7 +5786,7 @@ export default function AdminPage() {
                   </div>
                   <div>
                     <div className="text-base sm:text-lg font-black text-neutral-950 font-mono tracking-tight">
-                      Activa ({adminPin ? adminPin.length : 6} dígitos)
+                      Protección Activa
                     </div>
                     <div className="text-[11px] text-neutral-500 mt-0.5">
                       Bloqueo automático en 5 intentos
@@ -5795,38 +5794,38 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* KPI 3: Estado de Conexión Nube */}
+                {/* KPI 3: Productos en Catálogo */}
                 <div className="bg-white p-4 rounded-2xl border border-neutral-200/90 shadow-2xs flex flex-col justify-between">
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Base de Datos</span>
+                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Catálogo Activo</span>
                     <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-800 flex items-center justify-center shrink-0">
-                      <Database className="w-4 h-4" />
+                      <Package className="w-4 h-4" />
                     </div>
                   </div>
                   <div>
                     <div className="text-base sm:text-lg font-black text-neutral-950 font-mono tracking-tight">
-                      {isCloudConnected ? "Supabase Cloud" : "LocalStorage"}
+                      {products.length} productos
                     </div>
                     <div className="text-[11px] text-neutral-500 mt-0.5">
-                      {products.length} productos en memoria
+                      Disponibles en tienda web
                     </div>
                   </div>
                 </div>
 
-                {/* KPI 4: Registros Totales */}
+                {/* KPI 4: Ventas Registradas */}
                 <div className="bg-white p-4 rounded-2xl border border-neutral-200/90 shadow-2xs flex flex-col justify-between">
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Registros del Sistema</span>
+                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Ventas Realizadas</span>
                     <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-800 flex items-center justify-center shrink-0">
-                      <HardDrive className="w-4 h-4" />
+                      <BarChart3 className="w-4 h-4" />
                     </div>
                   </div>
                   <div>
                     <div className="text-base sm:text-lg font-black text-neutral-950 font-mono tracking-tight">
-                      {products.length + sales.length}
+                      {sales.length} órdenes
                     </div>
                     <div className="text-[11px] text-neutral-500 mt-0.5">
-                      {products.length} catálogo · {sales.length} órdenes
+                      Historial comercial registrado
                     </div>
                   </div>
                 </div>
@@ -5900,37 +5899,6 @@ export default function AdminPage() {
                             <span>Número de WhatsApp actualizado exitosamente.</span>
                           </div>
                         )}
-
-                        {/* Vista Previa del Mensaje Automatizado */}
-                        <div className="pt-2 border-t border-neutral-100 space-y-2">
-                          <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
-                            Formato de Orden en WhatsApp
-                          </span>
-                          <div className="rounded-xl bg-[#0b141a] p-3 text-white space-y-2 border border-neutral-800">
-                            <div className="flex items-center justify-between pb-1.5 border-b border-neutral-800/80 text-[10px] text-neutral-400">
-                              <div className="flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                <span className="font-bold text-neutral-200">Mensaje generado por la tienda</span>
-                              </div>
-                              <span className="font-mono text-[9px] text-neutral-400">WhatsApp</span>
-                            </div>
-
-                            <div className="bg-[#1f2c34] p-3 rounded-xl rounded-tl-none max-w-sm space-y-1 text-xs text-neutral-100 shadow-sm font-mono text-[11px]">
-                              <div className="font-bold text-emerald-400 flex items-center justify-between pb-1 border-b border-neutral-700/60">
-                                <span>NUEVO PEDIDO #904821</span>
-                                <span className="text-[9px] text-neutral-400">12:30 PM</span>
-                              </div>
-                              <div className="text-[10px] text-neutral-300 pt-1 space-y-0.5">
-                                <div>Cliente: Carlos Méndez</div>
-                                <div>Teléfono: 987 654 321</div>
-                                <div>Destino: Av. Javier Prado 1420, Lima</div>
-                                <div>Ítem: Redmi Buds 6 Play x1</div>
-                                <div className="text-emerald-300 font-bold pt-1">Total a Cobrar: S/ 149.00</div>
-                                <div className="text-neutral-400 text-[9px]">Método: Pago Contra Entrega</div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
                       </form>
                     )}
 
@@ -6067,163 +6035,89 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                {/* ================= COLUMNA DERECHA: RESPALDOS & DIAGNÓSTICO ================= */}
-                {(settingsViewTab === "all" || settingsViewTab === "backup" || settingsViewTab === "system") && (
+                {/* ================= COLUMNA DERECHA: RESPALDOS & EXPORTACIÓN ================= */}
+                {(settingsViewTab === "all" || settingsViewTab === "backup") && (
                   <div className={`space-y-5 ${settingsViewTab === "all" ? "lg:col-span-6" : "w-full"}`}>
-                    {/* CARD 3: RESPALDOS Y EXPORTACIÓN */}
-                    {(settingsViewTab === "all" || settingsViewTab === "backup") && (
-                      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-4">
-                        <div className="flex items-center justify-between gap-2 pb-3 border-b border-neutral-100">
-                          <div className="flex items-center gap-2">
-                            <Download className="w-4 h-4 text-neutral-900" />
-                            <h3 className="text-sm font-extrabold text-neutral-950">Copias de Seguridad &amp; Exportación</h3>
-                          </div>
-                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-700">
-                            {products.length} productos · {sales.length} órdenes
-                          </span>
+                    <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-4">
+                      <div className="flex items-center justify-between gap-2 pb-3 border-b border-neutral-100">
+                        <div className="flex items-center gap-2">
+                          <Download className="w-4 h-4 text-neutral-900" />
+                          <h3 className="text-sm font-extrabold text-neutral-950">Copias de Seguridad &amp; Exportación</h3>
                         </div>
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-700">
+                          {products.length} productos · {sales.length} órdenes
+                        </span>
+                      </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                          <button
-                            type="button"
-                            onClick={handleExportProductsCSV}
-                            className="p-3 rounded-xl border border-neutral-200 bg-neutral-50/60 hover:bg-neutral-100 text-left transition-colors cursor-pointer group shadow-2xs"
-                          >
-                            <div className="flex items-center justify-between text-neutral-950 font-extrabold text-xs mb-1">
-                              <span>Inventario (.CSV)</span>
-                              <Download className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors" />
-                            </div>
-                            <p className="text-[10px] text-neutral-500 font-medium">
-                              Excel / Google Sheets ({products.length} ítems)
-                            </p>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={handleExportSalesCSV}
-                            className="p-3 rounded-xl border border-neutral-200 bg-neutral-50/60 hover:bg-neutral-100 text-left transition-colors cursor-pointer group shadow-2xs"
-                          >
-                            <div className="flex items-center justify-between text-neutral-950 font-extrabold text-xs mb-1">
-                              <span>Ventas (.CSV)</span>
-                              <Download className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors" />
-                            </div>
-                            <p className="text-[10px] text-neutral-500 font-medium">
-                              Reporte de órdenes ({sales.length} registros)
-                            </p>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={handleExportBackupJSON}
-                            className="p-3 rounded-xl border border-neutral-200 bg-neutral-50/60 hover:bg-neutral-100 text-left transition-colors cursor-pointer group shadow-2xs"
-                          >
-                            <div className="flex items-center justify-between text-neutral-950 font-extrabold text-xs mb-1">
-                              <span>Backup JSON</span>
-                              <FileText className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors" />
-                            </div>
-                            <p className="text-[10px] text-neutral-500 font-medium">
-                              Copia íntegra con taxonomía
-                            </p>
-                          </button>
-                        </div>
-
-                        {/* Restaurar Respaldo JSON */}
-                        <div className="pt-2 border-t border-neutral-100">
-                          <div className="p-3 rounded-xl bg-neutral-50/80 border border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div>
-                              <span className="text-xs font-bold text-neutral-900 block">
-                                Restaurar desde Respaldo JSON
-                              </span>
-                              <span className="text-[10px] text-neutral-500">
-                                Carga un archivo de respaldo previo para restablecer el catálogo.
-                              </span>
-                            </div>
-
-                            <label className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-neutral-300 hover:border-neutral-900 text-neutral-900 text-xs font-bold cursor-pointer transition-colors shadow-2xs shrink-0">
-                              <Upload className="w-3.5 h-3.5 text-neutral-600" />
-                              <span>Cargar Archivo</span>
-                              <input
-                                type="file"
-                                accept=".json,application/json"
-                                onChange={handleRestoreBackupJSON}
-                                className="hidden"
-                              />
-                            </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <button
+                          type="button"
+                          onClick={handleExportProductsCSV}
+                          className="p-3 rounded-xl border border-neutral-200 bg-neutral-50/60 hover:bg-neutral-100 text-left transition-colors cursor-pointer group shadow-2xs"
+                        >
+                          <div className="flex items-center justify-between text-neutral-950 font-extrabold text-xs mb-1">
+                            <span>Inventario (.CSV)</span>
+                            <Download className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors" />
                           </div>
+                          <p className="text-[10px] text-neutral-500 font-medium">
+                            Excel ({products.length} ítems)
+                          </p>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleExportSalesCSV}
+                          className="p-3 rounded-xl border border-neutral-200 bg-neutral-50/60 hover:bg-neutral-100 text-left transition-colors cursor-pointer group shadow-2xs"
+                        >
+                          <div className="flex items-center justify-between text-neutral-950 font-extrabold text-xs mb-1">
+                            <span>Ventas (.CSV)</span>
+                            <Download className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors" />
+                          </div>
+                          <p className="text-[10px] text-neutral-500 font-medium">
+                            Reporte ({sales.length} órdenes)
+                          </p>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleExportBackupJSON}
+                          className="p-3 rounded-xl border border-neutral-200 bg-neutral-50/60 hover:bg-neutral-100 text-left transition-colors cursor-pointer group shadow-2xs"
+                        >
+                          <div className="flex items-center justify-between text-neutral-950 font-extrabold text-xs mb-1">
+                            <span>Backup JSON</span>
+                            <FileText className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors" />
+                          </div>
+                          <p className="text-[10px] text-neutral-500 font-medium">
+                            Copia íntegra
+                          </p>
+                        </button>
+                      </div>
+
+                      {/* Restaurar Respaldo JSON */}
+                      <div className="pt-2 border-t border-neutral-100">
+                        <div className="p-3 rounded-xl bg-neutral-50/80 border border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div>
+                            <span className="text-xs font-bold text-neutral-900 block">
+                              Restaurar desde Respaldo JSON
+                            </span>
+                            <span className="text-[10px] text-neutral-500">
+                              Carga un archivo de respaldo previo para restablecer el catálogo.
+                            </span>
+                          </div>
+
+                          <label className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-neutral-300 hover:border-neutral-900 text-neutral-900 text-xs font-bold cursor-pointer transition-colors shadow-2xs shrink-0">
+                            <Upload className="w-3.5 h-3.5 text-neutral-600" />
+                            <span>Cargar Archivo</span>
+                            <input
+                              type="file"
+                              accept=".json,application/json"
+                              onChange={handleRestoreBackupJSON}
+                              className="hidden"
+                            />
+                          </label>
                         </div>
                       </div>
-                    )}
-
-                    {/* CARD 4: DIAGNÓSTICO Y PARÁMETROS DEL SISTEMA */}
-                    {(settingsViewTab === "all" || settingsViewTab === "system") && (
-                      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-4">
-                        <div className="flex items-center justify-between gap-2 pb-3 border-b border-neutral-100">
-                          <div className="flex items-center gap-2">
-                            <Database className="w-4 h-4 text-neutral-900" />
-                            <h3 className="text-sm font-extrabold text-neutral-950">Diagnóstico &amp; Nube</h3>
-                          </div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            <span>Sistema Operativo</span>
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2.5 text-xs">
-                          <div className="p-2.5 rounded-xl bg-neutral-50 border border-neutral-200/80">
-                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                              Software
-                            </span>
-                            <strong className="text-neutral-950 text-xs">PulsoTech POS v2.6</strong>
-                          </div>
-
-                          <div className="p-2.5 rounded-xl bg-neutral-50 border border-neutral-200/80">
-                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                              Moneda Activa
-                            </span>
-                            <strong className="text-neutral-950 text-xs">{STORE_SETTINGS.currencyCode} ({STORE_SETTINGS.currencySymbol})</strong>
-                          </div>
-
-                          <div className="p-2.5 rounded-xl bg-neutral-50 border border-neutral-200/80">
-                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                              Sincronización Cloud
-                            </span>
-                            <strong className={`text-xs ${isCloudConnected ? "text-emerald-700" : "text-neutral-800"}`}>
-                              {isCloudConnected ? "Supabase Listo" : "LocalStorage Local"}
-                            </strong>
-                          </div>
-
-                          <div className="p-2.5 rounded-xl bg-neutral-50 border border-neutral-200/80">
-                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                              Versión de Esquema
-                            </span>
-                            <strong className="text-neutral-950 text-xs font-mono">2026_09_25_v8</strong>
-                          </div>
-                        </div>
-
-                        {syncSuccessMessage && (
-                          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                            <span>{syncSuccessMessage}</span>
-                          </div>
-                        )}
-
-                        <div className="pt-2 border-t border-neutral-100 flex items-center justify-between">
-                          <span className="text-[11px] text-neutral-400 font-medium">
-                            Sincronización bidireccional automática activa.
-                          </span>
-
-                          <button
-                            type="button"
-                            onClick={handleForceCloudSync}
-                            disabled={isSyncingCloud}
-                            className="px-4 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-900 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
-                          >
-                            <RefreshCw className={`w-3.5 h-3.5 ${isSyncingCloud ? "animate-spin" : ""}`} />
-                            <span>{isSyncingCloud ? "Sincronizando..." : "Forzar Sincronización"}</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 )}
               </div>
