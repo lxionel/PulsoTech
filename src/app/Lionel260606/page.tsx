@@ -1428,7 +1428,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-neutral-900 antialiased font-sans flex">
       {/* ================= BARRA LATERAL VERTICAL DESKTOP (POS REAL) ================= */}
-      <aside className="hidden lg:flex w-64 bg-neutral-950 text-neutral-300 border-r border-neutral-800/80 fixed inset-y-0 left-0 z-40 flex-col justify-between select-none">
+      <aside className="hidden md:flex w-64 bg-neutral-950 text-neutral-300 border-r border-neutral-800/80 fixed inset-y-0 left-0 z-40 flex-col justify-between select-none">
         {/* Superior: Branding, Botón de Acción y Navegación Vertical */}
         <div className="flex flex-col">
           {/* Logo y Encabezado del Sistema POS */}
@@ -1548,8 +1548,8 @@ export default function AdminPage() {
         </div>
       </aside>
 
-      {/* ================= HEADER SUPERIOR MÓVIL (lg:hidden) ================= */}
-      <div className="lg:hidden fixed top-0 inset-x-0 h-14 bg-neutral-950 text-white border-b border-neutral-800 z-30 flex items-center justify-between px-4">
+      {/* ================= HEADER SUPERIOR MÓVIL (md:hidden) ================= */}
+      <div className="md:hidden fixed top-0 inset-x-0 h-14 bg-neutral-950 text-white border-b border-neutral-800 z-30 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -1585,9 +1585,9 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* ================= GAVETA / DRAWER MÓVIL (lg:hidden) ================= */}
+      {/* ================= GAVETA / DRAWER MÓVIL (md:hidden) ================= */}
       {isMobileNavOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
+        <div className="md:hidden fixed inset-0 z-50 flex">
           <div
             className="fixed inset-0 bg-black/70 backdrop-blur-xs transition-opacity"
             onClick={() => setIsMobileNavOpen(false)}
@@ -1681,9 +1681,9 @@ export default function AdminPage() {
       )}
 
       {/* ================= ÁREA PRINCIPAL DE CONTENIDO ================= */}
-      <div className="lg:pl-64 flex-1 flex flex-col min-w-0 min-h-screen bg-[#f8fafc]">
+      <div className="md:pl-64 flex-1 flex flex-col min-w-0 min-h-screen bg-[#f8fafc]">
         {/* Encabezado Contextual Superior Desktop */}
-        <header className="bg-white border-b border-neutral-200/80 sticky top-0 z-20 px-4 sm:px-8 py-3.5 hidden lg:flex items-center justify-between gap-4 shadow-2xs">
+        <header className="bg-white border-b border-neutral-200/80 sticky top-0 z-20 px-4 sm:px-8 py-3.5 hidden md:flex items-center justify-between gap-4 shadow-2xs">
           <div>
             <div className="text-[11px] font-mono text-neutral-400 uppercase tracking-wider font-semibold">
               Sistema POS / {navItems.find((n) => n.id === activeTab)?.label || "Módulo"}
@@ -1720,7 +1720,7 @@ export default function AdminPage() {
         </header>
 
         {/* Contenido del Módulo Activo */}
-        <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full flex-1 pt-16 lg:pt-6">
+        <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full flex-1 pt-16 md:pt-6">
           {/* Banner de Notificación de Éxito */}
           {successNotice && (
             <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm font-medium flex items-center justify-between gap-3 shadow-xs animate-in fade-in">
