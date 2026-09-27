@@ -101,7 +101,7 @@ export default function AudioBannerSlider() {
 
   return (
     <section
-      className="relative w-full h-[380px] sm:h-[440px] lg:h-[480px] overflow-hidden bg-neutral-950 select-none flex items-center"
+      className="relative w-full h-full min-h-[460px] sm:min-h-[520px] lg:min-h-[580px] overflow-hidden bg-neutral-950 select-none flex items-center"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onTouchStart={handleTouchStart}
@@ -125,67 +125,65 @@ export default function AudioBannerSlider() {
                 fill
                 priority={index === 0}
                 sizes="100vw"
-                quality={95}
-                className="object-cover object-[65%_center] sm:object-center select-none"
+                quality={100}
+                className="object-cover object-[70%_center] sm:object-center select-none"
               />
 
-              {/* Gradient overlay for readability */}
-              <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/95 via-neutral-950/65 to-neutral-950/30 sm:bg-gradient-to-r sm:from-neutral-950/95 sm:via-neutral-950/75 sm:to-transparent sm:w-3/5 lg:w-[52%]" />
+              {/* Gradient overlay for readability without obscuring the products */}
+              <div className="absolute inset-0 z-1 pointer-events-none bg-gradient-to-t from-neutral-950/90 via-neutral-950/50 to-neutral-950/20 sm:bg-gradient-to-r sm:from-neutral-950/90 sm:via-neutral-950/65 sm:to-transparent sm:w-3/5 lg:w-[48%]" />
             </div>
           );
         })}
       </div>
 
-      {/* Main Commercial Content Overlay */}
+      {/* Main Commercial Content Overlay - Sin cuadros, limpio y visible */}
       <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-10 lg:px-16 w-full py-6 sm:py-8">
-        <div className="max-w-xl space-y-3.5 sm:space-y-4">
-          {/* Volver al inicio link */}
+        <div className="max-w-xl space-y-3 sm:space-y-4">
+          {/* Volver al inicio link sin cuadro */}
           <div>
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/60 hover:bg-black/90 text-neutral-300 hover:text-white text-xs font-semibold backdrop-blur-md border border-white/15 transition-all duration-200 group cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-neutral-200 hover:text-white drop-shadow-sm transition-colors group cursor-pointer"
             >
-              <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+              <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
               <span>Volver al inicio</span>
             </Link>
           </div>
 
-          {/* Badge & Category Tag */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-block px-2.5 sm:px-3 py-1 rounded-md text-[10px] sm:text-xs font-black tracking-widest uppercase bg-neutral-950 text-white shadow-xs border border-white/15">
-              {current.badge}
-            </span>
-            <span className="inline-block px-2.5 py-1 rounded-md text-[10px] sm:text-xs font-bold text-sky-400 bg-sky-950/60 border border-sky-500/30 backdrop-blur-xs">
-              {current.categoryTag}
-            </span>
-          </div>
+          {/* Kicker sin cuadro */}
+          <p className="text-[11px] sm:text-xs font-black tracking-widest uppercase text-sky-400 drop-shadow-sm">
+            {current.badge} • <span className="text-white/80">{current.categoryTag}</span>
+          </p>
 
           {/* Title */}
-          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.12] text-white">
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.12] text-white drop-shadow-md">
             {current.title}
           </h1>
 
           {/* Subtitle */}
-          <p className="text-xs sm:text-sm lg:text-base leading-relaxed font-normal max-w-lg text-neutral-200 sm:text-neutral-300">
+          <p className="text-xs sm:text-sm lg:text-base leading-relaxed font-normal max-w-lg text-neutral-200 drop-shadow-sm">
             {current.subtitle}
           </p>
 
-          {/* Trust Guarantees */}
-          <div className="pt-1 flex flex-wrap gap-2 sm:gap-2.5">
-            <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/10 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold tracking-tight border border-white/10 shadow-2xs">
-              <ShieldCheck className="w-3.5 h-3.5 text-neutral-200" />
+          {/* Trust Guarantees - Lista limpia con iconos y puntos, cero cuadros */}
+          <div className="pt-1.5 flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-2 text-xs sm:text-sm font-bold text-white drop-shadow-sm">
+            <span className="inline-flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>100% Caja Sellada</span>
             </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/10 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold tracking-tight border border-white/10 shadow-2xs">
-              <Zap className="w-3.5 h-3.5 text-neutral-200" />
+            <span className="text-white/30 hidden sm:inline">•</span>
+            <span className="inline-flex items-center gap-1.5">
+              <Zap className="w-4 h-4 text-amber-400 shrink-0" />
               <span>Garantía PulsoTech</span>
             </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/10 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold tracking-tight border border-white/10 shadow-2xs">
-              <Truck className="w-3.5 h-3.5 text-neutral-200" />
+            <span className="text-white/30 hidden sm:inline">•</span>
+            <span className="inline-flex items-center gap-1.5">
+              <Truck className="w-4 h-4 text-sky-400 shrink-0" />
               <span>Pago Contra Entrega</span>
             </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/10 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold tracking-tight border border-white/10 shadow-2xs">
-              <CheckCircle2 className="w-3.5 h-3.5 text-neutral-200" />
+            <span className="text-white/30 hidden sm:inline">•</span>
+            <span className="inline-flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>Entrega Inmediata</span>
             </span>
           </div>

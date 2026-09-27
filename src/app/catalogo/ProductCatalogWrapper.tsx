@@ -101,72 +101,83 @@ export default function ProductCatalogWrapper() {
 
   return (
     <div className="w-full flex flex-col">
-      {/* 1. Category Hero: Slider de 3 fotos para Audífonos, Fotográfico estático para otros */}
-      {meta.key === "audifonos" ? (
-        <AudioBannerSlider />
-      ) : (
-        /* Standard Photographic Hero para las demás categorías */
-        <section className="relative w-full h-[340px] sm:h-[400px] lg:h-[440px] overflow-hidden bg-neutral-950 select-none flex items-center">
-          <div className="absolute inset-0 z-0">
-            <Image
-              src={getAssetUrl(meta.image)}
-              alt={meta.title}
-              fill
-              priority
-              sizes="100vw"
-              quality={100}
-              className="object-cover object-[75%_center] sm:object-[68%_center] md:object-[62%_center] lg:object-center select-none"
-            />
-            <div className="absolute inset-0 z-1 pointer-events-none bg-gradient-to-t from-neutral-950/95 via-neutral-950/75 to-neutral-950/30 sm:bg-gradient-to-r sm:from-neutral-950 sm:via-neutral-950/85 sm:to-transparent sm:w-3/5 lg:w-[52%]" />
-          </div>
-
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-10 lg:px-16 w-full py-6 sm:py-8">
-            <div className="max-w-xl space-y-3.5 sm:space-y-4">
-              <div>
-                <Link
-                  href="/"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/60 hover:bg-black/90 text-neutral-300 hover:text-white text-xs font-semibold backdrop-blur-md border border-white/15 transition-all duration-200 group cursor-pointer"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
-                  <span>Volver al inicio</span>
-                </Link>
+      {/* 1. Primera pantalla completa (100dvh - 4rem): Banner fotográfico + Barra de categorías */}
+      <section className="w-full flex flex-col justify-between h-[calc(100dvh-4rem)] min-h-[540px] bg-neutral-950 overflow-hidden">
+        <div className="flex-1 w-full min-h-0 relative flex items-center">
+          {meta.key === "audifonos" ? (
+            <AudioBannerSlider />
+          ) : (
+            <div className="relative w-full h-full min-h-[340px] overflow-hidden bg-neutral-950 select-none flex items-center">
+              <div className="absolute inset-0 z-0">
+                <Image
+                  src={getAssetUrl(meta.image)}
+                  alt={meta.title}
+                  fill
+                  priority
+                  sizes="100vw"
+                  quality={100}
+                  className="object-cover object-[72%_center] sm:object-center select-none"
+                />
+                <div className="absolute inset-0 z-1 pointer-events-none bg-gradient-to-t from-neutral-950/90 via-neutral-950/50 to-neutral-950/20 sm:bg-gradient-to-r sm:from-neutral-950/90 sm:via-neutral-950/65 sm:to-transparent sm:w-3/5 lg:w-[48%]" />
               </div>
 
-              <div>
-                <span className="inline-block px-2.5 sm:px-3 py-1 rounded-md text-[10px] sm:text-xs font-black tracking-widest uppercase bg-neutral-950 text-white shadow-xs border border-white/15">
-                  {meta.badge}
-                </span>
-              </div>
+              <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-10 lg:px-16 w-full py-6 sm:py-8">
+                <div className="max-w-xl space-y-3 sm:space-y-4">
+                  <div>
+                    <Link
+                      href="/"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-neutral-200 hover:text-white drop-shadow-sm transition-colors group cursor-pointer"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
+                      <span>Volver al inicio</span>
+                    </Link>
+                  </div>
 
-              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.15] text-white">
-                {meta.title}
-              </h1>
+                  <p className="text-[11px] sm:text-xs font-black tracking-widest uppercase text-emerald-400 drop-shadow-sm">
+                    {meta.badge}
+                  </p>
 
-              <p className="text-xs sm:text-sm lg:text-base leading-relaxed font-normal max-w-lg text-neutral-200 sm:text-neutral-300">
-                {meta.subtitle}
-              </p>
+                  <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.12] text-white drop-shadow-md">
+                    {meta.title}
+                  </h1>
 
-              <div className="pt-1 flex flex-wrap gap-2 sm:gap-2.5">
-                {meta.trustItems.map((item) => (
-                  <span
-                    key={item.label}
-                    className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/10 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold tracking-tight border border-white/10 shadow-2xs"
-                  >
-                    <item.icon className="w-3.5 h-3.5 text-neutral-200" />
-                    <span>{item.label}</span>
-                  </span>
-                ))}
+                  <p className="text-xs sm:text-sm lg:text-base leading-relaxed font-normal max-w-lg text-neutral-200 drop-shadow-sm">
+                    {meta.subtitle}
+                  </p>
+
+                  <div className="pt-1.5 flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-2 text-xs sm:text-sm font-bold text-white drop-shadow-sm">
+                    <span className="inline-flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>100% Caja Sellada</span>
+                    </span>
+                    <span className="text-white/30 hidden sm:inline">•</span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <Zap className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span>Garantía PulsoTech</span>
+                    </span>
+                    <span className="text-white/30 hidden sm:inline">•</span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <Truck className="w-4 h-4 text-sky-400 shrink-0" />
+                      <span>Pago Contra Entrega</span>
+                    </span>
+                    <span className="text-white/30 hidden sm:inline">•</span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>Entrega Inmediata</span>
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
-      )}
+          )}
+        </div>
 
-      {/* 2. Barra interactiva de los 4 dibujos estilizados de categorías */}
-      <CategoryNavShowcase
-        activeCategory={categoria}
-        onSelectCategory={handleCategoryChange}
-      />
+        {/* 2. Barra interactiva de los 4 dibujos estilizados de categorías */}
+        <CategoryNavShowcase
+          activeCategory={categoria}
+          onSelectCategory={handleCategoryChange}
+        />
+      </section>
 
       {/* 3. Catálogo de productos filtrado para la categoría seleccionada */}
       <div className="w-full">
