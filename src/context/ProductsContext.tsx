@@ -43,7 +43,7 @@ const CURRENT_DATA_VERSION = "2026_09_25_v8";
 const BRANDS_STORAGE_KEY = "pulsotech_custom_brands";
 const CATEGORIES_STORAGE_KEY = "pulsotech_custom_categories";
 const DEFAULT_BRANDS = ["Xiaomi", "Redmi", "Soundcore", "Haylou", "Sony"];
-const DEFAULT_CATEGORIES = ["Audífonos Inalámbricos", "Smartwatches", "Altavoces Bluetooth", "Accesorios"];
+const DEFAULT_CATEGORIES = ["Audífonos Inalámbricos", "Smartwatches", "Cargadores Portátiles", "Periféricos PC", "Accesorios"];
 
 function getInitialBrands(): string[] {
   if (typeof window !== "undefined") {

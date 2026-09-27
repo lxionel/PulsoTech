@@ -12,9 +12,28 @@ import {
   Check,
 } from "lucide-react";
 
-export default function ProductCatalog() {
+interface ProductCatalogProps {
+  externalSelectedCategory?: string;
+  onCategoryChange?: (category: string) => void;
+}
+
+export default function ProductCatalog({
+  externalSelectedCategory,
+  onCategoryChange,
+}: ProductCatalogProps = {}) {
   const { products, brands, categories } = useProducts();
-  const [selectedCategory, setSelectedCategory] = useState<string>("todos");
+  const [internalCategory, setInternalCategory] = useState<string>("todos");
+
+  const selectedCategory =
+    externalSelectedCategory !== undefined ? externalSelectedCategory : internalCategory;
+
+  const setSelectedCategory = (cat: string) => {
+    setInternalCategory(cat);
+    if (onCategoryChange) {
+      onCategoryChange(cat);
+    }
+  };
+
   const [selectedBrand, setSelectedBrand] = useState<string>("todas");
   const [priceRange, setPriceRange] = useState<"all" | "under50" | "50to100" | "over100" | "custom">("all");
   const [maxPrice, setMaxPrice] = useState<number>(180);
@@ -74,7 +93,19 @@ export default function ProductCatalog() {
       if (selectedCategory !== "todos") {
         const prodCat = (product.category || "").toLowerCase();
         const selCat = selectedCategory.toLowerCase();
-        if (prodCat !== selCat && !prodCat.includes(selCat) && !selCat.includes(prodCat)) {
+        let isMatch = prodCat === selCat || prodCat.includes(selCat) || selCat.includes(prodCat);
+        if (!isMatch) {
+          if (selCat.includes("audífon") || selCat.includes("audifon") || selCat.includes("audio")) {
+            isMatch = prodCat.includes("audífon") || prodCat.includes("audifon") || prodCat.includes("auricular") || prodCat.includes("audio");
+          } else if (selCat.includes("reloj") || selCat.includes("smartwatch")) {
+            isMatch = prodCat.includes("smartwatch") || prodCat.includes("reloj");
+          } else if (selCat.includes("cargador") || selCat.includes("batería") || selCat.includes("powerbank")) {
+            isMatch = prodCat.includes("cargador") || prodCat.includes("batería") || prodCat.includes("bateria") || prodCat.includes("powerbank") || prodCat.includes("accesorio");
+          } else if (selCat.includes("periféric") || selCat.includes("periferic") || selCat.includes("pc")) {
+            isMatch = prodCat.includes("periféric") || prodCat.includes("periferic") || prodCat.includes("teclado") || prodCat.includes("mouse") || prodCat.includes("computadora") || prodCat.includes("accesorio");
+          }
+        }
+        if (!isMatch) {
           return false;
         }
       }
