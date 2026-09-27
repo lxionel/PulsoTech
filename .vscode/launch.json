@@ -2,7 +2,21 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Iniciar Servidor PulsoTech (F5)",
+      "name": "Iniciar PulsoTech y Abrir Tienda (F5)",
+      "type": "editor-browser",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "preLaunchTask": "Iniciar Servidor Next.js"
+    },
+    {
+      "name": "Iniciar PulsoTech y Abrir Panel Admin (F5)",
+      "type": "editor-browser",
+      "request": "launch",
+      "url": "http://localhost:3000/Lionel260606/",
+      "preLaunchTask": "Iniciar Servidor Next.js"
+    },
+    {
+      "name": "Iniciar Servidor en Terminal",
       "type": "node-terminal",
       "request": "launch",
       "command": "npm run dev"
