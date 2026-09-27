@@ -30,12 +30,24 @@ const CATEGORY_ITEMS = [
   },
 ];
 
-export default function CategoryNavShowcase() {
+interface CategoryNavShowcaseProps {
+  activeCategory?: string;
+  onSelectCategory?: (category: string) => void;
+}
+
+export default function CategoryNavShowcase({
+  activeCategory,
+  onSelectCategory,
+}: CategoryNavShowcaseProps = {}) {
   const router = useRouter();
 
   const handleCategoryClick = (item: typeof CATEGORY_ITEMS[0]) => {
     if (!item.available) return;
-    router.push(`/catalogo?categoria=${encodeURIComponent(item.query)}`);
+    if (onSelectCategory) {
+      onSelectCategory(item.query);
+    } else {
+      router.push(`/catalogo?categoria=${encodeURIComponent(item.query)}`);
+    }
   };
 
   return (
@@ -44,6 +56,13 @@ export default function CategoryNavShowcase() {
         {/* Fila limpia de dibujos centrados exactamente como en la captura de referencia */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 items-center justify-center">
           {CATEGORY_ITEMS.map((item) => {
+            const isSelected = Boolean(
+              activeCategory &&
+                (activeCategory.toLowerCase() === item.query.toLowerCase() ||
+                  activeCategory.toLowerCase().includes(item.query.toLowerCase()) ||
+                  item.query.toLowerCase().includes(activeCategory.toLowerCase()))
+            );
+
             return (
               <button
                 key={item.id}
@@ -60,15 +79,31 @@ export default function CategoryNavShowcase() {
                   </span>
                 )}
                 {/* Dibujo limpio y estilizado con animacion suave al pasar el cursor */}
-                <div className={`w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center text-neutral-900 transition-transform duration-200 ${item.available ? "group-hover:text-black group-hover:-translate-y-1 group-hover:scale-105" : ""}`}>
+                <div
+                  className={`w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center transition-transform duration-200 ${
+                    isSelected
+                      ? "text-black scale-105"
+                      : "text-neutral-900"
+                  } ${
+                    item.available
+                      ? "group-hover:text-black group-hover:-translate-y-1 group-hover:scale-105"
+                      : ""
+                  }`}
+                >
                   {item.id === "audifonos" && <AudifonosIcon />}
                   {item.id === "relojes" && <RelojIcon />}
                   {item.id === "cargadores" && <CargadorIcon />}
                   {item.id === "perifericos" && <PerifericosClusterIcon />}
                 </div>
 
-                {/* Texto exacto centrado debajo del dibujo */}
-                <span className={`mt-2 text-xs sm:text-sm font-semibold tracking-tight transition-colors text-neutral-800 ${item.available ? "group-hover:text-black" : ""}`}>
+                {/* Texto exacto centrado debajo del dibujo con indicador activo */}
+                <span
+                  className={`mt-2 text-xs sm:text-sm tracking-tight transition-colors ${
+                    isSelected
+                      ? "text-black font-black underline underline-offset-4 decoration-2"
+                      : "text-neutral-800 font-semibold"
+                  } ${item.available ? "group-hover:text-black" : ""}`}
+                >
                   {item.name}
                 </span>
               </button>

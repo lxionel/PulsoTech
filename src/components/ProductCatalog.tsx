@@ -194,6 +194,33 @@ export default function ProductCatalog({
     setSortBy("featured");
   };
 
+    const isAudioCat =
+    selectedCategory !== "todos" &&
+    (selectedCategory.toLowerCase().includes("audífon") ||
+      selectedCategory.toLowerCase().includes("audifon") ||
+      selectedCategory.toLowerCase().includes("audio"));
+
+  const isChargerCat =
+    selectedCategory !== "todos" &&
+    (selectedCategory.toLowerCase().includes("cargador") ||
+      selectedCategory.toLowerCase().includes("powerbank"));
+
+  const categoryTitle = isAudioCat
+    ? "Catálogo de Audífonos"
+    : isChargerCat
+    ? "Catálogo de Cargadores Portátiles"
+    : selectedCategory !== "todos"
+    ? `Catálogo: ${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}`
+    : "Catálogo Disponible";
+
+  const breadcrumbLabel = isAudioCat
+    ? "Audífonos"
+    : isChargerCat
+    ? "Cargadores Portátiles"
+    : selectedCategory !== "todos"
+    ? selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)
+    : "Catálogo de Productos";
+
   return (
     <section id="catalogo" className="pt-8 pb-14 sm:pt-10 sm:pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Catalog Title Header */}
@@ -202,10 +229,10 @@ export default function ProductCatalog({
           <div className="flex items-center gap-2 text-[11px] sm:text-xs font-semibold text-neutral-500 uppercase tracking-wider">
             <span>Inicio</span>
             <span className="text-neutral-300">/</span>
-            <span className="text-neutral-900 font-bold">Catálogo de Productos</span>
+            <span className="text-neutral-900 font-bold">{breadcrumbLabel}</span>
           </div>
           <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-neutral-950">
-            Catálogo Disponible
+            {categoryTitle}
           </h2>
           <p className="text-xs sm:text-base text-neutral-600 max-w-2xl leading-relaxed">
             Modelos originales en caja sellada con entrega el mismo día y pago contra entrega.
