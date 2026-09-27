@@ -7,7 +7,15 @@ import { ShoppingBag, Heart } from "lucide-react";
 import { STORE_SETTINGS } from "@/data/products";
 import Logo from "./Logo";
 
-export default function Navbar() {
+interface NavbarProps {
+  currentCategory?: string;
+  isTransparent?: boolean;
+}
+
+export default function Navbar({
+  currentCategory,
+  isTransparent = false,
+}: NavbarProps = {}) {
   const {
     itemsCount,
     setIsCartOpen,
@@ -17,34 +25,69 @@ export default function Navbar() {
   } = useCart();
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-neutral-200 shadow-2xs transition-all">
+    <header
+      className={`sticky top-0 z-40 w-full transition-all duration-200 ${
+        isTransparent
+          ? "bg-gradient-to-b from-black/85 via-black/50 to-transparent backdrop-blur-xs border-b border-white/10 shadow-none text-white"
+          : "bg-white/95 backdrop-blur-md border-b border-neutral-200 shadow-2xs text-[#111113]"
+      }`}
+    >
       <div className="w-full max-w-[1650px] mx-auto px-3 sm:px-6 lg:px-10 xl:px-14 h-16 flex items-center justify-between gap-2 sm:gap-4 lg:gap-8">
-        {/* Brand Logo PulsoTech + Nav */}
-        <div className="flex items-center gap-4 sm:gap-6 lg:gap-8 shrink-0 min-w-0">
-          <Logo size="md" />
+        {/* Brand Logo PulsoTech + Nav en la esquina */}
+        <div className="flex items-center gap-3 sm:gap-6 lg:gap-8 shrink-0 min-w-0">
+          <Logo size="md" inverted={isTransparent} />
 
-          {/* Menú de Navegación */}
-          <nav className="hidden md:flex items-center text-sm font-bold text-neutral-800">
+          {/* Menú de Navegación contextual en la esquina */}
+          <nav className="flex items-center text-xs sm:text-sm font-bold">
             <Link
               href="/#catalogo"
-              className="text-neutral-800 hover:text-black transition-colors px-2.5 py-1 rounded-lg hover:bg-neutral-100"
+              className={`transition-colors px-2 py-1 rounded-lg ${
+                isTransparent
+                  ? "text-white/80 hover:text-white hover:bg-white/10"
+                  : "text-neutral-800 hover:text-black hover:bg-neutral-100"
+              }`}
             >
               Catálogo
             </Link>
+
+            {currentCategory && (
+              <div className="flex items-center gap-1 sm:gap-1.5 ml-0.5">
+                <span className={isTransparent ? "text-white/40" : "text-neutral-400"}>/</span>
+                <span
+                  className={`font-black uppercase tracking-wider text-[11px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-md ${
+                    isTransparent
+                      ? "text-sky-400 bg-white/10 border border-white/15 backdrop-blur-xs"
+                      : "text-neutral-900 bg-neutral-100 border border-neutral-200"
+                  }`}
+                >
+                  {currentCategory}
+                </span>
+              </div>
+            )}
           </nav>
         </div>
 
         {/* Right Actions: Social Media (Desktop) + Favorites + Cart */}
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-          {/* Social Media Links (Visible on tablets and desktop, clean in footer for mobile) */}
-          <div className="hidden sm:flex items-center gap-0.5 sm:gap-1 bg-neutral-100/90 p-1 rounded-xl border border-neutral-200/70 shadow-2xs">
+          {/* Social Media Links */}
+          <div
+            className={`hidden sm:flex items-center gap-0.5 sm:gap-1 p-1 rounded-xl shadow-2xs ${
+              isTransparent
+                ? "bg-white/10 border border-white/15 backdrop-blur-md text-white"
+                : "bg-neutral-100/90 border border-neutral-200/70 text-neutral-600"
+            }`}
+          >
             {/* Instagram */}
             <a
               href={STORE_SETTINGS.social.instagram}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram (@lionel_a5)"
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-neutral-600 hover:text-pink-600 hover:bg-white flex items-center justify-center transition-all duration-200 cursor-pointer"
+              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-200 cursor-pointer ${
+                isTransparent
+                  ? "text-neutral-200 hover:text-pink-400 hover:bg-white/15"
+                  : "text-neutral-600 hover:text-pink-600 hover:bg-white"
+              }`}
               title="Instagram: @lionel_a5"
             >
               <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -60,7 +103,11 @@ export default function Navbar() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="TikTok (@lionel_a5)"
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-neutral-600 hover:text-black hover:bg-white flex items-center justify-center transition-all duration-200 cursor-pointer"
+              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-200 cursor-pointer ${
+                isTransparent
+                  ? "text-neutral-200 hover:text-white hover:bg-white/15"
+                  : "text-neutral-600 hover:text-black hover:bg-white"
+              }`}
               title="TikTok: @lionel_a5"
             >
               <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
@@ -74,7 +121,11 @@ export default function Navbar() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Facebook (Lionel)"
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-neutral-600 hover:text-blue-600 hover:bg-white flex items-center justify-center transition-all duration-200 cursor-pointer"
+              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-200 cursor-pointer ${
+                isTransparent
+                  ? "text-neutral-200 hover:text-blue-400 hover:bg-white/15"
+                  : "text-neutral-600 hover:text-blue-600 hover:bg-white"
+              }`}
               title="Facebook: Lionel"
             >
               <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current" viewBox="0 0 24 24">
@@ -87,7 +138,11 @@ export default function Navbar() {
           <button
             onClick={() => setIsFavoritesOpen(true)}
             aria-label="Ver favoritos guardados"
-            className="relative flex items-center justify-center p-2 sm:p-2.5 rounded-xl border border-neutral-200 hover:border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-red-500 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0"
+            className={`relative flex items-center justify-center p-2 sm:p-2.5 rounded-xl transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0 ${
+              isTransparent
+                ? "bg-white/10 hover:bg-white/20 border border-white/15 text-white"
+                : "bg-white hover:bg-neutral-50 border border-neutral-200 hover:border-neutral-300 text-neutral-700"
+            }`}
             title="Mis Favoritos"
           >
             <Heart
@@ -106,10 +161,14 @@ export default function Navbar() {
           <button
             onClick={() => setIsCartOpen(true)}
             aria-label="Abrir bolsa de compra"
-            className="relative flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white transition-all font-bold text-xs gap-2 sm:gap-2.5 shadow-sm active:scale-95 cursor-pointer shrink-0"
+            className={`relative flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all font-bold text-xs gap-2 sm:gap-2.5 shadow-sm active:scale-95 cursor-pointer shrink-0 ${
+              isTransparent
+                ? "bg-white text-neutral-950 hover:bg-neutral-100 shadow-md"
+                : "bg-neutral-950 hover:bg-neutral-800 text-white"
+            }`}
           >
             <div className="relative">
-              <ShoppingBag className="w-4 h-4 text-white" />
+              <ShoppingBag className={`w-4 h-4 ${isTransparent ? "text-neutral-950" : "text-white"}`} />
               {itemsCount > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center text-[9px] font-bold px-1 rounded-full bg-blue-600 text-white min-w-3.5 h-3.5">
                   {itemsCount}
@@ -117,7 +176,7 @@ export default function Navbar() {
               )}
             </div>
             <span className="hidden sm:inline">Bolsa</span>
-            <span className="text-white font-extrabold border-l border-neutral-700 pl-1.5 sm:pl-2">
+            <span className={`font-extrabold border-l pl-1.5 sm:pl-2 ${isTransparent ? "border-neutral-300 text-neutral-950" : "border-neutral-700 text-white"}`}>
               {STORE_SETTINGS.currencySymbol}
               {subtotal.toFixed(2)}
             </span>

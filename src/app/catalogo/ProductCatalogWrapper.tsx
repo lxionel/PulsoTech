@@ -8,8 +8,8 @@ import { ArrowLeft, ShieldCheck, Zap, Truck, CheckCircle2 } from "lucide-react";
 import { getAssetUrl } from "@/utils/paths";
 import CategoryNavShowcase from "@/components/CategoryNavShowcase";
 import ProductCatalog from "@/components/ProductCatalog";
-
 import AudioBannerSlider from "@/components/AudioBannerSlider";
+import Navbar from "@/components/Navbar";
 
 interface CategoryMeta {
   key: string;
@@ -99,15 +99,28 @@ export default function ProductCatalogWrapper() {
     });
   };
 
+  const currentCategoryLabel =
+    meta.key === "audifonos"
+      ? "Audífonos"
+      : meta.key === "cargadores"
+      ? "Cargadores"
+      : undefined;
+
   return (
     <div className="w-full flex flex-col">
-      {/* 1. Primera pantalla completa (100dvh - 4rem): Banner fotográfico + Barra de categorías */}
-      <section className="w-full flex flex-col justify-between h-[calc(100dvh-4rem)] min-h-[540px] bg-neutral-950 overflow-hidden">
+      {/* 1. Primera pantalla completa con Navbar integrado sobre las imágenes */}
+      <section className="relative w-full flex flex-col justify-between h-[100dvh] min-h-[580px] bg-neutral-950 overflow-hidden">
+        {/* Navbar integrado sobre las imágenes con categoría en la esquina */}
+        <div className="absolute top-0 left-0 right-0 z-40">
+          <Navbar currentCategory={currentCategoryLabel} isTransparent={true} />
+        </div>
+
+        {/* Banner fotográfico que ocupa todo el fondo */}
         <div className="flex-1 w-full min-h-0 relative flex items-center">
           {meta.key === "audifonos" ? (
             <AudioBannerSlider />
           ) : (
-            <div className="relative w-full h-full min-h-[340px] overflow-hidden bg-neutral-950 select-none flex items-center">
+            <div className="relative w-full h-full min-h-[340px] overflow-hidden bg-neutral-950 select-none flex items-center pt-16">
               <div className="absolute inset-0 z-0">
                 <Image
                   src={getAssetUrl(meta.image)}

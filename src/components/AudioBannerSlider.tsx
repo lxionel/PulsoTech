@@ -136,8 +136,14 @@ export default function AudioBannerSlider() {
         })}
       </div>
 
+      {/* Indicador de categoría en la esquina de la imagen */}
+      <div className="absolute top-20 right-4 sm:right-10 z-20 hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white text-xs font-bold tracking-wider shadow-lg">
+        <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+        <span className="tracking-widest">AUDÍFONOS</span>
+      </div>
+
       {/* Main Commercial Content Overlay - Sin cuadros, limpio y visible */}
-      <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-10 lg:px-16 w-full py-6 sm:py-8">
+      <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-10 lg:px-16 w-full pt-16 sm:pt-20 pb-6 sm:pb-8">
         <div className="max-w-xl space-y-3 sm:space-y-4">
           {/* Volver al inicio link sin cuadro */}
           <div>

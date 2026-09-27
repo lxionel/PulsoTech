@@ -6,9 +6,8 @@ import ProductCatalogWrapper from "./ProductCatalogWrapper";
 export default function CatalogoPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#fbfbfd] text-[#111113]">
-      <Navbar />
       <main className="flex-1 bg-[#fbfbfd]">
-        <Suspense fallback={<div className="p-8 text-center">Cargando catálogo...</div>}>
+        <Suspense fallback={<div className="p-8 text-center text-neutral-500">Cargando catálogo...</div>}>
           <ProductCatalogWrapper />
         </Suspense>
       </main>

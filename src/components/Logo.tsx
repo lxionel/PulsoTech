@@ -7,9 +7,15 @@ interface LogoProps {
   className?: string;
   showText?: boolean;
   size?: "sm" | "md" | "lg";
+  inverted?: boolean;
 }
 
-export default function Logo({ className = "", showText = true, size = "md" }: LogoProps) {
+export default function Logo({
+  className = "",
+  showText = true,
+  size = "md",
+  inverted = false,
+}: LogoProps) {
   const iconSize = size === "sm" ? 32 : size === "lg" ? 44 : 38;
   const textSize = size === "sm" ? "text-lg" : size === "lg" ? "text-2xl" : "text-xl";
   const subSize = size === "sm" ? "text-[8px]" : size === "lg" ? "text-[10px]" : "text-[9px]";
@@ -18,7 +24,11 @@ export default function Logo({ className = "", showText = true, size = "md" }: L
     <Link href="/" className={`flex items-center gap-2.5 group select-none ${className}`}>
       {/* Isotipo PulsoTech SVG Vectorial de Alta Fidelidad */}
       <div 
-        className="relative shrink-0 flex items-center justify-center rounded-xl bg-neutral-950 border border-neutral-900 shadow-2xs group-hover:bg-neutral-900 transition-all duration-200"
+        className={`relative shrink-0 flex items-center justify-center rounded-xl transition-all duration-200 ${
+          inverted
+            ? "bg-white/15 border border-white/20 group-hover:bg-white/25"
+            : "bg-neutral-950 border border-neutral-900 shadow-2xs group-hover:bg-neutral-900"
+        }`}
         style={{ width: iconSize, height: iconSize }}
       >
         <svg
@@ -39,10 +49,18 @@ export default function Logo({ className = "", showText = true, size = "md" }: L
       {/* Tipografía PulsoTech Unificada de Alta Gama */}
       {showText && (
         <div className="flex flex-col justify-center">
-          <div className={`font-black tracking-tight leading-none ${textSize} text-neutral-950 transition-colors`}>
+          <div
+            className={`font-black tracking-tight leading-none ${textSize} transition-colors ${
+              inverted ? "text-white" : "text-neutral-950"
+            }`}
+          >
             PulsoTech
           </div>
-          <span className={`font-bold tracking-[0.18em] text-neutral-500 uppercase leading-none mt-1 ${subSize}`}>
+          <span
+            className={`font-bold tracking-[0.18em] uppercase leading-none mt-1 ${subSize} ${
+              inverted ? "text-neutral-300" : "text-neutral-500"
+            }`}
+          >
             Tecnología &amp; Audio
           </span>
         </div>
