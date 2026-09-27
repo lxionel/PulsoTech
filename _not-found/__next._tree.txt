@@ -1,2 +1,2 @@
-:HL["/PulsoTech/_next/static/chunks/3c4giuf9g1oh-.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":4192,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"Xw6csuyYP6BJYmA6siELg"}
+:HL["/PulsoTech/_next/static/chunks/43il4av8gq9m-.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":4192,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"rXcOW4J5xPZRwn2B5Oc8t"}
