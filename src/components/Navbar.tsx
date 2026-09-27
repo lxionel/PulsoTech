@@ -28,7 +28,7 @@ export default function Navbar({
     <header
       className={`sticky top-0 z-40 w-full transition-all duration-200 ${
         isTransparent
-          ? "bg-gradient-to-b from-black/85 via-black/50 to-transparent backdrop-blur-xs border-b border-white/10 shadow-none text-white"
+          ? "bg-transparent text-white border-b-0 border-none shadow-none"
           : "bg-white/95 backdrop-blur-md border-b border-neutral-200 shadow-2xs text-[#111113]"
       }`}
     >
@@ -56,7 +56,7 @@ export default function Navbar({
                 <span
                   className={`font-black uppercase tracking-wider text-[11px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-md ${
                     isTransparent
-                      ? "text-sky-400 bg-white/10 border border-white/15 backdrop-blur-xs"
+                      ? "text-sky-400 bg-black/40 border border-white/15"
                       : "text-neutral-900 bg-neutral-100 border border-neutral-200"
                   }`}
                 >
@@ -73,7 +73,7 @@ export default function Navbar({
           <div
             className={`hidden sm:flex items-center gap-0.5 sm:gap-1 p-1 rounded-xl shadow-2xs ${
               isTransparent
-                ? "bg-white/10 border border-white/15 backdrop-blur-md text-white"
+                ? "bg-black/40 border border-white/15 text-white"
                 : "bg-neutral-100/90 border border-neutral-200/70 text-neutral-600"
             }`}
           >
