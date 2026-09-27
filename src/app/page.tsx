@@ -4,6 +4,7 @@ import React from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import CategoryNavShowcase from "@/components/CategoryNavShowcase";
+import ProductCatalog from "@/components/ProductCatalog";
 import Footer from "@/components/Footer";
 
 export default function Home() {
@@ -25,6 +26,9 @@ export default function Home() {
           {/* Los dibujos de categorias quedan fijos en la base exacta de la primera pantalla */}
           <CategoryNavShowcase />
         </section>
+
+        {/* 2. Catálogo general de productos en la página principal */}
+        <ProductCatalog />
       </main>
 
       {/* Clean Customer Footer */}
