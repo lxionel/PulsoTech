@@ -36,8 +36,12 @@ export default function RootLayout({
     <html
       lang="es"
       className={`${plusJakarta.variable} ${spaceGrotesk.variable} h-full antialiased scroll-smooth`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col font-sans bg-[#fbfbfd] text-[#111113] selection:bg-neutral-900 selection:text-white">
+      <body
+        className="min-h-full flex flex-col font-sans bg-[#fbfbfd] text-[#111113] selection:bg-neutral-900 selection:text-white"
+        suppressHydrationWarning
+      >
         <ProductsProvider>
           <CartProvider>
             {children}
