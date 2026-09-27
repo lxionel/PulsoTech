@@ -1,50 +1,41 @@
 "use client";
 
 import React from "react";
-
-interface CategoryNavShowcaseProps {
-  selectedCategory: string;
-  onSelectCategory: (category: string) => void;
-}
+import { useRouter } from "next/navigation";
 
 const CATEGORY_ITEMS = [
   {
     id: "audifonos",
     name: "Audífonos",
     query: "audífonos",
+    available: true,
   },
   {
     id: "relojes",
     name: "Relojes",
     query: "smartwatches",
+    available: false,
   },
   {
     id: "cargadores",
     name: "Cargadores portátiles",
     query: "cargadores",
+    available: true,
   },
   {
     id: "perifericos",
     name: "Periféricos de computadora",
     query: "periféricos",
+    available: false,
   },
 ];
 
-export default function CategoryNavShowcase({
-  selectedCategory,
-  onSelectCategory,
-}: CategoryNavShowcaseProps) {
-  const handleCategoryClick = (categoryQuery: string) => {
-    if (selectedCategory.toLowerCase() === categoryQuery.toLowerCase()) {
-      onSelectCategory("todos");
-    } else {
-      onSelectCategory(categoryQuery);
-    }
+export default function CategoryNavShowcase() {
+  const router = useRouter();
 
-    const catalogoEl = document.getElementById("catalogo");
-    if (catalogoEl) {
-      catalogoEl.scrollIntoView({ behavior: "smooth" });
-    }
+  const handleCategoryClick = (item: typeof CATEGORY_ITEMS[0]) => {
+    if (!item.available) return;
+    router.push(`/catalogo?categoria=${encodeURIComponent(item.query)}`);
   };
 
   return (
@@ -53,20 +44,23 @@ export default function CategoryNavShowcase({
         {/* Fila limpia de dibujos centrados exactamente como en la captura de referencia */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 items-center justify-center">
           {CATEGORY_ITEMS.map((item) => {
-            const isSelected =
-              selectedCategory.toLowerCase() === item.query.toLowerCase() ||
-              (selectedCategory !== "todos" &&
-                selectedCategory.toLowerCase().includes(item.query.toLowerCase()));
-
             return (
               <button
                 key={item.id}
                 type="button"
-                onClick={() => handleCategoryClick(item.query)}
-                className="group flex flex-col items-center justify-center py-1.5 px-2 cursor-pointer text-center transition-all duration-200 focus:outline-none"
+                onClick={() => handleCategoryClick(item)}
+                disabled={!item.available}
+                className={`group flex flex-col items-center justify-center py-1.5 px-2 text-center transition-all duration-200 focus:outline-none relative ${
+                  item.available ? "cursor-pointer" : "cursor-not-allowed opacity-60"
+                }`}
               >
+                {!item.available && (
+                  <span className="absolute -top-2 bg-neutral-900 text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full z-10">
+                    Próximamente
+                  </span>
+                )}
                 {/* Dibujo limpio y estilizado con animacion suave al pasar el cursor */}
-                <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center text-neutral-900 group-hover:text-black transition-transform duration-200 group-hover:-translate-y-1 group-hover:scale-105">
+                <div className={`w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center text-neutral-900 transition-transform duration-200 ${item.available ? "group-hover:text-black group-hover:-translate-y-1 group-hover:scale-105" : ""}`}>
                   {item.id === "audifonos" && <AudifonosIcon />}
                   {item.id === "relojes" && <RelojIcon />}
                   {item.id === "cargadores" && <CargadorIcon />}
@@ -74,13 +68,7 @@ export default function CategoryNavShowcase({
                 </div>
 
                 {/* Texto exacto centrado debajo del dibujo */}
-                <span
-                  className={`mt-2 text-xs sm:text-sm font-semibold tracking-tight transition-colors ${
-                    isSelected
-                      ? "text-black font-extrabold underline underline-offset-4 decoration-2"
-                      : "text-neutral-800 group-hover:text-black"
-                  }`}
-                >
+                <span className={`mt-2 text-xs sm:text-sm font-semibold tracking-tight transition-colors text-neutral-800 ${item.available ? "group-hover:text-black" : ""}`}>
                   {item.name}
                 </span>
               </button>
