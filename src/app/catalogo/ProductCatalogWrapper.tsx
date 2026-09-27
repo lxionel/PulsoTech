@@ -9,7 +9,10 @@ import { getAssetUrl } from "@/utils/paths";
 import CategoryNavShowcase from "@/components/CategoryNavShowcase";
 import ProductCatalog from "@/components/ProductCatalog";
 
+import Headphone3DModel from "@/components/Headphone3DModel";
+
 interface CategoryMeta {
+  key: string;
   badge: string;
   title: string;
   subtitle: string;
@@ -19,7 +22,8 @@ interface CategoryMeta {
 
 const CATEGORY_DATA: Record<string, CategoryMeta> = {
   audifonos: {
-    badge: "STOCK DISPONIBLE • AUDIO ORIGINAL",
+    key: "audifonos",
+    badge: "STOCK DISPONIBLE • EXPERIENCIA 3D AUDIO",
     title: "¡Audífonos y Sonido Original!",
     subtitle:
       "Modelos originales en caja sellada de fábrica, sonido inmersivo de alta fidelidad, garantía total y pago contra entrega.",
@@ -32,6 +36,7 @@ const CATEGORY_DATA: Record<string, CategoryMeta> = {
     ],
   },
   cargadores: {
+    key: "cargadores",
     badge: "STOCK DISPONIBLE • ENERGÍA Y CARGA",
     title: "¡Cargadores y Baterías Portátiles!",
     subtitle:
@@ -45,6 +50,7 @@ const CATEGORY_DATA: Record<string, CategoryMeta> = {
     ],
   },
   default: {
+    key: "default",
     badge: "STOCK DISPONIBLE",
     title: "¡Tecnología y Audio Original!",
     subtitle:
@@ -95,70 +101,136 @@ export default function ProductCatalogWrapper() {
 
   return (
     <div className="w-full flex flex-col">
-      {/* 1. Category Hero Banner fotográfico cinematográfico idéntico al estilo PulsoTech */}
-      <section className="relative w-full h-[340px] sm:h-[400px] lg:h-[440px] overflow-hidden bg-neutral-950 select-none flex items-center">
-        {/* Background Panoramic Photography en máxima resolución */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src={getAssetUrl(meta.image)}
-            alt={meta.title}
-            fill
-            priority
-            sizes="100vw"
-            quality={100}
-            className="object-cover object-[75%_center] sm:object-[68%_center] md:object-[62%_center] lg:object-center select-none"
-          />
+      {/* 1. Category Hero: 3D Interactivo para Audífonos, Fotográfico para otros */}
+      {meta.key === "audifonos" ? (
+        <section className="relative w-full min-h-[460px] sm:min-h-[500px] lg:min-h-[540px] overflow-hidden bg-[#0a0b10] select-none flex items-center border-b border-neutral-800/60">
+          {/* Ambient Studio Lighting Glow */}
+          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+            <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[480px] h-[480px] bg-sky-500/10 rounded-full blur-3xl" />
+            <div className="absolute top-1/3 left-10 w-[360px] h-[360px] bg-blue-600/10 rounded-full blur-3xl" />
+            {/* Subtle tech dot matrix */}
+            <div
+              className="absolute inset-0 opacity-[0.035]"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle, white 1px, transparent 1px)",
+                backgroundSize: "28px 28px",
+              }}
+            />
+          </div>
 
-          {/* Gradiente cinemático para máxima legibilidad tipográfica */}
-          <div className="absolute inset-0 z-1 pointer-events-none bg-gradient-to-t from-neutral-950/95 via-neutral-950/75 to-neutral-950/30 sm:bg-gradient-to-r sm:from-neutral-950 sm:via-neutral-950/85 sm:to-transparent sm:w-3/5 lg:w-[52%]" />
-        </div>
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-10 lg:px-16 w-full py-8 sm:py-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
+              {/* Left Column: Commercial Content */}
+              <div className="lg:col-span-6 space-y-3.5 sm:space-y-4">
+                <div>
+                  <Link
+                    href="/"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white text-xs font-semibold backdrop-blur-md border border-white/10 transition-all duration-200 group cursor-pointer"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+                    <span>Volver al inicio</span>
+                  </Link>
+                </div>
 
-        {/* Contenido comercial */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-10 lg:px-16 w-full py-6 sm:py-8">
-          <div className="max-w-xl space-y-3.5 sm:space-y-4">
-            {/* Botón sutil de volver a la tienda */}
-            <div>
-              <Link
-                href="/"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/60 hover:bg-black/90 text-neutral-300 hover:text-white text-xs font-semibold backdrop-blur-md border border-white/10 transition-all duration-200 group cursor-pointer"
-              >
-                <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
-                <span>Volver al inicio</span>
-              </Link>
-            </div>
+                <div>
+                  <span className="inline-block px-2.5 sm:px-3 py-1 rounded-md text-[10px] sm:text-xs font-black tracking-widest uppercase bg-neutral-950 text-white shadow-xs border border-white/15">
+                    {meta.badge}
+                  </span>
+                </div>
 
-            {/* Badge de stock / categoría */}
-            <div>
-              <span className="inline-block px-2.5 sm:px-3 py-1 rounded-md text-[10px] sm:text-xs font-black tracking-widest uppercase bg-neutral-950 text-white shadow-xs border border-white/15">
-                {meta.badge}
-              </span>
-            </div>
+                <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.12] text-white">
+                  {meta.title}
+                </h1>
 
-            {/* Título de la categoría */}
-            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.15] text-white">
-              {meta.title}
-            </h1>
+                <p className="text-xs sm:text-sm lg:text-base leading-relaxed font-normal text-neutral-300 max-w-lg">
+                  {meta.subtitle}
+                </p>
 
-            {/* Subtítulo descriptivo */}
-            <p className="text-xs sm:text-sm lg:text-base leading-relaxed font-normal max-w-lg text-neutral-200 sm:text-neutral-300">
-              {meta.subtitle}
-            </p>
+                {/* 3D Interaction helper badge */}
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sky-500/10 border border-sky-400/20 text-sky-300 text-[11px] sm:text-xs font-semibold">
+                  <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping" />
+                  <span>Modelo 3D en tiempo real: gira al hacer scroll o arrástralo</span>
+                </div>
 
-            {/* Píldoras de confianza y garantías */}
-            <div className="pt-1 flex flex-wrap gap-2 sm:gap-2.5">
-              {meta.trustItems.map((item) => (
-                <span
-                  key={item.label}
-                  className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/10 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold tracking-tight border border-white/10 shadow-2xs"
-                >
-                  <item.icon className="w-3.5 h-3.5 text-neutral-200" />
-                  <span>{item.label}</span>
-                </span>
-              ))}
+                {/* Píldoras de confianza y garantías */}
+                <div className="pt-1 flex flex-wrap gap-2 sm:gap-2.5">
+                  {meta.trustItems.map((item) => (
+                    <span
+                      key={item.label}
+                      className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/10 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold tracking-tight border border-white/10 shadow-2xs"
+                    >
+                      <item.icon className="w-3.5 h-3.5 text-neutral-200" />
+                      <span>{item.label}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right Column: 3D Interactive Model Canvas */}
+              <div className="lg:col-span-6 w-full flex items-center justify-center">
+                <Headphone3DModel />
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : (
+        /* Standard Photographic Hero para las demás categorías */
+        <section className="relative w-full h-[340px] sm:h-[400px] lg:h-[440px] overflow-hidden bg-neutral-950 select-none flex items-center">
+          <div className="absolute inset-0 z-0">
+            <Image
+              src={getAssetUrl(meta.image)}
+              alt={meta.title}
+              fill
+              priority
+              sizes="100vw"
+              quality={100}
+              className="object-cover object-[75%_center] sm:object-[68%_center] md:object-[62%_center] lg:object-center select-none"
+            />
+            <div className="absolute inset-0 z-1 pointer-events-none bg-gradient-to-t from-neutral-950/95 via-neutral-950/75 to-neutral-950/30 sm:bg-gradient-to-r sm:from-neutral-950 sm:via-neutral-950/85 sm:to-transparent sm:w-3/5 lg:w-[52%]" />
+          </div>
+
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-10 lg:px-16 w-full py-6 sm:py-8">
+            <div className="max-w-xl space-y-3.5 sm:space-y-4">
+              <div>
+                <Link
+                  href="/"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/60 hover:bg-black/90 text-neutral-300 hover:text-white text-xs font-semibold backdrop-blur-md border border-white/10 transition-all duration-200 group cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+                  <span>Volver al inicio</span>
+                </Link>
+              </div>
+
+              <div>
+                <span className="inline-block px-2.5 sm:px-3 py-1 rounded-md text-[10px] sm:text-xs font-black tracking-widest uppercase bg-neutral-950 text-white shadow-xs border border-white/15">
+                  {meta.badge}
+                </span>
+              </div>
+
+              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.15] text-white">
+                {meta.title}
+              </h1>
+
+              <p className="text-xs sm:text-sm lg:text-base leading-relaxed font-normal max-w-lg text-neutral-200 sm:text-neutral-300">
+                {meta.subtitle}
+              </p>
+
+              <div className="pt-1 flex flex-wrap gap-2 sm:gap-2.5">
+                {meta.trustItems.map((item) => (
+                  <span
+                    key={item.label}
+                    className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/10 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold tracking-tight border border-white/10 shadow-2xs"
+                  >
+                    <item.icon className="w-3.5 h-3.5 text-neutral-200" />
+                    <span>{item.label}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 2. Barra interactiva de los 4 dibujos estilizados de categorías */}
       <CategoryNavShowcase
