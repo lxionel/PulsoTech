@@ -70,7 +70,7 @@ export default function AudioBannerSlider() {
 
   return (
     <div
-      className="relative w-full aspect-[21/9] sm:aspect-[2.48/1] min-h-[260px] sm:min-h-[340px] md:min-h-[400px] max-h-[560px] overflow-hidden bg-neutral-950 select-none flex items-center"
+      className="relative w-full h-full min-h-[300px] overflow-hidden bg-neutral-950 select-none flex items-center"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onTouchStart={handleTouchStart}
@@ -107,7 +107,7 @@ export default function AudioBannerSlider() {
         onClick={prevSlide}
         type="button"
         aria-label="Foto anterior"
-        className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 hover:bg-black/75 border border-white/20 text-white flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer shadow-lg hover:border-white/40"
+        className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 hover:bg-black/75 border border-white/20 text-white flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer shadow-lg hover:border-white/40"
       >
         <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
       </button>
@@ -117,12 +117,12 @@ export default function AudioBannerSlider() {
         onClick={nextSlide}
         type="button"
         aria-label="Foto siguiente"
-        className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 hover:bg-black/75 border border-white/20 text-white flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer shadow-lg hover:border-white/40"
+        className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 hover:bg-black/75 border border-white/20 text-white flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer shadow-lg hover:border-white/40"
       >
         <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
       </button>
 
-      {/* Indicadores inferiores - Únicamente barras/puntos, SIN números */}
+      {/* Indicadores inferiores - Únicamente 2 barras/puntos, SIN números */}
       <div className="absolute bottom-3 sm:bottom-4 left-0 right-0 z-30 flex items-center justify-center pointer-events-auto">
         <div className="flex items-center gap-2 bg-black/50 px-3 py-1.5 rounded-full border border-white/15 shadow-md">
           {SLIDES.map((slide, idx) => (
