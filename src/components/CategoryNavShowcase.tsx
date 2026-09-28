@@ -68,16 +68,10 @@ export default function CategoryNavShowcase({
                 key={item.id}
                 type="button"
                 onClick={() => handleCategoryClick(item)}
-                disabled={!item.available}
                 className={`group flex flex-col items-center justify-center py-1.5 px-2 text-center transition-all duration-200 focus:outline-none relative ${
-                  item.available ? "cursor-pointer" : "cursor-not-allowed opacity-60"
+                  item.available ? "cursor-pointer" : "cursor-default"
                 }`}
               >
-                {!item.available && (
-                  <span className="absolute -top-2 bg-neutral-900 text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full z-10">
-                    Próximamente
-                  </span>
-                )}
                 {/* Dibujo limpio y estilizado con animacion suave al pasar el cursor */}
                 <div
                   className={`w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center transition-transform duration-200 ${
