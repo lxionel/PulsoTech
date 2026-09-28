@@ -50,27 +50,31 @@ export default function ProductCatalog({
       : products.filter((p) => (p.stockCount ?? 0) > 0 && p.inStock !== false);
   }, [products, showOutOfStock]);
 
-  // Lista dinámica combinada de marcas (sin duplicados por mayúsculas/minúsculas)
+  // Lista dinámica de marcas con productos en stock
   const allBrands = useMemo(() => {
     const map = new Map<string, string>();
-    (brands || []).forEach((b) => {
-      if (b && b.trim()) map.set(b.trim().toLowerCase(), b.trim());
-    });
     baseProducts.forEach((p) => {
       if (p.brand && p.brand.trim()) map.set(p.brand.trim().toLowerCase(), p.brand.trim());
     });
+    if (map.size === 0) {
+      (brands || []).forEach((b) => {
+        if (b && b.trim()) map.set(b.trim().toLowerCase(), b.trim());
+      });
+    }
     return Array.from(map.values());
   }, [brands, baseProducts]);
 
-  // Lista dinámica combinada de categorías (sin duplicados por mayúsculas/minúsculas)
+  // Lista dinámica de categorías con productos en stock
   const allCategories = useMemo(() => {
     const map = new Map<string, string>();
-    (categories || []).forEach((c) => {
-      if (c && c.trim()) map.set(c.trim().toLowerCase(), c.trim());
-    });
     baseProducts.forEach((p) => {
       if (p.category && p.category.trim()) map.set(p.category.trim().toLowerCase(), p.category.trim());
     });
+    if (map.size === 0) {
+      (categories || []).forEach((c) => {
+        if (c && c.trim()) map.set(c.trim().toLowerCase(), c.trim());
+      });
+    }
     return Array.from(map.values());
   }, [categories, baseProducts]);
 

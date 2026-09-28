@@ -16,10 +16,12 @@ export default function FloatingWidgets() {
     return null;
   }
 
+  const cleanWhatsApp = (whatsappNumber || "").replace(/\D/g, "");
+
   return (
     <aside aria-label="Contacto oficial por WhatsApp" className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40">
       <a
-        href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+        href={`https://wa.me/${cleanWhatsApp}?text=${encodeURIComponent(
           "¡Hola PulsoTech! Deseo consultar sobre los audífonos y productos disponibles."
         )}`}
         target="_blank"

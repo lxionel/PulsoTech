@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Product } from "@/types";
+import { PRODUCTS } from "@/data/products";
 import {
   isSupabaseReady,
   fetchProductsFromSupabase,
@@ -38,7 +39,7 @@ const ProductsContext = createContext<ProductsContextType | undefined>(undefined
 
 const STORAGE_KEY = "pulsotech_custom_products";
 const DATA_VERSION_KEY = "pulsotech_catalog_data_version";
-const CURRENT_DATA_VERSION = "2026_09_25_v8";
+const CURRENT_DATA_VERSION = "2026_09_28_v1";
 
 const BRANDS_STORAGE_KEY = "pulsotech_custom_brands";
 const CATEGORIES_STORAGE_KEY = "pulsotech_custom_categories";
@@ -81,7 +82,7 @@ function getInitialProducts(): Product[] {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored !== null) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
+        if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed;
         }
       }
@@ -89,7 +90,7 @@ function getInitialProducts(): Product[] {
       console.error("Error reading localStorage:", e);
     }
   }
-  return [];
+  return PRODUCTS;
 }
 
 export function ProductsProvider({ children }: { children: React.ReactNode }) {
@@ -122,10 +123,8 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const cloudProds = await fetchProductsFromSupabase();
-      if (cloudProds !== null) {
+      if (cloudProds !== null && cloudProds.length > 0) {
         setIsCloudConnected(true);
-
-        // Respetar fielmente los productos de Supabase (incluso si está vacío porque se borraron)
         setProducts(cloudProds);
         if (typeof window !== "undefined") {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudProds));
@@ -140,6 +139,16 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
           if (cloudSettings.categories && cloudSettings.categories.length > 0) {
             setCategories(cloudSettings.categories);
           }
+        }
+      } else if (cloudProds !== null && cloudProds.length === 0) {
+        // Si la nube está vacía pero tenemos productos base, sincronizarlos
+        setIsCloudConnected(true);
+        setProducts(PRODUCTS);
+        if (typeof window !== "undefined") {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(PRODUCTS));
+        }
+        for (const p of PRODUCTS) {
+          void upsertProductToSupabase(p);
         }
       } else {
         setIsCloudConnected(false);
@@ -410,9 +419,15 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   }, [saveProductsLocal]);
 
   const resetToDefault = useCallback(() => {
-    saveProductsLocal([]);
+    saveProductsLocal(PRODUCTS);
     if (isSupabaseReady()) {
-      clearAllProductsFromSupabase().catch(console.error);
+      clearAllProductsFromSupabase()
+        .then(() => {
+          PRODUCTS.forEach((p) => {
+            void upsertProductToSupabase(p);
+          });
+        })
+        .catch(console.error);
     }
   }, [saveProductsLocal]);
 

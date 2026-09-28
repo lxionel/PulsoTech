@@ -112,7 +112,7 @@ export default function FavoritesDrawer() {
                         />
                       ) : (
                         <Image
-                          src={displayImg}
+                          src={getAssetUrl(displayImg)}
                           alt={product.name}
                           fill
                           className="object-contain p-1"

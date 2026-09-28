@@ -51,7 +51,7 @@ export default function CategoryNavShowcase({
     if (onSelectCategory) {
       onSelectCategory(item.query);
     } else {
-      router.push(`/catalogo?categoria=${encodeURIComponent(item.query)}`);
+      router.push(`/catalogo/?categoria=${encodeURIComponent(item.query)}`);
     }
   };
 

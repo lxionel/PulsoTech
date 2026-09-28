@@ -20,7 +20,7 @@ export default function ProductCatalogWrapper() {
     categoria.toLowerCase().includes("auricular");
 
   const handleCategoryChange = (newCat: string) => {
-    router.push(`/catalogo?categoria=${encodeURIComponent(newCat)}`, {
+    router.push(`/catalogo/?categoria=${encodeURIComponent(newCat)}`, {
       scroll: false,
     });
   };

@@ -68,7 +68,7 @@ export default function Footer() {
             Catálogo
           </Link>
           <a
-            href={`https://wa.me/${whatsappNumber}`}
+            href={`https://wa.me/${(whatsappNumber || "").replace(/\D/g, "")}`}
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-emerald-700 transition-colors flex items-center gap-1 text-emerald-700 font-bold"

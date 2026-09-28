@@ -247,7 +247,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                     />
                   ) : (
                     <Image
-                      src={activeImage}
+                      src={getAssetUrl(activeImage)}
                       alt={product.name}
                       fill
                       unoptimized
@@ -341,7 +341,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                         />
                       ) : (
                         <Image
-                          src={img}
+                          src={getAssetUrl(img)}
                           alt={`${product.name} foto ${idx + 1}`}
                           fill
                           className="object-contain p-1"
@@ -579,7 +579,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
 
               {/* Primary WhatsApp Action */}
               <a
-                href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+                href={`https://wa.me/${(whatsappNumber || "").replace(/\D/g, "")}?text=${encodeURIComponent(
                   isOutOfStock
                     ? `¡Hola PulsoTech! Veo que el producto ${product.name} (ID: #${product.id}) está agotado en la web. ¿Cuándo volverán a tener unidades disponibles?`
                     : waMessage

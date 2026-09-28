@@ -114,7 +114,8 @@ export default function CartDrawer() {
 
     const message = lines.join("\n");
     const encoded = encodeURIComponent(message);
-    const waUrl = `https://wa.me/${whatsappNumber}?text=${encoded}`;
+    const cleanNumber = (whatsappNumber || STORE_SETTINGS.whatsappNumber).replace(/\D/g, "");
+    const waUrl = `https://wa.me/${cleanNumber}?text=${encoded}`;
 
     window.open(waUrl, "_blank");
   };
@@ -186,7 +187,7 @@ export default function CartDrawer() {
                         />
                       ) : (
                         <Image
-                          src={imgUrl}
+                          src={getAssetUrl(imgUrl)}
                           alt={item.product.name}
                           fill
                           className="object-contain"

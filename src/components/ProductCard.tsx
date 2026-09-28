@@ -22,10 +22,10 @@ export default function ProductCard({ product }: { product: Product }) {
     image: product.images?.[0] || fallbackImg,
   };
 
-  const primaryImage = currentColor?.image || product.images?.[0] || fallbackImg;
+  const primaryImage = getAssetUrl(currentColor?.image || product.images?.[0] || fallbackImg);
   const secondaryImage =
-    product.images?.[1] && product.images[1] !== primaryImage
-      ? product.images[1]
+    product.images?.[1] && product.images[1] !== (currentColor?.image || product.images?.[0])
+      ? getAssetUrl(product.images[1])
       : null;
 
   const isOutOfStock = (product.stockCount ?? 0) <= 0 || product.inStock === false;
