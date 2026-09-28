@@ -75,14 +75,14 @@ export default function AudioBannerSlider() {
 
   return (
     <div
-      className="relative w-full h-full min-h-[460px] sm:min-h-[520px] lg:min-h-[580px] overflow-hidden bg-neutral-950 select-none flex items-center"
+      className="relative w-full h-[320px] sm:h-[380px] md:h-[430px] lg:h-[470px] overflow-hidden bg-neutral-950 select-none flex items-center justify-center pt-14 pb-8"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Slides fotográficos puros sin textos ni degradados oscuros */}
+      {/* Slides fotográficos puros sin textos ni degradados que tapen */}
       <div className="absolute inset-0 z-0">
         {SLIDES.map((slide, index) => {
           const isActive = index === currentSlide;
@@ -93,15 +93,34 @@ export default function AudioBannerSlider() {
                 isActive ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
               }`}
             >
-              <Image
-                src={getAssetUrl(slide.image)}
-                alt={slide.alt}
-                fill
-                priority={index === 0}
-                sizes="100vw"
-                quality={100}
-                className="object-cover object-center select-none"
-              />
+              {/* Fondo ambiental suave con los colores de la misma foto */}
+              <div className="absolute inset-0 z-0 overflow-hidden">
+                <Image
+                  src={getAssetUrl(slide.image)}
+                  alt=""
+                  fill
+                  priority={index === 0}
+                  sizes="100vw"
+                  quality={40}
+                  className="object-cover blur-3xl opacity-30 scale-110 select-none"
+                />
+                <div className="absolute inset-0 bg-neutral-950/40" />
+              </div>
+
+              {/* Imagen fotográfica completa, más chica, centrada y sin recortes */}
+              <div className="relative z-10 w-full h-full max-w-4xl lg:max-w-5xl mx-auto flex items-center justify-center px-4 sm:px-12 py-2">
+                <div className="relative w-full h-full max-h-[230px] sm:max-h-[290px] md:max-h-[340px] lg:max-h-[380px]">
+                  <Image
+                    src={getAssetUrl(slide.image)}
+                    alt={slide.alt}
+                    fill
+                    priority={index === 0}
+                    sizes="(max-width: 1024px) 100vw, 1200px"
+                    quality={100}
+                    className="object-contain select-none drop-shadow-2xl"
+                  />
+                </div>
+              </div>
             </div>
           );
         })}
@@ -112,7 +131,7 @@ export default function AudioBannerSlider() {
         onClick={prevSlide}
         type="button"
         aria-label="Foto anterior"
-        className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 hover:bg-black/75 border border-white/20 text-white flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer shadow-lg hover:border-white/40"
+        className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/50 hover:bg-black/80 border border-white/20 text-white flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer shadow-lg hover:border-white/40"
       >
         <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
       </button>
@@ -122,28 +141,28 @@ export default function AudioBannerSlider() {
         onClick={nextSlide}
         type="button"
         aria-label="Foto siguiente"
-        className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 hover:bg-black/75 border border-white/20 text-white flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer shadow-lg hover:border-white/40"
+        className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/50 hover:bg-black/80 border border-white/20 text-white flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer shadow-lg hover:border-white/40"
       >
         <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
       </button>
 
       {/* Indicadores inferiores y contador */}
-      <div className="absolute bottom-4 sm:bottom-6 left-0 right-0 z-30 flex items-center justify-center gap-3 pointer-events-auto">
-        <div className="flex items-center gap-2 bg-black/50 px-3.5 py-1.5 rounded-full border border-white/15 shadow-md">
+      <div className="absolute bottom-2 sm:bottom-3 left-0 right-0 z-30 flex items-center justify-center gap-3 pointer-events-auto">
+        <div className="flex items-center gap-2 bg-black/60 px-3 py-1 rounded-full border border-white/15 shadow-md">
           {SLIDES.map((slide, idx) => (
             <button
               key={slide.id}
               onClick={() => setCurrentSlide(idx)}
               type="button"
               aria-label={`Ir a la foto ${idx + 1}`}
-              className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+              className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
                 idx === currentSlide
-                  ? "w-7 bg-white"
-                  : "w-2 bg-white/40 hover:bg-white/70"
+                  ? "w-6 bg-white"
+                  : "w-1.5 bg-white/40 hover:bg-white/70"
               }`}
             />
           ))}
-          <span className="text-[11px] font-mono text-neutral-200 ml-1.5 font-bold tracking-wider">
+          <span className="text-[10px] font-mono text-neutral-300 ml-1 font-bold tracking-wider">
             0{currentSlide + 1} / 0{SLIDES.length}
           </span>
         </div>

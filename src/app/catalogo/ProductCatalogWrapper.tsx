@@ -108,19 +108,19 @@ export default function ProductCatalogWrapper() {
 
   return (
     <div className="w-full flex flex-col">
-      {/* 1. Primera pantalla completa con Navbar integrado sobre las imágenes */}
-      <section className="relative w-full flex flex-col justify-between h-[100dvh] min-h-[580px] bg-neutral-950 overflow-hidden">
+      {/* 1. Presentación con Navbar integrado sobre las imágenes */}
+      <section className="relative w-full flex flex-col bg-neutral-950 overflow-hidden">
         {/* Navbar integrado sobre las imágenes con categoría en la esquina */}
         <div className="absolute top-0 left-0 right-0 z-40">
           <Navbar currentCategory={currentCategoryLabel} isTransparent={true} />
         </div>
 
-        {/* Banner fotográfico que ocupa todo el fondo */}
-        <div className="flex-1 w-full min-h-0 relative flex items-center">
+        {/* Banner fotográfico que ocupa el slider */}
+        <div className="w-full relative">
           {meta.key === "audifonos" ? (
             <AudioBannerSlider />
           ) : (
-            <div className="relative w-full h-full min-h-[340px] overflow-hidden bg-neutral-950 select-none flex items-center pt-16">
+            <div className="relative w-full min-h-[340px] sm:min-h-[400px] overflow-hidden bg-neutral-950 select-none flex items-center pt-16">
               <div className="absolute inset-0 z-0">
                 <Image
                   src={getAssetUrl(meta.image)}
