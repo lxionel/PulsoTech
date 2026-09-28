@@ -18,16 +18,16 @@ export default function HeroSection() {
           priority
           sizes="100vw"
           quality={100}
-          className="object-cover object-[72%_center] sm:object-[68%_center] md:object-[62%_center] lg:object-center select-none"
+          className="object-cover object-[72%_center] sm:object-[70%_center] md:object-[68%_center] lg:object-[68%_center] select-none"
         />
 
         {/* Gradiente sutil para legibilidad del texto sin oscurecer los productos de la derecha */}
         <div className="absolute inset-0 z-1 pointer-events-none bg-gradient-to-t from-neutral-950/95 via-neutral-950/70 to-neutral-950/20 sm:bg-gradient-to-r sm:from-neutral-950 sm:via-neutral-950/80 sm:to-transparent sm:w-1/2 lg:w-[48%]" />
       </div>
 
-      {/* Contenido comercial original exacto alineado a la izquierda de forma ordenada */}
-      <div className="relative z-10 w-full max-w-[1650px] mx-auto px-4 sm:px-8 lg:px-10 xl:px-12 pt-16 sm:pt-20 pb-6 sm:pb-8">
-        <div className="max-w-[320px] sm:max-w-[360px] space-y-3 sm:space-y-4">
+      {/* Contenido comercial original perfectamente encajado con la composición */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 xl:px-14 w-full pt-16 sm:pt-20 pb-6 sm:pb-8">
+        <div className="max-w-[340px] sm:max-w-[440px] space-y-3 sm:space-y-4">
           {/* Badge original: Fondo negro y letras blancas, limpio y sin punto */}
           <div>
             <span className="inline-block px-2.5 sm:px-3 py-1 rounded-md text-[10px] sm:text-xs font-black tracking-widest uppercase bg-neutral-950 text-white shadow-xs border border-white/10 sm:border-transparent">
@@ -35,13 +35,13 @@ export default function HeroSection() {
             </span>
           </div>
 
-          {/* Titulo perfectamente encuadrado a la izquierda sin tocar los productos */}
-          <h1 className="text-2xl sm:text-4xl lg:text-[40px] font-black tracking-tight leading-[1.12] text-white">
-            ¡Tecnología y<br className="hidden sm:inline" /> audio original!
+          {/* Titulo en 2 lineas identico al diseno original pero con holgura respecto a la foto */}
+          <h1 className="text-2xl sm:text-4xl lg:text-[44px] font-black tracking-tight leading-[1.12] text-white">
+            ¡Tecnología y audio original!
           </h1>
 
           {/* Subtitulo */}
-          <p className="text-xs sm:text-sm lg:text-base leading-relaxed font-normal max-w-[300px] sm:max-w-[340px] text-neutral-200 sm:text-neutral-300">
+          <p className="text-xs sm:text-sm lg:text-[15px] leading-relaxed font-normal max-w-sm sm:max-w-md text-neutral-200 sm:text-neutral-300">
             Caja sellada de fábrica, garantía total y pago contra entrega.
           </p>
 
