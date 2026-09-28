@@ -27,25 +27,26 @@ export default function ProductCatalogWrapper() {
 
   return (
     <div className="w-full flex flex-col">
-      {/* 1. Main Navigation estándar (64px / h-16) igual a la arquitectura de la tienda */}
-      <Navbar />
+      {/* 1. Primera pantalla completa (100dvh) con Navbar integrado sobre la imagen */}
+      <section className="relative w-full flex flex-col justify-between h-[100dvh] min-h-[520px] bg-neutral-950 overflow-hidden">
+        {/* Navbar integrado sobre la foto con diseño transparente y texto blanco */}
+        <div className="absolute top-0 left-0 right-0 z-40">
+          <Navbar isTransparent={true} />
+        </div>
 
-      {/* 2. Primera pantalla completa (100dvh - 4rem de navbar):
-          Contiene el banner fotográfico en flex-1 y la barra inferior de dibujos perfectamente visible */}
-      <section className="w-full flex flex-col justify-between h-[calc(100dvh-4rem)] min-h-[520px] bg-neutral-950 overflow-hidden">
         {/* El banner fotográfico toma todo el espacio vertical disponible */}
         <div className="flex-1 w-full min-h-0 relative flex items-center">
           {isAudioCategory ? <AudioBannerSlider /> : <HeroSection />}
         </div>
 
-        {/* Los dibujos de categorías quedan fijos en la base exacta de la primera pantalla sin cortarse */}
+        {/* Los dibujos de categorías fijos en la base exacta de la primera pantalla sin cortarse */}
         <CategoryNavShowcase
           activeCategory={categoria}
           onSelectCategory={handleCategoryChange}
         />
       </section>
 
-      {/* 3. Catálogo de productos filtrado para la categoría seleccionada */}
+      {/* 2. Catálogo de productos filtrado para la categoría seleccionada */}
       <div className="w-full">
         <ProductCatalog
           externalSelectedCategory={categoria}

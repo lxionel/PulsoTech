@@ -20,7 +20,7 @@ const CATEGORY_ITEMS = [
     id: "cargadores",
     name: "Cargadores portátiles",
     query: "cargadores",
-    available: true,
+    available: false,
   },
   {
     id: "perifericos",
