@@ -26,7 +26,7 @@ export default function HeroSection() {
       </div>
 
       {/* Contenido comercial original exacto */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-10 lg:px-16 w-full py-6 sm:py-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-10 lg:px-16 w-full pt-16 sm:pt-20 pb-6 sm:pb-8">
         <div className="max-w-xl space-y-3 sm:space-y-4">
           {/* Badge original: Fondo negro y letras blancas */}
           <div>
