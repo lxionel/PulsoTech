@@ -49,21 +49,6 @@ export default function Navbar({
             >
               Catálogo
             </Link>
-
-            {currentCategory && (
-              <div className="flex items-center gap-1 sm:gap-1.5 ml-0.5">
-                <span className={isTransparent ? "text-white/40" : "text-neutral-400"}>/</span>
-                <span
-                  className={`font-black uppercase tracking-wider text-[11px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-md ${
-                    isTransparent
-                      ? "text-sky-400 bg-black/40 border border-white/15"
-                      : "text-neutral-900 bg-neutral-100 border border-neutral-200"
-                  }`}
-                >
-                  {currentCategory}
-                </span>
-              </div>
-            )}
           </nav>
         </div>
 
