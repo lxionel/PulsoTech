@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const CATEGORY_ITEMS = [
@@ -40,9 +40,14 @@ export default function CategoryNavShowcase({
   onSelectCategory,
 }: CategoryNavShowcaseProps = {}) {
   const router = useRouter();
+  const [wigglingId, setWigglingId] = useState<string | null>(null);
 
   const handleCategoryClick = (item: typeof CATEGORY_ITEMS[0]) => {
-    if (!item.available) return;
+    if (!item.available) {
+      setWigglingId(item.id);
+      setTimeout(() => setWigglingId(null), 450);
+      return;
+    }
     if (onSelectCategory) {
       onSelectCategory(item.query);
     } else {
@@ -52,6 +57,13 @@ export default function CategoryNavShowcase({
 
   return (
     <div className="w-full bg-white py-3.5 sm:py-5 border-t border-neutral-200 shadow-xs shrink-0 select-none">
+      <style>{`
+        @keyframes catShake {
+          0%, 100% { transform: translateX(0); }
+          20%, 60% { transform: translateX(-4px); }
+          40%, 80% { transform: translateX(4px); }
+        }
+      `}</style>
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         {/* Fila limpia de dibujos centrados exactamente como en la captura de referencia */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 items-center justify-center">
@@ -68,19 +80,20 @@ export default function CategoryNavShowcase({
                 key={item.id}
                 type="button"
                 onClick={() => handleCategoryClick(item)}
-                className={`group flex flex-col items-center justify-center py-1.5 px-2 text-center transition-all duration-200 focus:outline-none relative ${
-                  item.available ? "cursor-pointer" : "cursor-default"
+                style={wigglingId === item.id ? { animation: "catShake 0.4s ease-in-out" } : undefined}
+                className={`group flex flex-col items-center justify-center py-1.5 px-2 text-center transition-all duration-300 focus:outline-none relative ${
+                  item.available ? "cursor-pointer active:scale-95" : "cursor-default"
                 }`}
               >
                 {/* Dibujo limpio y estilizado con animacion suave al pasar el cursor */}
                 <div
-                  className={`w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center transition-transform duration-200 ${
+                  className={`w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center transition-all duration-300 ${
                     isSelected
                       ? "text-black scale-105"
                       : "text-neutral-900"
                   } ${
                     item.available
-                      ? "group-hover:text-black group-hover:-translate-y-1 group-hover:scale-105"
+                      ? "group-hover:text-black group-hover:-translate-y-1.5 group-hover:scale-110"
                       : ""
                   }`}
                 >
@@ -92,7 +105,7 @@ export default function CategoryNavShowcase({
 
                 {/* Texto exacto centrado debajo del dibujo con indicador activo */}
                 <span
-                  className={`mt-2 text-xs sm:text-sm tracking-tight transition-colors ${
+                  className={`mt-2 text-xs sm:text-sm tracking-tight transition-colors duration-200 ${
                     isSelected
                       ? "text-black font-black underline underline-offset-4 decoration-2"
                       : "text-neutral-800 font-semibold"

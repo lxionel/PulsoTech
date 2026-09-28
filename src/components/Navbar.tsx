@@ -123,7 +123,7 @@ export default function Navbar({
           <button
             onClick={() => setIsFavoritesOpen(true)}
             aria-label="Ver favoritos guardados"
-            className={`relative flex items-center justify-center p-2 sm:p-2.5 rounded-xl transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0 ${
+            className={`relative flex items-center justify-center p-2 sm:p-2.5 rounded-xl transition-all duration-200 shadow-2xs hover:scale-105 active:scale-90 cursor-pointer shrink-0 ${
               isTransparent
                 ? "bg-white/10 hover:bg-white/20 border border-white/15 text-white"
                 : "bg-white hover:bg-neutral-50 border border-neutral-200 hover:border-neutral-300 text-neutral-700"
@@ -131,12 +131,12 @@ export default function Navbar({
             title="Mis Favoritos"
           >
             <Heart
-              className={`w-4 h-4 ${
-                favoritesCount > 0 ? "text-red-500 fill-red-500" : ""
+              className={`w-4 h-4 transition-transform duration-200 ${
+                favoritesCount > 0 ? "text-red-500 fill-red-500 scale-110" : ""
               }`}
             />
             {favoritesCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center text-[9px] font-bold px-1 rounded-full bg-red-500 text-white min-w-3.5 h-3.5">
+              <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center text-[9px] font-bold px-1 rounded-full bg-red-500 text-white min-w-3.5 h-3.5 animate-in zoom-in-75">
                 {favoritesCount}
               </span>
             )}
@@ -146,16 +146,16 @@ export default function Navbar({
           <button
             onClick={() => setIsCartOpen(true)}
             aria-label="Abrir bolsa de compra"
-            className={`relative flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all font-bold text-xs gap-2 sm:gap-2.5 shadow-sm active:scale-95 cursor-pointer shrink-0 ${
+            className={`group/cart relative flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all duration-200 font-bold text-xs gap-2 sm:gap-2.5 shadow-sm hover:scale-105 active:scale-95 cursor-pointer shrink-0 ${
               isTransparent
-                ? "bg-white text-neutral-950 hover:bg-neutral-100 shadow-md"
-                : "bg-neutral-950 hover:bg-neutral-800 text-white"
+                ? "bg-white text-neutral-950 hover:bg-neutral-100 shadow-md hover:shadow-lg"
+                : "bg-neutral-950 hover:bg-neutral-800 text-white hover:shadow-md"
             }`}
           >
             <div className="relative">
-              <ShoppingBag className={`w-4 h-4 ${isTransparent ? "text-neutral-950" : "text-white"}`} />
+              <ShoppingBag className={`w-4 h-4 transition-transform duration-200 group-hover/cart:scale-110 ${isTransparent ? "text-neutral-950" : "text-white"}`} />
               {itemsCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center text-[9px] font-bold px-1 rounded-full bg-blue-600 text-white min-w-3.5 h-3.5">
+                <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center text-[9px] font-bold px-1 rounded-full bg-blue-600 text-white min-w-3.5 h-3.5 animate-in zoom-in-75">
                   {itemsCount}
                 </span>
               )}

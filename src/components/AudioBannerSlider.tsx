@@ -27,6 +27,7 @@ const SLIDES: SlideData[] = [
 export default function AudioBannerSlider() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
@@ -47,7 +48,37 @@ export default function AudioBannerSlider() {
     return () => clearInterval(interval);
   }, [isHovered, nextSlide]);
 
-  // Touch Swipe Handlers
+  // Navegación fluida con teclas del teclado (Izquierda / Derecha)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        prevSlide();
+      } else if (e.key === "ArrowRight") {
+        nextSlide();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [nextSlide, prevSlide]);
+
+  // Efecto de paralaje interactivo sutil 3D con el cursor
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setMousePos({ x, y });
+  };
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setMousePos({ x: 0, y: 0 });
+  };
+
+  // Touch Swipe Handlers para móviles
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.targetTouches[0].clientX;
   };
@@ -70,15 +101,16 @@ export default function AudioBannerSlider() {
 
   return (
     <div
-      className="relative w-full h-full min-h-[300px] overflow-hidden bg-neutral-950 select-none flex items-center"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className="relative w-full h-full min-h-[300px] overflow-hidden bg-neutral-950 select-none flex items-center group/slider"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onMouseMove={handleMouseMove}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Slides panorámicos completos de borde a borde */}
-      <div className="absolute inset-0 z-0">
+      {/* Slides panorámicos completos de borde a borde con transición fluida y paralaje interactivo */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
         {SLIDES.map((slide, index) => {
           const isActive = index === currentSlide;
           return (
@@ -88,43 +120,52 @@ export default function AudioBannerSlider() {
                 isActive ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
               }`}
             >
-              <Image
-                src={getAssetUrl(slide.image)}
-                alt={slide.alt}
-                fill
-                priority={index === 0}
-                sizes="100vw"
-                quality={100}
-                className="object-cover object-center select-none"
-              />
+              <div
+                className="w-full h-full relative transition-transform duration-700 ease-out will-change-transform"
+                style={{
+                  transform: isActive
+                    ? `scale(${isHovered ? 1.03 : 1.0}) translate3d(${mousePos.x * -14}px, ${mousePos.y * -10}px, 0)`
+                    : "scale(1.0)",
+                }}
+              >
+                <Image
+                  src={getAssetUrl(slide.image)}
+                  alt={slide.alt}
+                  fill
+                  priority={index === 0}
+                  sizes="100vw"
+                  quality={100}
+                  className="object-cover object-center select-none"
+                />
+              </div>
             </div>
           );
         })}
       </div>
 
-      {/* Flecha Anterior */}
+      {/* Flecha Anterior Interactiva */}
       <button
         onClick={prevSlide}
         type="button"
         aria-label="Foto anterior"
-        className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 hover:bg-black/75 border border-white/20 text-white flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer shadow-lg hover:border-white/40"
+        className="group/btn absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-black/40 hover:bg-black/80 border border-white/20 hover:border-white/50 text-white flex items-center justify-center transition-all duration-300 active:scale-90 hover:scale-105 cursor-pointer shadow-lg hover:shadow-[0_0_20px_rgba(255,255,255,0.2)]"
       >
-        <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+        <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-200 group-hover/btn:-translate-x-0.5" />
       </button>
 
-      {/* Flecha Siguiente */}
+      {/* Flecha Siguiente Interactiva */}
       <button
         onClick={nextSlide}
         type="button"
         aria-label="Foto siguiente"
-        className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 hover:bg-black/75 border border-white/20 text-white flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer shadow-lg hover:border-white/40"
+        className="group/btn absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-black/40 hover:bg-black/80 border border-white/20 hover:border-white/50 text-white flex items-center justify-center transition-all duration-300 active:scale-90 hover:scale-105 cursor-pointer shadow-lg hover:shadow-[0_0_20px_rgba(255,255,255,0.2)]"
       >
-        <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+        <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
       </button>
 
-      {/* Indicadores inferiores - Únicamente 2 barras/puntos, SIN números */}
+      {/* Indicadores inferiores interactivos con brillo y expansión suave al hover */}
       <div className="absolute bottom-3 sm:bottom-4 left-0 right-0 z-30 flex items-center justify-center pointer-events-auto">
-        <div className="flex items-center gap-2 bg-black/50 px-3 py-1.5 rounded-full border border-white/15 shadow-md">
+        <div className="flex items-center gap-2 bg-black/50 hover:bg-black/70 px-3.5 py-1.5 rounded-full border border-white/15 transition-colors shadow-md">
           {SLIDES.map((slide, idx) => (
             <button
               key={slide.id}
@@ -133,8 +174,8 @@ export default function AudioBannerSlider() {
               aria-label={`Ver foto ${idx + 1}`}
               className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
                 idx === currentSlide
-                  ? "w-7 bg-white shadow-xs"
-                  : "w-2 bg-white/40 hover:bg-white/75"
+                  ? "w-8 bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]"
+                  : "w-2.5 bg-white/40 hover:w-4 hover:bg-white/80"
               }`}
             />
           ))}

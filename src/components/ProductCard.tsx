@@ -6,11 +6,12 @@ import { Product } from "@/types";
 import { STORE_SETTINGS } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import { getAssetUrl } from "@/utils/paths";
-import { ShoppingBag, Heart } from "lucide-react";
+import { ShoppingBag, Heart, Check } from "lucide-react";
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem, toggleFavorite, isFavorite } = useCart();
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
+  const [justAdded, setJustAdded] = useState(false);
   const isFav = isFavorite(product.id);
 
   const colors = product.colors || [];
@@ -34,6 +35,8 @@ export default function ProductCard({ product }: { product: Product }) {
     e.stopPropagation();
     if (isOutOfStock) return;
     addItem(product, currentColor, 1);
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 1200);
   };
 
   const handleToggleFavorite = (e: React.MouseEvent) => {
@@ -43,7 +46,7 @@ export default function ProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <div className="group relative rounded-2xl bg-white border border-neutral-200/90 hover:border-neutral-300 hover:shadow-lg transition-all duration-300 flex flex-col justify-between overflow-hidden h-full">
+    <div className="group relative rounded-2xl bg-white border border-neutral-200/90 hover:border-neutral-400 hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between overflow-hidden h-full will-change-transform">
       {/* Top Card Image Link */}
       <Link href={`/producto/?id=${product.id}&slug=${product.slug}`} className="block p-4 sm:p-5 pb-0 flex-1">
         {/* Top Header: Brand, New Tag & Favorite */}
@@ -76,10 +79,10 @@ export default function ProductCard({ product }: { product: Product }) {
               type="button"
               onClick={handleToggleFavorite}
               aria-label="Guardar en favoritos"
-              className="p-1.5 rounded-full text-neutral-400 hover:text-red-500 transition-colors cursor-pointer"
+              className="p-1.5 rounded-full text-neutral-400 hover:text-red-500 hover:bg-red-50 transition-all duration-200 active:scale-125 cursor-pointer"
               title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
             >
-              <Heart className={`w-4 h-4 ${isFav ? "text-red-500 fill-red-500" : ""}`} />
+              <Heart className={`w-4 h-4 transition-all duration-200 ${isFav ? "text-red-500 fill-red-500 scale-110" : ""}`} />
             </button>
           </div>
         </div>
@@ -126,7 +129,7 @@ export default function ProductCard({ product }: { product: Product }) {
                     }}
                     aria-label={`Color ${color.name}`}
                     title={color.name}
-                    className="w-6 h-6 flex items-center justify-center cursor-pointer shrink-0 transition-opacity"
+                    className="w-6 h-6 flex items-center justify-center cursor-pointer shrink-0 transition-transform duration-150 hover:scale-115 active:scale-90"
                   >
                     <span
                       className={`rounded-full border border-neutral-300 transition-all duration-150 block ${
@@ -171,7 +174,7 @@ export default function ProductCard({ product }: { product: Product }) {
           </span>
         </div>
 
-        {/* Row 2: Botón Añadir / Agotado */}
+        {/* Row 2: Botón Añadir / Agotado con feedback táctil inmediato */}
         {isOutOfStock ? (
           <button
             type="button"
@@ -184,10 +187,23 @@ export default function ProductCard({ product }: { product: Product }) {
           <button
             type="button"
             onClick={handleAddToCart}
-            className="w-full py-2.5 sm:py-3 px-4 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs active:scale-[0.98] transition-all cursor-pointer"
+            className={`w-full py-2.5 sm:py-3 px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs active:scale-[0.97] transition-all duration-200 cursor-pointer ${
+              justAdded
+                ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
+                : "bg-neutral-950 hover:bg-neutral-800 text-white hover:shadow-md"
+            }`}
           >
-            <ShoppingBag className="w-4 h-4 shrink-0" />
-            <span>Añadir al Carrito</span>
+            {justAdded ? (
+              <>
+                <Check className="w-4 h-4 shrink-0" />
+                <span>¡Añadido a la Bolsa!</span>
+              </>
+            ) : (
+              <>
+                <ShoppingBag className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-105" />
+                <span>Añadir al Carrito</span>
+              </>
+            )}
           </button>
         )}
       </div>

@@ -28,9 +28,13 @@ export default function HeroSection() {
       {/* Contenido comercial original exacto */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-10 lg:px-16 w-full pt-16 sm:pt-20 pb-6 sm:pb-8">
         <div className="max-w-xl space-y-3 sm:space-y-4">
-          {/* Badge original: Fondo negro y letras blancas */}
+          {/* Badge original: Fondo negro y letras blancas con indicador de pulso en vivo */}
           <div>
-            <span className="inline-block px-2.5 sm:px-3 py-1 rounded-md text-[10px] sm:text-xs font-black tracking-widest uppercase bg-neutral-950 text-white shadow-xs border border-white/10 sm:border-transparent">
+            <span className="inline-flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-md text-[10px] sm:text-xs font-black tracking-widest uppercase bg-neutral-950 text-white shadow-xs border border-white/10 sm:border-transparent">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
               STOCK DISPONIBLE
             </span>
           </div>
@@ -45,14 +49,15 @@ export default function HeroSection() {
             Caja sellada de fábrica, garantía total y pago contra entrega.
           </p>
 
-          {/* Boton de accion verde con scroll suave al catalogo */}
+          {/* Boton de accion verde interactivo con brillo y desplazamiento al pasar el cursor */}
           <div className="pt-1.5 sm:pt-2">
             <Link
               href="#catalogo"
-              className="inline-flex items-center gap-2 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl bg-[#15803d] hover:bg-[#166534] text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer"
+              className="group relative inline-flex items-center gap-2 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl bg-[#15803d] hover:bg-[#166534] text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md hover:shadow-xl hover:shadow-green-950/40 hover:scale-[1.02] active:scale-95 transition-all duration-300 cursor-pointer overflow-hidden"
             >
+              <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
               <span>VER CATÁLOGO</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
           </div>
         </div>
