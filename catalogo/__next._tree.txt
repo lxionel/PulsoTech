@@ -1,4 +1,4 @@
-:HL["/PulsoTech/_next/static/chunks/0hf4f2mrj5o6s.css","style"]
+:HL["/PulsoTech/_next/static/chunks/04u117_6trbss.css","style"]
 :HL["/PulsoTech/_next/static/media/0c89a48fa5027cee-s.p.2cyn07wtgehh0.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/PulsoTech/_next/static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
-0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"catalogo","param":null,"prefetchHints":4192,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"rEfaAFlExzs6WM4YQzowJ"}
+0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"catalogo","param":null,"prefetchHints":4192,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"R7S3pSxEMq5B7nx_yXXNL"}
