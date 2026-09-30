@@ -63,6 +63,7 @@ import {
   Smartphone,
   HardDrive,
   Settings,
+  Delete,
 } from "lucide-react";
 
 export type { SaleRecord };
@@ -203,6 +204,8 @@ export default function AdminPage() {
   const [pinError, setPinError] = useState("");
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [lockoutSeconds, setLockoutSeconds] = useState(0);
+  const [isShaking, setIsShaking] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   // Estados para cambio de PIN en Ajustes
   const [currentPinInput, setCurrentPinInput] = useState("");
@@ -246,19 +249,25 @@ export default function AdminPage() {
     return () => clearInterval(interval);
   }, [lockoutSeconds]);
 
-  const handlePinSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  const verifyPin = (pinToTest: string) => {
     if (lockoutSeconds > 0) return;
 
-    if (pinInput.trim() === adminPin.trim()) {
-      try {
-        sessionStorage.setItem("pulsotech_admin_authenticated", "true");
-      } catch {}
-      setIsAuthenticated(true);
+    if (pinToTest.trim() === adminPin.trim()) {
+      setIsSuccess(true);
       setPinError("");
-      setFailedAttempts(0);
-      setPinInput("");
+      setTimeout(() => {
+        try {
+          sessionStorage.setItem("pulsotech_admin_authenticated", "true");
+        } catch {}
+        setIsAuthenticated(true);
+        setPinError("");
+        setFailedAttempts(0);
+        setPinInput("");
+        setIsSuccess(false);
+      }, 300);
     } else {
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 500);
       const nextAttempts = failedAttempts + 1;
       setFailedAttempts(nextAttempts);
       if (nextAttempts >= 5) {
@@ -267,8 +276,64 @@ export default function AdminPage() {
       } else {
         setPinError(`PIN incorrecto. Intento ${nextAttempts} de 5.`);
       }
+      setTimeout(() => {
+        setPinInput("");
+      }, 400);
     }
   };
+
+  const handleDigitPress = (digit: string) => {
+    if (lockoutSeconds > 0 || isSuccess) return;
+    if (pinInput.length < 6) {
+      const nextVal = pinInput + digit;
+      setPinInput(nextVal);
+      setPinError("");
+      if (nextVal.length === 6) {
+        verifyPin(nextVal);
+      }
+    }
+  };
+
+  const handleBackspacePress = () => {
+    if (lockoutSeconds > 0 || isSuccess) return;
+    setPinInput((prev) => prev.slice(0, -1));
+    setPinError("");
+  };
+
+  const handleClearPress = () => {
+    if (lockoutSeconds > 0 || isSuccess) return;
+    setPinInput("");
+    setPinError("");
+  };
+
+  const handlePinSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (lockoutSeconds > 0 || isSuccess) return;
+    if (pinInput.length >= 4) {
+      verifyPin(pinInput);
+    }
+  };
+
+  // Soporte directo para teclado físico en la pantalla de PIN
+  useEffect(() => {
+    if (isAuthenticated || lockoutSeconds > 0) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      if (e.key >= "0" && e.key <= "9") {
+        handleDigitPress(e.key);
+      } else if (e.key === "Backspace") {
+        handleBackspacePress();
+      } else if (e.key === "Escape") {
+        handleClearPress();
+      } else if (e.key === "Enter" && pinInput.length >= 4) {
+        verifyPin(pinInput);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isAuthenticated, lockoutSeconds, pinInput, adminPin, isSuccess]);
 
   const handleLogout = () => {
     try {
@@ -1408,10 +1473,10 @@ export default function AdminPage() {
 
   if (isAuthChecking) {
     return (
-      <div className="min-h-screen bg-[#0a0a0c] flex items-center justify-center p-4 select-none">
+      <div className="min-h-screen bg-[#07090e] flex items-center justify-center p-4 select-none">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs font-mono font-bold text-neutral-400">Verificando acceso de seguridad...</span>
+          <span className="text-xs font-mono font-bold text-neutral-400">Verificando acceso seguro...</span>
         </div>
       </div>
     );
@@ -1419,116 +1484,132 @@ export default function AdminPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#0a0a0c] text-white flex flex-col justify-between p-4 sm:p-8 relative overflow-hidden select-none">
-        {/* Glow de fondo */}
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="min-h-screen bg-[#07090e] text-white flex flex-col justify-between p-4 sm:p-8 relative overflow-hidden select-none">
+        {/* Glow de fondo y textura ambiental refinada */}
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[650px] h-[380px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute -bottom-40 left-1/2 -translate-x-1/2 w-[550px] h-[320px] bg-teal-500/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none opacity-60" />
 
-        {/* Top Header */}
-        <div className="max-w-md w-full mx-auto flex items-center justify-between z-10">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-mono text-neutral-300 font-bold uppercase tracking-wider">
-              Terminal POS PulsoTech
+        {/* Encabezado Superior */}
+        <header className="max-w-md w-full mx-auto flex items-center justify-between z-10">
+          <div className="flex items-center gap-2.5">
+            <Logo size="sm" showText={true} />
+            <span className="text-[10px] font-mono font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5 shadow-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Admin
             </span>
           </div>
-          <span className="text-[10px] font-mono text-neutral-400 font-bold uppercase tracking-widest px-2.5 py-1 rounded-md bg-neutral-900 border border-neutral-800">
-            Acceso Restringido
-          </span>
-        </div>
 
-        {/* Main Lock Card */}
-        <div className="max-w-sm w-full mx-auto my-auto py-6 z-10 text-center space-y-5 animate-in fade-in zoom-in-95 duration-200">
-          <div className="space-y-3">
-            <div className="w-16 h-16 rounded-2xl bg-neutral-900 border border-neutral-800 shadow-2xl mx-auto flex items-center justify-center relative">
-              <Lock className="w-7 h-7 text-emerald-400" />
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 absolute -top-1 -right-1 ring-4 ring-[#0a0a0c] animate-pulse" />
-            </div>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-400 hover:text-white transition-colors py-1.5 px-3 rounded-xl bg-neutral-900/80 hover:bg-neutral-800 border border-neutral-800/80 cursor-pointer shadow-xs"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Volver a la tienda</span>
+          </Link>
+        </header>
 
-            <div>
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-                Panel Administrativo
-              </h1>
-              <p className="text-xs text-neutral-400 mt-1 max-w-xs mx-auto">
-                Ingresa tu PIN de seguridad para acceder a la gestión de productos, inventario y ventas.
-              </p>
-            </div>
-          </div>
-
-          {/* Indicador de dígitos ingresados */}
-          <div className="flex items-center justify-center gap-2.5 py-1">
-            {[0, 1, 2, 3, 4, 5].map((idx) => {
-              const hasChar = pinInput.length > idx;
-              return (
-                <div
-                  key={idx}
-                  className={`w-3.5 h-3.5 rounded-full transition-all duration-150 ${
-                    hasChar
-                      ? "bg-emerald-400 scale-110 shadow-xs shadow-emerald-400/60"
-                      : "bg-neutral-800 border border-neutral-700"
+        {/* Tarjeta Flotante Principal de Autenticación */}
+        <main className="max-w-[420px] w-full mx-auto my-auto py-6 z-10 animate-in fade-in zoom-in-95 duration-200">
+          <div className="rounded-3xl bg-neutral-900/75 border border-neutral-800/90 backdrop-blur-2xl p-6 sm:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.65)] space-y-6 text-center">
+            {/* Icono de seguridad con aura interactiva */}
+            <div className="space-y-3">
+              <div
+                className={`w-16 h-16 rounded-2xl mx-auto flex items-center justify-center relative transition-all duration-300 ${
+                  isSuccess
+                    ? "bg-emerald-500/20 border-2 border-emerald-400 shadow-[0_0_30px_rgba(52,211,153,0.5)] scale-105"
+                    : "bg-neutral-800/80 border border-neutral-700/80 shadow-inner"
+                }`}
+              >
+                {isSuccess ? (
+                  <Unlock className="w-7 h-7 text-emerald-300 animate-bounce" />
+                ) : (
+                  <Lock className="w-7 h-7 text-emerald-400" />
+                )}
+                <span
+                  className={`w-2.5 h-2.5 rounded-full absolute -top-1 -right-1 ring-4 ring-[#07090e] transition-colors ${
+                    isSuccess ? "bg-emerald-300" : "bg-emerald-500 animate-pulse"
                   }`}
                 />
-              );
-            })}
-          </div>
+              </div>
 
-          {/* Formulario y Teclado Táctil */}
-          <form onSubmit={handlePinSubmit} className="space-y-3">
-            <div className="relative">
-              <input
-                type={showPin ? "text" : "password"}
-                inputMode="numeric"
-                maxLength={12}
-                value={pinInput}
-                onChange={(e) => {
-                  setPinInput(e.target.value.replace(/\D/g, "").slice(0, 12));
-                  setPinError("");
-                }}
-                placeholder="••••••"
-                autoFocus
-                disabled={lockoutSeconds > 0}
-                className={`w-full text-center tracking-[0.25em] font-mono font-black text-xl py-3 px-10 rounded-2xl bg-neutral-900/90 border text-white placeholder-neutral-700 focus:outline-none transition-all shadow-inner ${
-                  pinError
-                    ? "border-red-500 ring-2 ring-red-500/20"
-                    : "border-neutral-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                }`}
-              />
+              <div>
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                  Acceso Administrativo
+                </h1>
+                <p className="text-xs text-neutral-400 mt-1 max-w-xs mx-auto">
+                  Ingresa tu código PIN de 6 dígitos para acceder al panel de control de PulsoTech.
+                </p>
+              </div>
+            </div>
+
+            {/* Display Visual de Dígitos PIN con animación shake en error */}
+            <div
+              className={`flex items-center justify-center gap-2.5 py-1 transition-transform ${
+                isShaking ? "animate-shake" : ""
+              }`}
+            >
+              {[0, 1, 2, 3, 4, 5].map((idx) => {
+                const hasChar = pinInput.length > idx;
+                const char = pinInput[idx];
+                return (
+                  <div
+                    key={idx}
+                    className={`w-9 sm:w-10 h-11 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                      hasChar
+                        ? "bg-emerald-500/15 border-2 border-emerald-400/80 shadow-[0_0_15px_rgba(52,211,153,0.3)] scale-105"
+                        : "bg-neutral-800/50 border border-neutral-700/60"
+                    }`}
+                  >
+                    {hasChar ? (
+                      showPin ? (
+                        <span className="font-mono font-black text-lg text-emerald-300">
+                          {char}
+                        </span>
+                      ) : (
+                        <span className="w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
+                      )
+                    ) : (
+                      <span className="w-1.5 h-1.5 rounded-full bg-neutral-600/60" />
+                    )}
+                  </div>
+                );
+              })}
+
               <button
                 type="button"
                 onClick={() => setShowPin(!showPin)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 p-1 cursor-pointer transition-colors"
+                className="ml-1 p-2 rounded-xl text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800/60 transition-colors cursor-pointer"
                 title={showPin ? "Ocultar PIN" : "Mostrar PIN"}
               >
                 {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
 
+            {/* Mensajes de error o bloqueo */}
             {pinError && (
-              <p className="text-xs font-bold text-red-400 animate-in fade-in">
-                {pinError}
-              </p>
+              <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold flex items-center justify-center gap-2 animate-in fade-in">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{pinError}</span>
+              </div>
             )}
 
             {lockoutSeconds > 0 && (
-              <p className="text-xs font-bold text-amber-400 animate-in fade-in">
-                Demasiados intentos fallidos. Espera {lockoutSeconds} segundos.
-              </p>
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold flex items-center justify-center gap-2 animate-in fade-in">
+                <Clock className="w-4 h-4 shrink-0" />
+                <span>Límite de intentos superado. Espera {lockoutSeconds} segundos.</span>
+              </div>
             )}
 
-            {/* Teclado numérico táctil (ideal para celular) */}
-            <div className="grid grid-cols-3 gap-2 pt-1">
+            {/* Teclado numérico táctil interactivo */}
+            <div className="grid grid-cols-3 gap-2.5 pt-1">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                 <button
                   key={num}
                   type="button"
-                  onClick={() => {
-                    if (lockoutSeconds > 0) return;
-                    if (pinInput.length < 12) {
-                      setPinInput((prev) => prev + num.toString());
-                      setPinError("");
-                    }
-                  }}
-                  disabled={lockoutSeconds > 0}
-                  className="h-11 rounded-xl bg-neutral-900/90 hover:bg-neutral-800 active:scale-95 text-lg font-mono font-bold text-white border border-neutral-800 transition-all flex items-center justify-center cursor-pointer disabled:opacity-40"
+                  onClick={() => handleDigitPress(num.toString())}
+                  disabled={lockoutSeconds > 0 || isSuccess}
+                  className="h-13 sm:h-14 rounded-2xl bg-neutral-800/40 hover:bg-neutral-800/80 active:bg-emerald-500/20 active:border-emerald-500/40 border border-neutral-700/50 text-xl font-bold font-mono text-white transition-all shadow-xs flex items-center justify-center cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
                 >
                   {num}
                 </button>
@@ -1536,60 +1617,61 @@ export default function AdminPage() {
 
               <button
                 type="button"
-                onClick={() => {
-                  setPinInput("");
-                  setPinError("");
-                }}
-                disabled={lockoutSeconds > 0}
-                className="h-11 rounded-xl bg-neutral-900/40 hover:bg-neutral-800 active:scale-95 text-[11px] font-bold text-neutral-400 hover:text-white border border-neutral-800/60 transition-all flex items-center justify-center cursor-pointer disabled:opacity-40 uppercase tracking-wider"
+                onClick={handleClearPress}
+                disabled={lockoutSeconds > 0 || isSuccess || pinInput.length === 0}
+                className="h-13 sm:h-14 rounded-2xl bg-neutral-900/40 hover:bg-neutral-800/60 active:scale-95 text-xs font-bold text-neutral-400 hover:text-white border border-neutral-800/60 transition-all flex items-center justify-center cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed uppercase tracking-wider"
+                title="Borrar todo"
               >
                 Borrar
               </button>
 
               <button
                 type="button"
-                onClick={() => {
-                  if (lockoutSeconds > 0) return;
-                  if (pinInput.length < 12) {
-                    setPinInput((prev) => prev + "0");
-                    setPinError("");
-                  }
-                }}
-                disabled={lockoutSeconds > 0}
-                className="h-11 rounded-xl bg-neutral-900/90 hover:bg-neutral-800 active:scale-95 text-lg font-mono font-bold text-white border border-neutral-800 transition-all flex items-center justify-center cursor-pointer disabled:opacity-40"
+                onClick={() => handleDigitPress("0")}
+                disabled={lockoutSeconds > 0 || isSuccess}
+                className="h-13 sm:h-14 rounded-2xl bg-neutral-800/40 hover:bg-neutral-800/80 active:bg-emerald-500/20 active:border-emerald-500/40 border border-neutral-700/50 text-xl font-bold font-mono text-white transition-all shadow-xs flex items-center justify-center cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
               >
                 0
               </button>
 
               <button
                 type="button"
-                onClick={() => {
-                  setPinInput((prev) => prev.slice(0, -1));
-                  setPinError("");
-                }}
-                disabled={lockoutSeconds > 0}
-                className="h-11 rounded-xl bg-neutral-900/40 hover:bg-neutral-800 active:scale-95 text-base font-bold text-neutral-400 hover:text-white border border-neutral-800/60 transition-all flex items-center justify-center cursor-pointer disabled:opacity-40"
+                onClick={handleBackspacePress}
+                disabled={lockoutSeconds > 0 || isSuccess || pinInput.length === 0}
+                className="h-13 sm:h-14 rounded-2xl bg-neutral-900/40 hover:bg-neutral-800/60 active:scale-95 text-neutral-400 hover:text-white border border-neutral-800/60 transition-all flex items-center justify-center cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed"
                 title="Retroceder"
               >
-                ⌫
+                <Delete className="w-5 h-5" />
               </button>
             </div>
 
+            {/* Botón de acceso / desbloqueo */}
             <button
-              type="submit"
-              disabled={lockoutSeconds > 0 || pinInput.length < 4}
-              className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:bg-neutral-800 disabled:text-neutral-500 text-neutral-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg active:scale-98 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1"
+              type="button"
+              onClick={() => handlePinSubmit()}
+              disabled={lockoutSeconds > 0 || isSuccess || pinInput.length < 4}
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:from-neutral-800 disabled:to-neutral-800 disabled:text-neutral-500 text-neutral-950 font-black text-xs uppercase tracking-wider transition-all shadow-[0_4px_20px_rgba(16,185,129,0.25)] active:scale-98 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              <Unlock className="w-4 h-4" />
-              <span>Acceder al Panel</span>
+              {isSuccess ? (
+                <>
+                  <Unlock className="w-4 h-4" />
+                  <span>Acceso Concedido</span>
+                </>
+              ) : (
+                <>
+                  <Lock className="w-4 h-4" />
+                  <span>Desbloquear Panel</span>
+                </>
+              )}
             </button>
-          </form>
-        </div>
+          </div>
+        </main>
 
         {/* Footer */}
-        <div className="max-w-md w-full mx-auto text-center z-10 text-[11px] text-neutral-600">
-          <span>Acceso restringido únicamente al administrador de PulsoTech.</span>
-        </div>
+        <footer className="max-w-md w-full mx-auto text-center z-10 text-[11px] text-neutral-500 flex items-center justify-center gap-2">
+          <ShieldCheck className="w-3.5 h-3.5 text-neutral-600" />
+          <span>PulsoTech Security · Acceso reservado para administración</span>
+        </footer>
       </div>
     );
   }
@@ -1637,7 +1719,7 @@ export default function AdminPage() {
       <aside className="hidden md:flex w-64 bg-neutral-950 text-neutral-300 border-r border-neutral-800/80 fixed inset-y-0 left-0 z-40 flex-col justify-between select-none">
         {/* Superior: Branding y Navegación Vertical */}
         <div className="flex flex-col">
-          {/* Logo y Encabezado del Sistema POS */}
+          {/* Logo y Encabezado del Sistema */}
           <div className="h-16 px-5 border-b border-neutral-800/80 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Logo size="sm" showText={false} />
@@ -1645,11 +1727,11 @@ export default function AdminPage() {
                 <div className="text-sm font-black text-white tracking-tight flex items-center gap-1.5">
                   <span>PulsoTech</span>
                   <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    POS
+                    Admin
                   </span>
                 </div>
                 <div className="text-[10px] text-neutral-400 font-medium">
-                  Terminal de Control Operativo
+                  Panel de Control &amp; Catálogo
                 </div>
               </div>
             </div>
@@ -1658,7 +1740,7 @@ export default function AdminPage() {
           {/* Menú Vertical de Módulos */}
           <nav className="p-3 space-y-1.5 pt-4">
             <div className="px-3 pb-1 text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400">
-              Módulos del Sistema
+              Navegación Principal
             </div>
 
             {navItems.map((item) => {
@@ -1731,7 +1813,7 @@ export default function AdminPage() {
               </div>
               <div className="truncate">
                 <div className="text-xs font-bold text-white truncate">Lionel (Admin)</div>
-                <div className="text-[10px] font-mono text-neutral-400">Terminal Activo</div>
+                <div className="text-[10px] font-mono text-emerald-400">Sesión Activa</div>
               </div>
             </div>
 
@@ -1760,7 +1842,7 @@ export default function AdminPage() {
           </button>
           <div className="flex items-center gap-2">
             <Logo size="sm" showText={false} />
-            <span className="text-sm font-black tracking-tight">PulsoTech POS</span>
+            <span className="text-sm font-black tracking-tight">PulsoTech Admin</span>
           </div>
         </div>
 
@@ -1798,8 +1880,8 @@ export default function AdminPage() {
                 <div className="flex items-center gap-2.5">
                   <Logo size="sm" showText={false} />
                   <div>
-                    <div className="text-sm font-black text-white">PulsoTech POS</div>
-                    <div className="text-[10px] text-neutral-400">Sistema Administrativo</div>
+                    <div className="text-sm font-black text-white">PulsoTech Admin</div>
+                    <div className="text-[10px] text-neutral-400">Panel de Control &amp; Catálogo</div>
                   </div>
                 </div>
                 <button
@@ -1813,7 +1895,7 @@ export default function AdminPage() {
 
               <nav className="space-y-1.5 py-4">
                 <div className="px-3 pb-1 text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400">
-                  Módulos
+                  Navegación
                 </div>
                 {navItems.map((item) => {
                   const isActive = activeTab === item.id;
@@ -1863,7 +1945,7 @@ export default function AdminPage() {
             <div className="pt-4 border-t border-neutral-800 space-y-2">
               <div className="flex items-center justify-between px-2 text-xs">
                 <span className="text-neutral-400">Lionel (Admin)</span>
-                <span className="text-[10px] font-mono text-neutral-400">Terminal Activo</span>
+                <span className="text-[10px] font-mono text-emerald-400">Sesión Activa</span>
               </div>
               <button
                 type="button"
@@ -1884,7 +1966,7 @@ export default function AdminPage() {
         <header className="bg-white border-b border-neutral-200/80 sticky top-0 z-20 px-4 sm:px-8 py-3.5 hidden md:flex items-center justify-between gap-4 shadow-2xs">
           <div>
             <div className="text-[11px] font-mono text-neutral-400 uppercase tracking-wider font-semibold">
-              Sistema POS / {navItems.find((n) => n.id === activeTab)?.label || "Módulo"}
+              Administración / {navItems.find((n) => n.id === activeTab)?.label || "Módulo"}
             </div>
             <h1 className="text-base font-black text-neutral-950 tracking-tight">
               {activeTab === "inventory" && "Inventario de Productos"}
@@ -5724,7 +5806,7 @@ export default function AdminPage() {
                   <div className="flex items-center gap-2 text-xs font-mono text-neutral-400 font-bold uppercase tracking-wider mb-0.5">
                     <span>Configuración</span>
                     <span>/</span>
-                    <span className="text-neutral-700">Terminal &amp; Canales</span>
+                    <span className="text-neutral-700">Panel &amp; Canales</span>
                   </div>
                   <h2 className="text-lg sm:text-xl font-extrabold text-neutral-950 flex items-center gap-2">
                     <Settings className="w-5 h-5 text-neutral-900" />
@@ -5909,7 +5991,7 @@ export default function AdminPage() {
                             <h3 className="text-sm font-extrabold text-neutral-950">Seguridad &amp; PIN de Acceso</h3>
                           </div>
                           <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200">
-                            Terminal Protegido
+                            Panel Protegido
                           </span>
                         </div>
 
@@ -6014,7 +6096,7 @@ export default function AdminPage() {
                             className="px-4 py-2 rounded-xl border border-neutral-200 hover:border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                           >
                             <LogOut className="w-3.5 h-3.5 text-neutral-500" />
-                            <span>Bloquear Terminal</span>
+                            <span>Bloquear Panel</span>
                           </button>
 
                           <button
