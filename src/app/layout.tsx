@@ -22,7 +22,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "PulsoTech - Tecnología, Audio y Accesorios",
+  title: "PulsoTech",
   description:
     "Tienda especializada en audífonos originales y accesorios tecnológicos. Entrega el mismo día con garantía y atención personalizada.",
 };
