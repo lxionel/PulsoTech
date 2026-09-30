@@ -1721,7 +1721,7 @@ export default function AdminPage() {
           {/* Logo y Encabezado del Sistema */}
           <div className="h-16 px-5 border-b border-neutral-800/80 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Logo size="sm" showText={false} />
+              <Logo size="sm" showText={false} inverted={true} />
               <div>
                 <div className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
                   <span>PulsoTech</span>
@@ -1893,7 +1893,7 @@ export default function AdminPage() {
             <div>
               <div className="flex items-center justify-between pb-4 border-b border-neutral-800">
                 <div className="flex items-center gap-2.5">
-                  <Logo size="sm" showText={false} />
+                  <Logo size="sm" showText={false} inverted={true} />
                   <div>
                     <div className="text-sm font-bold text-white">PulsoTech Admin</div>
                     <div className="text-[10px] text-neutral-400">Panel de Control &amp; Catálogo</div>

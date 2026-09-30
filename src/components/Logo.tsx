@@ -16,18 +16,16 @@ export default function Logo({
   size = "md",
   inverted = false,
 }: LogoProps) {
-  const iconSize = size === "sm" ? 32 : size === "lg" ? 44 : 38;
+  const iconSize = size === "sm" ? 28 : size === "lg" ? 40 : 34;
   const textSize = size === "sm" ? "text-lg" : size === "lg" ? "text-2xl" : "text-xl";
   const subSize = size === "sm" ? "text-[8px]" : size === "lg" ? "text-[10px]" : "text-[9px]";
 
   return (
     <Link href="/" className={`flex items-center gap-2.5 group select-none ${className}`}>
-      {/* Isotipo PulsoTech SVG Vectorial de Alta Fidelidad */}
+      {/* Isotipo PulsoTech: Cubo Isométrico Geométrico Puro Sin Fondo */}
       <div 
-        className={`relative shrink-0 flex items-center justify-center rounded-xl transition-all duration-200 ${
-          inverted
-            ? "bg-white/15 border border-white/20 group-hover:bg-white/25"
-            : "bg-neutral-950 border border-neutral-900 shadow-2xs group-hover:bg-neutral-900"
+        className={`relative shrink-0 flex items-center justify-center transition-transform duration-200 group-hover:scale-105 ${
+          inverted ? "text-white" : "text-neutral-950"
         }`}
         style={{ width: iconSize, height: iconSize }}
       >
@@ -35,14 +33,29 @@ export default function Logo({
           viewBox="0 0 44 44"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className="w-3/5 h-3/5"
+          className="w-full h-full"
         >
-          {/* Barra vertical principal (Tronco P) */}
-          <rect x="11" y="9" width="4" height="26" rx="2" fill="#FFFFFF"/>
-          {/* Barras acústicas de pulso y ecualizador que configuran el bucle dinámico de la P */}
-          <rect x="18" y="9" width="4" height="15" rx="2" fill="#FFFFFF"/>
-          <rect x="25" y="11.5" width="4" height="10" rx="2" fill="#FFFFFF"/>
-          <rect x="32" y="14" width="4" height="5" rx="2" fill="#FFFFFF"/>
+          {/* Perímetro hexagonal exterior del cubo */}
+          <path
+            d="M22 5L37 13.5V30.5L22 39L7 30.5V13.5L22 5Z"
+            stroke="currentColor"
+            strokeWidth="3.6"
+            strokeLinejoin="round"
+          />
+          {/* Arista vertical interior central */}
+          <path
+            d="M22 22V39"
+            stroke="currentColor"
+            strokeWidth="2.8"
+            strokeLinecap="round"
+          />
+          {/* Aristas superiores en 'Y' que definen las tres caras del cubo */}
+          <path
+            d="M7 13.5L22 22L37 13.5"
+            stroke="currentColor"
+            strokeWidth="2.8"
+            strokeLinejoin="round"
+          />
         </svg>
       </div>
 
