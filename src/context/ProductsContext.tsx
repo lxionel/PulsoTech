@@ -39,7 +39,7 @@ const ProductsContext = createContext<ProductsContextType | undefined>(undefined
 
 const STORAGE_KEY = "pulsotech_custom_products";
 const DATA_VERSION_KEY = "pulsotech_catalog_data_version";
-const CURRENT_DATA_VERSION = "2026_09_28_v1";
+const CURRENT_DATA_VERSION = "2026_09_29_v2_clean";
 
 const BRANDS_STORAGE_KEY = "pulsotech_custom_brands";
 const CATEGORIES_STORAGE_KEY = "pulsotech_custom_categories";
@@ -79,10 +79,16 @@ function getInitialCategories(): string[] {
 function getInitialProducts(): Product[] {
   if (typeof window !== "undefined") {
     try {
+      const version = localStorage.getItem(DATA_VERSION_KEY);
+      if (version !== CURRENT_DATA_VERSION) {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
+        return [];
+      }
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored !== null) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           return parsed;
         }
       }
@@ -103,7 +109,6 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
 
   // Guardar en localStorage de respaldo
   const saveProductsLocal = useCallback((newProducts: Product[]) => {
-    setProducts(newProducts);
     if (typeof window !== "undefined") {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(newProducts));
@@ -123,7 +128,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const cloudProds = await fetchProductsFromSupabase();
-      if (cloudProds !== null && cloudProds.length > 0) {
+      if (cloudProds !== null) {
         setIsCloudConnected(true);
         setProducts(cloudProds);
         if (typeof window !== "undefined") {
@@ -139,16 +144,6 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
           if (cloudSettings.categories && cloudSettings.categories.length > 0) {
             setCategories(cloudSettings.categories);
           }
-        }
-      } else if (cloudProds !== null && cloudProds.length === 0) {
-        // Si la nube está vacía pero tenemos productos base, sincronizarlos
-        setIsCloudConnected(true);
-        setProducts(PRODUCTS);
-        if (typeof window !== "undefined") {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(PRODUCTS));
-        }
-        for (const p of PRODUCTS) {
-          void upsertProductToSupabase(p);
         }
       } else {
         setIsCloudConnected(false);

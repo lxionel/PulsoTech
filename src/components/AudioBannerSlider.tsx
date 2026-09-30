@@ -27,7 +27,6 @@ const SLIDES: SlideData[] = [
 export default function AudioBannerSlider() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
@@ -61,21 +60,12 @@ export default function AudioBannerSlider() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [nextSlide, prevSlide]);
 
-  // Efecto de paralaje interactivo sutil 3D con el cursor
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    setMousePos({ x, y });
-  };
-
   const handleMouseEnter = () => {
     setIsHovered(true);
   };
 
   const handleMouseLeave = () => {
     setIsHovered(false);
-    setMousePos({ x: 0, y: 0 });
   };
 
   // Touch Swipe Handlers para móviles
@@ -104,12 +94,11 @@ export default function AudioBannerSlider() {
       className="relative w-full h-full min-h-[300px] overflow-hidden bg-neutral-950 select-none flex items-center group/slider"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      onMouseMove={handleMouseMove}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Slides panorámicos completos de borde a borde con transición fluida y paralaje interactivo */}
+      {/* Slides panorámicos completos de borde a borde con transición fluida sin movimiento al cursor */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         {SLIDES.map((slide, index) => {
           const isActive = index === currentSlide;
@@ -120,14 +109,7 @@ export default function AudioBannerSlider() {
                 isActive ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
               }`}
             >
-              <div
-                className="w-full h-full relative transition-transform duration-700 ease-out will-change-transform"
-                style={{
-                  transform: isActive
-                    ? `scale(${isHovered ? 1.03 : 1.0}) translate3d(${mousePos.x * -14}px, ${mousePos.y * -10}px, 0)`
-                    : "scale(1.0)",
-                }}
-              >
+              <div className="w-full h-full relative">
                 <Image
                   src={getAssetUrl(slide.image)}
                   alt={slide.alt}

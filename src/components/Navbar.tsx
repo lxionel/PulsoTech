@@ -24,12 +24,27 @@ export default function Navbar({
     setIsFavoritesOpen,
   } = useCart();
 
+  const [isScrolled, setIsScrolled] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <header
-      className={`sticky top-0 z-40 w-full transition-all duration-200 ${
+      className={`w-full transition-all duration-300 z-50 ${
         isTransparent
-          ? "bg-transparent text-white border-b-0 border-none shadow-none"
-          : "bg-white/95 backdrop-blur-md border-b border-neutral-200 shadow-2xs text-[#111113]"
+          ? `fixed top-0 left-0 right-0 ${
+              isScrolled
+                ? "bg-neutral-950/90 backdrop-blur-md border-b border-neutral-800/80 text-white shadow-md"
+                : "bg-transparent text-white border-b-0 border-none shadow-none"
+            }`
+          : "sticky top-0 bg-white/95 backdrop-blur-md border-b border-neutral-200 shadow-2xs text-[#111113]"
       }`}
     >
       <div className="w-full max-w-[1650px] mx-auto px-3 sm:px-6 lg:px-10 xl:px-14 h-16 flex items-center justify-between gap-2 sm:gap-4 lg:gap-8">

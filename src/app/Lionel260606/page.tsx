@@ -2500,6 +2500,8 @@ export default function AdminPage() {
                             onClick={() => {
                               if (confirm(`¿Estás seguro de eliminar "${item.name}" del catálogo?`)) {
                                 deleteProduct(item.id);
+                                setSuccessNotice(`Producto "${item.name}" eliminado del catálogo.`);
+                                setTimeout(() => setSuccessNotice(""), 4000);
                               }
                             }}
                             className="p-2 rounded-xl border border-neutral-200 text-neutral-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors cursor-pointer"
@@ -2728,6 +2730,8 @@ export default function AdminPage() {
                                   onClick={() => {
                                     if (confirm(`¿Estás seguro de eliminar "${item.name}" del catálogo?`)) {
                                       deleteProduct(item.id);
+                                      setSuccessNotice(`Producto "${item.name}" eliminado del catálogo.`);
+                                      setTimeout(() => setSuccessNotice(""), 4000);
                                     }
                                   }}
                                   className="p-1.5 rounded-lg border border-neutral-200 text-neutral-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors cursor-pointer"
