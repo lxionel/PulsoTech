@@ -25,26 +25,74 @@ export default function Navbar({
   } = useCart();
 
   const [isScrolled, setIsScrolled] = React.useState(false);
+  const [isVisible, setIsVisible] = React.useState(true);
+  const lastScrollY = React.useRef(0);
 
   React.useEffect(() => {
+    let ticking = false;
+
+    // Inicializar posición de scroll actual
+    const initialY = typeof window !== "undefined" ? window.scrollY : 0;
+    lastScrollY.current = Math.max(0, initialY);
+    setIsScrolled(initialY > 20);
+    setIsVisible(true);
+
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+
+          // Cerca del tope superior: siempre visible y estado no-scrolled
+          if (currentScrollY <= 20) {
+            setIsScrolled(false);
+            setIsVisible(true);
+            lastScrollY.current = Math.max(0, currentScrollY);
+            ticking = false;
+            return;
+          }
+
+          setIsScrolled(true);
+
+          const delta = currentScrollY - lastScrollY.current;
+
+          // Umbral de sensibilidad para evitar oscilaciones
+          if (Math.abs(delta) >= 8) {
+            if (delta > 0 && currentScrollY > 70) {
+              // Desplazamiento hacia abajo: ocultar encabezado
+              setIsVisible(false);
+            } else if (delta < 0) {
+              // Desplazamiento hacia arriba: mostrar encabezado
+              setIsVisible(true);
+            }
+            lastScrollY.current = currentScrollY;
+          }
+
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
-    handleScroll();
+
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
     <header
-      className={`w-full transition-all duration-300 z-50 ${
+      className={`w-full transition-all duration-300 ease-in-out z-50 ${
+        isVisible ? "translate-y-0" : "-translate-y-full pointer-events-none"
+      } ${
         isTransparent
           ? `fixed top-0 left-0 right-0 ${
               isScrolled
                 ? "bg-neutral-950/90 backdrop-blur-md border-b border-neutral-800/80 text-white shadow-md"
                 : "bg-transparent text-white border-b-0 border-none shadow-none"
             }`
-          : "sticky top-0 bg-white/95 backdrop-blur-md border-b border-neutral-200 shadow-2xs text-[#111113]"
+          : `sticky top-0 ${
+              isScrolled
+                ? "bg-white/95 backdrop-blur-md border-b border-neutral-200 shadow-md text-[#111113]"
+                : "bg-white/95 backdrop-blur-md border-b border-neutral-200/80 shadow-2xs text-[#111113]"
+            }`
       }`}
     >
       <div className="w-full max-w-[1650px] mx-auto px-3 sm:px-6 lg:px-10 xl:px-14 h-16 flex items-center justify-between gap-2 sm:gap-4 lg:gap-8">
