@@ -1473,10 +1473,10 @@ export default function AdminPage() {
 
   if (isAuthChecking) {
     return (
-      <div className="min-h-screen bg-[#07090e] flex items-center justify-center p-4 select-none">
+      <div className="min-h-screen bg-[#090a0f] flex items-center justify-center p-4 select-none">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs font-mono font-bold text-neutral-400">Verificando acceso seguro...</span>
+          <div className="w-10 h-10 border-2 border-white/40 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-mono font-medium text-neutral-400">Verificando acceso seguro...</span>
         </div>
       </div>
     );
@@ -1484,25 +1484,24 @@ export default function AdminPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#07090e] text-white flex flex-col justify-between p-4 sm:p-8 relative overflow-hidden select-none">
-        {/* Glow de fondo y textura ambiental refinada */}
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[650px] h-[380px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute -bottom-40 left-1/2 -translate-x-1/2 w-[550px] h-[320px] bg-teal-500/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none opacity-60" />
+      <div className="min-h-screen bg-[#090a0f] text-white flex flex-col justify-between p-4 sm:p-8 relative overflow-hidden select-none">
+        {/* Sutil aura ambiental neutra sin colores neón */}
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-white/[0.02] rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none opacity-50" />
 
         {/* Encabezado Superior */}
         <header className="max-w-md w-full mx-auto flex items-center justify-between z-10">
           <div className="flex items-center gap-2.5">
-            <Logo size="sm" showText={true} />
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5 shadow-xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <Logo size="sm" showText={true} inverted={true} />
+            <span className="text-[10px] font-mono font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full bg-white/[0.06] text-neutral-300 border border-white/10 flex items-center gap-1.5 shadow-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-neutral-400" />
               Admin
             </span>
           </div>
 
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-400 hover:text-white transition-colors py-1.5 px-3 rounded-xl bg-neutral-900/80 hover:bg-neutral-800 border border-neutral-800/80 cursor-pointer shadow-xs"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-400 hover:text-white transition-colors py-1.5 px-3 rounded-xl bg-neutral-900/80 hover:bg-neutral-800 border border-neutral-800/80 cursor-pointer shadow-xs"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Volver a la tienda</span>
@@ -1511,30 +1510,30 @@ export default function AdminPage() {
 
         {/* Tarjeta Flotante Principal de Autenticación */}
         <main className="max-w-[420px] w-full mx-auto my-auto py-6 z-10 animate-in fade-in zoom-in-95 duration-200">
-          <div className="rounded-3xl bg-neutral-900/75 border border-neutral-800/90 backdrop-blur-2xl p-6 sm:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.65)] space-y-6 text-center">
-            {/* Icono de seguridad con aura interactiva */}
+          <div className="rounded-3xl bg-[#111318]/90 border border-white/[0.08] backdrop-blur-2xl p-6 sm:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.8)] space-y-6 text-center">
+            {/* Icono de seguridad minimalista y sobrio */}
             <div className="space-y-3">
               <div
                 className={`w-16 h-16 rounded-2xl mx-auto flex items-center justify-center relative transition-all duration-300 ${
                   isSuccess
-                    ? "bg-emerald-500/20 border-2 border-emerald-400 shadow-[0_0_30px_rgba(52,211,153,0.5)] scale-105"
-                    : "bg-neutral-800/80 border border-neutral-700/80 shadow-inner"
+                    ? "bg-white/15 border border-white/40 shadow-sm scale-105"
+                    : "bg-neutral-900 border border-neutral-800 shadow-inner"
                 }`}
               >
                 {isSuccess ? (
-                  <Unlock className="w-7 h-7 text-emerald-300 animate-bounce" />
+                  <Unlock className="w-7 h-7 text-white animate-bounce" />
                 ) : (
-                  <Lock className="w-7 h-7 text-emerald-400" />
+                  <Lock className="w-7 h-7 text-neutral-300" />
                 )}
                 <span
-                  className={`w-2.5 h-2.5 rounded-full absolute -top-1 -right-1 ring-4 ring-[#07090e] transition-colors ${
-                    isSuccess ? "bg-emerald-300" : "bg-emerald-500 animate-pulse"
+                  className={`w-2 h-2 rounded-full absolute -top-1 -right-1 ring-4 ring-[#111318] transition-colors ${
+                    isSuccess ? "bg-white" : "bg-neutral-500"
                   }`}
                 />
               </div>
 
               <div>
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
                   Acceso Administrativo
                 </h1>
                 <p className="text-xs text-neutral-400 mt-1 max-w-xs mx-auto">
@@ -1543,7 +1542,7 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* Display Visual de Dígitos PIN con animación shake en error */}
+            {/* Display Visual de Dígitos PIN */}
             <div
               className={`flex items-center justify-center gap-2.5 py-1 transition-transform ${
                 isShaking ? "animate-shake" : ""
@@ -1557,20 +1556,20 @@ export default function AdminPage() {
                     key={idx}
                     className={`w-9 sm:w-10 h-11 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-200 ${
                       hasChar
-                        ? "bg-emerald-500/15 border-2 border-emerald-400/80 shadow-[0_0_15px_rgba(52,211,153,0.3)] scale-105"
-                        : "bg-neutral-800/50 border border-neutral-700/60"
+                        ? "bg-white/15 border-2 border-white/60 shadow-sm scale-105"
+                        : "bg-neutral-900/60 border border-neutral-800"
                     }`}
                   >
                     {hasChar ? (
                       showPin ? (
-                        <span className="font-mono font-black text-lg text-emerald-300">
+                        <span className="font-mono font-bold text-lg text-white">
                           {char}
                         </span>
                       ) : (
-                        <span className="w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-white shadow-xs" />
                       )
                     ) : (
-                      <span className="w-1.5 h-1.5 rounded-full bg-neutral-600/60" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-neutral-700" />
                     )}
                   </div>
                 );
@@ -1588,20 +1587,20 @@ export default function AdminPage() {
 
             {/* Mensajes de error o bloqueo */}
             {pinError && (
-              <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold flex items-center justify-center gap-2 animate-in fade-in">
+              <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium flex items-center justify-center gap-2 animate-in fade-in">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{pinError}</span>
               </div>
             )}
 
             {lockoutSeconds > 0 && (
-              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold flex items-center justify-center gap-2 animate-in fade-in">
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-medium flex items-center justify-center gap-2 animate-in fade-in">
                 <Clock className="w-4 h-4 shrink-0" />
                 <span>Límite de intentos superado. Espera {lockoutSeconds} segundos.</span>
               </div>
             )}
 
-            {/* Teclado numérico táctil interactivo */}
+            {/* Teclado numérico táctil interactivo (sobrio, oscuro, sin neón) */}
             <div className="grid grid-cols-3 gap-2.5 pt-1">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                 <button
@@ -1609,7 +1608,7 @@ export default function AdminPage() {
                   type="button"
                   onClick={() => handleDigitPress(num.toString())}
                   disabled={lockoutSeconds > 0 || isSuccess}
-                  className="h-13 sm:h-14 rounded-2xl bg-neutral-800/40 hover:bg-neutral-800/80 active:bg-emerald-500/20 active:border-emerald-500/40 border border-neutral-700/50 text-xl font-bold font-mono text-white transition-all shadow-xs flex items-center justify-center cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+                  className="h-13 sm:h-14 rounded-2xl bg-neutral-900/60 hover:bg-neutral-800 active:bg-neutral-700 border border-neutral-800 text-xl font-bold font-mono text-white transition-all shadow-xs flex items-center justify-center cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
                 >
                   {num}
                 </button>
@@ -1619,7 +1618,7 @@ export default function AdminPage() {
                 type="button"
                 onClick={handleClearPress}
                 disabled={lockoutSeconds > 0 || isSuccess || pinInput.length === 0}
-                className="h-13 sm:h-14 rounded-2xl bg-neutral-900/40 hover:bg-neutral-800/60 active:scale-95 text-xs font-bold text-neutral-400 hover:text-white border border-neutral-800/60 transition-all flex items-center justify-center cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed uppercase tracking-wider"
+                className="h-13 sm:h-14 rounded-2xl bg-neutral-950/40 hover:bg-neutral-800 active:scale-95 text-xs font-semibold text-neutral-400 hover:text-white border border-neutral-800/80 transition-all flex items-center justify-center cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed uppercase tracking-wider"
                 title="Borrar todo"
               >
                 Borrar
@@ -1629,7 +1628,7 @@ export default function AdminPage() {
                 type="button"
                 onClick={() => handleDigitPress("0")}
                 disabled={lockoutSeconds > 0 || isSuccess}
-                className="h-13 sm:h-14 rounded-2xl bg-neutral-800/40 hover:bg-neutral-800/80 active:bg-emerald-500/20 active:border-emerald-500/40 border border-neutral-700/50 text-xl font-bold font-mono text-white transition-all shadow-xs flex items-center justify-center cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+                className="h-13 sm:h-14 rounded-2xl bg-neutral-900/60 hover:bg-neutral-800 active:bg-neutral-700 border border-neutral-800 text-xl font-bold font-mono text-white transition-all shadow-xs flex items-center justify-center cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
               >
                 0
               </button>
@@ -1638,19 +1637,19 @@ export default function AdminPage() {
                 type="button"
                 onClick={handleBackspacePress}
                 disabled={lockoutSeconds > 0 || isSuccess || pinInput.length === 0}
-                className="h-13 sm:h-14 rounded-2xl bg-neutral-900/40 hover:bg-neutral-800/60 active:scale-95 text-neutral-400 hover:text-white border border-neutral-800/60 transition-all flex items-center justify-center cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed"
+                className="h-13 sm:h-14 rounded-2xl bg-neutral-950/40 hover:bg-neutral-800 active:scale-95 text-neutral-400 hover:text-white border border-neutral-800/80 transition-all flex items-center justify-center cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed"
                 title="Retroceder"
               >
                 <Delete className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Botón de acceso / desbloqueo */}
+            {/* Botón de acceso / desbloqueo (Estilo Apple / Linear blanco de alto contraste) */}
             <button
               type="button"
               onClick={() => handlePinSubmit()}
               disabled={lockoutSeconds > 0 || isSuccess || pinInput.length < 4}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:from-neutral-800 disabled:to-neutral-800 disabled:text-neutral-500 text-neutral-950 font-black text-xs uppercase tracking-wider transition-all shadow-[0_4px_20px_rgba(16,185,129,0.25)] active:scale-98 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-3.5 rounded-xl bg-white hover:bg-neutral-200 active:bg-neutral-300 disabled:bg-neutral-800 disabled:text-neutral-500 text-neutral-950 font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-98 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isSuccess ? (
                 <>
@@ -1669,7 +1668,7 @@ export default function AdminPage() {
 
         {/* Footer */}
         <footer className="max-w-md w-full mx-auto text-center z-10 text-[11px] text-neutral-500 flex items-center justify-center gap-2">
-          <ShieldCheck className="w-3.5 h-3.5 text-neutral-600" />
+          <ShieldCheck className="w-3.5 h-3.5 text-neutral-500" />
           <span>PulsoTech Security · Acceso reservado para administración</span>
         </footer>
       </div>
@@ -1715,8 +1714,8 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-neutral-900 antialiased font-sans flex">
-      {/* ================= BARRA LATERAL VERTICAL DESKTOP (POS REAL) ================= */}
-      <aside className="hidden md:flex w-64 bg-neutral-950 text-neutral-300 border-r border-neutral-800/80 fixed inset-y-0 left-0 z-40 flex-col justify-between select-none">
+      {/* ================= BARRA LATERAL VERTICAL DESKTOP ================= */}
+      <aside className="hidden md:flex w-64 bg-[#0c0d12] text-neutral-300 border-r border-neutral-800/80 fixed inset-y-0 left-0 z-40 flex-col justify-between select-none">
         {/* Superior: Branding y Navegación Vertical */}
         <div className="flex flex-col">
           {/* Logo y Encabezado del Sistema */}
@@ -1724,9 +1723,9 @@ export default function AdminPage() {
             <div className="flex items-center gap-3">
               <Logo size="sm" showText={false} />
               <div>
-                <div className="text-sm font-black text-white tracking-tight flex items-center gap-1.5">
+                <div className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
                   <span>PulsoTech</span>
-                  <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-white/[0.08] text-neutral-300 border border-white/10">
                     Admin
                   </span>
                 </div>
@@ -1739,7 +1738,7 @@ export default function AdminPage() {
 
           {/* Menú Vertical de Módulos */}
           <nav className="p-3 space-y-1.5 pt-4">
-            <div className="px-3 pb-1 text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400">
+            <div className="px-3 pb-1 text-[10px] font-mono font-medium uppercase tracking-wider text-neutral-500">
               Navegación Principal
             </div>
 
@@ -1761,21 +1760,16 @@ export default function AdminPage() {
                   onPointerUp={(e) => e.currentTarget.blur()}
                   className={`group relative w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-colors duration-150 cursor-pointer select-none outline-none focus:outline-none focus:ring-0 ${
                     isActive
-                      ? "bg-white/[0.08] text-white font-bold border border-white/10 shadow-xs"
-                      : "text-neutral-400 font-medium hover:text-neutral-100 hover:bg-white/[0.03] border border-transparent"
+                      ? "bg-white/[0.10] text-white font-semibold border border-white/15 shadow-xs"
+                      : "text-neutral-400 font-medium hover:text-neutral-200 hover:bg-white/[0.04] border border-transparent"
                   }`}
                 >
-                  {/* Barra Indicadora Esmeralda Exclusiva del Ítem Activo */}
-                  {isActive && (
-                    <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-emerald-400 shadow-xs shadow-emerald-400/50" />
-                  )}
-
                   <div className="flex items-center gap-3 min-w-0">
                     <Icon
                       className={`w-4 h-4 shrink-0 transition-colors ${
                         isActive
-                          ? "text-emerald-400"
-                          : "text-neutral-500 group-hover:text-neutral-300"
+                          ? "text-white"
+                          : "text-neutral-400 group-hover:text-neutral-200"
                       }`}
                     />
                     <span className="truncate">{item.label}</span>
@@ -1783,9 +1777,9 @@ export default function AdminPage() {
 
                   {typeof item.count === "number" && (
                     <span
-                      className={`text-[10px] font-mono font-bold shrink-0 transition-colors ${
+                      className={`text-[10px] font-mono font-medium shrink-0 transition-colors ${
                         isActive
-                          ? "px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/25"
+                          ? "px-2 py-0.5 rounded-md bg-white/15 text-white border border-white/15"
                           : "text-neutral-500 px-1.5"
                       }`}
                     >
@@ -1801,19 +1795,40 @@ export default function AdminPage() {
                 </button>
               );
             })}
+
+            {/* Enlace rápido a la tienda */}
+            <div className="pt-4 mt-3 border-t border-neutral-800/60">
+              <div className="px-3 pb-1 text-[10px] font-mono font-medium uppercase tracking-wider text-neutral-500">
+                Acceso Rápido
+              </div>
+              <Link
+                href="/"
+                target="_blank"
+                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs text-neutral-400 hover:text-white hover:bg-white/[0.04] transition-colors group cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <ShoppingBag className="w-4 h-4 text-neutral-400 group-hover:text-white transition-colors" />
+                  <span>Ver Tienda Online</span>
+                </div>
+                <ExternalLink className="w-3.5 h-3.5 text-neutral-500 group-hover:text-neutral-300 transition-colors" />
+              </Link>
+            </div>
           </nav>
         </div>
 
-        {/* Inferior: Perfil de Operador y Cerrar Sesión (Limpio, sin Base de Datos) */}
-        <div className="p-3 border-t border-neutral-800/80 bg-neutral-950/80">
-          <div className="px-3 py-2.5 rounded-xl bg-neutral-900/60 border border-neutral-800/60 flex items-center justify-between">
+        {/* Inferior: Perfil de Operador y Cerrar Sesión */}
+        <div className="p-3 border-t border-neutral-800/80 bg-[#0a0b0e]">
+          <div className="px-3 py-2.5 rounded-xl bg-neutral-900/60 border border-neutral-800/80 flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-black text-xs shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-neutral-800 border border-neutral-700 text-white flex items-center justify-center font-bold text-xs shrink-0">
                 L
               </div>
               <div className="truncate">
-                <div className="text-xs font-bold text-white truncate">Lionel (Admin)</div>
-                <div className="text-[10px] font-mono text-emerald-400">Sesión Activa</div>
+                <div className="text-xs font-semibold text-white truncate">Lionel (Admin)</div>
+                <div className="text-[10px] font-mono text-neutral-400 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-neutral-400" />
+                  <span>Sesión Activa</span>
+                </div>
               </div>
             </div>
 
@@ -1850,7 +1865,7 @@ export default function AdminPage() {
           <button
             type="button"
             onClick={handleNewProductClick}
-            className="px-2.5 py-1.5 rounded-lg bg-emerald-500 text-neutral-950 font-bold text-xs flex items-center gap-1 active:scale-95 cursor-pointer"
+            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-neutral-200 text-neutral-950 font-bold text-xs flex items-center gap-1 active:scale-95 cursor-pointer shadow-xs"
           >
             <PlusCircle className="w-3.5 h-3.5" />
             <span>Nuevo</span>
@@ -1874,13 +1889,13 @@ export default function AdminPage() {
             onClick={() => setIsMobileNavOpen(false)}
           />
 
-          <div className="relative w-72 max-w-[85vw] bg-neutral-950 text-neutral-300 border-r border-neutral-800 h-full flex flex-col justify-between p-4 z-10 shadow-2xl animate-in slide-in-from-left duration-200">
+          <div className="relative w-72 max-w-[85vw] bg-[#0c0d12] text-neutral-300 border-r border-neutral-800 h-full flex flex-col justify-between p-4 z-10 shadow-2xl animate-in slide-in-from-left duration-200">
             <div>
               <div className="flex items-center justify-between pb-4 border-b border-neutral-800">
                 <div className="flex items-center gap-2.5">
                   <Logo size="sm" showText={false} />
                   <div>
-                    <div className="text-sm font-black text-white">PulsoTech Admin</div>
+                    <div className="text-sm font-bold text-white">PulsoTech Admin</div>
                     <div className="text-[10px] text-neutral-400">Panel de Control &amp; Catálogo</div>
                   </div>
                 </div>
@@ -1894,7 +1909,7 @@ export default function AdminPage() {
               </div>
 
               <nav className="space-y-1.5 py-4">
-                <div className="px-3 pb-1 text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400">
+                <div className="px-3 pb-1 text-[10px] font-mono font-medium uppercase tracking-wider text-neutral-500">
                   Navegación
                 </div>
                 {navItems.map((item) => {
@@ -1915,22 +1930,18 @@ export default function AdminPage() {
                       onPointerUp={(e) => e.currentTarget.blur()}
                       className={`relative w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-colors duration-150 cursor-pointer select-none outline-none focus:outline-none focus:ring-0 ${
                         isActive
-                          ? "bg-white/[0.08] text-white font-bold border border-white/10 shadow-xs"
-                          : "text-neutral-400 font-medium hover:text-neutral-100 hover:bg-white/[0.03] border border-transparent"
+                          ? "bg-white/[0.10] text-white font-semibold border border-white/15 shadow-xs"
+                          : "text-neutral-400 font-medium hover:text-neutral-200 hover:bg-white/[0.04] border border-transparent"
                       }`}
                     >
-                      {isActive && (
-                        <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-emerald-400 shadow-xs shadow-emerald-400/50" />
-                      )}
-
                       <div className="flex items-center gap-3">
-                        <Icon className={`w-4 h-4 ${isActive ? "text-emerald-400" : "text-neutral-500"}`} />
+                        <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-neutral-400"}`} />
                         <span>{item.label}</span>
                       </div>
                       {typeof item.count === "number" && (
-                        <span className={`text-[10px] font-mono font-bold ${
+                        <span className={`text-[10px] font-mono font-medium ${
                           isActive
-                            ? "px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/25"
+                            ? "px-2 py-0.5 rounded-md bg-white/15 text-white border border-white/15"
                             : "text-neutral-500 px-1.5"
                         }`}>
                           {item.count}
@@ -1939,13 +1950,31 @@ export default function AdminPage() {
                     </button>
                   );
                 })}
+
+                {/* Enlace rápido tienda en móvil */}
+                <div className="pt-3 mt-2 border-t border-neutral-800/60">
+                  <Link
+                    href="/"
+                    target="_blank"
+                    className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs text-neutral-400 hover:text-white hover:bg-white/[0.04] transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <ShoppingBag className="w-4 h-4 text-neutral-400" />
+                      <span>Ver Tienda Online</span>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-neutral-500" />
+                  </Link>
+                </div>
               </nav>
             </div>
 
             <div className="pt-4 border-t border-neutral-800 space-y-2">
               <div className="flex items-center justify-between px-2 text-xs">
-                <span className="text-neutral-400">Lionel (Admin)</span>
-                <span className="text-[10px] font-mono text-emerald-400">Sesión Activa</span>
+                <span className="text-neutral-300 font-medium">Lionel (Admin)</span>
+                <span className="text-[10px] font-mono text-neutral-400 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-neutral-400" />
+                  <span>Sesión Activa</span>
+                </span>
               </div>
               <button
                 type="button"
@@ -1985,7 +2014,7 @@ export default function AdminPage() {
                 onClick={handleNewProductClick}
                 className="px-3.5 py-1.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
               >
-                <PlusCircle className="w-3.5 h-3.5 text-emerald-400" />
+                <PlusCircle className="w-3.5 h-3.5 text-neutral-300" />
                 <span>＋ Agregar Producto</span>
               </button>
             )}
@@ -4717,7 +4746,7 @@ export default function AdminPage() {
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-neutral-950 text-white flex items-center justify-center font-bold">
-                    <BarChart3 className="w-4 h-4 text-emerald-400" />
+                    <BarChart3 className="w-4 h-4 text-neutral-300" />
                   </div>
                   <div>
                     <h2 className="text-base sm:text-lg font-black text-neutral-950 tracking-tight">
@@ -4757,7 +4786,7 @@ export default function AdminPage() {
                         : "text-neutral-500 hover:text-neutral-900"
                     }`}
                   >
-                    <PlusCircle className="w-3.5 h-3.5 text-emerald-600" />
+                    <PlusCircle className="w-3.5 h-3.5 text-neutral-700" />
                     <span>Registrar Venta</span>
                   </button>
 
@@ -4771,7 +4800,7 @@ export default function AdminPage() {
                         : "text-neutral-500 hover:text-neutral-900"
                     }`}
                   >
-                    <TrendingUp className="w-3.5 h-3.5 text-blue-600" />
+                    <TrendingUp className="w-3.5 h-3.5 text-neutral-700" />
                     <span>Métricas &amp; Reportes</span>
                   </button>
                 </div>
@@ -4782,7 +4811,7 @@ export default function AdminPage() {
                     onClick={() => setSalesViewMode("register")}
                     className="px-3.5 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
                   >
-                    <PlusCircle className="w-3.5 h-3.5 text-emerald-400" />
+                    <PlusCircle className="w-3.5 h-3.5 text-neutral-300" />
                     <span>＋ Nueva Venta</span>
                   </button>
                 )}
@@ -4794,7 +4823,7 @@ export default function AdminPage() {
               <div className="p-4 rounded-2xl border border-neutral-200 bg-white shadow-2xs space-y-2.5 animate-in fade-in">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="w-2 h-2 rounded-full bg-neutral-600" />
                     <span className="text-xs font-bold text-neutral-950">
                       Orden #{lastRegisteredSale.id} guardada con éxito
                     </span>
@@ -4818,7 +4847,7 @@ export default function AdminPage() {
                     onClick={() => setReceiptModalSale(lastRegisteredSale)}
                     className="px-3.5 py-1.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
                   >
-                    <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                    <Printer className="w-3.5 h-3.5 text-neutral-300" />
                     <span>Imprimir Nota de Venta</span>
                   </button>
                   <button
@@ -4926,7 +4955,7 @@ export default function AdminPage() {
                       { id: "all", label: "Todas las Órdenes", count: sales.length, dotColor: "bg-neutral-400" },
                       { id: "pending", label: "Pendientes", count: sales.filter((s) => (s.deliveryStatus || "pending") === "pending").length, dotColor: "bg-amber-400" },
                       { id: "shipped", label: "En Camino", count: sales.filter((s) => s.deliveryStatus === "shipped").length, dotColor: "bg-blue-400" },
-                      { id: "delivered", label: "Entregados", count: sales.filter((s) => s.deliveryStatus === "delivered").length, dotColor: "bg-emerald-400" },
+                      { id: "delivered", label: "Entregados", count: sales.filter((s) => s.deliveryStatus === "delivered").length, dotColor: "bg-emerald-600" },
                       { id: "cancelled", label: "Cancelados", count: sales.filter((s) => s.deliveryStatus === "cancelled").length, dotColor: "bg-neutral-300" },
                     ].map((st) => (
                       <button
@@ -5106,7 +5135,7 @@ export default function AdminPage() {
                                 className="px-3 py-1.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                                 title="Imprimir Nota de Venta oficial"
                               >
-                                <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                                <Printer className="w-3.5 h-3.5 text-neutral-300" />
                                 <span>Imprimir Nota</span>
                               </button>
 
@@ -5418,7 +5447,7 @@ export default function AdminPage() {
                       type="submit"
                       className="px-8 py-3.5 rounded-xl bg-neutral-950 text-white font-black text-xs hover:bg-neutral-800 transition-colors flex items-center justify-center gap-2 shadow-sm active:scale-95 cursor-pointer"
                     >
-                      <ShoppingBag className="w-4 h-4 text-emerald-400" />
+                      <ShoppingBag className="w-4 h-4 text-neutral-300" />
                       <span>Procesar Venta y Descontar Stock</span>
                     </button>
                   </div>
@@ -5595,15 +5624,15 @@ export default function AdminPage() {
                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 bg-neutral-950 text-white text-[10px] font-mono font-bold px-2 py-1 rounded-md shadow-lg pointer-events-none whitespace-nowrap z-20">
                                   {STORE_SETTINGS.currencySymbol}{bar.revenue.toFixed(2)} ({bar.orders} ped.)
                                 </div>
-                                <div className="text-[10px] font-bold text-neutral-600 mb-1.5 group-hover:text-emerald-600 transition-colors font-mono">
+                                <div className="text-[10px] font-bold text-neutral-600 mb-1.5 group-hover:text-neutral-950 transition-colors font-mono">
                                   {STORE_SETTINGS.currencySymbol}{bar.revenue >= 1000 ? `${(bar.revenue / 1000).toFixed(1)}k` : bar.revenue.toFixed(0)}
                                 </div>
                                 <div
                                   style={{ height: `${heightPct}%` }}
                                   className={`w-full rounded-t-lg transition-all duration-300 ${
                                     isBest
-                                      ? "bg-gradient-to-t from-emerald-700 via-emerald-600 to-emerald-400 group-hover:brightness-110 shadow-sm shadow-emerald-500/20 ring-2 ring-emerald-400/40"
-                                      : "bg-gradient-to-t from-neutral-900 to-neutral-700 group-hover:from-emerald-600 group-hover:to-emerald-400"
+                                      ? "bg-neutral-900 group-hover:bg-neutral-800 shadow-xs ring-1 ring-neutral-950/20"
+                                      : "bg-neutral-300 group-hover:bg-neutral-500"
                                   }`}
                                 />
                                 <div className="mt-2 text-center">
@@ -6427,7 +6456,7 @@ export default function AdminPage() {
                     Método: {receiptModalSale.paymentMethod || "Efectivo / Yape"}
                   </div>
                 </div>
-                <div className="text-2xl font-black font-mono text-emerald-400">
+                <div className="text-2xl font-black font-mono text-white">
                   {STORE_SETTINGS.currencySymbol}{receiptModalSale.total.toFixed(2)}
                 </div>
               </div>
