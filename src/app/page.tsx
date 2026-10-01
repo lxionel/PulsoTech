@@ -2,7 +2,7 @@
 
 import React from "react";
 import Navbar from "@/components/Navbar";
-import HeroSection from "@/components/HeroSection";
+import AudioBannerSlider from "@/components/AudioBannerSlider";
 import CategoryNavShowcase from "@/components/CategoryNavShowcase";
 import ProductCatalog from "@/components/ProductCatalog";
 import Footer from "@/components/Footer";
@@ -17,12 +17,12 @@ export default function Home() {
       <main className="flex-1">
         {/* Primera pantalla completa (100dvh) */}
         <section className="relative w-full flex flex-col justify-between h-[100dvh] min-h-[520px] bg-neutral-950 overflow-hidden">
-          {/* El banner fotográfico toma todo el espacio vertical disponible */}
+          {/* Banner fotográfico dinámico en alta resolución */}
           <div className="flex-1 w-full min-h-0 relative flex items-center">
-            <HeroSection />
+            <AudioBannerSlider />
           </div>
 
-          {/* Los dibujos de categorías fijos en la base exacta de la primera pantalla sin cortarse */}
+          {/* Iconos de categorías fijos en la base de la primera pantalla */}
           <CategoryNavShowcase />
         </section>
 
