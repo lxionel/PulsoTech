@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { ShoppingBag, Heart } from "lucide-react";
 import { STORE_SETTINGS } from "@/data/products";
@@ -16,6 +17,8 @@ export default function Navbar({
   currentCategory,
   isTransparent = false,
 }: NavbarProps = {}) {
+  const pathname = usePathname();
+  const isHome = pathname === "/";
   const {
     itemsCount,
     setIsCartOpen,
@@ -100,14 +103,32 @@ export default function Navbar({
         <div className="flex items-center gap-3 sm:gap-6 lg:gap-8 shrink-0 min-w-0">
           <Logo size="md" inverted={isTransparent} />
 
-          {/* Menú de Navegación contextual en la esquina */}
-          <nav className="flex items-center text-xs sm:text-sm font-bold">
+          {/* Menú de Navegación contextual en la esquina: Inicio y Catálogo */}
+          <nav className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-bold">
             <Link
-              href="/#catalogo"
-              className={`transition-colors px-2 py-1 rounded-lg ${
-                isTransparent
-                  ? "text-white/80 hover:text-white hover:bg-white/10"
-                  : "text-neutral-800 hover:text-black hover:bg-neutral-100"
+              href="/"
+              className={`transition-colors px-2.5 py-1 rounded-lg ${
+                isHome
+                  ? isTransparent
+                    ? "text-white bg-white/20"
+                    : "text-black bg-neutral-100"
+                  : isTransparent
+                  ? "text-white/70 hover:text-white hover:bg-white/10"
+                  : "text-neutral-600 hover:text-black hover:bg-neutral-100"
+              }`}
+            >
+              Inicio
+            </Link>
+            <Link
+              href="/catalogo"
+              className={`transition-colors px-2.5 py-1 rounded-lg ${
+                !isHome
+                  ? isTransparent
+                    ? "text-white bg-white/20"
+                    : "text-black bg-neutral-100"
+                  : isTransparent
+                  ? "text-white/70 hover:text-white hover:bg-white/10"
+                  : "text-neutral-600 hover:text-black hover:bg-neutral-100"
               }`}
             >
               Catálogo

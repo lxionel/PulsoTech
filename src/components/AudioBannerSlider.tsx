@@ -3,15 +3,15 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ArrowRight, Volume2, ShieldCheck, Zap, Watch } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight, ShieldCheck, Truck, Banknote } from "lucide-react";
 import { getAssetUrl } from "@/utils/paths";
+import { STORE_SETTINGS } from "@/data/products";
 
 interface SlideData {
   id: number;
   image: string;
   alt: string;
   badge: string;
-  badgeIcon: React.ReactNode;
   title: string;
   subtitle: string;
   ctaText: string;
@@ -21,35 +21,22 @@ interface SlideData {
 const SLIDES: SlideData[] = [
   {
     id: 1,
-    image: "/images/banners/hero-audio-slider-2.png",
-    alt: "Audífonos Bose Over-Ear Diadema Premium",
-    badge: "CANCELACIÓN ACTIVA ANC",
-    badgeIcon: <Volume2 className="w-3.5 h-3.5" />,
-    title: "Aísla el mundo. Siente cada nota.",
-    subtitle: "Acústica envolvente de alta fidelidad, almohadillas ergonómicas y graves profundos.",
-    ctaText: "VER MODELOS DE DIADEMA",
+    image: "/images/banners/hero-audio-slider-1.png",
+    alt: "Colección Completa de Audífonos y Sonido PulsoTech",
+    badge: "SECCIÓN OFICIAL · AUDÍFONOS",
+    title: "Audífonos 100% Originales en Caja Sellada.",
+    subtitle: "Modelos de Diadema y True Wireless garantizados. Entrega el mismo día en Lima con opción de pago contra entrega (Efectivo o Yape al recibir).",
+    ctaText: "VER MODELOS DISPONIBLES",
     ctaHref: "#catalogo",
   },
   {
     id: 2,
-    image: "/images/banners/hero-audio-slider-1.png",
-    alt: "Colección Completa de Audífonos y Sonido PulsoTech",
-    badge: "AUDIO DE ALTA FIDELIDAD",
-    badgeIcon: <Zap className="w-3.5 h-3.5" />,
-    title: "Sonido puro. Cancelación extrema.",
-    subtitle: "Modelos Over-Ear y True Wireless sellados de fábrica con garantía oficial y entrega hoy.",
-    ctaText: "VER TODOS LOS AUDÍFONOS",
-    ctaHref: "#catalogo",
-  },
-  {
-    id: 3,
-    image: "/images/banners/hero-tech-2.jpg",
-    alt: "Accesorios Tecnológicos y Gadgets PulsoTech",
-    badge: "TECNOLOGÍA & ACCESORIOS",
-    badgeIcon: <Watch className="w-3.5 h-3.5" />,
-    title: "Potencia e innovación para tu día.",
-    subtitle: "Carga rápida GaN, smartwatches y accesorios originales con cobertura y soporte en todo el Perú.",
-    ctaText: "EXPLORAR ACCESORIOS",
+    image: "/images/banners/hero-audio-slider-2.png",
+    alt: "Audífonos Over-Ear Diadema Premium con Cancelación de Ruido",
+    badge: "CANCELACIÓN ACTIVA ANC",
+    title: "Comodidad total y cancelación de ruido pura.",
+    subtitle: "Diseñados para largas sesiones de trabajo, estudio o viajes. Almohadillas ultra suaves, bajos profundos y hasta 40 horas continuas de batería.",
+    ctaText: "EXPLORAR MODELOS OVER-EAR",
     ctaHref: "#catalogo",
   },
 ];
@@ -69,12 +56,12 @@ export default function AudioBannerSlider() {
     setCurrentSlide((prev) => (prev - 1 + SLIDES.length) % SLIDES.length);
   }, []);
 
-  // Auto-play cada 6s cuando no hay hover
+  // Auto-play cada 7s cuando el cursor no está encima
   useEffect(() => {
     if (isHovered) return;
     const interval = setInterval(() => {
       nextSlide();
-    }, 6500);
+    }, 7000);
     return () => clearInterval(interval);
   }, [isHovered, nextSlide]);
 
@@ -91,7 +78,6 @@ export default function AudioBannerSlider() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [nextSlide, prevSlide]);
 
-  // Touch Swipe Handlers para móviles
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.targetTouches[0].clientX;
   };
@@ -116,14 +102,14 @@ export default function AudioBannerSlider() {
 
   return (
     <div
-      className="relative w-full h-full min-h-[360px] sm:min-h-[420px] overflow-hidden bg-neutral-950 select-none flex items-center group/slider"
+      className="relative w-full h-full min-h-[340px] overflow-hidden bg-neutral-950 select-none flex items-center group/slider"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Slides panorámicos en alta resolución con fundido cruzado limpio (SIN signos '+' sobre las fotos) */}
+      {/* Slides panorámicos con fundido cruzado suave */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         {SLIDES.map((slide, index) => {
           const isActive = index === currentSlide;
@@ -142,93 +128,110 @@ export default function AudioBannerSlider() {
                   priority={index === 0}
                   sizes="100vw"
                   quality={100}
-                  className="object-cover object-center select-none"
+                  className="object-cover object-[75%_center] sm:object-[68%_center] md:object-[65%_center] lg:object-[60%_center] select-none"
                 />
 
-                {/* Gradiente oscuro cinematográfico para máxima legibilidad sin tapar los productos */}
-                <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-neutral-950/95 via-neutral-950/60 to-neutral-950/20 sm:bg-gradient-to-r sm:from-neutral-950 sm:via-neutral-950/75 sm:to-transparent sm:w-[580px] lg:w-[640px]" />
+                {/* Gradiente oscuro obsidiana en el lado izquierdo para dar 100% legibilidad sin tapar los audífonos */}
+                <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-neutral-950/95 via-neutral-950/70 to-neutral-950/30 sm:bg-gradient-to-r sm:from-neutral-950 sm:via-neutral-950/85 sm:to-transparent sm:w-[540px] lg:w-[620px]" />
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Contenido Comercial Principal: Tipografía de alto impacto y estilo editorial */}
-      <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 xl:px-14 w-full pt-16 sm:pt-20 pb-6 sm:pb-8">
-        <div className="max-w-[360px] sm:max-w-[480px] space-y-4 sm:space-y-5">
-          {/* Badge de categoría elegante con backdrop blur */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-mono font-semibold tracking-wider uppercase bg-black/60 text-white shadow-xs border border-white/20 backdrop-blur-md">
-            {currentData.badgeIcon}
-            <span>{currentData.badge}</span>
+      {/* Contenido comercial limpio a la izquierda (sin tapar los audífonos físicos) */}
+      <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 xl:px-14 w-full pt-16 sm:pt-20 pb-6 sm:pb-8 pointer-events-none">
+        <div className="max-w-[340px] sm:max-w-[460px] lg:max-w-[500px] space-y-3 sm:space-y-4 pointer-events-auto">
+          {/* Badge de sección */}
+          <div>
+            <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-md text-[10px] sm:text-xs font-black tracking-widest uppercase bg-neutral-900/90 text-white shadow-xs border border-white/10 backdrop-blur-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span>{currentData.badge}</span>
+            </span>
           </div>
 
-          {/* Título comercial refinado y de excelente lectura */}
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.08] text-white">
+          {/* Título comercial */}
+          <h1 className="text-2xl sm:text-4xl lg:text-[42px] font-black tracking-tight leading-[1.12] text-white">
             {currentData.title}
           </h1>
 
-          {/* Subtítulo descriptivo fluido */}
-          <p className="text-xs sm:text-sm lg:text-base leading-relaxed font-normal max-w-md text-neutral-200/90 sm:text-neutral-300">
+          {/* Subtítulo descriptivo */}
+          <p className="text-xs sm:text-sm lg:text-[15px] leading-relaxed font-normal max-w-sm sm:max-w-md text-neutral-300">
             {currentData.subtitle}
           </p>
 
-          {/* Botones de acción: Verde institucional con brillo + Garantía */}
-          <div className="pt-2 flex flex-wrap items-center gap-3.5">
+          {/* Botones de acción comerciales */}
+          <div className="pt-1.5 sm:pt-2 flex flex-wrap items-center gap-2.5 sm:gap-3">
             <Link
               href={currentData.ctaHref}
-              className="group relative inline-flex items-center gap-2.5 px-7 sm:px-8 py-3.5 sm:py-4 rounded-xl bg-[#15803d] hover:bg-[#16a34a] text-white font-extrabold text-xs sm:text-sm tracking-wider uppercase shadow-lg hover:shadow-green-950/40 hover:scale-[1.02] active:scale-95 transition-all duration-300 cursor-pointer overflow-hidden"
+              className="inline-flex items-center gap-2 px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-950 font-black text-xs sm:text-sm tracking-wider uppercase shadow-md hover:scale-[1.02] active:scale-95 transition-all duration-200 cursor-pointer"
             >
-              <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
               <span>{currentData.ctaText}</span>
-              <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+              <ArrowRight className="w-4 h-4" />
             </Link>
 
-            {/* Micro badge de garantía oficial */}
-            <div className="inline-flex items-center gap-2 text-xs font-semibold text-neutral-200 px-4 py-3 rounded-xl bg-white/[0.08] border border-white/15 backdrop-blur-md">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>Garantía Oficial</span>
+            <a
+              href={`https://wa.me/${STORE_SETTINGS.whatsappNumber}?text=${encodeURIComponent("Hola PulsoTech, deseo consultar los modelos de audífonos disponibles en stock.")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 sm:px-5 py-3 sm:py-3.5 rounded-xl bg-neutral-900/80 hover:bg-neutral-800 text-white font-bold text-xs sm:text-sm tracking-wide border border-white/10 hover:border-white/20 transition-all duration-200 cursor-pointer backdrop-blur-md"
+            >
+              <span>Consultar Stock</span>
+            </a>
+          </div>
+
+          {/* Indicadores de confianza de compra */}
+          <div className="pt-2 sm:pt-3 flex flex-wrap items-center gap-3 sm:gap-4 text-[11px] sm:text-xs text-neutral-400 font-medium">
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>Garantía Oficial 12 Meses</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Truck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>Envío Express Hoy</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Banknote className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>Pago al Recibir</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Flecha Anterior (Limpia y con efecto glass) */}
+      {/* Flechas de navegación del carrusel */}
       <button
+        type="button"
         onClick={prevSlide}
-        type="button"
-        aria-label="Foto anterior"
-        className="group/btn absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-black/45 hover:bg-black/80 border border-white/20 hover:border-white/50 text-white flex items-center justify-center transition-all duration-300 active:scale-90 hover:scale-105 cursor-pointer shadow-lg backdrop-blur-md"
+        aria-label="Diapositiva anterior"
+        className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/40 hover:bg-black/70 text-white/70 hover:text-white border border-white/10 flex items-center justify-center transition-all duration-200 opacity-0 group-hover/slider:opacity-100 cursor-pointer backdrop-blur-xs"
       >
-        <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-200 group-hover/btn:-translate-x-0.5" />
+        <ChevronLeft className="w-5 h-5" />
       </button>
 
-      {/* Flecha Siguiente (Limpia y con efecto glass) */}
       <button
-        onClick={nextSlide}
         type="button"
-        aria-label="Foto siguiente"
-        className="group/btn absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-black/45 hover:bg-black/80 border border-white/20 hover:border-white/50 text-white flex items-center justify-center transition-all duration-300 active:scale-90 hover:scale-105 cursor-pointer shadow-lg backdrop-blur-md"
+        onClick={nextSlide}
+        aria-label="Siguiente diapositiva"
+        className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/40 hover:bg-black/70 text-white/70 hover:text-white border border-white/10 flex items-center justify-center transition-all duration-200 opacity-0 group-hover/slider:opacity-100 cursor-pointer backdrop-blur-xs"
       >
-        <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
+        <ChevronRight className="w-5 h-5" />
       </button>
 
-      {/* Indicadores inferiores en cápsula */}
-      <div className="absolute bottom-3 sm:bottom-4 left-0 right-0 z-30 flex items-center justify-center pointer-events-auto">
-        <div className="flex items-center gap-2 bg-black/50 hover:bg-black/70 px-3.5 py-1.5 rounded-full border border-white/15 transition-colors shadow-md backdrop-blur-md">
-          {SLIDES.map((slide, idx) => (
-            <button
-              key={slide.id}
-              onClick={() => setCurrentSlide(idx)}
-              type="button"
-              aria-label={`Ver foto ${idx + 1}`}
-              className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                idx === currentSlide
-                  ? "w-8 bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]"
-                  : "w-2.5 bg-white/40 hover:w-4 hover:bg-white/80"
-              }`}
-            />
-          ))}
-        </div>
+      {/* Indicadores de diapositiva en la base */}
+      <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2">
+        {SLIDES.map((slide, index) => (
+          <button
+            key={slide.id}
+            type="button"
+            onClick={() => setCurrentSlide(index)}
+            aria-label={`Ir a diapositiva ${index + 1}`}
+            className={`transition-all duration-300 rounded-full cursor-pointer ${
+              index === currentSlide
+                ? "w-7 h-1.5 bg-white shadow-xs"
+                : "w-2 h-1.5 bg-white/40 hover:bg-white/70"
+            }`}
+          />
+        ))}
       </div>
     </div>
   );

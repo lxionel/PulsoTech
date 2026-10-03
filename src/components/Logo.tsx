@@ -61,20 +61,13 @@ export default function Logo({
 
       {/* Tipografía PulsoTech Unificada de Alta Gama */}
       {showText && (
-        <div className="flex flex-col justify-center">
-          <div
+        <div className="flex items-center">
+          <span
             className={`font-black tracking-tight leading-none ${textSize} transition-colors ${
               inverted ? "text-white" : "text-neutral-950"
             }`}
           >
             PulsoTech
-          </div>
-          <span
-            className={`font-bold tracking-[0.18em] uppercase leading-none mt-1 ${subSize} ${
-              inverted ? "text-neutral-300" : "text-neutral-500"
-            }`}
-          >
-            Tecnología &amp; Audio
           </span>
         </div>
       )}
