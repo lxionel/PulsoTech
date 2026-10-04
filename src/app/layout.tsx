@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { ProductsProvider } from "@/context/ProductsContext";
@@ -9,17 +9,19 @@ import FavoritesDrawer from "@/components/FavoritesDrawer";
 import { ComparisonProvider } from "@/context/ComparisonContext";
 import ProductComparison from "@/components/ProductComparison";
 
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
+const plusJakarta = localFont({
+  src: "./fonts/plus-jakarta-sans-latin.woff2",
   variable: "--font-sans",
-  weight: ["300", "400", "500", "600", "700", "800"],
+  weight: "300 800",
+  style: "normal",
   display: "swap",
 });
 
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
+const spaceGrotesk = localFont({
+  src: "./fonts/space-grotesk-latin.woff2",
   variable: "--font-display",
-  weight: ["400", "500", "600", "700"],
+  weight: "400 700",
+  style: "normal",
   display: "swap",
 });
 
