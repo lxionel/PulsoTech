@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/context/CartContext";
-import { ShoppingBag, Heart, Menu, X } from "lucide-react";
+import { ShoppingBag, Heart, Menu, X, Home, LayoutGrid, Headphones, ChevronRight } from "lucide-react";
 import { STORE_SETTINGS } from "@/data/products";
 import Logo from "./Logo";
 
@@ -18,6 +18,7 @@ export default function Navbar({
 }: NavbarProps = {}) {
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const overlaysHero = isTransparent && isHome;
   const {
     itemsCount,
     setIsCartOpen,
@@ -33,7 +34,7 @@ export default function Navbar({
   const headerRef = React.useRef<HTMLElement>(null);
   const menuButtonRef = React.useRef<HTMLButtonElement>(null);
   const isStartActive = isHome && !isCatalogVisible;
-  const isCatalogActive = (isHome && isCatalogVisible) || pathname.startsWith("/catalogo");
+  const isCatalogActive = (isHome && isCatalogVisible) || (pathname.startsWith("/catalogo") || pathname.startsWith("/producto"));
   const lastScrollY = React.useRef(0);
 
   const closeMobileMenu = () => {
@@ -139,17 +140,13 @@ export default function Navbar({
       className={`store-motion w-full transition-[transform,background-color,border-color,box-shadow] duration-300 ease-in-out z-50 ${
         isVisible || isMobileMenuOpen ? "translate-y-0" : "-translate-y-full pointer-events-none"
       } ${
-        isTransparent
+        overlaysHero
           ? `fixed top-0 left-0 right-0 ${
-              isScrolled
-                ? "bg-neutral-950/90 backdrop-blur-md border-b border-neutral-800/80 text-white shadow-md"
-                : "bg-transparent text-white border-b-0 border-none shadow-none"
+              isScrolled || isMobileMenuOpen
+                ? "bg-black/95 backdrop-blur-md border-b border-white/10 text-white shadow-md"
+                : "bg-transparent text-white border-none shadow-none"
             }`
-          : `sticky top-0 ${
-              isScrolled
-                ? "bg-white/95 backdrop-blur-md border-b border-neutral-200 shadow-md text-[#111113]"
-                : "bg-white/95 backdrop-blur-md border-b border-neutral-200/80 shadow-2xs text-[#111113]"
-            }`
+          : "sticky top-0 bg-black text-white border-b border-white/10 shadow-sm"
       }`}
     >
       <div className="w-full max-w-[1650px] mx-auto px-3 sm:px-6 lg:px-10 xl:px-14 h-16 flex items-center justify-between gap-2 sm:gap-4 lg:gap-8">
@@ -162,11 +159,11 @@ export default function Navbar({
             aria-expanded={isMobileMenuOpen}
             aria-controls="store-mobile-navigation"
             onClick={() => setIsMobileMenuOpen((previous) => !previous)}
-            className="sm:hidden min-h-11 min-w-11 inline-flex items-center justify-center rounded-xl text-current hover:bg-current/10 active:scale-95 transition-transform cursor-pointer"
+            className="store-menu-toggle sm:hidden h-11 w-11 inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
           >
             {isMobileMenuOpen ? <X aria-hidden="true" className="w-5 h-5" /> : <Menu aria-hidden="true" className="w-5 h-5" />}
           </button>
-          <Logo size="md" inverted={isTransparent} onClick={() => setIsMobileMenuOpen(false)} className="gap-2 sm:gap-2.5 [&>div:first-child]:max-w-7 [&>div:first-child]:max-h-7 sm:[&>div:first-child]:max-w-none sm:[&>div:first-child]:max-h-none [&_span]:text-lg sm:[&_span]:text-xl" />
+          <Logo size="md" inverted onClick={() => setIsMobileMenuOpen(false)} className="gap-2 sm:gap-2.5 [&>div:first-child]:max-w-7 [&>div:first-child]:max-h-7 sm:[&>div:first-child]:max-w-none sm:[&>div:first-child]:max-h-none [&_span]:text-lg sm:[&_span]:text-xl" />
 
           {/* Menú de Navegación contextual en la esquina: Inicio y Catálogo */}
           <nav aria-label="Navegación principal" className="hidden sm:flex items-center gap-2 text-sm font-bold">
@@ -175,12 +172,8 @@ export default function Navbar({
               aria-current={isStartActive ? "location" : undefined}
               className={`inline-flex items-center justify-center min-h-10 sm:min-h-0 transition-[color,background-color,scale] duration-200 active:scale-95 px-4 sm:px-2.5 py-1 rounded-lg ${
                 isStartActive
-                  ? isTransparent
-                    ? "text-white bg-white/20"
-                    : "text-black bg-neutral-100"
-                  : isTransparent
-                  ? "text-white/70 hover:text-white hover:bg-white/10"
-                  : "text-neutral-600 hover:text-black hover:bg-neutral-100"
+                  ? "text-white bg-white/15"
+                  : "text-white/70 hover:text-white hover:bg-white/10"
               }`}
             >
               Inicio
@@ -190,12 +183,8 @@ export default function Navbar({
               aria-current={isCatalogActive ? "location" : undefined}
               className={`inline-flex items-center justify-center min-h-10 sm:min-h-0 transition-[color,background-color,scale] duration-200 active:scale-95 px-4 sm:px-2.5 py-1 rounded-lg ${
                 isCatalogActive
-                  ? isTransparent
-                    ? "text-white bg-white/20"
-                    : "text-black bg-neutral-100"
-                  : isTransparent
-                  ? "text-white/70 hover:text-white hover:bg-white/10"
-                  : "text-neutral-600 hover:text-black hover:bg-neutral-100"
+                  ? "text-white bg-white/15"
+                  : "text-white/70 hover:text-white hover:bg-white/10"
               }`}
             >
               Catálogo
@@ -207,11 +196,7 @@ export default function Navbar({
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {/* Social Media Links */}
           <div
-            className={`hidden lg:flex items-center gap-0.5 sm:gap-1 p-1 rounded-xl shadow-2xs ${
-              isTransparent
-                ? "bg-black/40 border border-white/15 text-white"
-                : "bg-neutral-100/90 border border-neutral-200/70 text-neutral-600"
-            }`}
+            className="hidden lg:flex items-center gap-0.5 sm:gap-1 p-1 rounded-xl shadow-2xs bg-white/5 border border-white/10 text-white"
           >
             {/* Instagram */}
             <a
@@ -219,11 +204,7 @@ export default function Navbar({
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram (@lionel_a5)"
-              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-200 cursor-pointer ${
-                isTransparent
-                  ? "text-neutral-200 hover:text-pink-400 hover:bg-white/15"
-                  : "text-neutral-600 hover:text-pink-600 hover:bg-white"
-              }`}
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-200 cursor-pointer text-neutral-200 hover:text-pink-400 hover:bg-white/15"
               title="Instagram: @lionel_a5"
             >
               <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -239,11 +220,7 @@ export default function Navbar({
               target="_blank"
               rel="noopener noreferrer"
               aria-label="TikTok (@lionel_a5)"
-              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-200 cursor-pointer ${
-                isTransparent
-                  ? "text-neutral-200 hover:text-white hover:bg-white/15"
-                  : "text-neutral-600 hover:text-black hover:bg-white"
-              }`}
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-200 cursor-pointer text-neutral-200 hover:text-white hover:bg-white/15"
               title="TikTok: @lionel_a5"
             >
               <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
@@ -257,11 +234,7 @@ export default function Navbar({
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Facebook (Lionel)"
-              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-200 cursor-pointer ${
-                isTransparent
-                  ? "text-neutral-200 hover:text-blue-400 hover:bg-white/15"
-                  : "text-neutral-600 hover:text-blue-600 hover:bg-white"
-              }`}
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-200 cursor-pointer text-neutral-200 hover:text-blue-400 hover:bg-white/15"
               title="Facebook: Lionel"
             >
               <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current" viewBox="0 0 24 24">
@@ -274,11 +247,7 @@ export default function Navbar({
           <button
             onClick={() => { setIsMobileMenuOpen(false); setIsFavoritesOpen(true); }}
             aria-label="Ver favoritos guardados"
-            className={`relative min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 flex items-center justify-center p-2 sm:p-2.5 rounded-xl transition-all duration-200 shadow-2xs hover:scale-105 active:scale-90 cursor-pointer shrink-0 ${
-              isTransparent
-                ? "bg-white/10 hover:bg-white/20 border border-white/15 text-white"
-                : "bg-white hover:bg-neutral-50 border border-neutral-200 hover:border-neutral-300 text-neutral-700"
-            }`}
+            className="relative min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 flex items-center justify-center p-2 sm:p-2.5 rounded-xl transition-all duration-200 shadow-2xs hover:scale-105 active:scale-90 cursor-pointer shrink-0 bg-white/10 hover:bg-white/20 border border-white/15 text-white"
             title="Mis Favoritos"
           >
             <Heart
@@ -297,14 +266,10 @@ export default function Navbar({
           <button
             onClick={() => { setIsMobileMenuOpen(false); setIsCartOpen(true); }}
             aria-label="Abrir bolsa de compra"
-            className={`group/cart relative min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all duration-200 font-bold text-xs gap-2 sm:gap-2.5 shadow-sm hover:scale-105 active:scale-95 cursor-pointer shrink-0 ${
-              isTransparent
-                ? "bg-white text-neutral-950 hover:bg-neutral-100 shadow-md hover:shadow-lg"
-                : "bg-neutral-950 hover:bg-neutral-800 text-white hover:shadow-md"
-            }`}
+            className="group/cart relative min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all duration-200 font-bold text-xs gap-2 sm:gap-2.5 shadow-sm hover:scale-105 active:scale-95 cursor-pointer shrink-0 bg-white text-neutral-950 hover:bg-neutral-100 shadow-md hover:shadow-lg"
           >
             <div className="relative">
-              <ShoppingBag className={`w-4 h-4 transition-transform duration-200 group-hover/cart:scale-110 ${isTransparent ? "text-neutral-950" : "text-white"}`} />
+              <ShoppingBag className="w-4 h-4 transition-transform duration-200 group-hover/cart:scale-110 text-neutral-950" />
               {itemsCount > 0 && (
                 <span key={itemsCount} className="store-feedback absolute -top-1.5 -right-1.5 inline-flex items-center justify-center text-[9px] font-bold px-1 rounded-full bg-blue-600 text-white min-w-3.5 h-3.5">
                   {itemsCount}
@@ -312,7 +277,7 @@ export default function Navbar({
               )}
             </div>
             <span className="hidden sm:inline">Bolsa</span>
-            <span className={`hidden sm:inline font-extrabold border-l pl-2 ${isTransparent ? "border-neutral-300 text-neutral-950" : "border-neutral-700 text-white"}`}>
+            <span className="hidden sm:inline font-extrabold border-l pl-2 border-neutral-300 text-neutral-950">
               {STORE_SETTINGS.currencySymbol}
               {subtotal.toFixed(2)}
             </span>
@@ -323,19 +288,32 @@ export default function Navbar({
         id="store-mobile-navigation"
         aria-label="Menú móvil"
         hidden={!isMobileMenuOpen}
-        className={`absolute top-full inset-x-0 sm:hidden border-b shadow-xl px-5 py-4 ${
-          isTransparent ? "bg-neutral-950 text-white border-neutral-800" : "bg-white text-neutral-950 border-neutral-200"
-        }`}
+        className="absolute top-[calc(100%+8px)] inset-x-3 sm:hidden max-h-[calc(100dvh-88px)] overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-neutral-950 text-white shadow-2xl p-3"
       >
-        <div className="space-y-1 text-base font-bold">
-          <Link href="/#inicio" onClick={closeMobileMenu} aria-current={isStartActive ? "location" : undefined} className={`block rounded-xl px-4 py-3 ${isStartActive ? (isTransparent ? "bg-white/10" : "bg-neutral-100") : ""}`}>Inicio</Link>
-          <Link href="/#catalogo" onClick={closeMobileMenu} aria-current={isCatalogActive ? "location" : undefined} className={`block rounded-xl px-4 py-3 ${isCatalogActive ? (isTransparent ? "bg-white/10" : "bg-neutral-100") : ""}`}>Catálogo</Link>
-          <Link href="/catalogo/?categoria=aud%C3%ADfonos#seccion-categoria" onClick={closeMobileMenu} className="block rounded-xl px-4 py-3">Audífonos</Link>
+        <p className="px-3 pt-1 pb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Explorar PulsoTech</p>
+        <div className="space-y-1">
+          {[
+            { label: "Inicio", href: "/#inicio", icon: Home, active: isStartActive },
+            { label: "Catálogo", href: "/#catalogo", icon: LayoutGrid, active: isCatalogActive },
+            { label: "Audífonos", href: "/catalogo/?categoria=aud%C3%ADfonos#seccion-categoria", icon: Headphones, active: false },
+          ].map(({ label, href, icon: Icon, active }) => (
+            <Link
+              key={label}
+              href={href}
+              onClick={closeMobileMenu}
+              aria-current={active ? "location" : undefined}
+              className={`flex items-center gap-3 min-h-12 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors ${active ? "border-white/10 bg-white/8 text-white" : "border-transparent text-neutral-300 hover:bg-white/5 hover:text-white"}`}
+            >
+              <Icon aria-hidden="true" className="h-[18px] w-[18px] shrink-0 text-neutral-400" />
+              <span className="flex-1">{label}</span>
+              <ChevronRight aria-hidden="true" className="h-4 w-4 text-neutral-500" />
+            </Link>
+          ))}
         </div>
-        <div className={`mt-4 pt-4 border-t flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold ${isTransparent ? "border-white/15 text-neutral-300" : "border-neutral-200 text-neutral-600"}`}>
-          <a href={STORE_SETTINGS.social.instagram} target="_blank" rel="noopener noreferrer" onClick={closeMobileMenu} className="inline-flex min-h-11 items-center">Instagram</a>
-          <a href={STORE_SETTINGS.social.tiktok} target="_blank" rel="noopener noreferrer" onClick={closeMobileMenu} className="inline-flex min-h-11 items-center">TikTok</a>
-          <a href={STORE_SETTINGS.social.facebook} target="_blank" rel="noopener noreferrer" onClick={closeMobileMenu} className="inline-flex min-h-11 items-center">Facebook</a>
+        <div className="mt-3 border-t border-white/10 pt-3 grid grid-cols-3 gap-2 text-[11px] font-medium text-neutral-400">
+          <a href={STORE_SETTINGS.social.instagram} target="_blank" rel="noopener noreferrer" onClick={closeMobileMenu} className="flex min-h-11 items-center justify-center rounded-lg border border-white/10 hover:bg-white/5 hover:text-white">Instagram</a>
+          <a href={STORE_SETTINGS.social.tiktok} target="_blank" rel="noopener noreferrer" onClick={closeMobileMenu} className="flex min-h-11 items-center justify-center rounded-lg border border-white/10 hover:bg-white/5 hover:text-white">TikTok</a>
+          <a href={STORE_SETTINGS.social.facebook} target="_blank" rel="noopener noreferrer" onClick={closeMobileMenu} className="flex min-h-11 items-center justify-center rounded-lg border border-white/10 hover:bg-white/5 hover:text-white">Facebook</a>
         </div>
       </nav>
     </header>

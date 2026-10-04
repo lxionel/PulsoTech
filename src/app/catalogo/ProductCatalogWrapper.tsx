@@ -30,8 +30,8 @@ export default function ProductCatalogWrapper() {
 
   return (
     <div className="w-full flex flex-col">
-      {/* Encabezado fijo y adaptado a la imagen que acompaña el scroll */}
-      <Navbar isTransparent={true} />
+      {/* El catálogo mantiene una cabecera negra; Inicio se adapta a su fotografía. */}
+      <Navbar />
 
       {/* Audífonos usa una cabecera compacta; las otras vistas conservan su altura. */}
       <section id="seccion-categoria" className={`relative w-full flex flex-col justify-between bg-neutral-950 overflow-hidden ${showAudioBanner ? "" : "sm:h-[100dvh] sm:min-h-[520px]"}`}>

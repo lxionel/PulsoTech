@@ -29,7 +29,6 @@ import {
   ArrowLeft,
   ChevronLeft,
   Clock,
-  Star,
   Check,
   Heart,
   Play,
@@ -192,10 +191,10 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   const waMessage = `¡Hola PulsoTech! Deseo comprar el modelo *${product.name}* (Color: ${currentColor?.name || "Estándar"}, Precio: ${STORE_SETTINGS.currencySymbol}${product.price.toFixed(2)}). ¿Tienen stock disponible para entrega hoy?`;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#fbfbfd] text-[#111113] pb-[calc(80px+env(safe-area-inset-bottom))] sm:pb-0">
+    <div className="store-product-page min-h-screen flex flex-col bg-[#fbfbfd] text-[#111113]">
       <Navbar />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 w-full pb-24 sm:pb-10">
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 w-full pb-10">
         {/* Breadcrumb Navigation (Más grande y legible) */}
         <nav className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base text-neutral-500 mb-6 sm:mb-8 font-medium overflow-hidden sm:overflow-x-auto whitespace-nowrap py-1.5">
           <Link
@@ -387,17 +386,6 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-neutral-950 tracking-tight leading-tight">
                 {product.name}
               </h1>
-
-              <div className="flex items-center gap-2 text-xs text-neutral-600">
-                <div className="flex items-center text-amber-500">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                  ))}
-                </div>
-                <span className="font-bold text-neutral-900">5.0</span>
-                <span className="text-neutral-400">·</span>
-                <span>Producto 100% Original en Caja Sellada</span>
-              </div>
 
               <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed">
                 {product.subtitle}
@@ -668,18 +656,18 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
       </main>
 
       {/* La barra comparte el color, la cantidad y el inventario de la ficha. */}
-      {showMobilePurchase && <aside aria-label="Compra rápida del producto" className="store-motion store-mobile-purchase sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-neutral-200/90 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] px-4 shadow-[0_-4px_25px_rgba(0,0,0,0.08)] flex items-center justify-between gap-3">
+      {showMobilePurchase && <aside aria-label="Compra rápida del producto" className="store-motion store-mobile-purchase sm:hidden fixed bottom-0 left-0 right-0 z-40 min-h-[calc(72px+env(safe-area-inset-bottom))] bg-black border-t border-white/10 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] px-4 flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span
-              className="w-2.5 h-2.5 rounded-full border border-neutral-300 inline-block shrink-0"
+              className="w-2.5 h-2.5 rounded-full border border-white/40 inline-block shrink-0"
               style={{ backgroundColor: currentColor?.hex || "#18181b" }}
             />
-            <span className="text-[11px] font-bold text-neutral-500 truncate">
+            <span className="text-[11px] font-medium text-neutral-400 truncate">
               {isOutOfStock ? "Agotado" : `${currentColor.name} · ${purchaseQuantity} ud.`}
             </span>
           </div>
-          <div className="text-base min-[360px]:text-lg font-black text-neutral-950 tracking-tight leading-none mt-0.5 truncate">
+          <div className="text-base min-[360px]:text-lg font-black text-white tracking-tight leading-none mt-0.5 truncate">
             {STORE_SETTINGS.currencySymbol}{product.price.toFixed(2)}
           </div>
         </div>
@@ -689,17 +677,17 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
             type="button"
             onClick={handleAddToCart}
             disabled={isOutOfStock}
-            className="min-h-11 min-w-11 flex items-center justify-center rounded-xl border border-neutral-300 bg-white text-neutral-900 font-bold hover:bg-neutral-50 active:scale-95 transition-all shadow-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="min-h-11 min-w-11 flex items-center justify-center rounded-xl border border-white/20 bg-white/5 text-white font-bold hover:bg-white/10 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             title="Añadir a la bolsa"
             aria-label="Añadir a la bolsa"
           >
-            <ShoppingBag className="w-4 h-4 text-neutral-900" />
+            <ShoppingBag className="w-4 h-4" />
           </button>
           <button
             type="button"
             onClick={handleBuyNow}
             disabled={isOutOfStock}
-            className="min-h-11 px-2 min-[360px]:px-3 py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-extrabold text-[10px] min-[360px]:text-xs uppercase active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="min-h-11 px-2 min-[360px]:px-3 py-2.5 rounded-xl bg-[#15803d] hover:bg-[#166534] text-white font-extrabold text-[10px] min-[360px]:text-xs uppercase active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isOutOfStock ? "Agotado" : "Comprar ahora"}
           </button>

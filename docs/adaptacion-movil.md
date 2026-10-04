@@ -15,13 +15,17 @@ Comprobación del 4 de octubre de 2026 sobre la exportación estática de
   El bloque de portada queda centrado también en altura, debajo de la cabecera,
   y el botón «Ver catálogo» muestra únicamente el texto. El título es
   «Tecnología para tu día a día».
-- El pie tiene fondo negro, marca blanca y enlaces claros; su contenido se centra
-  en móvil y los enlaces legales dejan espacio para el botón flotante de WhatsApp.
+- El pie tiene fondo negro y marca blanca, con redes junto a la marca y enlaces
+  agrupados en Tienda y Atención. Los enlaces legales dejan espacio para WhatsApp.
+- La cabecera de catálogo y producto es negra; Inicio mantiene la cabecera sobre
+  su fotografía. El menú móvil es un panel compacto con iconos y bordes suaves,
+  con altura limitada y desplazamiento para pantallas pequeñas.
 - Búsqueda y orden tienen controles legibles, sin desbordar el catálogo.
 - Favoritos, colores, filtros y botones de compra tienen áreas táctiles mayores.
 - Bolsa y filtros permiten desplazamiento; el cupón cabe en pantallas pequeñas.
 - La compra rápida muestra el precio completo del producto usado en la prueba.
-  El pie deja espacio para el botón flotante y el área segura del dispositivo.
+  Usa fondo negro y botón verde, y comparte su altura de 72 píxeles más el área
+  segura con la reserva interior del pie. No se agrega un margen blanco exterior.
 - La ficha móvil presenta galería, marca/nombre, precio, color y acciones de compra
   antes de la descripción y las especificaciones. En escritorio, la ficha técnica
   permanece debajo de la galería y los datos de compra en la columna derecha.
@@ -48,3 +52,12 @@ En móvil la ficha técnica comienza después del bloque de información y compr
 en escritorio la galería y ese bloque comienzan a la misma altura. Al seleccionar
 Blanco, se actualizan la fotografía, el color del enlace de WhatsApp y la barra
 de compra rápida.
+
+Se revisaron la cabecera negra y la unión del pie con la barra de compra en 320,
+390, 430, 640, 768 y 1440 píxeles, sin desbordamiento horizontal. En móvil el
+elemento inmediatamente encima de la barra pertenece al pie, sin franja externa.
+El menú cabe en 320 × 568, cierra con Escape, al tocar fuera y al navegar a
+Audífonos. Se quitaron la frase general «Producto 100% Original en Caja Sellada»
+y la valoración fija de cinco estrellas de la ficha.
+Al cambiar a Blanco y dos unidades, la barra reflejó ambos datos y añadió esa
+variante a la bolsa. Se retiró la variante de prueba y no se envió ningún pedido.

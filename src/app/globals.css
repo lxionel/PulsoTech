@@ -48,8 +48,17 @@ body {
   }
 
   body:has(.store-mobile-purchase) :is(.store-whatsapp-widget, .store-comparison-bar) {
-    bottom: calc(96px + env(safe-area-inset-bottom));
+    bottom: calc(88px + env(safe-area-inset-bottom));
   }
+
+  .store-product-page:has(.store-mobile-purchase) .store-footer {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+}
+
+.store-motion .store-menu-toggle:focus-visible {
+  outline: 2px solid rgb(255 255 255 / 40%);
+  outline-offset: 2px;
 }
 
 /* Custom Scrollbar */
