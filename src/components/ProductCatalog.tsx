@@ -234,7 +234,7 @@ export default function ProductCatalog({
           <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-neutral-950">
             {categoryTitle}
           </h2>
-          <p className="text-xs sm:text-base text-neutral-600 max-w-2xl leading-relaxed">
+          <p className="text-sm sm:text-base text-neutral-600 max-w-2xl leading-relaxed">
             Consulta disponibilidad y coordina tu pedido por WhatsApp. Atención local en Chimbote.
           </p>
         </div>
@@ -244,10 +244,11 @@ export default function ProductCatalog({
           <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
+            aria-label="Buscar productos"
             placeholder="Buscar por ID, modelo o marca..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-9 py-2.5 rounded-xl bg-white border border-neutral-200 text-xs font-medium text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 transition-colors shadow-2xs"
+            className="w-full min-h-12 sm:min-h-0 pl-10 pr-9 py-2.5 rounded-xl bg-white border border-neutral-200 text-base sm:text-xs font-medium text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 transition-colors shadow-2xs"
           />
           {searchQuery && (
             <button
@@ -460,15 +461,15 @@ export default function ProductCatalog({
         </aside>
 
         {/* Right Column: Main Products Area */}
-        <div className="flex-1 w-full space-y-4 sm:space-y-6">
+        <div className="flex-1 min-w-0 w-full space-y-4 sm:space-y-6">
           {/* Top Sort and Active Summary Bar */}
           <div className="flex flex-col gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-neutral-200/80 shadow-2xs">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center justify-between sm:justify-start gap-2.5">
                 {/* Mobile Filter Button */}
                 <button
                   onClick={() => setIsMobileFiltersOpen(true)}
-                  className="lg:hidden inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-neutral-950 text-white font-bold text-xs uppercase tracking-wider shadow-xs active:scale-95 transition-all cursor-pointer"
+                  className="lg:hidden min-h-11 sm:min-h-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-neutral-950 text-white font-bold text-xs uppercase tracking-wider shadow-xs active:scale-95 transition-all cursor-pointer"
                 >
                   <Filter className="w-3.5 h-3.5" />
                   <span>Filtros</span>
@@ -486,18 +487,19 @@ export default function ProductCatalog({
               </div>
 
               {/* Sort Dropdown */}
-              <div className="flex items-center gap-1.5 sm:gap-2 text-xs">
+              <div className="flex min-w-0 items-center gap-1.5 sm:gap-2 text-xs">
                 <span className="text-neutral-500 font-medium hidden sm:inline">Ordenar:</span>
-                <div className="flex items-center gap-1.5 border border-neutral-200 rounded-xl px-2.5 sm:px-3 py-1.5 bg-neutral-50">
+                <div className="flex w-full sm:w-auto min-w-0 items-center gap-1.5 border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-1.5 bg-neutral-50">
                   <ArrowUpDown className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
                   <select
+                    aria-label="Ordenar productos"
                     value={sortBy}
                     onChange={(e) =>
                       setSortBy(
                         e.target.value as "featured" | "price-asc" | "price-desc"
                       )
                     }
-                    className="bg-transparent text-xs font-bold text-neutral-800 focus:outline-none cursor-pointer"
+                    className="w-full sm:w-auto min-w-0 bg-transparent text-base sm:text-xs font-bold text-neutral-800 focus:outline-none cursor-pointer"
                   >
                     <option value="featured">Destacados</option>
                     <option value="price-asc">Precio: Menor a mayor</option>
@@ -510,6 +512,17 @@ export default function ProductCatalog({
             {hasActiveFilters && (
               <div className="flex items-center gap-1.5 flex-wrap pt-2.5 border-t border-neutral-100 text-xs">
                 <span className="text-neutral-400 text-[11px] font-medium">Activos:</span>
+                {selectedCategory !== "todos" && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategory("todos")}
+                    aria-label={`Quitar categoría: ${breadcrumbLabel}`}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-100 text-neutral-800 text-[11px] font-bold cursor-pointer"
+                  >
+                    {breadcrumbLabel}
+                    <X aria-hidden="true" className="w-3 h-3" />
+                  </button>
+                )}
                 {showAudioFilters && ([
                   { key: "type", options: AUDIO_TYPE_OPTIONS },
                   { key: "anc", options: AUDIO_ANC_OPTIONS },
@@ -619,7 +632,7 @@ export default function ProductCatalog({
             className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in"
             onClick={() => setIsMobileFiltersOpen(false)}
           />
-          <div className="relative w-full max-w-[85vw] sm:max-w-xs bg-white h-full p-5 sm:p-6 overflow-y-auto space-y-6 shadow-2xl flex flex-col justify-between z-10 animate-in slide-in-from-right duration-200">
+          <div className="store-mobile-filters relative w-full max-w-[calc(100%-1rem)] sm:max-w-xs bg-white h-full p-5 sm:p-6 overflow-y-auto overscroll-contain space-y-6 shadow-2xl flex flex-col justify-between z-10 animate-in slide-in-from-right duration-200">
             <div className="space-y-6">
               <div className="flex items-center justify-between pb-4 border-b border-neutral-200">
                 <div className="flex items-center gap-2">

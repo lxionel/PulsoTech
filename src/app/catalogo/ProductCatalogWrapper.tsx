@@ -34,7 +34,7 @@ export default function ProductCatalogWrapper() {
       <Navbar isTransparent={true} />
 
       {/* Audífonos usa una cabecera compacta; las otras vistas conservan su altura. */}
-      <section id="seccion-categoria" className={`relative w-full flex flex-col justify-between bg-neutral-950 overflow-hidden ${showAudioBanner ? "" : "h-[100dvh] min-h-[520px]"}`}>
+      <section id="seccion-categoria" className={`relative w-full flex flex-col justify-between bg-neutral-950 overflow-hidden ${showAudioBanner ? "" : "sm:h-[100dvh] sm:min-h-[520px]"}`}>
         {/* El banner fotográfico toma todo el espacio vertical disponible */}
         <div className="flex-1 w-full min-h-0 relative flex items-center">
           {showAudioBanner ? <AudioBannerSlider /> : <HeroSection />}

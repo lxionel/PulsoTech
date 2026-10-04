@@ -52,7 +52,7 @@ export default function ProductCard({ product }: { product: Product }) {
       <Link href={`/producto/?id=${product.id}&slug=${product.slug}`} className="block p-4 sm:p-5 pb-0 flex-1">
         {/* Top Header: Brand, New Tag & Favorite */}
         <div className="flex items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-1.5">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
               {product.brand}
             </span>
@@ -63,7 +63,7 @@ export default function ProductCard({ product }: { product: Product }) {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             {/* Etiqueta Stock */}
             {isOutOfStock ? (
               <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-neutral-100 text-neutral-500 border border-neutral-200 tracking-wide">
@@ -81,7 +81,7 @@ export default function ProductCard({ product }: { product: Product }) {
               onClick={handleToggleFavorite}
               aria-label={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
               aria-pressed={isFav}
-              className="p-1.5 rounded-full text-neutral-400 hover:text-red-500 hover:bg-red-50 transition-all duration-200 active:scale-125 cursor-pointer"
+              className="min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center p-1.5 rounded-full text-neutral-400 hover:text-red-500 hover:bg-red-50 transition-all duration-200 active:scale-125 cursor-pointer"
               title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
             >
               <Heart className={`w-4 h-4 transition-all duration-200 ${isFav ? "text-red-500 fill-red-500 scale-110" : ""}`} />
@@ -90,7 +90,7 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
 
         {/* Large Product Image Frame with Hover Transition (only on image hover) */}
-        <div className="relative w-full aspect-square rounded-xl bg-white flex items-center justify-center p-2 overflow-hidden border border-neutral-100 group/image">
+        <div className="relative w-full aspect-[4/3] sm:aspect-square rounded-xl bg-white flex items-center justify-center p-2 overflow-hidden border border-neutral-100 group/image">
           <div className="relative w-full h-full flex items-center justify-center">
             {/* Imagen Principal (Color seleccionado) */}
             <img
@@ -115,7 +115,7 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
 
         {/* Selector de Colores Disponibles (Swatches con aro activo, selección SOLO al hacer clic) */}
-        <div className="h-7 flex items-center gap-1.5 pt-2 pb-0.5 shrink-0">
+        <div className="min-h-11 sm:min-h-0 sm:h-7 flex items-center gap-1.5 pt-2 pb-0.5 shrink-0">
           {colors.length > 0 && (
             <div className="flex items-center gap-1">
               {colors.map((color, idx) => {
@@ -132,7 +132,7 @@ export default function ProductCard({ product }: { product: Product }) {
                     aria-label={`Color ${color.name}`}
                     aria-pressed={isSelected}
                     title={color.name}
-                    className="w-6 h-6 flex items-center justify-center cursor-pointer shrink-0 transition-transform duration-150 hover:scale-115 active:scale-90"
+                    className="w-11 h-11 sm:w-6 sm:h-6 flex items-center justify-center cursor-pointer shrink-0 transition-transform duration-150 hover:scale-115 active:scale-90"
                   >
                     <span
                       className={`rounded-full border border-neutral-300 transition-all duration-150 block ${
@@ -156,10 +156,10 @@ export default function ProductCard({ product }: { product: Product }) {
 
         {/* Title & Subtitle (Inmóviles y perfectamente alineados) */}
         <div className="pt-1 pb-3">
-          <h3 className="text-base sm:text-lg font-extrabold text-neutral-950 leading-snug line-clamp-1 min-h-[1.75rem]">
+          <h3 className="text-lg font-extrabold text-neutral-950 leading-snug line-clamp-2 sm:line-clamp-1 min-h-[1.75rem]">
             {product.name}
           </h3>
-          <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed min-h-[2.5rem] mt-1">
+          <p className="text-sm sm:text-xs text-neutral-500 line-clamp-2 leading-relaxed min-h-[2.5rem] mt-1">
             {product.subtitle}
           </p>
         </div>
@@ -182,7 +182,7 @@ export default function ProductCard({ product }: { product: Product }) {
           <button
             type="button"
             disabled
-            className="w-full py-2.5 sm:py-3 px-4 rounded-xl bg-neutral-100 border border-neutral-200 text-neutral-400 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-not-allowed"
+            className="w-full min-h-12 sm:min-h-0 py-2.5 sm:py-3 px-4 rounded-xl bg-neutral-100 border border-neutral-200 text-neutral-400 font-extrabold text-sm flex items-center justify-center gap-2 cursor-not-allowed"
           >
             <span>Agotado</span>
           </button>
@@ -190,7 +190,7 @@ export default function ProductCard({ product }: { product: Product }) {
           <button
             type="button"
             onClick={handleAddToCart}
-            className={`w-full py-2.5 sm:py-3 px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs active:scale-[0.97] transition-all duration-200 cursor-pointer ${
+            className={`w-full min-h-12 sm:min-h-0 py-2.5 sm:py-3 px-4 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2 shadow-xs active:scale-[0.97] transition-all duration-200 cursor-pointer ${
               justAdded
                 ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
                 : "bg-neutral-950 hover:bg-neutral-800 text-white hover:shadow-md"

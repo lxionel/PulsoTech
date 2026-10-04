@@ -197,7 +197,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
 
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 w-full pb-24 sm:pb-10">
         {/* Breadcrumb Navigation (Más grande y legible) */}
-        <nav className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base text-neutral-500 mb-6 sm:mb-8 font-medium overflow-x-auto whitespace-nowrap py-1.5">
+        <nav className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base text-neutral-500 mb-6 sm:mb-8 font-medium overflow-hidden sm:overflow-x-auto whitespace-nowrap py-1.5">
           <Link
             href="/"
             className="hover:text-neutral-950 transition-colors flex items-center gap-1.5 shrink-0"
@@ -213,7 +213,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
             Catálogo
           </Link>
           <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-400 shrink-0" />
-          <span className="text-neutral-950 font-bold truncate max-w-xs sm:max-w-md shrink-0">
+          <span className="text-neutral-950 font-bold truncate min-w-0 max-w-xs sm:max-w-md sm:shrink-0">
             {product.name}
           </span>
         </nav>
@@ -680,7 +680,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
               {isOutOfStock ? "Agotado" : `${currentColor.name} · ${purchaseQuantity} ud.`}
             </span>
           </div>
-          <div className="text-lg font-black text-neutral-950 font-mono tracking-tight leading-none mt-0.5 truncate">
+          <div className="text-base min-[360px]:text-lg font-black text-neutral-950 tracking-tight leading-none mt-0.5 truncate">
             {STORE_SETTINGS.currencySymbol}{product.price.toFixed(2)}
           </div>
         </div>
@@ -700,7 +700,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
             type="button"
             onClick={handleBuyNow}
             disabled={isOutOfStock}
-            className="min-h-11 px-3 py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-extrabold text-xs uppercase active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="min-h-11 px-2 min-[360px]:px-3 py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-extrabold text-[10px] min-[360px]:text-xs uppercase active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isOutOfStock ? "Agotado" : "Comprar ahora"}
           </button>

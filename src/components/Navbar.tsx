@@ -113,17 +113,17 @@ export default function Navbar({
             }`
       }`}
     >
-      <div className="w-full max-w-[1650px] mx-auto px-3 sm:px-6 lg:px-10 xl:px-14 h-16 flex items-center justify-between gap-2 sm:gap-4 lg:gap-8">
+      <div className="w-full max-w-[1650px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 py-2 sm:py-0 sm:h-16 sm:flex sm:justify-between sm:gap-4 lg:gap-8">
         {/* Brand Logo PulsoTech + Nav en la esquina */}
-        <div className="flex items-center gap-3 sm:gap-6 lg:gap-8 shrink-0 min-w-0">
+        <div className="contents sm:flex sm:items-center sm:gap-6 lg:gap-8 sm:shrink-0 min-w-0">
           <Logo size="md" inverted={isTransparent} />
 
           {/* Menú de Navegación contextual en la esquina: Inicio y Catálogo */}
-          <nav className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-bold">
+          <nav aria-label="Navegación principal" className="col-span-2 row-start-2 flex items-center gap-1 sm:gap-2 text-sm font-bold">
             <Link
               href="/#inicio"
               aria-current={isStartActive ? "location" : undefined}
-              className={`transition-[color,background-color,scale] duration-200 active:scale-95 px-2.5 py-1 rounded-lg ${
+              className={`inline-flex items-center justify-center min-h-10 sm:min-h-0 transition-[color,background-color,scale] duration-200 active:scale-95 px-4 sm:px-2.5 py-1 rounded-lg ${
                 isStartActive
                   ? isTransparent
                     ? "text-white bg-white/20"
@@ -138,7 +138,7 @@ export default function Navbar({
             <Link
               href="/#catalogo"
               aria-current={isCatalogActive ? "location" : undefined}
-              className={`transition-[color,background-color,scale] duration-200 active:scale-95 px-2.5 py-1 rounded-lg ${
+              className={`inline-flex items-center justify-center min-h-10 sm:min-h-0 transition-[color,background-color,scale] duration-200 active:scale-95 px-4 sm:px-2.5 py-1 rounded-lg ${
                 isCatalogActive
                   ? isTransparent
                     ? "text-white bg-white/20"
@@ -154,10 +154,10 @@ export default function Navbar({
         </div>
 
         {/* Right Actions: Social Media (Desktop) + Favorites + Cart */}
-        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+        <div className="col-start-2 row-start-1 flex items-center gap-2 sm:gap-3 shrink-0">
           {/* Social Media Links */}
           <div
-            className={`hidden sm:flex items-center gap-0.5 sm:gap-1 p-1 rounded-xl shadow-2xs ${
+            className={`hidden lg:flex items-center gap-0.5 sm:gap-1 p-1 rounded-xl shadow-2xs ${
               isTransparent
                 ? "bg-black/40 border border-white/15 text-white"
                 : "bg-neutral-100/90 border border-neutral-200/70 text-neutral-600"
@@ -224,7 +224,7 @@ export default function Navbar({
           <button
             onClick={() => setIsFavoritesOpen(true)}
             aria-label="Ver favoritos guardados"
-            className={`relative flex items-center justify-center p-2 sm:p-2.5 rounded-xl transition-all duration-200 shadow-2xs hover:scale-105 active:scale-90 cursor-pointer shrink-0 ${
+            className={`relative min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 flex items-center justify-center p-2 sm:p-2.5 rounded-xl transition-all duration-200 shadow-2xs hover:scale-105 active:scale-90 cursor-pointer shrink-0 ${
               isTransparent
                 ? "bg-white/10 hover:bg-white/20 border border-white/15 text-white"
                 : "bg-white hover:bg-neutral-50 border border-neutral-200 hover:border-neutral-300 text-neutral-700"
@@ -247,7 +247,7 @@ export default function Navbar({
           <button
             onClick={() => setIsCartOpen(true)}
             aria-label="Abrir bolsa de compra"
-            className={`group/cart relative flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all duration-200 font-bold text-xs gap-2 sm:gap-2.5 shadow-sm hover:scale-105 active:scale-95 cursor-pointer shrink-0 ${
+            className={`group/cart relative min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all duration-200 font-bold text-xs gap-2 sm:gap-2.5 shadow-sm hover:scale-105 active:scale-95 cursor-pointer shrink-0 ${
               isTransparent
                 ? "bg-white text-neutral-950 hover:bg-neutral-100 shadow-md hover:shadow-lg"
                 : "bg-neutral-950 hover:bg-neutral-800 text-white hover:shadow-md"
@@ -262,7 +262,7 @@ export default function Navbar({
               )}
             </div>
             <span className="hidden sm:inline">Bolsa</span>
-            <span className={`font-extrabold border-l pl-1.5 sm:pl-2 ${isTransparent ? "border-neutral-300 text-neutral-950" : "border-neutral-700 text-white"}`}>
+            <span className={`hidden sm:inline font-extrabold border-l pl-2 ${isTransparent ? "border-neutral-300 text-neutral-950" : "border-neutral-700 text-white"}`}>
               {STORE_SETTINGS.currencySymbol}
               {subtotal.toFixed(2)}
             </span>

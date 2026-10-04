@@ -149,7 +149,7 @@ export default function CartDrawer() {
       <div className="absolute inset-0" onClick={() => { if (!isCheckingStock) setIsCartOpen(false); }} />
 
       <div className="absolute inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10">
-        <div className="w-screen max-w-full sm:max-w-md bg-white sm:border-l border-neutral-200 p-4 sm:p-6 flex flex-col justify-between shadow-2xl relative text-neutral-900 h-full">
+        <div className="store-drawer w-screen max-w-full sm:max-w-md bg-white sm:border-l border-neutral-200 p-4 sm:p-6 flex flex-col justify-between overflow-y-auto overscroll-contain shadow-2xl relative text-neutral-900 h-full">
           {/* Header */}
           <div>
             <div className="flex items-center justify-between pb-3.5 sm:pb-4 border-b border-neutral-200">
@@ -172,7 +172,7 @@ export default function CartDrawer() {
           </div>
 
           {/* Cart Items */}
-          <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1">
+          <div className="flex-1 min-h-32 sm:min-h-0 overflow-y-auto py-4 space-y-3 pr-1">
             {stockNotice && (
               <div role="status" className="flex items-start gap-2 p-3 rounded-xl border border-neutral-200 bg-neutral-50 text-xs text-neutral-700">
                 <p className="flex-1 leading-relaxed">{stockNotice}</p>
@@ -396,7 +396,7 @@ export default function CartDrawer() {
                             handleApplyCoupon();
                           }
                         }}
-                        className="flex-1 px-3 py-1.5 rounded-lg border border-neutral-300 text-xs font-mono font-bold uppercase focus:outline-none focus:border-neutral-900 bg-white"
+                        className="flex-1 min-w-0 w-full px-3 py-1.5 rounded-lg border border-neutral-300 text-xs font-mono font-bold uppercase focus:outline-none focus:border-neutral-900 bg-white"
                       />
                       <button
                         type="button"

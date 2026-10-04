@@ -67,7 +67,7 @@ export default function CategoryNavShowcase({
       `}</style>
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         {/* Fila limpia de dibujos centrados exactamente como en la captura de referencia */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 items-center justify-center">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2 sm:gap-6 items-stretch justify-center">
           {CATEGORY_ITEMS.map((item) => {
             const isSelected = Boolean(
               activeCategory &&
@@ -84,13 +84,13 @@ export default function CategoryNavShowcase({
                 data-available={item.available}
                 onClick={() => handleCategoryClick(item)}
                 style={wigglingId === item.id ? { animation: "catShake 0.4s ease-in-out" } : undefined}
-                className={`store-category group flex flex-col items-center justify-center py-1.5 px-2 text-center transition-transform duration-300 relative ${
+                className={`store-category group min-w-0 flex flex-col items-center justify-start sm:justify-center py-2 sm:py-1.5 px-2 text-center transition-transform duration-300 relative ${
                   item.available ? "cursor-pointer active:scale-95" : "cursor-default"
                 }`}
               >
                 {/* Dibujo limpio y estilizado con animacion suave al pasar el cursor */}
                 <div
-                  className={`store-category-icon w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center transition-[transform,scale,color] duration-300 ${
+                  className={`store-category-icon w-10 h-10 sm:w-16 sm:h-16 flex items-center justify-center transition-[transform,scale,color] duration-300 ${
                     isSelected
                       ? "text-black scale-105"
                       : "text-neutral-900"
@@ -108,7 +108,7 @@ export default function CategoryNavShowcase({
 
                 {/* Texto exacto centrado debajo del dibujo con indicador activo */}
                 <span
-                  className={`mt-2 text-xs sm:text-sm tracking-tight transition-colors duration-200 ${
+                  className={`mt-2 text-xs sm:text-sm leading-snug text-balance tracking-tight transition-colors duration-200 ${
                     isSelected
                       ? "text-black font-black underline underline-offset-4 decoration-2"
                       : "text-neutral-800 font-semibold"

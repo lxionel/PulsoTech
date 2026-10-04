@@ -8,7 +8,7 @@ import { getAssetUrl } from "@/utils/paths";
 
 export default function HeroSection() {
   return (
-    <div className="store-motion relative w-full h-full min-h-[340px] overflow-hidden bg-neutral-950 select-none flex items-center">
+    <div className="store-motion relative w-full min-h-[460px] sm:h-full sm:min-h-[340px] overflow-hidden bg-neutral-950 select-none flex items-end sm:items-center">
       {/* Background Panoramic Photography en maxima resolucion */}
       <div className="absolute inset-0 z-0">
         <Image
@@ -26,7 +26,7 @@ export default function HeroSection() {
       </div>
 
       {/* Contenido comercial original perfectamente encajado con la composición */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 xl:px-14 w-full pt-16 sm:pt-20 pb-6 sm:pb-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 xl:px-14 w-full pt-36 sm:pt-20 pb-8 sm:pb-8">
         <div className="store-hero-copy max-w-[340px] sm:max-w-[440px] space-y-3 sm:space-y-4">
           {/* Badge original: Fondo negro y letras blancas, limpio y sin punto */}
           <div>
@@ -36,12 +36,12 @@ export default function HeroSection() {
           </div>
 
           {/* Titulo en 2 lineas identico al diseno original pero con holgura respecto a la foto */}
-          <h1 className="text-2xl sm:text-4xl lg:text-[44px] font-black tracking-tight leading-[1.12] text-white">
+          <h1 className="text-[clamp(2rem,8.2vw,2.75rem)] sm:text-4xl lg:text-[44px] font-black tracking-tight leading-[1.12] text-white text-balance sm:text-wrap">
             ¡Tecnología y audio original!
           </h1>
 
           {/* Subtitulo */}
-          <p className="text-xs sm:text-sm lg:text-[15px] leading-relaxed font-normal max-w-sm sm:max-w-md text-neutral-200 sm:text-neutral-300">
+          <p className="text-sm sm:text-sm lg:text-[15px] leading-relaxed font-normal max-w-sm sm:max-w-md text-neutral-200 sm:text-neutral-300">
             Pedidos por WhatsApp y entregas coordinadas en Chimbote.
           </p>
 

@@ -20,7 +20,7 @@ export default function CompareProductButton({ product }: { product: Product }) 
       disabled={limitReached}
       title={limitReached ? "Quita un modelo para comparar otro. Máximo 2 modelos." : undefined}
       onClick={() => toggleProduct(product.id)}
-      className={`inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-colors active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ${isSelected
+      className={`min-h-11 sm:min-h-0 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-colors active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ${isSelected
         ? "bg-neutral-100 border-neutral-300 text-neutral-950"
         : "bg-white border-neutral-200 text-neutral-600 hover:text-neutral-950 hover:border-neutral-300"}`}
     >

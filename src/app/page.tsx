@@ -16,7 +16,7 @@ export default function Home() {
       {/* Main Content */}
       <main className="flex-1">
         {/* Primera pantalla completa (100dvh) */}
-        <section id="inicio" className="relative w-full flex flex-col justify-between h-[100dvh] min-h-[520px] bg-neutral-950 overflow-hidden">
+        <section id="inicio" className="relative w-full flex flex-col justify-between sm:h-[100dvh] sm:min-h-[520px] bg-neutral-950 overflow-hidden">
           {/* Banner fotográfico dinámico en alta resolución */}
           <div className="flex-1 w-full min-h-0 relative flex items-center">
             <HeroSection />

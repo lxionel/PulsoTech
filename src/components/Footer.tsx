@@ -18,7 +18,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
         <div className="space-y-3">
           <Logo size="sm" />
-          <p className="text-neutral-500 max-w-sm text-xs leading-relaxed">
+          <p className="text-neutral-500 max-w-sm text-sm sm:text-xs leading-relaxed">
             Tecnología y audio original. Atención en Chimbote, pedidos por WhatsApp y entregas coordinadas.
           </p>
           {/* Social Networks Links */}
@@ -84,7 +84,7 @@ export default function Footer() {
       </div>
 
       {/* Bottom Bar: Clean Legal */}
-      <div className="border-t border-neutral-100 py-6">
+      <div className="border-t border-neutral-100 pt-6 pb-20 sm:pb-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-neutral-400">
           <div>
             © {new Date().getFullYear()} {STORE_SETTINGS.name}. Todos los derechos reservados.
