@@ -12,23 +12,23 @@ export default function Footer() {
   const { whatsappNumber } = useCart();
 
   return (
-    <footer id="garantia" className="border-t border-neutral-200 bg-white text-neutral-600 text-xs">
+    <footer id="garantia" className="border-t border-white/10 bg-black text-neutral-300 text-xs">
 
       {/* Main Footer Links */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-        <div className="space-y-3">
-          <Logo size="sm" />
-          <p className="text-neutral-500 max-w-sm text-sm sm:text-xs leading-relaxed">
-            Tecnología y audio original. Atención en Chimbote, pedidos por WhatsApp y entregas coordinadas.
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="space-y-3 text-center md:text-left">
+          <Logo size="sm" inverted className="justify-center md:justify-start" />
+          <p className="text-neutral-400 max-w-sm text-sm sm:text-xs leading-relaxed">
+            Tecnología para tu día a día. Atención en Chimbote, pedidos por WhatsApp y entregas coordinadas.
           </p>
           {/* Social Networks Links */}
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex items-center justify-center md:justify-start gap-2 pt-1">
             <a
               href={STORE_SETTINGS.social.instagram}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram de Lionel"
-              className="w-8 h-8 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 hover:text-pink-600 flex items-center justify-center transition-colors"
+              className="w-8 h-8 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white flex items-center justify-center transition-colors"
               title="Instagram: @lionel_a5"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -42,7 +42,7 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="TikTok de Lionel"
-              className="w-8 h-8 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 hover:text-black flex items-center justify-center transition-colors"
+              className="w-8 h-8 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white flex items-center justify-center transition-colors"
               title="TikTok: @lionel_a5"
             >
               <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
@@ -54,7 +54,7 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Facebook de Lionel"
-              className="w-8 h-8 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 hover:text-blue-600 flex items-center justify-center transition-colors"
+              className="w-8 h-8 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white flex items-center justify-center transition-colors"
               title="Facebook: Lionel"
             >
               <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -64,35 +64,35 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs font-semibold text-neutral-600">
-          <Link href="/#catalogo" className="hover:text-black transition-colors">
+        <div className="flex flex-wrap justify-center md:justify-start items-center gap-4 sm:gap-6 text-xs font-semibold text-neutral-300">
+          <Link href="/#catalogo" className="hover:text-white transition-colors">
             Catálogo
           </Link>
           <a
             href={`https://wa.me/${(whatsappNumber || "").replace(/\D/g, "")}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-emerald-700 transition-colors flex items-center gap-1 text-emerald-700 font-bold"
+            className="hover:text-emerald-300 transition-colors flex items-center gap-1 text-emerald-400 font-bold"
           >
             <span>WhatsApp Directo</span>
             <ArrowUpRight className="w-3 h-3" />
           </a>
-          <Link href="/garantia-y-entregas/" className="hover:text-black transition-colors">
+          <Link href="/garantia-y-entregas/" className="hover:text-white transition-colors">
             Garantía &amp; Envíos
           </Link>
         </div>
       </div>
 
       {/* Bottom Bar: Clean Legal */}
-      <div className="border-t border-neutral-100 pt-6 pb-20 sm:pb-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-neutral-400">
+      <div className="border-t border-white/10 pt-6 pb-20 lg:pb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:pl-8 lg:pr-60 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-neutral-400">
           <div>
             © {new Date().getFullYear()} {STORE_SETTINGS.name}. Todos los derechos reservados.
           </div>
           <div className="flex flex-wrap justify-center items-center gap-4">
-            <Link href="/privacidad/" className="hover:text-neutral-900 transition-colors">Privacidad</Link>
-            <Link href="/terminos/" className="hover:text-neutral-900 transition-colors">Términos y Condiciones</Link>
-            <Link href="/reclamaciones/" className="hover:text-neutral-900 transition-colors">{COMPLAINT_BOOK_ENABLED ? "Libro de Reclamaciones" : "Atención y reclamos"}</Link>
+            <Link href="/privacidad/" className="hover:text-white transition-colors">Privacidad</Link>
+            <Link href="/terminos/" className="hover:text-white transition-colors">Términos y Condiciones</Link>
+            <Link href="/reclamaciones/" className="hover:text-white transition-colors">{COMPLAINT_BOOK_ENABLED ? "Libro de Reclamaciones" : "Atención y reclamos"}</Link>
           </div>
         </div>
       </div>

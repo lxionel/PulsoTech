@@ -28,7 +28,7 @@ const spaceGrotesk = localFont({
 export const metadata: Metadata = {
   title: "PulsoTech",
   description:
-    "Tecnología y audio original en Chimbote. Pedidos por WhatsApp, entregas coordinadas y atención personalizada.",
+    "Tecnología para tu día a día en Chimbote. Pedidos por WhatsApp, entregas coordinadas y atención personalizada.",
 };
 
 export default function RootLayout({

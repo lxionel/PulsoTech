@@ -12,6 +12,11 @@ Comprobación del 4 de octubre de 2026 sobre la exportación estática de
 - La portada móvil usa una altura compacta y texto proporcionado a la pantalla.
   La portada y el encabezado del catálogo están centrados en móvil. Se conservan
   la fotografía, las categorías, la paleta y la composición de escritorio.
+  El bloque de portada queda centrado también en altura, debajo de la cabecera,
+  y el botón «Ver catálogo» muestra únicamente el texto. El título es
+  «Tecnología para tu día a día».
+- El pie tiene fondo negro, marca blanca y enlaces claros; su contenido se centra
+  en móvil y los enlaces legales dejan espacio para el botón flotante de WhatsApp.
 - Búsqueda y orden tienen controles legibles, sin desbordar el catálogo.
 - Favoritos, colores, filtros y botones de compra tienen áreas táctiles mayores.
 - Bolsa y filtros permiten desplazamiento; el cupón cabe en pantallas pequeñas.
