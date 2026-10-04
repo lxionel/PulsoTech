@@ -219,9 +219,9 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
         </nav>
 
         {/* Full Product Grid (Despegatec & Miccell Inspired) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-          {/* Left Column: Stage Image Gallery + Lab Tech Specs Grid */}
-          <div className="lg:col-span-7 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-[auto_1fr] gap-8 lg:gap-x-12 lg:gap-y-6 items-start">
+          {/* Gallery first on mobile; left column on desktop. */}
+          <div className="store-product-gallery lg:col-span-7 lg:col-start-1 lg:row-start-1 space-y-6">
             {/* Main Stage Frame (Image or Video) */}
             <div className="relative aspect-square w-full rounded-2xl sm:rounded-3xl bg-white border border-neutral-200/90 p-3 sm:p-6 flex items-center justify-center shadow-xs overflow-hidden group">
               {isVideoActive && videoInfo ? (
@@ -361,48 +361,10 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                 })}
               </div>
             )}
-
-            {/* Technical Specification Grid */}
-            {allSpecsList.length > 0 && (
-              <div className="pt-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-                    Ficha Técnica de Rendimiento
-                  </h3>
-                  <span className="text-[11px] font-semibold text-neutral-400">
-                    Especificaciones Oficiales
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {allSpecsList.map((spec, sIdx) => {
-                    const IconComponent = getSpecIcon(spec.label);
-                    return (
-                      <div
-                        key={spec.label + sIdx}
-                        className="p-3.5 rounded-2xl bg-white border border-neutral-200/80 shadow-2xs flex items-center gap-3 transition-colors hover:border-neutral-300"
-                      >
-                        <div className="w-10 h-10 rounded-xl bg-neutral-900 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                          <IconComponent className="w-5 h-5 text-neutral-100" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block truncate">
-                            {spec.label}
-                          </span>
-                          <span className="text-xs font-extrabold text-neutral-900 truncate block" title={spec.value}>
-                            {spec.value}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Right Column: Commercial Details & Purchase Actions */}
-          <div className="lg:col-span-5 space-y-6">
+          <div className="store-product-information lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:row-span-2 space-y-6">
             {/* Header: Brand & Title */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
@@ -636,6 +598,43 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
               </div>
             </div>
           </div>
+          {/* Technical Specification Grid */}
+          {allSpecsList.length > 0 && (
+            <div className="store-product-specs lg:col-span-7 lg:col-start-1 lg:row-start-2 pt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+                  Ficha Técnica de Rendimiento
+                </h3>
+                <span className="text-[11px] font-semibold text-neutral-400">
+                  Especificaciones Oficiales
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {allSpecsList.map((spec, sIdx) => {
+                  const IconComponent = getSpecIcon(spec.label);
+                  return (
+                    <div
+                      key={spec.label + sIdx}
+                      className="p-3.5 rounded-2xl bg-white border border-neutral-200/80 shadow-2xs flex items-center gap-3 transition-colors hover:border-neutral-300"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-neutral-900 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                        <IconComponent className="w-5 h-5 text-neutral-100" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block truncate">
+                          {spec.label}
+                        </span>
+                        <span className="text-xs font-extrabold text-neutral-900 truncate block" title={spec.value}>
+                          {spec.value}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Related Products Section */}

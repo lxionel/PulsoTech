@@ -17,6 +17,9 @@ Comprobación del 4 de octubre de 2026 sobre la exportación estática de
 - Bolsa y filtros permiten desplazamiento; el cupón cabe en pantallas pequeñas.
 - La compra rápida muestra el precio completo del producto usado en la prueba.
   El pie deja espacio para el botón flotante y el área segura del dispositivo.
+- La ficha móvil presenta galería, marca/nombre, precio, color y acciones de compra
+  antes de la descripción y las especificaciones. En escritorio, la ficha técnica
+  permanece debajo de la galería y los datos de compra en la columna derecha.
 - La categoría seleccionada aparece en el resumen de filtros, evitando un resumen vacío.
 
 ## Comprobaciones manuales
@@ -33,3 +36,10 @@ ningún pedido ni se modificaron productos o ventas en Supabase.
 La consola no mostró errores durante estas comprobaciones. La validación
 en tamaños de navegador no sustituye revisar el resultado en dispositivos
 Android/iOS reales y con el teclado en pantalla.
+
+Tras ajustar el orden de la ficha, se verificó el producto Huawei FreeBuds SE 2
+en anchos de 320, 390, 430, 768 y 1440 píxeles, sin desbordamiento horizontal.
+En móvil la ficha técnica comienza después del bloque de información y compra;
+en escritorio la galería y ese bloque comienzan a la misma altura. Al seleccionar
+Blanco, se actualizan la fotografía, el color del enlace de WhatsApp y la barra
+de compra rápida.
