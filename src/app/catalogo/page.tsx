@@ -1,5 +1,4 @@
 import React, { Suspense } from "react";
-import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProductCatalogWrapper from "./ProductCatalogWrapper";
 

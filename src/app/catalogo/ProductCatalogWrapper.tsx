@@ -7,22 +7,25 @@ import ProductCatalog from "@/components/ProductCatalog";
 import AudioBannerSlider from "@/components/AudioBannerSlider";
 import HeroSection from "@/components/HeroSection";
 import Navbar from "@/components/Navbar";
+import { isAudioCategory } from "@/lib/categories";
 
 export default function ProductCatalogWrapper() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const categoria = searchParams.get("categoria") || "todos";
 
-  const isAudioCategory =
-    categoria.toLowerCase().includes("audífon") ||
-    categoria.toLowerCase().includes("audifon") ||
-    categoria.toLowerCase().includes("audio") ||
-    categoria.toLowerCase().includes("auricular");
+  const showAudioBanner = isAudioCategory(categoria);
 
-  const handleCategoryChange = (newCat: string) => {
-    router.push(`/catalogo/?categoria=${encodeURIComponent(newCat)}`, {
-      scroll: false,
-    });
+  const handleCategoryChange = (newCategory: string) => {
+    router.push(`/catalogo/?categoria=${encodeURIComponent(newCategory)}#catalogo`);
+  };
+
+  const handleSectionChange = (newCat: string) => {
+    if (newCat === categoria) {
+      document.getElementById("seccion-categoria")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    router.push(`/catalogo/?categoria=${encodeURIComponent(newCat)}#seccion-categoria`);
   };
 
   return (
@@ -30,17 +33,17 @@ export default function ProductCatalogWrapper() {
       {/* Encabezado fijo y adaptado a la imagen que acompaña el scroll */}
       <Navbar isTransparent={true} />
 
-      {/* 1. Primera pantalla completa (100dvh) */}
-      <section className="relative w-full flex flex-col justify-between h-[100dvh] min-h-[520px] bg-neutral-950 overflow-hidden">
+      {/* Audífonos usa una cabecera compacta; las otras vistas conservan su altura. */}
+      <section id="seccion-categoria" className={`relative w-full flex flex-col justify-between bg-neutral-950 overflow-hidden ${showAudioBanner ? "" : "h-[100dvh] min-h-[520px]"}`}>
         {/* El banner fotográfico toma todo el espacio vertical disponible */}
         <div className="flex-1 w-full min-h-0 relative flex items-center">
-          {isAudioCategory ? <AudioBannerSlider /> : <HeroSection />}
+          {showAudioBanner ? <AudioBannerSlider /> : <HeroSection />}
         </div>
 
         {/* Los dibujos de categorías fijos en la base exacta de la primera pantalla sin cortarse */}
         <CategoryNavShowcase
           activeCategory={categoria}
-          onSelectCategory={handleCategoryChange}
+          onSelectCategory={handleSectionChange}
         />
       </section>
 

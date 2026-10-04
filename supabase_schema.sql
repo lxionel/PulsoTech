@@ -1,3 +1,5 @@
+begin;
+
 -- ==============================================================================
 -- PULSOTECH - ESQUEMA DE BASE DE DATOS SUPABASE (POSTGRESQL)
 -- ==============================================================================
@@ -5,6 +7,8 @@
 -- 1. Ve a tu panel de Supabase: https://supabase.com/dashboard
 -- 2. Entra a tu proyecto y haz clic en "SQL Editor" en el menú lateral izquierdo.
 -- 3. Haz clic en "New query", pega todo este código y pulsa "Run" (ejecutar).
+-- 4. Después de activar el administrador y MFA, ejecuta supabase/activate-atomic-sales.sql.
+-- 5. Para copias operativas privadas, ejecuta supabase/activate-backups.sql.
 -- ==============================================================================
 
 -- 1. Crear tabla de productos
@@ -43,47 +47,86 @@ create table if not exists public.store_settings (
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- 3. Habilitar seguridad a nivel de filas (Row Level Security)
+-- PulsoTech: catálogo público, modificaciones solo para administradores autorizados.
+-- Ejecutar desde el SQL Editor del proyecto. No borra productos, ventas ni ajustes.
+
+create table if not exists public.store_admins (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+alter table public.store_admins enable row level security;
 alter table public.products enable row level security;
 alter table public.store_settings enable row level security;
 
--- 4. Políticas para la tabla 'products' (Lectura y escritura segura mediante la clave anónima)
-drop policy if exists "Permitir lectura publica de productos" on public.products;
-create policy "Permitir lectura publica de productos"
-  on public.products for select
-  using (true);
+-- Quitar las políticas antiguas es necesario: las permisivas se combinan con OR.
+do $policies$
+declare existing record;
+begin
+  for existing in
+    select schemaname, tablename, policyname from pg_policies
+    where schemaname = 'public' and tablename in ('products', 'store_settings', 'store_admins')
+  loop
+    execute format('drop policy %I on %I.%I', existing.policyname, existing.schemaname, existing.tablename);
+  end loop;
+end;
+$policies$;
 
-drop policy if exists "Permitir insercion de productos" on public.products;
-create policy "Permitir insercion de productos"
-  on public.products for insert
-  with check (true);
+-- La pertenencia permite configurar el autenticador, pero no concede acceso a datos privados.
+create or replace function public.is_store_admin_account()
+returns boolean language sql stable security definer set search_path = ''
+as $account$
+  select exists (select 1 from public.store_admins where user_id = (select auth.uid()));
+$account$;
+revoke all on function public.is_store_admin_account() from public;
+grant execute on function public.is_store_admin_account() to anon, authenticated;
 
-drop policy if exists "Permitir actualizacion de productos" on public.products;
-create policy "Permitir actualizacion de productos"
-  on public.products for update
-  using (true);
+-- Exigir un JWT de nivel aal2 y un factor TOTP todavía verificado.
+create or replace function public.is_store_admin()
+returns boolean language sql stable security definer set search_path = ''
+as $admin$
+  select public.is_store_admin_account()
+    and coalesce((select auth.jwt()->>'aal') = 'aal2', false)
+    and exists (
+      select 1 from auth.mfa_factors
+      where user_id = (select auth.uid()) and status = 'verified' and factor_type = 'totp'
+    );
+$admin$;
+revoke all on function public.is_store_admin() from public;
+grant execute on function public.is_store_admin() to anon, authenticated;
 
-drop policy if exists "Permitir eliminacion de productos" on public.products;
-create policy "Permitir eliminacion de productos"
-  on public.products for delete
-  using (true);
+-- Las cuentas no pueden otorgarse permisos ni modificar la lista de administradores.
+revoke all on public.store_admins from public, anon, authenticated;
+grant select on public.store_admins to authenticated;
+create policy store_admins_self_read on public.store_admins for select to authenticated
+  using (user_id = (select auth.uid()));
 
--- 5. Políticas para la tabla 'store_settings'
-drop policy if exists "Permitir lectura publica de configuraciones" on public.store_settings;
-create policy "Permitir lectura publica de configuraciones"
-  on public.store_settings for select
-  using (true);
+revoke all on public.products from public, anon, authenticated;
+grant select on public.products to anon, authenticated;
+grant insert, update, delete on public.products to authenticated;
+create policy products_public_read on public.products for select to anon, authenticated using (true);
+create policy products_admin_write on public.products for all to authenticated
+  using ((select public.is_store_admin())) with check ((select public.is_store_admin()));
 
-drop policy if exists "Permitir insercion de configuraciones" on public.store_settings;
-create policy "Permitir insercion de configuraciones"
-  on public.store_settings for insert
-  with check (true);
+revoke all on public.store_settings from public, anon, authenticated;
+grant select on public.store_settings to anon, authenticated;
+grant insert, update, delete on public.store_settings to authenticated;
+create policy settings_public_read on public.store_settings for select to anon, authenticated
+  using (key in ('brands', 'categories', 'whatsapp_number', 'coupons'));
+create policy settings_admin_access on public.store_settings for all to authenticated
+  using ((select public.is_store_admin())) with check ((select public.is_store_admin()));
 
-drop policy if exists "Permitir actualizacion de configuraciones" on public.store_settings;
-create policy "Permitir actualizacion de configuraciones"
-  on public.store_settings for update
-  using (true);
+-- Mantener Realtime sin fallar si las tablas ya pertenecen a la publicación.
+do $realtime$
+declare target_table text;
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    foreach target_table in array array['products', 'store_settings'] loop
+      if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = target_table) then
+        execute format('alter publication supabase_realtime add table public.%I', target_table);
+      end if;
+    end loop;
+  end if;
+end;
+$realtime$;
 
--- 6. Habilitar suscripción a cambios en tiempo real (Supabase Realtime)
-alter publication supabase_realtime add table public.products;
-alter publication supabase_realtime add table public.store_settings;
+commit;

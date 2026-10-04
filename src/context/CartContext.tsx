@@ -1,14 +1,17 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from "react";
 import { Product, ProductColor, CartItem, Coupon } from "@/types";
 import { STORE_SETTINGS } from "@/data/products";
 import { getAssetUrl } from "@/utils/paths";
+import { useProducts } from "@/context/ProductsContext";
+import { addCartItem, setCartQuantity, inspectCart, cartQuantityLimit, cartTotals } from "@/lib/cart-stock";
 import {
   fetchCouponsFromSupabase,
   saveCouponsToSupabase,
   fetchStoreSettingsFromSupabase,
   saveStoreSettingsToSupabase,
+  isSupabaseReady,
 } from "@/lib/supabase";
 
 export const DEFAULT_COUPONS: Coupon[] = [
@@ -32,6 +35,13 @@ export const DEFAULT_COUPONS: Coupon[] = [
 
 interface CartContextType {
   items: CartItem[];
+  stockIssues: Map<string, string>;
+  stockNotice: string;
+  clearStockNotice: () => void;
+  isCheckingStock: boolean;
+  isInventoryLoading: boolean;
+  quantityLimit: (productId: string, color: string) => number;
+  validateCart: () => Promise<{ items: CartItem[]; discountAmount: number; total: number } | null>;
   addItem: (product: Product, color?: ProductColor, quantity?: number) => void;
   removeItem: (productId: string, colorName: string) => void;
   updateQuantity: (productId: string, colorName: string, quantity: number) => void;
@@ -69,7 +79,17 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const { products, isLoading: isInventoryLoading, refreshFromCloud } = useProducts();
+  const [cartState, setCartState] = useState<{ items: CartItem[]; notice: string }>({ items: [], notice: "" });
+  const savedItems = cartState.items;
+  const setItems = (next: CartItem[] | ((previous: CartItem[]) => CartItem[])) => {
+    setCartState((previous) => ({ ...previous, items: typeof next === "function" ? next(previous.items) : next }));
+  };
+  const inspected = useMemo(() => inspectCart(savedItems, products), [savedItems, products]);
+  const items = isInventoryLoading ? savedItems : inspected.items;
+  const stockIssues = isInventoryLoading ? new Map<string, string>() : inspected.issues;
+  const [isCheckingStock, setIsCheckingStock] = useState(false);
+  const checkingStock = useRef(false);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
@@ -148,79 +168,88 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isLoaded) return;
     try {
-      localStorage.setItem("pulsotech_cart", JSON.stringify(items));
+      localStorage.setItem("pulsotech_cart", JSON.stringify(savedItems));
       localStorage.setItem("pulsotech_favorites", JSON.stringify(favorites));
       localStorage.setItem("pulsotech_phone", whatsappNumber);
       localStorage.setItem("pulsotech_coupons", JSON.stringify(coupons));
     } catch {
       // Ignorar error de almacenamiento
     }
-  }, [items, favorites, whatsappNumber, coupons, isLoaded]);
+  }, [savedItems, favorites, whatsappNumber, coupons, isLoaded]);
+
+  const clearStockNotice = () => setCartState((previous) => ({ ...previous, notice: "" }));
+  const setStockNotice = (notice: string) => setCartState((previous) => ({ ...previous, notice }));
+  const quantityLimit = (productId: string, color: string) => cartQuantityLimit(items, products, productId, color);
 
   const addItem = (product: Product, color?: ProductColor, quantity = 1) => {
-    const isOutOfStock = (product.stockCount ?? 0) <= 0 || product.inStock === false;
-    if (isOutOfStock) {
-      alert(`El producto "${product.name}" se encuentra agotado.`);
+    if (checkingStock.current) return;
+    setIsCartOpen(true);
+    if (isInventoryLoading) {
+      setStockNotice("Estamos cargando la disponibilidad. Intenta de nuevo en un momento.");
       return;
     }
-
-    const validColor: ProductColor = color || (product.colors && product.colors[0]) || {
-      name: "Original",
-      hex: "#18181b",
-      image: product.images?.[0] || getAssetUrl("/placeholder-earbuds.svg"),
+    const validColor = color || product.colors?.[0] || {
+      name: "Original", hex: "#18181b", image: product.images?.[0] || getAssetUrl("/placeholder-earbuds.svg"),
     };
-
-    setItems((prev) => {
-      const existingIndex = prev.findIndex(
-        (item) =>
-          item.product.id === product.id &&
-          (item.selectedColor?.name || "Original") === validColor.name
-      );
-
-      if (existingIndex > -1) {
-        const next = [...prev];
-        const newQty = next[existingIndex].quantity + quantity;
-        if (product.stockCount && newQty > product.stockCount) {
-          alert(`Solo quedan ${product.stockCount} unidades disponibles de este producto.`);
-          next[existingIndex].quantity = product.stockCount;
-        } else {
-          next[existingIndex].quantity = newQty;
-        }
-        return next;
-      }
-
-      const initialQty = product.stockCount && quantity > product.stockCount ? product.stockCount : quantity;
-      return [...prev, { product, selectedColor: validColor, quantity: initialQty }];
-    });
-    setIsCartOpen(true);
+    setCartState((previous) => addCartItem(previous.items, products, product.id, validColor, quantity));
   };
 
   const removeItem = (productId: string, colorName: string) => {
-    setItems((prev) =>
-      prev.filter(
-        (item) =>
-          !(item.product.id === productId && (item.selectedColor?.name || "Original") === colorName)
-      )
-    );
+    if (checkingStock.current) return;
+    setCartState((previous) => ({
+      items: previous.items.filter((item) => !(item.product.id === productId && (item.selectedColor?.name || "Original") === colorName)),
+      notice: "",
+    }));
   };
 
   const updateQuantity = (productId: string, colorName: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeItem(productId, colorName);
+    if (checkingStock.current) return;
+    if (isInventoryLoading) {
+      setStockNotice("Estamos cargando la disponibilidad. Intenta de nuevo en un momento.");
       return;
     }
-    setItems((prev) =>
-      prev.map((item) =>
-        item.product.id === productId && (item.selectedColor?.name || "Original") === colorName
-          ? { ...item, quantity }
-          : item
-      )
-    );
+    setCartState((previous) => setCartQuantity(previous.items, products, productId, colorName, quantity));
   };
 
   const clearCart = () => {
-    setItems([]);
+    if (checkingStock.current) return;
+    setCartState({ items: [], notice: "" });
     setAppliedCoupon(null);
+  };
+
+  const validateCart = async () => {
+    if (checkingStock.current || savedItems.length === 0) return null;
+    if (isInventoryLoading) {
+      setStockNotice("Estamos cargando la disponibilidad. Intenta de nuevo en un momento.");
+      return null;
+    }
+    checkingStock.current = true;
+    setIsCheckingStock(true);
+    try {
+      const latestProducts = isSupabaseReady() ? await refreshFromCloud() : products;
+      if (latestProducts === null) {
+        setStockNotice("No pudimos comprobar el stock. Intenta de nuevo antes de enviar tu pedido.");
+        return null;
+      }
+      const checked = inspectCart(savedItems, latestProducts);
+      setItems(checked.items);
+      if (checked.issues.size > 0) {
+        setStockNotice("Revisa los productos marcados en tu bolsa antes de continuar.");
+        return null;
+      }
+      if (checked.pricesChanged) {
+        setStockNotice("Se actualizaron los precios de tu bolsa. Revisa el total y vuelve a pulsar Pedir por WhatsApp.");
+        return null;
+      }
+      clearStockNotice();
+      return { items: checked.items, ...cartTotals(checked.items, appliedCoupon) };
+    } catch {
+      setStockNotice("No pudimos comprobar el stock. Intenta de nuevo antes de enviar tu pedido.");
+      return null;
+    } finally {
+      checkingStock.current = false;
+      setIsCheckingStock(false);
+    }
   };
 
   const toggleFavorite = (productId: string) => {
@@ -304,22 +333,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Cálculos de Totales - El total es exactamente subtotal menos descuento (sin cargos ocultos de envío)
-  const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-
-  let discountAmount = 0;
-  if (appliedCoupon && appliedCoupon.isActive) {
-    if (appliedCoupon.minPurchase && subtotal < appliedCoupon.minPurchase) {
-      discountAmount = 0;
-    } else if (appliedCoupon.discountType === "percentage") {
-      discountAmount = (subtotal * appliedCoupon.discountValue) / 100;
-    } else {
-      discountAmount = Math.min(subtotal, appliedCoupon.discountValue);
-    }
-  }
+  const { subtotal, discountAmount, total } = cartTotals(items, appliedCoupon);
 
   // Costo de envío es 0 ya que se coordina vía WhatsApp
   const shipping = 0;
-  const total = Math.max(0, subtotal - discountAmount);
   const itemsCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const freeShippingRemaining = 0;
   const favoritesCount = favorites.length;
@@ -338,6 +355,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     <CartContext.Provider
       value={{
         items,
+        stockIssues,
+        stockNotice: cartState.notice,
+        clearStockNotice,
+        isCheckingStock,
+        isInventoryLoading,
+        quantityLimit,
+        validateCart,
         addItem,
         removeItem,
         updateQuantity,

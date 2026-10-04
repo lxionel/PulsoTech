@@ -10,6 +10,9 @@ export interface ProductSpecItem {
 }
 
 export interface ProductSpecs {
+  audioType?: "earbuds" | "headband";
+  ancEnabled?: "yes" | "no";
+  playbackHours?: string;
   battery?: string;
   anc?: string;
   driver?: string;

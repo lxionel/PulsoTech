@@ -11,8 +11,7 @@ export const STORE_SETTINGS = {
   currencyCode: "PEN",
   freeShippingThreshold: 0,
   shippingCost: 0,
-  guaranteeMonths: 12,
-  deliveryTime: "Entrega el mismo día",
+  deliveryTime: "Entrega coordinada en Chimbote",
   social: {
     instagram: "https://www.instagram.com/lionel_a5/",
     tiktok: "https://www.tiktok.com/@lionel_a5",

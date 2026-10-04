@@ -6,6 +6,8 @@ import { ProductsProvider } from "@/context/ProductsContext";
 import FloatingWidgets from "@/components/FloatingWidgets";
 import CartDrawer from "@/components/CartDrawer";
 import FavoritesDrawer from "@/components/FavoritesDrawer";
+import { ComparisonProvider } from "@/context/ComparisonContext";
+import ProductComparison from "@/components/ProductComparison";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -24,7 +26,7 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: "PulsoTech",
   description:
-    "Tienda especializada en audífonos originales y accesorios tecnológicos. Entrega el mismo día con garantía y atención personalizada.",
+    "Tecnología y audio original en Chimbote. Pedidos por WhatsApp, entregas coordinadas y atención personalizada.",
 };
 
 export default function RootLayout({
@@ -35,6 +37,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
+      data-scroll-behavior="smooth"
       className={`${plusJakarta.variable} ${spaceGrotesk.variable} h-full antialiased scroll-smooth`}
       suppressHydrationWarning
     >
@@ -44,10 +47,13 @@ export default function RootLayout({
       >
         <ProductsProvider>
           <CartProvider>
-            {children}
-            <CartDrawer />
-            <FavoritesDrawer />
-            <FloatingWidgets />
+            <ComparisonProvider>
+              {children}
+              <CartDrawer />
+              <FavoritesDrawer />
+              <FloatingWidgets />
+              <ProductComparison />
+            </ComparisonProvider>
           </CartProvider>
         </ProductsProvider>
       </body>

@@ -16,11 +16,13 @@ import {
 } from "@/lib/supabase";
 
 interface ProductsContextType {
+  isLoading: boolean;
   products: Product[];
   addProduct: (product: Product) => void;
   updateProduct: (product: Product) => void;
   deleteProduct: (id: string) => void;
   updateStock: (id: string, deltaOrExact: number, isDelta?: boolean) => void;
+  applyConfirmedStock: (stock: { id: string; stockCount: number; inStock: boolean }) => void;
   resetToDefault: () => void;
   exportProductsJson: () => string;
   brands: string[];
@@ -32,7 +34,7 @@ interface ProductsContextType {
   updateCategory: (oldCategory: string, newCategory: string) => void;
   deleteCategory: (category: string) => void;
   isCloudConnected: boolean;
-  refreshFromCloud: () => Promise<void>;
+  refreshFromCloud: () => Promise<Product[] | null>;
 }
 
 const ProductsContext = createContext<ProductsContextType | undefined>(undefined);
@@ -79,12 +81,6 @@ function getInitialCategories(): string[] {
 function getInitialProducts(): Product[] {
   if (typeof window !== "undefined") {
     try {
-      const version = localStorage.getItem(DATA_VERSION_KEY);
-      if (version !== CURRENT_DATA_VERSION) {
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
-        return [];
-      }
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored !== null) {
         const parsed = JSON.parse(stored);
@@ -100,9 +96,11 @@ function getInitialProducts(): Product[] {
 }
 
 export function ProductsProvider({ children }: { children: React.ReactNode }) {
-  const [products, setProducts] = useState<Product[]>(getInitialProducts);
-  const [brands, setBrands] = useState<string[]>(getInitialBrands);
-  const [categories, setCategories] = useState<string[]>(getInitialCategories);
+  // The server and the first client render must match. Restore saved data after mount.
+  const [products, setProducts] = useState<Product[]>(PRODUCTS);
+  const [brands, setBrands] = useState<string[]>(DEFAULT_BRANDS);
+  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Estado de Supabase Cloud
   const [isCloudConnected, setIsCloudConnected] = useState<boolean>(false);
@@ -123,20 +121,20 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const refreshFromCloud = useCallback(async () => {
     if (!isSupabaseReady()) {
       setIsCloudConnected(false);
-      return;
+      return null;
     }
 
     try {
-      const cloudProds = await fetchProductsFromSupabase();
+      const [cloudProds, cloudSettings] = await Promise.all([
+        fetchProductsFromSupabase(),
+        fetchStoreSettingsFromSupabase(),
+      ]);
       if (cloudProds !== null) {
         setIsCloudConnected(true);
         setProducts(cloudProds);
-        if (typeof window !== "undefined") {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudProds));
-        }
+        saveProductsLocal(cloudProds);
 
         // Cargar marcas y categorías de la nube si existen
-        const cloudSettings = await fetchStoreSettingsFromSupabase();
         if (cloudSettings) {
           if (cloudSettings.brands && cloudSettings.brands.length > 0) {
             setBrands(cloudSettings.brands);
@@ -145,6 +143,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
             setCategories(cloudSettings.categories);
           }
         }
+        return cloudProds;
       } else {
         setIsCloudConnected(false);
       }
@@ -152,18 +151,21 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       console.error("Error en refreshFromCloud:", e);
       setIsCloudConnected(false);
     }
-  }, []);
+    return null;
+  }, [saveProductsLocal]);
 
   // Inicialización y suscripción en tiempo real
   useEffect(() => {
     let isMounted = true;
 
-    const init = async () => {
-      if (isMounted) {
-        await refreshFromCloud();
-      }
-    };
-    void init();
+    const timer = window.setTimeout(() => {
+      setProducts(getInitialProducts());
+      setBrands(getInitialBrands());
+      setCategories(getInitialCategories());
+      void refreshFromCloud().finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+    }, 0);
 
     // Suscripción Realtime en Supabase si está disponible
     const client = getSupabaseClient();
@@ -177,9 +179,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
             fetchProductsFromSupabase().then((data) => {
               if (data && Array.isArray(data) && isMounted) {
                 setProducts(data);
-                if (typeof window !== "undefined") {
-                  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-                }
+                saveProductsLocal(data);
               }
             });
           }
@@ -188,14 +188,16 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
 
       return () => {
         isMounted = false;
+        window.clearTimeout(timer);
         client.removeChannel(channel);
       };
     }
 
     return () => {
       isMounted = false;
+      window.clearTimeout(timer);
     };
-  }, [refreshFromCloud]);
+  }, [refreshFromCloud, saveProductsLocal]);
 
   // Sincronizar storage entre pestañas cuando se usa modo local
   useEffect(() => {
@@ -281,6 +283,17 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         });
       }
 
+      return next;
+    });
+  }, [saveProductsLocal]);
+
+  // Apply a database receipt without performing another stock write.
+  const applyConfirmedStock = useCallback((stock: { id: string; stockCount: number; inStock: boolean }) => {
+    if (!Number.isSafeInteger(stock.stockCount) || stock.stockCount < 0) return;
+    setProducts((previous) => {
+      const next = previous.map((product) => product.id === stock.id
+        ? { ...product, stockCount: stock.stockCount, inStock: stock.inStock } : product);
+      saveProductsLocal(next);
       return next;
     });
   }, [saveProductsLocal]);
@@ -433,11 +446,13 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   return (
     <ProductsContext.Provider
       value={{
+        isLoading,
         products,
         addProduct,
         updateProduct,
         deleteProduct,
         updateStock,
+        applyConfirmedStock,
         resetToDefault,
         exportProductsJson,
         brands,

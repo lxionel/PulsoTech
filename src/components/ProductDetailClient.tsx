@@ -6,11 +6,16 @@ import Link from "next/link";
 import { Product } from "@/types";
 import { STORE_SETTINGS } from "@/data/products";
 import { getAssetUrl } from "@/utils/paths";
+import { AUDIO_TYPE_OPTIONS, parsePlaybackHours } from "@/lib/audio-filters";
+import { getProductVideoInfo } from "@/lib/content-security";
 import { useCart } from "@/context/CartContext";
 import { useProducts } from "@/context/ProductsContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
+import ShareProductButton from "@/components/ShareProductButton";
+import CompareProductButton from "@/components/CompareProductButton";
+import { useComparison } from "@/context/ComparisonContext";
 import {
   Battery,
   ShieldCheck,
@@ -30,22 +35,6 @@ import {
   Play,
 } from "lucide-react";
 
-function getEmbedVideoInfo(url?: string): { isYouTube: boolean; embedUrl: string } | null {
-  if (!url || !url.trim()) return null;
-  const trimmed = url.trim();
-  const ytMatch = trimmed.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
-  if (ytMatch && ytMatch[1]) {
-    return {
-      isYouTube: true,
-      embedUrl: `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?autoplay=1&rel=0`,
-    };
-  }
-  return {
-    isYouTube: false,
-    embedUrl: trimmed,
-  };
-}
-
 function getSpecIcon(label: string) {
   const l = label.toLowerCase();
   if (l.includes("batería") || l.includes("autonomía") || l.includes("estuche")) return Battery;
@@ -58,7 +47,8 @@ function getSpecIcon(label: string) {
 }
 
 export default function ProductDetailClient({ product: initialProduct }: { product: Product }) {
-  const { addItem, setIsCartOpen, whatsappNumber, toggleFavorite, isFavorite } = useCart();
+  const { addItem, setIsCartOpen, whatsappNumber, toggleFavorite, isFavorite, isCartOpen, isFavoritesOpen } = useCart();
+  const { isOpen: isComparisonOpen, selectedProducts } = useComparison();
   const { products } = useProducts();
 
   // Obtener siempre la versión más actualizada en vivo desde useProducts()
@@ -79,6 +69,8 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   const [isVideoActive, setIsVideoActive] = useState(false);
   const isFav = isFavorite(product.id);
   const isOutOfStock = (product.stockCount ?? 0) <= 0 || product.inStock === false;
+  const purchaseQuantity = isOutOfStock ? 0 : Math.min(quantity, product.stockCount);
+  const showMobilePurchase = !isCartOpen && !isFavoritesOpen && !(isComparisonOpen && selectedProducts.length === 2);
 
   // Consolidar especificaciones técnicas oficiales (customSpecs + specs estándar)
   const allSpecsList = React.useMemo(() => {
@@ -95,8 +87,22 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
 
     // 2. Si faltan campos de specs estándar, agregarlos:
     if (product.specs) {
+      const addRecordedSpec = (label: string, value: string) => {
+        const existing = list.find((spec) => spec.label.toLowerCase() === label.toLowerCase());
+        if (existing) existing.value = value;
+        else list.push({ label, value });
+      };
+      const audioType = AUDIO_TYPE_OPTIONS.find((option) => option.value === product.specs.audioType);
+      if (audioType) addRecordedSpec("Tipo de audífono", audioType.label);
+      const playbackHours = parsePlaybackHours(product.specs.playbackHours);
+      if (playbackHours !== undefined) {
+        addRecordedSpec("Autonomía por carga", `${playbackHours} horas (sin estuche)`);
+      }
+      if (product.specs.ancEnabled === "yes" || product.specs.ancEnabled === "no") {
+        addRecordedSpec("Cancelación activa (ANC)", product.specs.ancEnabled === "yes" ? "Con ANC" : "Sin ANC");
+      }
       if (product.specs.battery && !list.some((s) => s.label.toLowerCase().includes("batería") || s.label.toLowerCase().includes("autonomía"))) {
-        list.push({ label: "Batería Total", value: `${product.specs.battery} con estuche` });
+        list.push({ label: "Autonomía", value: product.specs.battery });
       }
       if (product.specs.anc && !list.some((s) => s.label.toLowerCase().includes("cancelación") || s.label.toLowerCase().includes("anc"))) {
         list.push({ label: "Cancelación de Ruido", value: product.specs.anc });
@@ -130,7 +136,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
       }
     );
   }, [colors, selectedColorIndex, product.images, fallbackImg]);
-  const videoInfo = React.useMemo(() => getEmbedVideoInfo(product.videoUrl), [product.videoUrl]);
+  const videoInfo = React.useMemo(() => getProductVideoInfo(product.videoUrl), [product.videoUrl]);
 
   const galleryImages = React.useMemo(() => {
     const list: string[] = [];
@@ -171,11 +177,13 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   };
 
   const handleAddToCart = () => {
-    addItem(product, currentColor, quantity);
+    if (isOutOfStock) return;
+    addItem(product, currentColor, purchaseQuantity);
   };
 
   const handleBuyNow = () => {
-    addItem(product, currentColor, quantity);
+    if (isOutOfStock) return;
+    addItem(product, currentColor, purchaseQuantity);
     setIsCartOpen(true);
   };
 
@@ -184,7 +192,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   const waMessage = `¡Hola PulsoTech! Deseo comprar el modelo *${product.name}* (Color: ${currentColor?.name || "Estándar"}, Precio: ${STORE_SETTINGS.currencySymbol}${product.price.toFixed(2)}). ¿Tienen stock disponible para entrega hoy?`;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#fbfbfd] text-[#111113]">
+    <div className="min-h-screen flex flex-col bg-[#fbfbfd] text-[#111113] pb-[calc(80px+env(safe-area-inset-bottom))] sm:pb-0">
       <Navbar />
 
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 w-full pb-24 sm:pb-10">
@@ -225,6 +233,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                       className="w-full h-full border-0 aspect-square"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
+                      referrerPolicy="strict-origin-when-cross-origin"
                     />
                   ) : (
                     <video
@@ -241,7 +250,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                   activeImage?.startsWith("blob:") ||
                   activeImage?.startsWith("http") ? (
                     <img
-                      src={activeImage}
+                      src={getAssetUrl(activeImage)}
                       alt={product.name}
                       className="w-full h-full object-contain p-2 max-w-full max-h-full"
                     />
@@ -335,7 +344,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                       img?.startsWith("blob:") ||
                       img?.startsWith("http") ? (
                         <img
-                          src={img}
+                          src={getAssetUrl(img)}
                           alt={`${product.name} foto ${idx + 1}`}
                           className="w-full h-full object-contain p-0.5"
                         />
@@ -431,6 +440,8 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
               <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed">
                 {product.subtitle}
               </p>
+              <ShareProductButton key={product.id} product={product} />
+              <CompareProductButton product={product} />
             </div>
 
             {/* Price Box (Retail Style) */}
@@ -450,14 +461,14 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
 
               {/* Trust & Guarantee Indicators */}
               <div className="grid grid-cols-2 gap-2 pt-1">
-                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200/70 text-xs text-neutral-800 font-medium">
+                <Link href="/garantia-y-entregas/" className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200/70 text-xs text-neutral-800 font-medium hover:border-neutral-400 transition-colors">
                   <ShieldCheck className="w-4 h-4 text-neutral-700 shrink-0" />
                   <span className="truncate">Garantía PulsoTech</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200/70 text-xs text-neutral-800 font-medium">
+                </Link>
+                <Link href="/garantia-y-entregas/" className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200/70 text-xs text-neutral-800 font-medium hover:border-neutral-400 transition-colors">
                   <Truck className="w-4 h-4 text-neutral-700 shrink-0" />
-                  <span className="truncate">Envío & Entrega Segura</span>
-                </div>
+                  <span className="truncate">Entrega coordinada</span>
+                </Link>
               </div>
             </div>
 
@@ -504,16 +515,20 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                   <span className="text-xs font-semibold text-neutral-700">Cantidad:</span>
                   <div className="flex items-center border border-neutral-200 rounded-xl bg-white shadow-2xs">
                     <button
-                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      onClick={() => setQuantity(Math.max(1, purchaseQuantity - 1))}
+                      disabled={purchaseQuantity <= 1}
+                      aria-label="Reducir cantidad"
                       className="px-3.5 py-2 text-neutral-600 hover:text-black font-bold text-sm cursor-pointer"
                     >
                       -
                     </button>
                     <span className="px-3 py-2 text-xs font-bold text-neutral-900 min-w-8 text-center">
-                      {quantity}
+                      {purchaseQuantity}
                     </span>
                     <button
-                      onClick={() => setQuantity((q) => Math.min(product.stockCount || 99, q + 1))}
+                      onClick={() => setQuantity(Math.min(product.stockCount, purchaseQuantity + 1))}
+                      disabled={purchaseQuantity >= product.stockCount}
+                      aria-label="Aumentar cantidad"
                       className="px-3.5 py-2 text-neutral-600 hover:text-black font-bold text-sm cursor-pointer"
                     >
                       +
@@ -653,19 +668,19 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
         )}
       </main>
 
-      {/* Barra Flotante Inferior para Móviles (sm:hidden): Comprar y Añadir al Carrito siempre a mano */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-neutral-200/90 p-3 px-4 shadow-[0_-4px_25px_rgba(0,0,0,0.08)] flex items-center justify-between gap-3 animate-in slide-in-from-bottom duration-200">
-        <div className="min-w-0">
+      {/* La barra comparte el color, la cantidad y el inventario de la ficha. */}
+      {showMobilePurchase && <aside aria-label="Compra rápida del producto" className="store-motion store-mobile-purchase sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-neutral-200/90 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] px-4 shadow-[0_-4px_25px_rgba(0,0,0,0.08)] flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span
               className="w-2.5 h-2.5 rounded-full border border-neutral-300 inline-block shrink-0"
               style={{ backgroundColor: currentColor?.hex || "#18181b" }}
             />
-            <span className="text-[11px] font-bold text-neutral-500 truncate max-w-[120px]">
-              {currentColor?.name || "Original"}
+            <span className="text-[11px] font-bold text-neutral-500 truncate">
+              {isOutOfStock ? "Agotado" : `${currentColor.name} · ${purchaseQuantity} ud.`}
             </span>
           </div>
-          <div className="text-lg font-black text-neutral-950 font-mono tracking-tight leading-none mt-0.5">
+          <div className="text-lg font-black text-neutral-950 font-mono tracking-tight leading-none mt-0.5 truncate">
             {STORE_SETTINGS.currencySymbol}{product.price.toFixed(2)}
           </div>
         </div>
@@ -674,7 +689,8 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
           <button
             type="button"
             onClick={handleAddToCart}
-            className="p-2.5 rounded-xl border border-neutral-300 bg-white text-neutral-900 font-bold hover:bg-neutral-50 active:scale-95 transition-all shadow-xs cursor-pointer"
+            disabled={isOutOfStock}
+            className="min-h-11 min-w-11 flex items-center justify-center rounded-xl border border-neutral-300 bg-white text-neutral-900 font-bold hover:bg-neutral-50 active:scale-95 transition-all shadow-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             title="Añadir a la bolsa"
             aria-label="Añadir a la bolsa"
           >
@@ -683,12 +699,13 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
           <button
             type="button"
             onClick={handleBuyNow}
-            className="px-5 py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-extrabold text-xs tracking-wider uppercase active:scale-95 transition-all shadow-sm cursor-pointer"
+            disabled={isOutOfStock}
+            className="min-h-11 px-3 py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-extrabold text-xs uppercase active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Comprar Ahora
+            {isOutOfStock ? "Agotado" : "Comprar ahora"}
           </button>
         </div>
-      </div>
+      </aside>}
 
       <Footer />
     </div>

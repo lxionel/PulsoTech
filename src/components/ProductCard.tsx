@@ -7,6 +7,7 @@ import { STORE_SETTINGS } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import { getAssetUrl } from "@/utils/paths";
 import { ShoppingBag, Heart, Check } from "lucide-react";
+import CompareProductButton from "./CompareProductButton";
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem, toggleFavorite, isFavorite } = useCart();
@@ -46,7 +47,7 @@ export default function ProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <div className="group relative rounded-2xl bg-white border border-neutral-200/90 hover:border-neutral-400 hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between overflow-hidden h-full will-change-transform">
+    <div className="store-motion store-product-card group relative rounded-2xl bg-white border border-neutral-200/90 hover:border-neutral-400 hover:shadow-xl transition-[transform,box-shadow,border-color] duration-300 flex flex-col justify-between overflow-hidden h-full">
       {/* Top Card Image Link */}
       <Link href={`/producto/?id=${product.id}&slug=${product.slug}`} className="block p-4 sm:p-5 pb-0 flex-1">
         {/* Top Header: Brand, New Tag & Favorite */}
@@ -78,7 +79,8 @@ export default function ProductCard({ product }: { product: Product }) {
             <button
               type="button"
               onClick={handleToggleFavorite}
-              aria-label="Guardar en favoritos"
+              aria-label={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
+              aria-pressed={isFav}
               className="p-1.5 rounded-full text-neutral-400 hover:text-red-500 hover:bg-red-50 transition-all duration-200 active:scale-125 cursor-pointer"
               title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
             >
@@ -94,7 +96,7 @@ export default function ProductCard({ product }: { product: Product }) {
             <img
               src={primaryImage}
               alt={product.name}
-              className={`absolute inset-0 w-full h-full object-contain p-1 transition-all duration-500 ease-out ${
+              className={`store-product-image-primary absolute inset-0 w-full h-full object-contain p-1 transition-[transform,scale,opacity] duration-500 ease-out ${
                 secondaryImage
                   ? "opacity-100 group-hover/image:opacity-0 group-hover/image:scale-95"
                   : "group-hover/image:scale-105"
@@ -106,7 +108,7 @@ export default function ProductCard({ product }: { product: Product }) {
               <img
                 src={secondaryImage}
                 alt={`${product.name} detalle`}
-                className="absolute inset-0 w-full h-full object-contain p-1 transition-all duration-500 ease-out opacity-0 group-hover/image:opacity-100 scale-95 group-hover/image:scale-100 pointer-events-none"
+                className="store-product-image-secondary absolute inset-0 w-full h-full object-contain p-1 transition-[transform,scale,opacity] duration-500 ease-out opacity-0 group-hover/image:opacity-100 scale-95 group-hover/image:scale-100 pointer-events-none"
               />
             )}
           </div>
@@ -128,6 +130,7 @@ export default function ProductCard({ product }: { product: Product }) {
                       setSelectedColorIndex(idx);
                     }}
                     aria-label={`Color ${color.name}`}
+                    aria-pressed={isSelected}
                     title={color.name}
                     className="w-6 h-6 flex items-center justify-center cursor-pointer shrink-0 transition-transform duration-150 hover:scale-115 active:scale-90"
                   >
@@ -195,7 +198,7 @@ export default function ProductCard({ product }: { product: Product }) {
           >
             {justAdded ? (
               <>
-                <Check className="w-4 h-4 shrink-0" />
+                <Check className="store-feedback w-4 h-4 shrink-0" />
                 <span>¡Añadido a la Bolsa!</span>
               </>
             ) : (
@@ -206,6 +209,7 @@ export default function ProductCard({ product }: { product: Product }) {
             )}
           </button>
         )}
+        <CompareProductButton product={product} />
       </div>
     </div>
   );

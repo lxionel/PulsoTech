@@ -1,14 +1,22 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { useProducts } from "@/context/ProductsContext";
 import { STORE_SETTINGS } from "@/data/products";
 import { getAssetUrl } from "@/utils/paths";
 import { Product, ProductColor, SaleRecord } from "@/types";
-import { fetchSalesRecordsFromSupabase, saveSalesRecordsToSupabase } from "@/lib/supabase";
+import { usePrivateSales } from "@/hooks/usePrivateSales";
+import LegacySalesBackup from "@/components/LegacySalesBackup";
+import StoreBackupPanel from "@/components/StoreBackupPanel";
 import Logo from "@/components/Logo";
+import AdminAccess, { useAdministrator } from "@/components/AdminAccess";
+import AdminPasswordSettings from "@/components/AdminPasswordSettings";
+import AdminComplaints from "@/components/AdminComplaints";
+import { isAudioCategory } from "@/lib/categories";
+import { parsePlaybackHours } from "@/lib/audio-filters";
+import { MAX_BACKUP_BYTES, csvCell, parseStoreBackup, restoreBackupLocally, validateImageFile, validateProductContent } from "@/lib/content-security";
 import {
   Package,
   DollarSign,
@@ -28,7 +36,6 @@ import {
   RefreshCw,
   Upload,
   Eye,
-  EyeOff,
   Filter,
   Video as VideoIcon,
   Plus,
@@ -45,12 +52,8 @@ import {
   Calendar,
   PieChart,
   Clock,
-  Lock,
-  Unlock,
-  Shield,
   ShieldCheck,
   LogOut,
-  KeyRound,
   Printer,
   MessageSquare,
   Send,
@@ -63,7 +66,6 @@ import {
   Smartphone,
   HardDrive,
   Settings,
-  Delete,
 } from "lucide-react";
 
 export type { SaleRecord };
@@ -163,6 +165,10 @@ export function getCategorySpecTemplate(categoryName: string): SpecFieldTemplate
 }
 
 export default function AdminPage() {
+  return <AdminAccess><AdminWorkspace /></AdminAccess>;
+}
+
+function AdminWorkspace() {
   const {
     whatsappNumber,
     setWhatsappNumber,
@@ -177,6 +183,7 @@ export default function AdminPage() {
     updateProduct,
     deleteProduct,
     updateStock,
+    applyConfirmedStock,
     brands,
     addBrand,
     updateBrand,
@@ -195,190 +202,13 @@ export default function AdminPage() {
   >("inventory");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
-  // Estados de Autenticación & Seguridad del Panel
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [adminPin, setAdminPin] = useState("260606");
-  const [pinInput, setPinInput] = useState("");
-  const [showPin, setShowPin] = useState(false);
-  const [pinError, setPinError] = useState("");
-  const [failedAttempts, setFailedAttempts] = useState(0);
-  const [lockoutSeconds, setLockoutSeconds] = useState(0);
-  const [isShaking, setIsShaking] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-
-  // Estados para cambio de PIN en Ajustes
-  const [currentPinInput, setCurrentPinInput] = useState("");
-  const [newPinInput, setNewPinInput] = useState("");
-  const [confirmPinInput, setConfirmPinInput] = useState("");
-  const [pinChangeNotice, setPinChangeNotice] = useState<{ text: string; isError: boolean } | null>(null);
-
-  // Carga inicial segura del estado de sesión y PIN personalizado
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      try {
-        const savedPin = localStorage.getItem("pulsotech_admin_pin");
-        if (savedPin) {
-          setAdminPin(savedPin);
-        }
-        const sessionAuth = sessionStorage.getItem("pulsotech_admin_authenticated");
-        if (sessionAuth === "true") {
-          setIsAuthenticated(true);
-        }
-      } catch {
-        // Ignorar error de acceso
-      } finally {
-        setIsAuthChecking(false);
-      }
-    }, 0);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Temporizador de enfriamiento ante intentos fallidos
-  useEffect(() => {
-    if (lockoutSeconds <= 0) return;
-    const interval = setInterval(() => {
-      setLockoutSeconds((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [lockoutSeconds]);
-
-  const verifyPin = (pinToTest: string) => {
-    if (lockoutSeconds > 0) return;
-
-    if (pinToTest.trim() === adminPin.trim()) {
-      setIsSuccess(true);
-      setPinError("");
-      setTimeout(() => {
-        try {
-          sessionStorage.setItem("pulsotech_admin_authenticated", "true");
-        } catch {}
-        setIsAuthenticated(true);
-        setPinError("");
-        setFailedAttempts(0);
-        setPinInput("");
-        setIsSuccess(false);
-      }, 300);
-    } else {
-      setIsShaking(true);
-      setTimeout(() => setIsShaking(false), 500);
-      const nextAttempts = failedAttempts + 1;
-      setFailedAttempts(nextAttempts);
-      if (nextAttempts >= 5) {
-        setLockoutSeconds(30);
-        setPinError("Has superado el límite de intentos. Panel bloqueado por 30 segundos.");
-      } else {
-        setPinError(`PIN incorrecto. Intento ${nextAttempts} de 5.`);
-      }
-      setTimeout(() => {
-        setPinInput("");
-      }, 400);
-    }
-  };
-
-  const handleDigitPress = (digit: string) => {
-    if (lockoutSeconds > 0 || isSuccess) return;
-    if (pinInput.length < 6) {
-      const nextVal = pinInput + digit;
-      setPinInput(nextVal);
-      setPinError("");
-      if (nextVal.length === 6) {
-        verifyPin(nextVal);
-      }
-    }
-  };
-
-  const handleBackspacePress = () => {
-    if (lockoutSeconds > 0 || isSuccess) return;
-    setPinInput((prev) => prev.slice(0, -1));
-    setPinError("");
-  };
-
-  const handleClearPress = () => {
-    if (lockoutSeconds > 0 || isSuccess) return;
-    setPinInput("");
-    setPinError("");
-  };
-
-  const handlePinSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (lockoutSeconds > 0 || isSuccess) return;
-    if (pinInput.length >= 4) {
-      verifyPin(pinInput);
-    }
-  };
-
-  // Soporte directo para teclado físico en la pantalla de PIN
-  useEffect(() => {
-    if (isAuthenticated || lockoutSeconds > 0) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return;
-      }
-      if (e.key >= "0" && e.key <= "9") {
-        handleDigitPress(e.key);
-      } else if (e.key === "Backspace") {
-        handleBackspacePress();
-      } else if (e.key === "Escape") {
-        handleClearPress();
-      } else if (e.key === "Enter" && pinInput.length >= 4) {
-        verifyPin(pinInput);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isAuthenticated, lockoutSeconds, pinInput, adminPin, isSuccess]);
-
-  const handleLogout = () => {
-    try {
-      sessionStorage.removeItem("pulsotech_admin_authenticated");
-    } catch {}
-    setIsAuthenticated(false);
-    setPinInput("");
-    setPinError("");
-  };
-
-  const handleChangePin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (currentPinInput.trim() !== adminPin.trim()) {
-      setPinChangeNotice({ text: "El PIN actual ingresado no es correcto.", isError: true });
-      return;
-    }
-    if (newPinInput.trim().length < 4) {
-      setPinChangeNotice({ text: "El nuevo PIN debe tener al menos 4 dígitos.", isError: true });
-      return;
-    }
-    if (newPinInput.trim() !== confirmPinInput.trim()) {
-      setPinChangeNotice({ text: "Los nuevos PINs no coinciden. Verifícalos.", isError: true });
-      return;
-    }
-
-    try {
-      localStorage.setItem("pulsotech_admin_pin", newPinInput.trim());
-      setAdminPin(newPinInput.trim());
-      setCurrentPinInput("");
-      setNewPinInput("");
-      setConfirmPinInput("");
-      setPinChangeNotice({ text: "¡PIN de seguridad actualizado con éxito! Tu nueva clave está activa.", isError: false });
-      setTimeout(() => setPinChangeNotice(null), 4000);
-    } catch {
-      setPinChangeNotice({ text: "Error al guardar el nuevo PIN en el almacenamiento.", isError: true });
-    }
-  };
+  const { logout } = useAdministrator();
+  const handleLogout = () => { void logout(); };
 
   // Estados de WhatsApp y Ajustes
   const [phoneInput, setPhoneInput] = useState(whatsappNumber);
   const [phoneSaved, setPhoneSaved] = useState(false);
-  const [settingsViewTab, setSettingsViewTab] = useState<"whatsapp" | "security" | "backup">("whatsapp");
-  const [showCurrentPinToggle, setShowCurrentPinToggle] = useState(false);
-  const [showNewPinToggle, setShowNewPinToggle] = useState(false);
-  const [showConfirmPinToggle, setShowConfirmPinToggle] = useState(false);
+  const [settingsViewTab, setSettingsViewTab] = useState<"whatsapp" | "security" | "backup" | "complaints">("whatsapp");
   const [isSyncingCloud, setIsSyncingCloud] = useState(false);
   const [syncSuccessMessage, setSyncSuccessMessage] = useState("");
 
@@ -415,89 +245,10 @@ export default function AdminPage() {
     productCount: number;
   } | null>(null);
 
-  // Registro de ventas en localStorage (persistente y con soporte para analíticas)
-  const SALES_STORAGE_KEY = "pulsotech_sales_records";
-  const [sales, setSales] = useState<SaleRecord[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const stored = localStorage.getItem(SALES_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          return parsed
-            .filter((s: SaleRecord) => !["VTA-1001", "VTA-1002", "VTA-1003"].includes(s.id))
-            .map((s: SaleRecord) => {
-              let ts = s.timestamp;
-              if (typeof ts !== "number" || isNaN(ts)) {
-                const parsedDate = Date.parse(s.date);
-                ts = !isNaN(parsedDate) ? parsedDate : Date.now();
-              }
-              return {
-                ...s,
-                timestamp: ts,
-                paymentMethod: s.paymentMethod || "Yape / Plin",
-                channel: s.channel || "WhatsApp",
-              };
-            });
-        }
-      }
-    } catch {
-      // Ignorar error de carga
-    }
-    return [];
-  });
-
-  // Sincronizar ventas con Supabase al montar el panel
-  useEffect(() => {
-    let isCancelled = false;
-    const loadCloudSales = async () => {
-      try {
-        const cloudSales = await fetchSalesRecordsFromSupabase();
-        if (!isCancelled && cloudSales && cloudSales.length > 0) {
-          const sanitized = cloudSales
-            .filter((s: SaleRecord) => !["VTA-1001", "VTA-1002", "VTA-1003"].includes(s.id))
-            .map((s: SaleRecord) => {
-              let ts = s.timestamp;
-              if (typeof ts !== "number" || isNaN(ts)) {
-                const parsedDate = Date.parse(s.date);
-                ts = !isNaN(parsedDate) ? parsedDate : Date.now();
-              }
-              return {
-                ...s,
-                timestamp: ts,
-                paymentMethod: s.paymentMethod || "Yape / Plin",
-                channel: s.channel || "WhatsApp",
-              };
-            });
-          setSales(sanitized);
-          try {
-            localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(sanitized));
-          } catch {
-            // Ignorar
-          }
-        }
-      } catch (err) {
-        console.error("Error al cargar ventas desde Supabase:", err);
-      }
-    };
-    void loadCloudSales();
-    return () => {
-      isCancelled = true;
-    };
-  }, []);
-
-  const saveSalesToStorage = (updatedSales: SaleRecord[]) => {
-    setSales(updatedSales);
-    try {
-      localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(updatedSales));
-    } catch {
-      // Ignorar error de guardado
-    }
-    // Guardar en la nube automáticamente
-    saveSalesRecordsToSupabase(updatedSales).catch((err) => {
-      console.error("Error guardando ventas en Supabase:", err);
-    });
-  };
+  // El historial privado se carga con autorización y permanece solo en memoria.
+  const { records: sales, loading: salesLoading, saving: salesSaving, ready: salesReady,
+    error: salesError, reload: reloadSales, execute: executeSale } = usePrivateSales();
+  const draftSaleId = useRef<string | null>(null);
 
   // Sub-vista activa dentro de Ventas & Despacho
   const [salesViewMode, setSalesViewMode] = useState<"orders" | "register" | "analytics">("orders");
@@ -563,6 +314,9 @@ export default function AdminPage() {
   const [formName, setFormName] = useState("");
   const [formBrand, setFormBrand] = useState(brands[0] || "Xiaomi");
   const [formCategory, setFormCategory] = useState(categories[0] || "Audífonos Inalámbricos");
+  const [formAudioType, setFormAudioType] = useState<"earbuds" | "headband" | "">("");
+  const [formAncEnabled, setFormAncEnabled] = useState<"yes" | "no" | "">("");
+  const [formPlaybackHours, setFormPlaybackHours] = useState("");
   const [formPrice, setFormPrice] = useState<number | "">("");
   const [formHasPromo, setFormHasPromo] = useState(false);
   const [formOriginalPrice, setFormOriginalPrice] = useState<number | "">("");
@@ -595,6 +349,11 @@ export default function AdminPage() {
 
   const handleCategoryChange = (newCat: string) => {
     setFormCategory(newCat);
+    if (!isAudioCategory(newCat)) {
+      setFormAudioType("");
+      setFormAncEnabled("");
+      setFormPlaybackHours("");
+    }
     // Si no hay valores rellenados, cambiar automáticamente a la plantilla técnica de la nueva categoría
     const hasValues = formCustomSpecs.some((s) => s.value.trim().length > 0);
     if (!hasValues) {
@@ -777,45 +536,46 @@ export default function AdminPage() {
   const handleRestoreBackupJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value = "";
+    if (!/\.json$/i.test(file.name) || file.size > MAX_BACKUP_BYTES) {
+      alert("Selecciona un respaldo JSON de como máximo 10 MB.");
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
         const raw = event.target?.result;
         if (typeof raw !== "string") return;
-        const parsed = JSON.parse(raw);
-        if (!parsed || !Array.isArray(parsed.products)) {
-          alert("El archivo seleccionado no tiene el formato de respaldo de PulsoTech.");
-          return;
-        }
+        const parsed = parseStoreBackup(raw);
         if (
           confirm(
-            `Se detectaron ${parsed.products.length} productos en el respaldo.\n\n¿Deseas restaurar este catálogo ahora? Esta acción actualizará los datos locales.`
+            `Se detectaron ${parsed.products.length} productos en el respaldo.\n\n¿Deseas restaurar este catálogo ahora? Esta acción actualizará los datos locales.${parsed.sales?.length ? "\nEl archivo también contiene ventas, que no se importarán. El historial privado de Supabase se conserva." : ""}`
           )
         ) {
-          localStorage.setItem("pulsotech_custom_products", JSON.stringify(parsed.products));
-          if (Array.isArray(parsed.brands) && parsed.brands.length > 0) {
-            localStorage.setItem("pulsotech_custom_brands", JSON.stringify(parsed.brands));
-          }
-          if (Array.isArray(parsed.categories) && parsed.categories.length > 0) {
-            localStorage.setItem("pulsotech_custom_categories", JSON.stringify(parsed.categories));
-          }
-          if (Array.isArray(parsed.sales)) {
-            localStorage.setItem("pulsotech_sales_records", JSON.stringify(parsed.sales));
-          }
+          restoreBackupLocally(localStorage, parsed);
           alert("Copia de seguridad restaurada correctamente. Recargando el panel...");
           window.location.reload();
         }
-      } catch {
-        alert("Ocurrió un error al procesar el archivo JSON.");
+      } catch (failure) {
+        alert(failure instanceof SyntaxError ? "El archivo no contiene un JSON válido." : failure instanceof Error ? failure.message : "No se pudo procesar el respaldo.");
       }
     };
+    reader.onerror = () => alert("No se pudo leer el archivo de respaldo.");
     reader.readAsText(file);
-    e.target.value = "";
   };
 
-  const handleRecordManualSale = (e: React.FormEvent) => {
+  const handleRecordManualSale = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!salesReady || salesLoading || salesSaving) return;
     setSaleFormError("");
+    if (draftSaleId.current && sales.some((sale) => sale.id === draftSaleId.current)) {
+      setSaleFormError("Esta orden ya figura en el historial. Comprueba su registro y el stock antes de iniciar una venta nueva.");
+      return;
+    }
+    if (!Number.isSafeInteger(newSaleQty) || newSaleQty <= 0) {
+      setSaleFormError("La cantidad debe ser un número entero mayor que cero.");
+      return;
+    }
 
     let productName = "";
     let unitPrice = 0;
@@ -843,13 +603,10 @@ export default function AdminPage() {
       unitPrice = selectedProd.price;
 
       if (selectedProd.stockCount < newSaleQty) {
-        const confirmSell = window.confirm(
-          `Atención: El producto "${selectedProd.name}" solo tiene ${selectedProd.stockCount} unidad(es) en inventario. ¿Deseas procesar la venta de ${newSaleQty} unidad(es) de todos modos?`
-        );
-        if (!confirmSell) return;
+        setSaleFormError(`El producto solo tiene ${selectedProd.stockCount} unidad(es). Actualiza el inventario y revisa la cantidad.`);
+        return;
       }
 
-      updateStock(selectedProd.id, -newSaleQty, true);
     }
 
     const nowRef = new Date();
@@ -858,7 +615,8 @@ export default function AdminPage() {
     const year = parseInt(yStr) || nowRef.getFullYear();
     const month = (parseInt(mStr) || (nowRef.getMonth() + 1)) - 1;
     const day = parseInt(dStr) || nowRef.getDate();
-    const hours = parseInt(hStr) || 12;
+    const parsedHours = parseInt(hStr);
+    const hours = Number.isFinite(parsedHours) ? parsedHours : 12;
     const mins = parseInt(minStr) || 0;
 
     const saleDateObj = new Date(year, month, day, hours, mins, 0);
@@ -873,13 +631,13 @@ export default function AdminPage() {
       minute: "2-digit",
     })}`;
 
-    const computedTotal =
+    const computedTotal = Math.round((
       newSaleCustomPrice !== ""
         ? parseFloat(newSaleCustomPrice) || 0
-        : unitPrice * newSaleQty;
+        : unitPrice * newSaleQty) * 100) / 100;
 
     const newRecord: SaleRecord = {
-      id: `VTA-${Math.floor(1000 + Math.random() * 9000)}`,
+      id: draftSaleId.current ?? `VTA-${crypto.randomUUID()}`,
       productName,
       quantity: newSaleQty,
       total: computedTotal,
@@ -895,8 +653,15 @@ export default function AdminPage() {
       notes: newSaleNotes.trim() || undefined,
     };
 
-    saveSalesToStorage([newRecord, ...sales]);
-    setLastRegisteredSale(newRecord);
+    draftSaleId.current = newRecord.id;
+    const saved = await executeSale({ kind: "create", sale: newRecord,
+      productId: selectedProd?.id ?? null,
+      expectedPrice: selectedProd && newSaleCustomPrice === "" ? selectedProd.price : null });
+    if (!saved?.sale) return;
+    draftSaleId.current = null;
+    // This is a local display update, not a second inventory write.
+    if (saved.stock) applyConfirmedStock(saved.stock);
+    setLastRegisteredSale(saved.sale);
     setNewSaleCustomer("");
     setNewSaleCustomerPhone("");
     setNewSaleCustomerAddress("");
@@ -916,45 +681,45 @@ export default function AdminPage() {
     setSalesViewMode("orders");
 
     setSuccessNotice(
-      `Venta #${newRecord.id} registrada con éxito. Total: ${STORE_SETTINGS.currencySymbol}${newRecord.total.toFixed(2)}.`
+      `Venta #${saved.sale.id} registrada con éxito. Total: ${STORE_SETTINGS.currencySymbol}${saved.sale.total.toFixed(2)}.`
     );
     setTimeout(() => setSuccessNotice(""), 6000);
   };
 
-  const handleUpdateDeliveryStatus = (
+  const handleUpdateDeliveryStatus = async (
     saleId: string,
     status: "pending" | "shipped" | "delivered" | "cancelled"
   ) => {
-    const updated = sales.map((s) =>
-      s.id === saleId ? { ...s, deliveryStatus: status } : s
-    );
-    saveSalesToStorage(updated);
+    if (!await executeSale({ kind: "status", id: saleId, status })) return;
     setSuccessNotice(`Estado de la orden #${saleId} actualizado.`);
     setTimeout(() => setSuccessNotice(""), 3000);
   };
 
-  const handleDeleteSale = (saleId: string) => {
-    if (confirm("¿Deseas eliminar este registro de venta?")) {
-      const updated = sales.filter((s) => s.id !== saleId);
-      saveSalesToStorage(updated);
+  const handleDeleteSale = async (saleId: string) => {
+    if (confirm("¿Deseas eliminar este registro de venta? Esta acción no devuelve unidades al inventario.")) {
+      if (!await executeSale({ kind: "remove", id: saleId })) return;
       setSuccessNotice("Registro de venta eliminado.");
       setTimeout(() => setSuccessNotice(""), 3000);
     }
   };
 
-  const handleClearAllSales = () => {
+  const handleClearAllSales = async () => {
     if (
       confirm(
-        "¿Estás seguro de vaciar todo el historial de ventas? Esta acción dejará los ingresos en S/ 0.00."
+        "¿Estás seguro de vaciar todo el historial de ventas? Esta acción dejará los ingresos en S/ 0.00 y no devuelve unidades al inventario."
       )
     ) {
-      saveSalesToStorage([]);
+      if (!await executeSale({ kind: "clear" })) return;
       setSuccessNotice("Historial de ventas vaciado correctamente.");
       setTimeout(() => setSuccessNotice(""), 3000);
     }
   };
 
   const handleExportSalesCSV = () => {
+    if (!salesReady || salesLoading || salesSaving) {
+      alert("Carga y comprueba el historial antes de exportar ventas.");
+      return;
+    }
     const dataToExport = displayedSales.length > 0 ? displayedSales : sales;
     if (dataToExport.length === 0) {
       alert("No hay ventas registradas para exportar en este período.");
@@ -972,20 +737,20 @@ export default function AdminPage() {
       "Notas",
     ];
     const rows = dataToExport.map((s) => [
-      s.id,
-      `"${(s.productName || "").replace(/"/g, '""')}"`,
+      csvCell(s.id),
+      csvCell(s.productName || ""),
       s.quantity,
       s.total.toFixed(2),
-      s.channel,
-      `"${(s.paymentMethod || "No especificado").replace(/"/g, '""')}"`,
-      `"${(s.customerName || "").replace(/"/g, '""')}"`,
-      `"${s.date}"`,
-      `"${(s.notes || "").replace(/"/g, '""')}"`,
+      csvCell(s.channel),
+      csvCell(s.paymentMethod || "No especificado"),
+      csvCell(s.customerName || ""),
+      csvCell(s.date),
+      csvCell(s.notes || ""),
     ]);
     const csvContent =
-      "data:text/csv;charset=utf-8,\uFEFF" +
+      "\uFEFF" +
       [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
+    const encodedUri = `data:text/csv;charset=utf-8,${encodeURIComponent(csvContent)}`;
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
     link.setAttribute(
@@ -1004,19 +769,19 @@ export default function AdminPage() {
     }
     const headers = ["ID", "Nombre", "Marca", "Categoria", "Precio_PEN", "Precio_Original_PEN", "Stock", "En_Oferta"];
     const rows = products.map((p) => [
-      p.id,
-      `"${p.name.replace(/"/g, '""')}"`,
-      `"${p.brand}"`,
-      `"${p.category}"`,
+      csvCell(p.id),
+      csvCell(p.name),
+      csvCell(p.brand),
+      csvCell(p.category),
       p.price.toFixed(2),
       (p.originalPrice || p.price).toFixed(2),
       p.stockCount,
       p.originalPrice && p.originalPrice > p.price ? "SI" : "NO",
     ]);
     const csvContent =
-      "data:text/csv;charset=utf-8,\uFEFF" +
+      "\uFEFF" +
       [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
+    const encodedUri = `data:text/csv;charset=utf-8,${encodeURIComponent(csvContent)}`;
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
     link.setAttribute("download", `inventario_pulsotech_${new Date().toISOString().slice(0, 10)}.csv`);
@@ -1107,9 +872,11 @@ export default function AdminPage() {
     );
   };
 
-  const handleColorImageUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleColorImageUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (file) {
+      try { await validateImageFile(file); } catch (failure) { alert(failure instanceof Error ? failure.message : "No se pudo leer la imagen."); return; }
       const reader = new FileReader();
       reader.onloadend = () => {
         if (typeof reader.result === "string") {
@@ -1120,9 +887,11 @@ export default function AdminPage() {
     }
   };
 
-  const handleSecondaryImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSecondaryImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (file) {
+      try { await validateImageFile(file); } catch (failure) { alert(failure instanceof Error ? failure.message : "No se pudo leer la imagen."); return; }
       const reader = new FileReader();
       reader.onloadend = () => {
         if (typeof reader.result === "string") {
@@ -1225,6 +994,9 @@ export default function AdminPage() {
 
   // Cargar datos en el formulario para editar
   const handleEditClick = (product: Product) => {
+    setFormAudioType(product.specs?.audioType || "");
+    setFormAncEnabled(product.specs?.ancEnabled || "");
+    setFormPlaybackHours(product.specs?.playbackHours || "");
     setEditingProductId(product.id);
     setFormCustomId(product.id);
     setFormName(product.name);
@@ -1277,6 +1049,9 @@ export default function AdminPage() {
 
   // Limpiar formulario para nuevo producto (100% LIMPIO, SIN EJEMPLOS PRECARGADOS)
   const handleNewProductClick = () => {
+    setFormAudioType("");
+    setFormAncEnabled("");
+    setFormPlaybackHours("");
     setEditingProductId(null);
     setFormActiveStep(1);
     setFormCustomId(generate6DigitId());
@@ -1309,8 +1084,13 @@ export default function AdminPage() {
   };
 
   // Guardar producto nuevo o editado
-  const handleSaveProduct = (e: React.FormEvent) => {
+  const handleSaveProduct = (e: Pick<React.FormEvent, "preventDefault">) => {
     e.preventDefault();
+    const playbackHours = parsePlaybackHours(formPlaybackHours);
+    if (isAudioCategory(formCategory) && formPlaybackHours.trim() && playbackHours === undefined) {
+      alert("Ingresa las horas de autonomía por carga como un número mayor que cero.");
+      return;
+    }
     if (!formName.trim()) {
       alert("Por favor ingresa el nombre del producto.");
       return;
@@ -1366,10 +1146,10 @@ export default function AdminPage() {
       return match ? match.value : fallback;
     };
 
-    const batteryVal = findSpecValue(["batería", "bateria", "autonomía", "autonomia"], "Hasta 30h");
-    const ancVal = findSpecValue(["cancelación", "cancelacion", "anc", "ruido"], "Estándar");
+    const batteryVal = findSpecValue(["batería", "bateria", "autonomía", "autonomia"], "");
+    const ancVal = findSpecValue(["cancelación", "cancelacion", "anc", "ruido"], "");
     const driverVal = findSpecValue(["driver", "diafragma", "potencia"], "Dinámico");
-    const connVal = findSpecValue(["bluetooth", "conectividad", "inalámbrico"], "Bluetooth 5.3");
+    const connVal = findSpecValue(["bluetooth", "conectividad", "inalámbrico"], "");
     const latencyVal = findSpecValue(["latencia", "ms"], "60ms");
     const weightVal = findSpecValue(["peso", "gr", "gramos"], "4.2g");
 
@@ -1394,6 +1174,9 @@ export default function AdminPage() {
       images: images.length > 0 ? images : [getAssetUrl("/images/products/redmi-buds-6-play.png")],
       customSpecs: validSpecs.length > 0 ? validSpecs : undefined,
       specs: {
+        audioType: isAudioCategory(formCategory) ? formAudioType || undefined : undefined,
+        ancEnabled: isAudioCategory(formCategory) ? formAncEnabled || undefined : undefined,
+        playbackHours: isAudioCategory(formCategory) && playbackHours !== undefined ? String(playbackHours) : undefined,
         battery: batteryVal,
         anc: ancVal,
         driver: driverVal,
@@ -1417,6 +1200,10 @@ export default function AdminPage() {
       tags: [formBrand.toLowerCase(), formCategory.toLowerCase(), "tecnología"],
     };
 
+    try { validateProductContent(productPayload); } catch (failure) {
+      alert(failure instanceof Error ? failure.message : "Revisa los datos del producto.");
+      return;
+    }
     if (editingProductId) {
       if (editingProductId !== finalId) {
         deleteProduct(editingProductId);
@@ -1470,210 +1257,6 @@ export default function AdminPage() {
       if (inventorySortBy === "name") return a.name.localeCompare(b.name);
       return 0;
     });
-
-  if (isAuthChecking) {
-    return (
-      <div className="min-h-screen bg-[#090a0f] flex items-center justify-center p-4 select-none">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-2 border-white/40 border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs font-mono font-medium text-neutral-400">Verificando acceso seguro...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-[#090a0f] text-white flex flex-col justify-between p-4 sm:p-8 relative overflow-hidden select-none">
-        {/* Sutil aura ambiental neutra sin colores neón */}
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-white/[0.02] rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none opacity-50" />
-
-        {/* Encabezado Superior */}
-        <header className="max-w-md w-full mx-auto flex items-center justify-between z-10">
-          <div className="flex items-center gap-2.5">
-            <Logo size="sm" showText={true} inverted={true} />
-            <span className="text-[10px] font-mono font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full bg-white/[0.06] text-neutral-300 border border-white/10 flex items-center gap-1.5 shadow-xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-neutral-400" />
-              Admin
-            </span>
-          </div>
-
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-400 hover:text-white transition-colors py-1.5 px-3 rounded-xl bg-neutral-900/80 hover:bg-neutral-800 border border-neutral-800/80 cursor-pointer shadow-xs"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Volver a la tienda</span>
-          </Link>
-        </header>
-
-        {/* Tarjeta Flotante Principal de Autenticación */}
-        <main className="max-w-[420px] w-full mx-auto my-auto py-6 z-10 animate-in fade-in zoom-in-95 duration-200">
-          <div className="rounded-3xl bg-[#111318]/90 border border-white/[0.08] backdrop-blur-2xl p-6 sm:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.8)] space-y-6 text-center">
-            {/* Icono de seguridad minimalista y sobrio */}
-            <div className="space-y-3">
-              <div
-                className={`w-16 h-16 rounded-2xl mx-auto flex items-center justify-center relative transition-all duration-300 ${
-                  isSuccess
-                    ? "bg-white/15 border border-white/40 shadow-sm scale-105"
-                    : "bg-neutral-900 border border-neutral-800 shadow-inner"
-                }`}
-              >
-                {isSuccess ? (
-                  <Unlock className="w-7 h-7 text-white animate-bounce" />
-                ) : (
-                  <Lock className="w-7 h-7 text-neutral-300" />
-                )}
-                <span
-                  className={`w-2 h-2 rounded-full absolute -top-1 -right-1 ring-4 ring-[#111318] transition-colors ${
-                    isSuccess ? "bg-white" : "bg-neutral-500"
-                  }`}
-                />
-              </div>
-
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-                  Acceso Administrativo
-                </h1>
-                <p className="text-xs text-neutral-400 mt-1 max-w-xs mx-auto">
-                  Ingresa tu código PIN de 6 dígitos para acceder al panel de control de PulsoTech.
-                </p>
-              </div>
-            </div>
-
-            {/* Display Visual de Dígitos PIN */}
-            <div
-              className={`flex items-center justify-center gap-2.5 py-1 transition-transform ${
-                isShaking ? "animate-shake" : ""
-              }`}
-            >
-              {[0, 1, 2, 3, 4, 5].map((idx) => {
-                const hasChar = pinInput.length > idx;
-                const char = pinInput[idx];
-                return (
-                  <div
-                    key={idx}
-                    className={`w-9 sm:w-10 h-11 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-200 ${
-                      hasChar
-                        ? "bg-white/15 border-2 border-white/60 shadow-sm scale-105"
-                        : "bg-neutral-900/60 border border-neutral-800"
-                    }`}
-                  >
-                    {hasChar ? (
-                      showPin ? (
-                        <span className="font-mono font-bold text-lg text-white">
-                          {char}
-                        </span>
-                      ) : (
-                        <span className="w-2.5 h-2.5 rounded-full bg-white shadow-xs" />
-                      )
-                    ) : (
-                      <span className="w-1.5 h-1.5 rounded-full bg-neutral-700" />
-                    )}
-                  </div>
-                );
-              })}
-
-              <button
-                type="button"
-                onClick={() => setShowPin(!showPin)}
-                className="ml-1 p-2 rounded-xl text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800/60 transition-colors cursor-pointer"
-                title={showPin ? "Ocultar PIN" : "Mostrar PIN"}
-              >
-                {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-
-            {/* Mensajes de error o bloqueo */}
-            {pinError && (
-              <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium flex items-center justify-center gap-2 animate-in fade-in">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{pinError}</span>
-              </div>
-            )}
-
-            {lockoutSeconds > 0 && (
-              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-medium flex items-center justify-center gap-2 animate-in fade-in">
-                <Clock className="w-4 h-4 shrink-0" />
-                <span>Límite de intentos superado. Espera {lockoutSeconds} segundos.</span>
-              </div>
-            )}
-
-            {/* Teclado numérico táctil interactivo (sobrio, oscuro, sin neón) */}
-            <div className="grid grid-cols-3 gap-2.5 pt-1">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                <button
-                  key={num}
-                  type="button"
-                  onClick={() => handleDigitPress(num.toString())}
-                  disabled={lockoutSeconds > 0 || isSuccess}
-                  className="h-13 sm:h-14 rounded-2xl bg-neutral-900/60 hover:bg-neutral-800 active:bg-neutral-700 border border-neutral-800 text-xl font-bold font-mono text-white transition-all shadow-xs flex items-center justify-center cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
-                >
-                  {num}
-                </button>
-              ))}
-
-              <button
-                type="button"
-                onClick={handleClearPress}
-                disabled={lockoutSeconds > 0 || isSuccess || pinInput.length === 0}
-                className="h-13 sm:h-14 rounded-2xl bg-neutral-950/40 hover:bg-neutral-800 active:scale-95 text-xs font-semibold text-neutral-400 hover:text-white border border-neutral-800/80 transition-all flex items-center justify-center cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed uppercase tracking-wider"
-                title="Borrar todo"
-              >
-                Borrar
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDigitPress("0")}
-                disabled={lockoutSeconds > 0 || isSuccess}
-                className="h-13 sm:h-14 rounded-2xl bg-neutral-900/60 hover:bg-neutral-800 active:bg-neutral-700 border border-neutral-800 text-xl font-bold font-mono text-white transition-all shadow-xs flex items-center justify-center cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
-              >
-                0
-              </button>
-
-              <button
-                type="button"
-                onClick={handleBackspacePress}
-                disabled={lockoutSeconds > 0 || isSuccess || pinInput.length === 0}
-                className="h-13 sm:h-14 rounded-2xl bg-neutral-950/40 hover:bg-neutral-800 active:scale-95 text-neutral-400 hover:text-white border border-neutral-800/80 transition-all flex items-center justify-center cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed"
-                title="Retroceder"
-              >
-                <Delete className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Botón de acceso / desbloqueo (Estilo Apple / Linear blanco de alto contraste) */}
-            <button
-              type="button"
-              onClick={() => handlePinSubmit()}
-              disabled={lockoutSeconds > 0 || isSuccess || pinInput.length < 4}
-              className="w-full py-3.5 rounded-xl bg-white hover:bg-neutral-200 active:bg-neutral-300 disabled:bg-neutral-800 disabled:text-neutral-500 text-neutral-950 font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-98 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {isSuccess ? (
-                <>
-                  <Unlock className="w-4 h-4" />
-                  <span>Acceso Concedido</span>
-                </>
-              ) : (
-                <>
-                  <Lock className="w-4 h-4" />
-                  <span>Desbloquear Panel</span>
-                </>
-              )}
-            </button>
-          </div>
-        </main>
-
-        {/* Footer */}
-        <footer className="max-w-md w-full mx-auto text-center z-10 text-[11px] text-neutral-500 flex items-center justify-center gap-2">
-          <ShieldCheck className="w-3.5 h-3.5 text-neutral-500" />
-          <span>PulsoTech Security · Acceso reservado para administración</span>
-        </footer>
-      </div>
-    );
-  }
 
   const navItems = [
     {
@@ -2236,7 +1819,7 @@ export default function AdminPage() {
                     {/* Selector de Orden */}
                     <select
                       value={inventorySortBy}
-                      onChange={(e) => setInventorySortBy(e.target.value as any)}
+                      onChange={(e) => setInventorySortBy(e.target.value as typeof inventorySortBy)}
                       className="px-3 py-2 rounded-xl bg-neutral-50 hover:bg-neutral-100/70 border border-neutral-200 text-xs font-semibold text-neutral-800 focus:outline-none focus:border-neutral-900 transition-colors cursor-pointer"
                     >
                       <option value="default">Orden: Más recientes</option>
@@ -2481,7 +2064,7 @@ export default function AdminPage() {
                         <div className="w-14 h-14 rounded-xl bg-neutral-50 border border-neutral-200 p-1 shrink-0 flex items-center justify-center overflow-hidden">
                           {item.colors[0]?.image ? (
                             <img
-                              src={item.colors[0].image}
+                              src={getAssetUrl(item.colors[0].image)}
                               alt={item.name}
                               className="w-full h-full object-contain"
                             />
@@ -2692,7 +2275,7 @@ export default function AdminPage() {
                                 <div className="w-11 h-11 rounded-xl bg-neutral-50 border border-neutral-200 p-1 shrink-0 flex items-center justify-center overflow-hidden">
                                   {item.colors[0]?.image ? (
                                     <img
-                                      src={item.colors[0].image}
+                                      src={getAssetUrl(item.colors[0].image)}
                                       alt={item.name}
                                       className="w-full h-full object-contain"
                                     />
@@ -2898,8 +2481,7 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={(e) => {
-                    const fakeEvent = { preventDefault: () => {} } as any;
-                    handleSaveProduct(fakeEvent);
+                    handleSaveProduct(e);
                   }}
                   className="px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
                 >
@@ -3216,7 +2798,7 @@ export default function AdminPage() {
                               <div className="w-12 h-12 rounded-xl bg-white border border-neutral-200 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
                                 {color.image ? (
                                   <img
-                                    src={color.image}
+                                    src={getAssetUrl(color.image)}
                                     alt={color.name}
                                     className="w-full h-full object-contain"
                                   />
@@ -3230,7 +2812,7 @@ export default function AdminPage() {
                                 <span>Subir imagen</span>
                                 <input
                                   type="file"
-                                  accept="image/*"
+                                  accept="image/jpeg,image/png,image/webp,image/gif"
                                   onChange={(e) => handleColorImageUpload(idx, e)}
                                   className="hidden"
                                 />
@@ -3251,7 +2833,7 @@ export default function AdminPage() {
                         <div className="w-12 h-12 rounded-xl bg-white border border-neutral-200 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
                           {formSecondaryImage ? (
                             <img
-                              src={formSecondaryImage}
+                              src={getAssetUrl(formSecondaryImage)}
                               alt="Secondary Preview"
                               className="w-full h-full object-contain"
                             />
@@ -3265,7 +2847,7 @@ export default function AdminPage() {
                           <span>Subir foto secundaria</span>
                           <input
                             type="file"
-                            accept="image/*"
+                            accept="image/jpeg,image/png,image/webp,image/gif"
                             onChange={handleSecondaryImageUpload}
                             className="hidden"
                           />
@@ -3462,6 +3044,41 @@ export default function AdminPage() {
                 {/* ===== PASO 4: FICHA TÉCNICA ===== */}
                 {formActiveStep === 4 && (
                   <div className="space-y-4 pt-2 border-t border-neutral-100 animate-in fade-in duration-150">
+                    {isAudioCategory(formCategory) && (
+                      <fieldset className="space-y-3 bg-neutral-50/60 p-3.5 rounded-xl border border-neutral-200">
+                        <legend className="text-sm font-extrabold text-neutral-950 px-1">Características de audífonos</legend>
+                        <p className="text-xs text-neutral-500 leading-relaxed">Completa los datos confirmados del modelo. Si no los conoces, déjalos sin especificar.</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <label className="text-xs font-bold text-neutral-800 space-y-1.5">
+                            <span className="block">Tipo de audífono</span>
+                            <select value={formAudioType} onChange={(event) => {
+                              const value = event.target.value;
+                              setFormAudioType(value === "earbuds" || value === "headband" ? value : "");
+                            }} className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900">
+                              <option value="">Sin especificar</option>
+                              <option value="earbuds">In-ear / earbuds</option>
+                              <option value="headband">De diadema</option>
+                            </select>
+                          </label>
+                          <label className="text-xs font-bold text-neutral-800 space-y-1.5">
+                            <span className="block">Cancelación activa (ANC)</span>
+                            <select value={formAncEnabled} onChange={(event) => {
+                              const value = event.target.value;
+                              setFormAncEnabled(value === "yes" || value === "no" ? value : "");
+                            }} className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900">
+                              <option value="">Sin especificar</option>
+                              <option value="yes">Con ANC</option>
+                              <option value="no">Sin ANC</option>
+                            </select>
+                          </label>
+                          <label className="text-xs font-bold text-neutral-800 space-y-1.5">
+                            <span className="block">Autonomía por carga (h)</span>
+                            <input type="number" min="0.1" step="0.1" placeholder="Sin especificar" value={formPlaybackHours} onChange={(event) => setFormPlaybackHours(event.target.value)} className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900" />
+                          </label>
+                        </div>
+                        <p className="text-[11px] text-neutral-500 leading-relaxed">ANC para escuchar música, no solo reducción de ruido del micrófono. La autonomía no incluye recargas del estuche.</p>
+                      </fieldset>
+                    )}
                     <div className="flex items-center justify-between">
                       <h3 className="text-sm font-extrabold text-neutral-950">
                         Ficha Técnica ({formCategory})
@@ -3646,7 +3263,7 @@ export default function AdminPage() {
                         {activePreviewImg ? (
                           <div className="relative w-full h-full flex items-center justify-center">
                             <img
-                              src={activePreviewImg}
+                              src={getAssetUrl(activePreviewImg)}
                               alt="Preview"
                               className={`absolute inset-0 w-full h-full object-contain p-1 transition-all duration-500 ease-out ${
                                 formSecondaryImage
@@ -3656,7 +3273,7 @@ export default function AdminPage() {
                             />
                             {formSecondaryImage && (
                               <img
-                                src={formSecondaryImage}
+                                src={getAssetUrl(formSecondaryImage)}
                                 alt="Hover Preview"
                                 className="absolute inset-0 w-full h-full object-contain p-1 transition-all duration-500 ease-out opacity-0 group-hover/preview-image:opacity-100 scale-95 group-hover/preview-image:scale-100 pointer-events-none"
                               />
@@ -3938,7 +3555,7 @@ export default function AdminPage() {
                     <button
                       key={f.id}
                       type="button"
-                      onClick={() => setFilterStatusFilter(f.id as any)}
+                      onClick={() => setFilterStatusFilter(f.id as typeof filterStatusFilter)}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                         filterStatusFilter === f.id
                           ? "bg-neutral-950 text-white shadow-2xs"
@@ -4167,7 +3784,7 @@ export default function AdminPage() {
                                         <div className="w-8 h-8 rounded-lg bg-neutral-100 border border-neutral-200/80 p-0.5 shrink-0 overflow-hidden flex items-center justify-center">
                                           {(p.images?.[0] || p.colors?.[0]?.image) ? (
                                             <img
-                                              src={p.images?.[0] || p.colors?.[0]?.image}
+                                              src={getAssetUrl(p.images?.[0] || p.colors?.[0]?.image || "")}
                                               alt={p.name}
                                               className="w-full h-full object-contain"
                                             />
@@ -4444,7 +4061,7 @@ export default function AdminPage() {
                                         <div className="w-8 h-8 rounded-lg bg-neutral-100 border border-neutral-200/80 p-0.5 shrink-0 overflow-hidden flex items-center justify-center">
                                           {(p.images?.[0] || p.colors?.[0]?.image) ? (
                                             <img
-                                              src={p.images?.[0] || p.colors?.[0]?.image}
+                                              src={getAssetUrl(p.images?.[0] || p.colors?.[0]?.image || "")}
                                               alt={p.name}
                                               className="w-full h-full object-contain"
                                             />
@@ -4741,6 +4358,13 @@ export default function AdminPage() {
         {/* ================= PESTAÑA: VENTAS & LOGÍSTICA DE DESPACHO ================= */}
         {activeTab === "sales" && (
           <div className="space-y-6 animate-in fade-in duration-200">
+            {salesLoading && <p role="status" className="text-xs text-neutral-600">Cargando historial privado de ventas…</p>}
+            {salesSaving && <p role="status" className="text-xs text-neutral-600">Confirmando el guardado de la orden…</p>}
+            {salesError && <div role="alert" className="rounded-xl border border-neutral-200 bg-white p-4 text-xs text-neutral-700 space-y-3">
+              <p>{salesError}</p>
+              <button type="button" disabled={salesLoading || salesSaving} onClick={() => { void reloadSales(); void refreshFromCloud(); }} className="rounded-lg bg-neutral-950 px-3 py-2 font-bold text-white disabled:opacity-50">Recargar historial e inventario</button>
+            </div>}
+            <fieldset disabled={!salesReady || salesLoading || salesSaving} hidden={!salesReady && sales.length === 0} className="min-w-0 space-y-6 border-0 p-0">
             {/* Header del Módulo con Selector de Sub-Vistas */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200/90 shadow-2xs">
               <div className="space-y-0.5">
@@ -4995,7 +4619,7 @@ export default function AdminPage() {
                       </h4>
                       <p className="text-xs text-neutral-500 mt-1 max-w-md mx-auto leading-relaxed">
                         {sales.length === 0
-                          ? "Comienza registrando tu primera venta con el botón 'Registrar Venta'. Cada orden generará su Nota de Venta oficial y enlace a WhatsApp."
+                          ? "Comienza registrando tu primera venta con el botón 'Registrar Venta'. Cada orden guardada permite generar una nota de venta y un enlace a WhatsApp."
                           : "Prueba seleccionando otro canal, limpiando el texto de búsqueda o cambiando el estado."}
                       </p>
                     </div>
@@ -5133,7 +4757,7 @@ export default function AdminPage() {
                                 type="button"
                                 onClick={() => setReceiptModalSale(s)}
                                 className="px-3 py-1.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
-                                title="Imprimir Nota de Venta oficial"
+                                title="Imprimir nota de venta"
                               >
                                 <Printer className="w-3.5 h-3.5 text-neutral-300" />
                                 <span>Imprimir Nota</span>
@@ -5437,7 +5061,7 @@ export default function AdminPage() {
                   <div className="flex items-center justify-between pt-2 border-t border-neutral-100 gap-3">
                     <button
                       type="button"
-                      onClick={() => setSalesViewMode("orders")}
+                      onClick={() => { draftSaleId.current = null; setSalesViewMode("orders"); }}
                       className="px-5 py-3 rounded-xl border border-neutral-200 text-neutral-700 font-bold text-xs hover:bg-neutral-100 transition-colors cursor-pointer"
                     >
                       Cancelar
@@ -5448,7 +5072,7 @@ export default function AdminPage() {
                       className="px-8 py-3.5 rounded-xl bg-neutral-950 text-white font-black text-xs hover:bg-neutral-800 transition-colors flex items-center justify-center gap-2 shadow-sm active:scale-95 cursor-pointer"
                     >
                       <ShoppingBag className="w-4 h-4 text-neutral-300" />
-                      <span>Procesar Venta y Descontar Stock</span>
+                      <span>{salesSaving ? "Guardando venta…" : "Procesar Venta y Descontar Stock"}</span>
                     </button>
                   </div>
                 </form>
@@ -5817,6 +5441,7 @@ export default function AdminPage() {
                 </div>
               </div>
             )}
+            </fieldset>
           </div>
         )}
 
@@ -5847,7 +5472,8 @@ export default function AdminPage() {
                 <div className="flex items-center gap-1.5 bg-neutral-100 p-1 rounded-xl border border-neutral-200/80 shrink-0 overflow-x-auto max-w-full">
                   {[
                     { id: "whatsapp", label: "WhatsApp" },
-                    { id: "security", label: "Seguridad & PIN" },
+                    { id: "complaints", label: "Reclamos" },
+                    { id: "security", label: "Seguridad de la cuenta" },
                     { id: "backup", label: "Respaldos & Datos" },
                   ].map((tab) => (
                     <button
@@ -5890,7 +5516,7 @@ export default function AdminPage() {
                 {/* KPI 2: Seguridad del Panel */}
                 <div className="bg-white p-4 rounded-2xl border border-neutral-200/90 shadow-2xs flex flex-col justify-between">
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Seguridad PIN</span>
+                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Sesión administrativa</span>
                     <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-800 flex items-center justify-center shrink-0">
                       <ShieldCheck className="w-4 h-4" />
                     </div>
@@ -5900,7 +5526,7 @@ export default function AdminPage() {
                       Protección Activa
                     </div>
                     <div className="text-[11px] text-neutral-500 mt-0.5">
-                      Bloqueo automático en 5 intentos
+                      Cuenta autorizada y verificada
                     </div>
                   </div>
                 </div>
@@ -6008,139 +5634,13 @@ export default function AdminPage() {
                       </form>
                     )}
 
-                {/* CARD 2: SEGURIDAD Y PIN */}
-                {settingsViewTab === "security" && (
-                      <form
-                        onSubmit={handleChangePin}
-                        className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-4"
-                      >
-                        <div className="flex items-center justify-between gap-2 pb-3 border-b border-neutral-100">
-                          <div className="flex items-center gap-2">
-                            <Shield className="w-4 h-4 text-neutral-900" />
-                            <h3 className="text-sm font-extrabold text-neutral-950">Seguridad &amp; PIN de Acceso</h3>
-                          </div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200">
-                            Panel Protegido
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <div>
-                            <label className="text-[11px] font-bold text-neutral-700 block mb-1">
-                              PIN Actual
-                            </label>
-                            <div className="relative">
-                              <input
-                                type={showCurrentPinToggle ? "text" : "password"}
-                                inputMode="numeric"
-                                maxLength={12}
-                                value={currentPinInput}
-                                onChange={(e) => setCurrentPinInput(e.target.value.replace(/\D/g, ""))}
-                                placeholder="••••••"
-                                required
-                                className="w-full pl-3 pr-8 py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowCurrentPinToggle(!showCurrentPinToggle)}
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-0.5 cursor-pointer"
-                              >
-                                {showCurrentPinToggle ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                              </button>
-                            </div>
-                          </div>
-
-                          <div>
-                            <label className="text-[11px] font-bold text-neutral-700 block mb-1">
-                              Nuevo PIN
-                            </label>
-                            <div className="relative">
-                              <input
-                                type={showNewPinToggle ? "text" : "password"}
-                                inputMode="numeric"
-                                maxLength={12}
-                                value={newPinInput}
-                                onChange={(e) => setNewPinInput(e.target.value.replace(/\D/g, ""))}
-                                placeholder="••••••"
-                                required
-                                className="w-full pl-3 pr-8 py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowNewPinToggle(!showNewPinToggle)}
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-0.5 cursor-pointer"
-                              >
-                                {showNewPinToggle ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                              </button>
-                            </div>
-                          </div>
-
-                          <div>
-                            <label className="text-[11px] font-bold text-neutral-700 block mb-1">
-                              Confirmar PIN
-                            </label>
-                            <div className="relative">
-                              <input
-                                type={showConfirmPinToggle ? "text" : "password"}
-                                inputMode="numeric"
-                                maxLength={12}
-                                value={confirmPinInput}
-                                onChange={(e) => setConfirmPinInput(e.target.value.replace(/\D/g, ""))}
-                                placeholder="••••••"
-                                required
-                                className="w-full pl-3 pr-8 py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowConfirmPinToggle(!showConfirmPinToggle)}
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-0.5 cursor-pointer"
-                              >
-                                {showConfirmPinToggle ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-
-                        {pinChangeNotice && (
-                          <div
-                            className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
-                              pinChangeNotice.isError
-                                ? "bg-rose-50 text-rose-700 border border-rose-200"
-                                : "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                            }`}
-                          >
-                            {pinChangeNotice.isError ? (
-                              <AlertCircle className="w-4 h-4 shrink-0" />
-                            ) : (
-                              <CheckCircle className="w-4 h-4 shrink-0" />
-                            )}
-                            <span>{pinChangeNotice.text}</span>
-                          </div>
-                        )}
-
-                        <div className="flex items-center justify-between pt-2 border-t border-neutral-100 flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={handleLogout}
-                            className="px-4 py-2 rounded-xl border border-neutral-200 hover:border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-                          >
-                            <LogOut className="w-3.5 h-3.5 text-neutral-500" />
-                            <span>Bloquear Panel</span>
-                          </button>
-
-                          <button
-                            type="submit"
-                            className="px-5 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-                          >
-                            <KeyRound className="w-3.5 h-3.5" />
-                            <span>Actualizar PIN</span>
-                          </button>
-                        </div>
-                      </form>
-                    )}
+                {/* Cuenta y seguridad */}
+                {settingsViewTab === "security" && <AdminPasswordSettings />}
+                {settingsViewTab === "complaints" && <AdminComplaints />}
                 {/* CARD 3: RESPALDOS Y EXPORTACIÓN */}
                 {settingsViewTab === "backup" && (
                   <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-4">
+                      <LegacySalesBackup />
                       <div className="flex items-center justify-between gap-2 pb-3 border-b border-neutral-100">
                         <div className="flex items-center gap-2">
                           <Download className="w-4 h-4 text-neutral-900" />
@@ -6151,6 +5651,7 @@ export default function AdminPage() {
                         </span>
                       </div>
 
+                      <StoreBackupPanel />
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                         <button
                           type="button"
@@ -6186,11 +5687,11 @@ export default function AdminPage() {
                           className="p-3 rounded-xl border border-neutral-200 bg-neutral-50/60 hover:bg-neutral-100 text-left transition-colors cursor-pointer group shadow-2xs"
                         >
                           <div className="flex items-center justify-between text-neutral-950 font-extrabold text-xs mb-1">
-                            <span>Backup JSON</span>
+                            <span>Catálogo (.JSON)</span>
                             <FileText className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors" />
                           </div>
                           <p className="text-[10px] text-neutral-500 font-medium">
-                            Copia íntegra
+                            Productos, marcas y categorías
                           </p>
                         </button>
                       </div>
@@ -6482,7 +5983,7 @@ export default function AdminPage() {
               </div>
 
               <div className="text-[10px] text-neutral-400 text-center leading-relaxed">
-                Garantía oficial de 12 meses por defectos de fábrica. Conservar este comprobante para cualquier soporte técnico.
+                Conserva esta nota para coordinar soporte. La garantía corresponde a las condiciones informadas para el producto. Esta nota no sustituye una boleta o factura.
               </div>
 
               {/* Botones de Acción (no-print) */}
@@ -6564,9 +6065,9 @@ export default function AdminPage() {
                     text: `Hola ${whatsappTemplateSale.customerName}, te saluda PulsoTech. Confirmamos que tu pedido #${whatsappTemplateSale.id} (${whatsappTemplateSale.productName}) ya fue depositado en agencia para el envío a provincia. ${whatsappTemplateSale.trackingNumber ? "Número de guía / seguimiento: " + whatsappTemplateSale.trackingNumber + "." : "Te estaremos adjuntando la fotografía del remito en breve."} Te mantendremos informado hasta que llegue a tus manos. ¡Muchas gracias por tu compra!`,
                   },
                   {
-                    title: "3. Confirmación de Entrega y Garantía Oficial de 12 Meses",
-                    desc: "Para cerrar la venta con social proof y activar su garantía.",
-                    text: `Hola ${whatsappTemplateSale.customerName}, te saluda PulsoTech. Confirmamos la entrega exitosa de tu pedido #${whatsappTemplateSale.id}. ¡Muchas gracias por confiar en nosotros! Recuerda que tus ${whatsappTemplateSale.productName} cuentan con garantía oficial de 12 meses ante cualquier defecto de fábrica. Si tienes alguna duda con la configuración o el uso, estamos atentos a responderte por este mismo canal. ¡Que disfrutes tu música!`,
+                    title: "3. Confirmación de entrega y atención posterior",
+                    desc: "Para confirmar la entrega y ofrecer atención al cliente.",
+                    text: `Hola ${whatsappTemplateSale.customerName}, te saluda PulsoTech. Confirmamos la entrega de tu pedido #${whatsappTemplateSale.id}. ¡Gracias por confiar en nosotros! Si tienes alguna consulta sobre ${whatsappTemplateSale.productName} o necesitas atención por una falla, escríbenos por este canal. Atenderemos tu solicitud conforme a las condiciones informadas al comprar y a tus derechos como consumidor.`,
                   },
                 ].map((template, idx) => {
                   const cleanPhone = customMsgPhone.replace(/\D/g, "");

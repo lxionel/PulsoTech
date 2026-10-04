@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { normalizeCategory } from "@/lib/categories";
 
 const CATEGORY_ITEMS = [
   {
@@ -51,12 +52,12 @@ export default function CategoryNavShowcase({
     if (onSelectCategory) {
       onSelectCategory(item.query);
     } else {
-      router.push(`/catalogo/?categoria=${encodeURIComponent(item.query)}`);
+      router.push(`/catalogo/?categoria=${encodeURIComponent(item.query)}#seccion-categoria`);
     }
   };
 
   return (
-    <div className="w-full bg-white py-3.5 sm:py-5 border-t border-neutral-200 shadow-xs shrink-0 select-none">
+    <div className="store-motion w-full bg-white py-3.5 sm:py-5 border-t border-neutral-200 shadow-xs shrink-0 select-none">
       <style>{`
         @keyframes catShake {
           0%, 100% { transform: translateX(0); }
@@ -70,30 +71,32 @@ export default function CategoryNavShowcase({
           {CATEGORY_ITEMS.map((item) => {
             const isSelected = Boolean(
               activeCategory &&
-                (activeCategory.toLowerCase() === item.query.toLowerCase() ||
-                  activeCategory.toLowerCase().includes(item.query.toLowerCase()) ||
-                  item.query.toLowerCase().includes(activeCategory.toLowerCase()))
+                (normalizeCategory(activeCategory) === normalizeCategory(item.query) ||
+                  normalizeCategory(activeCategory).includes(normalizeCategory(item.query)) ||
+                  normalizeCategory(item.query).includes(normalizeCategory(activeCategory)))
             );
 
             return (
               <button
                 key={item.id}
                 type="button"
+                aria-pressed={isSelected}
+                data-available={item.available}
                 onClick={() => handleCategoryClick(item)}
                 style={wigglingId === item.id ? { animation: "catShake 0.4s ease-in-out" } : undefined}
-                className={`group flex flex-col items-center justify-center py-1.5 px-2 text-center transition-all duration-300 focus:outline-none relative ${
+                className={`store-category group flex flex-col items-center justify-center py-1.5 px-2 text-center transition-transform duration-300 relative ${
                   item.available ? "cursor-pointer active:scale-95" : "cursor-default"
                 }`}
               >
                 {/* Dibujo limpio y estilizado con animacion suave al pasar el cursor */}
                 <div
-                  className={`w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center transition-all duration-300 ${
+                  className={`store-category-icon w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center transition-[transform,scale,color] duration-300 ${
                     isSelected
                       ? "text-black scale-105"
                       : "text-neutral-900"
                   } ${
                     item.available
-                      ? "group-hover:text-black group-hover:-translate-y-1.5 group-hover:scale-110"
+                      ? "group-hover:text-black"
                       : ""
                   }`}
                 >

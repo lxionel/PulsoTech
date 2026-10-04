@@ -3,6 +3,17 @@
 import React, { useState, useMemo } from "react";
 import { useProducts } from "@/context/ProductsContext";
 import ProductCard from "./ProductCard";
+import AudioFiltersPanel from "./AudioFiltersPanel";
+import {
+  type AudioFilters,
+  DEFAULT_AUDIO_FILTERS,
+  AUDIO_TYPE_OPTIONS,
+  AUDIO_ANC_OPTIONS,
+  AUDIO_PLAYBACK_OPTIONS,
+  matchesAudioFilters,
+} from "@/lib/audio-filters";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { matchesProductCategory, isAudioCategory } from "@/lib/categories";
 import {
   Search,
   SlidersHorizontal,
@@ -21,17 +32,13 @@ export default function ProductCatalog({
   externalSelectedCategory,
   onCategoryChange,
 }: ProductCatalogProps = {}) {
-  const { products, brands, categories } = useProducts();
-  const [internalCategory, setInternalCategory] = useState<string>("todos");
-
-  const selectedCategory =
-    externalSelectedCategory !== undefined ? externalSelectedCategory : internalCategory;
-
-  const setSelectedCategory = (cat: string) => {
-    setInternalCategory(cat);
-    if (onCategoryChange) {
-      onCategoryChange(cat);
-    }
+  const { products, brands, categories, isLoading } = useProducts();
+  const [internalCategory, setInternalCategory] = useState("todos");
+  const selectedCategory = externalSelectedCategory ?? internalCategory;
+  const setSelectedCategory = (category: string) => {
+    setInternalCategory(category);
+    setAudioFilters(DEFAULT_AUDIO_FILTERS);
+    onCategoryChange?.(category);
   };
 
   const [selectedBrand, setSelectedBrand] = useState<string>("todas");
@@ -42,13 +49,36 @@ export default function ProductCatalog({
   const [showOutOfStock, setShowOutOfStock] = useState(false);
   const [onlyNew, setOnlyNew] = useState(false);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [audioFilters, setAudioFilters] = useState<AudioFilters>(DEFAULT_AUDIO_FILTERS);
 
-  // Lista de productos base según el filtro de disponibilidad (los de stock 0 se ocultan por defecto)
+  const availableProducts = useMemo(() => products.filter((product) =>
+    showOutOfStock || ((product.stockCount ?? 0) > 0 && product.inStock !== false)
+  ), [products, showOutOfStock]);
+
+  // Las marcas se limitan a la categoría actual; las categorías permiten cambiarla.
   const baseProducts = useMemo(() => {
-    return showOutOfStock
-      ? products
-      : products.filter((p) => (p.stockCount ?? 0) > 0 && p.inStock !== false);
-  }, [products, showOutOfStock]);
+    return availableProducts.filter((product) =>
+      matchesProductCategory(product.category || "", selectedCategory)
+    );
+  }, [availableProducts, selectedCategory]);
+
+  const showAudioFilters = isAudioCategory(selectedCategory);
+  const hasAudioFilters = showAudioFilters && Object.values(audioFilters).some((value) => value !== "all");
+
+  const allCategories = useMemo(() => {
+    const categoryNames = new Map<string, string>();
+    availableProducts.forEach((product) => {
+      const name = product.category?.trim();
+      if (name) categoryNames.set(name.toLowerCase(), name);
+    });
+    if (categoryNames.size === 0) {
+      categories.forEach((category) => {
+        const name = category.trim();
+        if (name) categoryNames.set(name.toLowerCase(), name);
+      });
+    }
+    return Array.from(categoryNames.values());
+  }, [availableProducts, categories]);
 
   // Lista dinámica de marcas con productos en stock
   const allBrands = useMemo(() => {
@@ -64,55 +94,13 @@ export default function ProductCatalog({
     return Array.from(map.values());
   }, [brands, baseProducts]);
 
-  // Lista dinámica de categorías con productos en stock
-  const allCategories = useMemo(() => {
-    const map = new Map<string, string>();
-    baseProducts.forEach((p) => {
-      if (p.category && p.category.trim()) map.set(p.category.trim().toLowerCase(), p.category.trim());
-    });
-    if (map.size === 0) {
-      (categories || []).forEach((c) => {
-        if (c && c.trim()) map.set(c.trim().toLowerCase(), c.trim());
-      });
-    }
-    return Array.from(map.values());
-  }, [categories, baseProducts]);
-
-  // Lock body scroll when mobile filters drawer is open
-  React.useEffect(() => {
-    if (isMobileFiltersOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isMobileFiltersOpen]);
+  useBodyScrollLock(isMobileFiltersOpen);
 
   // Filter products logic
-  const filteredProducts = useMemo(() => {
+  const productsMatchingGeneralFilters = useMemo(() => {
     return baseProducts.filter((product) => {
       // Category filter
-      if (selectedCategory !== "todos") {
-        const prodCat = (product.category || "").toLowerCase();
-        const selCat = selectedCategory.toLowerCase();
-        let isMatch = prodCat === selCat || prodCat.includes(selCat) || selCat.includes(prodCat);
-        if (!isMatch) {
-          if (selCat.includes("audífon") || selCat.includes("audifon") || selCat.includes("audio")) {
-            isMatch = prodCat.includes("audífon") || prodCat.includes("audifon") || prodCat.includes("auricular") || prodCat.includes("audio");
-          } else if (selCat.includes("reloj") || selCat.includes("smartwatch")) {
-            isMatch = prodCat.includes("smartwatch") || prodCat.includes("reloj");
-          } else if (selCat.includes("cargador") || selCat.includes("batería") || selCat.includes("powerbank")) {
-            isMatch = prodCat.includes("cargador") || prodCat.includes("batería") || prodCat.includes("bateria") || prodCat.includes("powerbank") || prodCat.includes("accesorio");
-          } else if (selCat.includes("periféric") || selCat.includes("periferic") || selCat.includes("pc")) {
-            isMatch = prodCat.includes("periféric") || prodCat.includes("periferic") || prodCat.includes("teclado") || prodCat.includes("mouse") || prodCat.includes("computadora") || prodCat.includes("accesorio");
-          }
-        }
-        if (!isMatch) {
-          return false;
-        }
-      }
+      if (!matchesProductCategory(product.category || "", selectedCategory)) return false;
 
       // Brand filter
       if (selectedBrand !== "todas") {
@@ -157,6 +145,15 @@ export default function ProductCatalog({
     searchQuery,
   ]);
 
+  const audioFilterProducts = useMemo(() => productsMatchingGeneralFilters.filter((product) =>
+    isAudioCategory(product.category || "")
+  ), [productsMatchingGeneralFilters]);
+
+  const filteredProducts = useMemo(() => hasAudioFilters
+    ? audioFilterProducts.filter((product) => matchesAudioFilters(product, audioFilters))
+    : productsMatchingGeneralFilters,
+  [hasAudioFilters, audioFilterProducts, audioFilters, productsMatchingGeneralFilters]);
+
   // Sort products
   const sortedProducts = useMemo(() => {
     const list = [...filteredProducts];
@@ -169,6 +166,7 @@ export default function ProductCatalog({
   }, [filteredProducts, sortBy]);
 
   const hasActiveFilters =
+    hasAudioFilters ||
     selectedCategory !== "todos" ||
     selectedBrand !== "todas" ||
     priceRange !== "all" ||
@@ -184,10 +182,12 @@ export default function ProductCatalog({
     if (showOutOfStock) count++;
     if (onlyNew) count++;
     if (searchQuery.trim() !== "") count++;
+    if (showAudioFilters) count += Object.values(audioFilters).filter((value) => value !== "all").length;
     return count;
-  }, [selectedCategory, selectedBrand, priceRange, showOutOfStock, onlyNew, searchQuery]);
+  }, [selectedCategory, selectedBrand, priceRange, showOutOfStock, onlyNew, searchQuery, showAudioFilters, audioFilters]);
 
   const clearAllFilters = () => {
+    setAudioFilters(DEFAULT_AUDIO_FILTERS);
     setSelectedCategory("todos");
     setSelectedBrand("todas");
     setPriceRange("all");
@@ -198,11 +198,7 @@ export default function ProductCatalog({
     setSortBy("featured");
   };
 
-    const isAudioCat =
-    selectedCategory !== "todos" &&
-    (selectedCategory.toLowerCase().includes("audífon") ||
-      selectedCategory.toLowerCase().includes("audifon") ||
-      selectedCategory.toLowerCase().includes("audio"));
+  const isAudioCat = isAudioCategory(selectedCategory);
 
   const isChargerCat =
     selectedCategory !== "todos" &&
@@ -239,7 +235,7 @@ export default function ProductCatalog({
             {categoryTitle}
           </h2>
           <p className="text-xs sm:text-base text-neutral-600 max-w-2xl leading-relaxed">
-            Modelos originales en caja sellada con entrega el mismo día y pago contra entrega.
+            Consulta disponibilidad y coordina tu pedido por WhatsApp. Atención local en Chimbote.
           </p>
         </div>
 
@@ -361,12 +357,12 @@ export default function ProductCatalog({
                 {selectedBrand === "todas" ? (
                   <Check className="w-3.5 h-3.5" />
                 ) : (
-                  <span className="text-[10px] text-neutral-400 font-bold">{products.length}</span>
+                  <span className="text-[10px] text-neutral-400 font-bold">{baseProducts.length}</span>
                 )}
               </button>
 
               {allBrands.map((brandName) => {
-                const count = products.filter(
+                const count = baseProducts.filter(
                   (p) => p.brand?.toLowerCase() === brandName.toLowerCase()
                 ).length;
                 const isSelected = selectedBrand.toLowerCase() === brandName.toLowerCase();
@@ -407,14 +403,14 @@ export default function ProductCatalog({
                 }`}
               >
                 <span>Todos los productos</span>
-                <span className="text-[10px] font-bold opacity-75">{baseProducts.length}</span>
+                <span className="text-[10px] font-bold opacity-75">{availableProducts.length}</span>
               </button>
 
               {allCategories.map((catName) => {
-                const count = baseProducts.filter(
-                  (p) => (p.category || "").toLowerCase() === catName.toLowerCase()
+                const count = availableProducts.filter(
+                  (p) => matchesProductCategory(p.category || "", catName)
                 ).length;
-                const isSelected = selectedCategory.toLowerCase() === catName.toLowerCase();
+                const isSelected = selectedCategory !== "todos" && matchesProductCategory(catName, selectedCategory);
                 return (
                   <button
                     key={catName}
@@ -432,6 +428,10 @@ export default function ProductCatalog({
               })}
             </div>
           </div>
+
+          {showAudioFilters && (
+            <AudioFiltersPanel filters={audioFilters} onChange={setAudioFilters} products={audioFilterProducts} className="pb-5 border-b border-neutral-100" />
+          )}
 
           {/* 4. Availability Filter */}
           <div className="space-y-2">
@@ -461,61 +461,6 @@ export default function ProductCatalog({
 
         {/* Right Column: Main Products Area */}
         <div className="flex-1 w-full space-y-4 sm:space-y-6">
-          {/* Mobile Quick Category Rail */}
-          {allCategories.length > 0 && (
-            <div className="flex lg:hidden items-center gap-2 overflow-x-auto pb-1 scrollbar-none touch-pan-x -mx-1 px-1">
-              <button
-                type="button"
-                onClick={() => setSelectedCategory("todos")}
-                className={`h-8 px-3.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 ${
-                  selectedCategory === "todos"
-                    ? "bg-neutral-950 text-white shadow-xs"
-                    : "bg-white text-neutral-700 border border-neutral-200/90 hover:bg-neutral-50 shadow-2xs"
-                }`}
-              >
-                <span>Todos</span>
-                <span
-                  className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md font-bold ${
-                    selectedCategory === "todos"
-                      ? "bg-white/20 text-white"
-                      : "bg-neutral-100 text-neutral-600"
-                  }`}
-                >
-                  {baseProducts.length}
-                </span>
-              </button>
-              {allCategories.map((catName) => {
-                const isSelected = selectedCategory.toLowerCase() === catName.toLowerCase();
-                const count = baseProducts.filter(
-                  (p) => (p.category || "").toLowerCase() === catName.toLowerCase()
-                ).length;
-                return (
-                  <button
-                    key={catName}
-                    type="button"
-                    onClick={() => setSelectedCategory(catName.toLowerCase())}
-                    className={`h-8 px-3.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 ${
-                      isSelected
-                        ? "bg-neutral-950 text-white shadow-xs"
-                        : "bg-white text-neutral-700 border border-neutral-200/90 hover:bg-neutral-50 shadow-2xs"
-                    }`}
-                  >
-                    <span>{catName}</span>
-                    <span
-                      className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md font-bold ${
-                        isSelected
-                          ? "bg-white/20 text-white"
-                          : "bg-neutral-100 text-neutral-600"
-                      }`}
-                    >
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
           {/* Top Sort and Active Summary Bar */}
           <div className="flex flex-col gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-neutral-200/80 shadow-2xs">
             <div className="flex items-center justify-between gap-3">
@@ -565,6 +510,22 @@ export default function ProductCatalog({
             {hasActiveFilters && (
               <div className="flex items-center gap-1.5 flex-wrap pt-2.5 border-t border-neutral-100 text-xs">
                 <span className="text-neutral-400 text-[11px] font-medium">Activos:</span>
+                {showAudioFilters && ([
+                  { key: "type", options: AUDIO_TYPE_OPTIONS },
+                  { key: "anc", options: AUDIO_ANC_OPTIONS },
+                  { key: "playback", options: AUDIO_PLAYBACK_OPTIONS },
+                ] as const).map(({ key, options }) => audioFilters[key] !== "all" && (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setAudioFilters((previous) => ({ ...previous, [key]: "all" }))}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-100 text-neutral-800 text-[11px] font-bold cursor-pointer"
+                    aria-label={`Quitar filtro: ${options.find((option) => option.value === audioFilters[key])?.label}`}
+                  >
+                    {options.find((option) => option.value === audioFilters[key])?.label}
+                    <X aria-hidden="true" className="w-3 h-3" />
+                  </button>
+                ))}
                 {selectedBrand !== "todas" && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-100 text-neutral-800 text-[11px] font-bold">
                     {selectedBrand}
@@ -615,7 +576,9 @@ export default function ProductCatalog({
           </div>
 
           {/* Products Grid */}
-          {sortedProducts.length > 0 ? (
+          {isLoading && products.length === 0 ? (
+            <div role="status" className="py-16 text-center text-sm text-neutral-500">Cargando productos...</div>
+          ) : sortedProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
               {sortedProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
@@ -636,7 +599,7 @@ export default function ProductCatalog({
                 No encontramos productos con esos filtros.
               </p>
               <p className="text-neutral-500 text-xs mt-1">
-                Prueba ajustando el rango de precio o seleccionando todas las marcas.
+                Prueba ajustando los filtros o quitando alguna característica.
               </p>
               <button
                 onClick={clearAllFilters}
@@ -787,14 +750,14 @@ export default function ProductCatalog({
                     }`}
                   >
                     <span>Todos los productos</span>
-                    <span className="text-[10px] font-bold opacity-75">{baseProducts.length}</span>
+                    <span className="text-[10px] font-bold opacity-75">{availableProducts.length}</span>
                   </button>
 
                   {allCategories.map((catName) => {
-                    const count = baseProducts.filter(
-                      (p) => (p.category || "").toLowerCase() === catName.toLowerCase()
+                    const count = availableProducts.filter(
+                      (p) => matchesProductCategory(p.category || "", catName)
                     ).length;
-                    const isSelected = selectedCategory.toLowerCase() === catName.toLowerCase();
+                    const isSelected = selectedCategory !== "todos" && matchesProductCategory(catName, selectedCategory);
                     return (
                       <button
                         key={catName}
@@ -812,6 +775,10 @@ export default function ProductCatalog({
                   })}
                 </div>
               </div>
+
+              {showAudioFilters && (
+                <AudioFiltersPanel filters={audioFilters} onChange={setAudioFilters} products={audioFilterProducts} className="pt-2 border-t border-neutral-100" />
+              )}
 
               {/* Availability Filter Mobile */}
               <div className="space-y-2.5 pt-2 border-t border-neutral-100">

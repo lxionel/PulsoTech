@@ -1,4 +1,4 @@
-name: Deploy Next.js to GitHub Pages
+name: Validate PulsoTech for Cloudflare Pages
 
 on:
   push:
@@ -6,14 +6,14 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: "validate-${{ github.ref }}"
+  cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,18 +22,19 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Next.js
-        run: npm run build
+      - name: Test application security and data recovery
+        run: node --experimental-strip-types --test tests/*.test.mjs
 
-      - name: Deploy to GitHub Pages branch
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./out
-          publish_branch: gh-pages
+      - name: Build static site for Cloudflare Pages
+        run: npm run build:cloudflare
+        env:
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          NEXT_PUBLIC_REQUIRE_ADMIN_CAPTCHA: ${{ vars.NEXT_PUBLIC_REQUIRE_ADMIN_CAPTCHA }}
+          NEXT_PUBLIC_STORE_RUC: ${{ vars.NEXT_PUBLIC_STORE_RUC }}
+          NEXT_PUBLIC_COMPLAINT_BOOK_ENABLED: ${{ vars.NEXT_PUBLIC_COMPLAINT_BOOK_ENABLED }}

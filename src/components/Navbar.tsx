@@ -14,7 +14,6 @@ interface NavbarProps {
 }
 
 export default function Navbar({
-  currentCategory,
   isTransparent = false,
 }: NavbarProps = {}) {
   const pathname = usePathname();
@@ -29,21 +28,33 @@ export default function Navbar({
 
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [isVisible, setIsVisible] = React.useState(true);
+  const [isCatalogVisible, setIsCatalogVisible] = React.useState(false);
+  const isStartActive = isHome && !isCatalogVisible;
+  const isCatalogActive = (isHome && isCatalogVisible) || pathname.startsWith("/catalogo");
   const lastScrollY = React.useRef(0);
 
   React.useEffect(() => {
     let ticking = false;
+    let animationFrame = 0;
+    const updateActiveSection = () => {
+      const catalog = document.getElementById("catalogo");
+      setIsCatalogVisible(Boolean(catalog && catalog.getBoundingClientRect().top <= 80));
+    };
 
     // Inicializar posición de scroll actual
-    const initialY = typeof window !== "undefined" ? window.scrollY : 0;
+    const initialY = window.scrollY;
     lastScrollY.current = Math.max(0, initialY);
-    setIsScrolled(initialY > 20);
-    setIsVisible(true);
+    const initializationFrame = window.requestAnimationFrame(() => {
+      setIsScrolled(window.scrollY > 20);
+      setIsVisible(true);
+      updateActiveSection();
+    });
 
     const handleScroll = () => {
       if (!ticking) {
-        window.requestAnimationFrame(() => {
+        animationFrame = window.requestAnimationFrame(() => {
           const currentScrollY = window.scrollY;
+          updateActiveSection();
 
           // Cerca del tope superior: siempre visible y estado no-scrolled
           if (currentScrollY <= 20) {
@@ -77,12 +88,16 @@ export default function Navbar({
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.cancelAnimationFrame(animationFrame);
+      window.cancelAnimationFrame(initializationFrame);
+    };
+  }, [pathname]);
 
   return (
     <header
-      className={`w-full transition-all duration-300 ease-in-out z-50 ${
+      className={`store-motion w-full transition-[transform,background-color,border-color,box-shadow] duration-300 ease-in-out z-50 ${
         isVisible ? "translate-y-0" : "-translate-y-full pointer-events-none"
       } ${
         isTransparent
@@ -106,9 +121,10 @@ export default function Navbar({
           {/* Menú de Navegación contextual en la esquina: Inicio y Catálogo */}
           <nav className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-bold">
             <Link
-              href="/"
-              className={`transition-colors px-2.5 py-1 rounded-lg ${
-                isHome
+              href="/#inicio"
+              aria-current={isStartActive ? "location" : undefined}
+              className={`transition-[color,background-color,scale] duration-200 active:scale-95 px-2.5 py-1 rounded-lg ${
+                isStartActive
                   ? isTransparent
                     ? "text-white bg-white/20"
                     : "text-black bg-neutral-100"
@@ -120,9 +136,10 @@ export default function Navbar({
               Inicio
             </Link>
             <Link
-              href="/catalogo"
-              className={`transition-colors px-2.5 py-1 rounded-lg ${
-                !isHome
+              href="/#catalogo"
+              aria-current={isCatalogActive ? "location" : undefined}
+              className={`transition-[color,background-color,scale] duration-200 active:scale-95 px-2.5 py-1 rounded-lg ${
+                isCatalogActive
                   ? isTransparent
                     ? "text-white bg-white/20"
                     : "text-black bg-neutral-100"
@@ -220,7 +237,7 @@ export default function Navbar({
               }`}
             />
             {favoritesCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center text-[9px] font-bold px-1 rounded-full bg-red-500 text-white min-w-3.5 h-3.5 animate-in zoom-in-75">
+              <span key={favoritesCount} className="store-feedback absolute -top-1.5 -right-1.5 inline-flex items-center justify-center text-[9px] font-bold px-1 rounded-full bg-red-500 text-white min-w-3.5 h-3.5">
                 {favoritesCount}
               </span>
             )}
@@ -239,7 +256,7 @@ export default function Navbar({
             <div className="relative">
               <ShoppingBag className={`w-4 h-4 transition-transform duration-200 group-hover/cart:scale-110 ${isTransparent ? "text-neutral-950" : "text-white"}`} />
               {itemsCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center text-[9px] font-bold px-1 rounded-full bg-blue-600 text-white min-w-3.5 h-3.5 animate-in zoom-in-75">
+                <span key={itemsCount} className="store-feedback absolute -top-1.5 -right-1.5 inline-flex items-center justify-center text-[9px] font-bold px-1 rounded-full bg-blue-600 text-white min-w-3.5 h-3.5">
                   {itemsCount}
                 </span>
               )}

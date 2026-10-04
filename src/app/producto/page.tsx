@@ -13,7 +13,7 @@ function DynamicProductContent() {
   const searchParams = useSearchParams();
   const idParam = searchParams.get("id");
   const slugParam = searchParams.get("slug");
-  const { products } = useProducts();
+  const { products, isLoading } = useProducts();
 
   const product = React.useMemo(() => {
     if (idParam) {
@@ -33,6 +33,9 @@ function DynamicProductContent() {
     return null;
   }, [idParam, slugParam, products]);
 
+  if (!product && isLoading) {
+    return <div role="status" className="min-h-screen flex items-center justify-center text-neutral-500">Cargando producto...</div>;
+  }
   if (!product) {
     return (
       <div className="min-h-screen flex flex-col bg-[#fbfbfd] text-[#111113]">

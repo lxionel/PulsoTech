@@ -19,7 +19,7 @@ export default function FloatingWidgets() {
   const cleanWhatsApp = (whatsappNumber || "").replace(/\D/g, "");
 
   return (
-    <aside aria-label="Contacto oficial por WhatsApp" className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40">
+    <aside aria-label="Contacto oficial por WhatsApp" className="store-motion store-whatsapp-widget fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40">
       <a
         href={`https://wa.me/${cleanWhatsApp}?text=${encodeURIComponent(
           "¡Hola PulsoTech! Deseo consultar sobre los audífonos y productos disponibles."
@@ -41,7 +41,7 @@ export default function FloatingWidgets() {
           </svg>
           {/* Subtle online beacon con pulsación activa */}
           <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75" />
+            <span aria-hidden="true" className="store-online-pulse absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75" />
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-300 border border-[#15803d]" />
           </span>
         </div>

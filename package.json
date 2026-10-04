@@ -5,8 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node scripts/security-headers.mjs",
+    "build:cloudflare": "node scripts/build-cloudflare.mjs",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "backup:verify": "node --experimental-strip-types scripts/recover-backup.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.1",
@@ -19,6 +22,7 @@
     "three": "^0.186.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@tailwindcss/postcss": "^4",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20",

@@ -6,6 +6,7 @@ import { STORE_SETTINGS } from "@/data/products";
 import { ArrowUpRight } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import Logo from "./Logo";
+import { COMPLAINT_BOOK_ENABLED } from "@/data/store-policies";
 
 export default function Footer() {
   const { whatsappNumber } = useCart();
@@ -18,7 +19,7 @@ export default function Footer() {
         <div className="space-y-3">
           <Logo size="sm" />
           <p className="text-neutral-500 max-w-sm text-xs leading-relaxed">
-            Distribución de tecnología, audífonos 100% originales y accesorios garantizados. Entrega el mismo día y pago seguro contra entrega.
+            Tecnología y audio original. Atención en Chimbote, pedidos por WhatsApp y entregas coordinadas.
           </p>
           {/* Social Networks Links */}
           <div className="flex items-center gap-2 pt-1">
@@ -76,7 +77,7 @@ export default function Footer() {
             <span>WhatsApp Directo</span>
             <ArrowUpRight className="w-3 h-3" />
           </a>
-          <Link href="/#garantia" className="hover:text-black transition-colors">
+          <Link href="/garantia-y-entregas/" className="hover:text-black transition-colors">
             Garantía &amp; Envíos
           </Link>
         </div>
@@ -88,10 +89,10 @@ export default function Footer() {
           <div>
             © {new Date().getFullYear()} {STORE_SETTINGS.name}. Todos los derechos reservados.
           </div>
-          <div className="flex items-center gap-4">
-            <span>Privacidad</span>
-            <span>Términos y Condiciones</span>
-            <span>Libro de Reclamaciones</span>
+          <div className="flex flex-wrap justify-center items-center gap-4">
+            <Link href="/privacidad/" className="hover:text-neutral-900 transition-colors">Privacidad</Link>
+            <Link href="/terminos/" className="hover:text-neutral-900 transition-colors">Términos y Condiciones</Link>
+            <Link href="/reclamaciones/" className="hover:text-neutral-900 transition-colors">{COMPLAINT_BOOK_ENABLED ? "Libro de Reclamaciones" : "Atención y reclamos"}</Link>
           </div>
         </div>
       </div>

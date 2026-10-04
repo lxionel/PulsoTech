@@ -8,6 +8,7 @@ import { useProducts } from "@/context/ProductsContext";
 import { STORE_SETTINGS } from "@/data/products";
 import { getAssetUrl } from "@/utils/paths";
 import { X, Heart, ShoppingBag, Trash2, ArrowRight } from "lucide-react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 export default function FavoritesDrawer() {
   const {
@@ -19,17 +20,7 @@ export default function FavoritesDrawer() {
   } = useCart();
   const { products } = useProducts();
 
-  // Lock body scroll when favorites is open
-  React.useEffect(() => {
-    if (isFavoritesOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isFavoritesOpen]);
+  useBodyScrollLock(isFavoritesOpen);
 
   if (!isFavoritesOpen) return null;
 
