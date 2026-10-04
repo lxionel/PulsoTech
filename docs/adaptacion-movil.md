@@ -5,10 +5,13 @@ Comprobación del 4 de octubre de 2026 sobre la exportación estática de
 
 ## Ajustes
 
-- En móvil, marca y acciones ocupan la primera fila; Inicio y Catálogo la segunda.
-  El total permanece visible en la bolsa y en la cabecera de escritorio.
+- En móvil, la cabecera ocupa una sola fila con menú hamburguesa, marca y acciones.
+  El menú incluye Inicio, Catálogo, Audífonos y redes sociales; cierra al seleccionar
+  un enlace, pulsar Escape, tocar fuera o cambiar a escritorio. El total permanece
+  visible en la bolsa y en la cabecera de escritorio.
 - La portada móvil usa una altura compacta y texto proporcionado a la pantalla.
-  Se conservan la fotografía, las categorías, la paleta y la composición de escritorio.
+  La portada y el encabezado del catálogo están centrados en móvil. Se conservan
+  la fotografía, las categorías, la paleta y la composición de escritorio.
 - Búsqueda y orden tienen controles legibles, sin desbordar el catálogo.
 - Favoritos, colores, filtros y botones de compra tienen áreas táctiles mayores.
 - Bolsa y filtros permiten desplazamiento; el cupón cabe en pantallas pequeñas.

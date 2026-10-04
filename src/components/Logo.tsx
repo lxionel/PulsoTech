@@ -8,6 +8,7 @@ interface LogoProps {
   showText?: boolean;
   size?: "sm" | "md" | "lg";
   inverted?: boolean;
+  onClick?: React.MouseEventHandler<HTMLAnchorElement>;
 }
 
 export default function Logo({
@@ -15,13 +16,14 @@ export default function Logo({
   showText = true,
   size = "md",
   inverted = false,
+  onClick,
 }: LogoProps) {
   const iconSize = size === "sm" ? 28 : size === "lg" ? 40 : 34;
   const textSize = size === "sm" ? "text-lg" : size === "lg" ? "text-2xl" : "text-xl";
   const subSize = size === "sm" ? "text-[8px]" : size === "lg" ? "text-[10px]" : "text-[9px]";
 
   return (
-    <Link href="/" className={`flex items-center gap-2.5 group select-none ${className}`}>
+    <Link href="/" onClick={onClick} className={`flex items-center gap-2.5 group select-none ${className}`}>
       {/* Isotipo PulsoTech: Cubo Isométrico Geométrico Puro Sin Fondo */}
       <div 
         className={`relative shrink-0 flex items-center justify-center transition-transform duration-200 group-hover:scale-105 ${

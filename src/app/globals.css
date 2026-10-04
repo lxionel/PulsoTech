@@ -24,7 +24,7 @@ body {
 /* Dejar libre la barra de compra en móvil, incluido el área segura del dispositivo. */
 @media (width < 640px) {
   #catalogo {
-    scroll-margin-top: 108px;
+    scroll-margin-top: 72px;
   }
 
   .store-whatsapp-widget {

@@ -225,8 +225,8 @@ export default function ProductCatalog({
     <section id="catalogo" className="pt-8 pb-14 sm:pt-10 sm:pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Catalog Title Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6 mb-6 sm:mb-8 pb-5 sm:pb-6 border-b border-neutral-200">
-        <div className="space-y-1.5 sm:space-y-2">
-          <div className="flex items-center gap-2 text-[11px] sm:text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+        <div className="space-y-1.5 sm:space-y-2 text-center sm:text-left">
+          <div className="flex justify-center sm:justify-start items-center gap-2 text-[11px] sm:text-xs font-semibold text-neutral-500 uppercase tracking-wider">
             <span>Inicio</span>
             <span className="text-neutral-300">/</span>
             <span className="text-neutral-900 font-bold">{breadcrumbLabel}</span>

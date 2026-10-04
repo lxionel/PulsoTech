@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/context/CartContext";
-import { ShoppingBag, Heart } from "lucide-react";
+import { ShoppingBag, Heart, Menu, X } from "lucide-react";
 import { STORE_SETTINGS } from "@/data/products";
 import Logo from "./Logo";
 
@@ -29,9 +29,42 @@ export default function Navbar({
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [isVisible, setIsVisible] = React.useState(true);
   const [isCatalogVisible, setIsCatalogVisible] = React.useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const headerRef = React.useRef<HTMLElement>(null);
+  const menuButtonRef = React.useRef<HTMLButtonElement>(null);
   const isStartActive = isHome && !isCatalogVisible;
   const isCatalogActive = (isHome && isCatalogVisible) || pathname.startsWith("/catalogo");
   const lastScrollY = React.useRef(0);
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+    menuButtonRef.current?.focus();
+  };
+
+  React.useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMobileMenuOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    };
+    const handleOutsideClick = (event: PointerEvent) => {
+      if (event.target instanceof Node && !headerRef.current?.contains(event.target)) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    const desktop = window.matchMedia("(min-width: 640px)");
+    const handleResize = () => { if (desktop.matches) setIsMobileMenuOpen(false); };
+    document.addEventListener("keydown", handleKey);
+    document.addEventListener("pointerdown", handleOutsideClick);
+    desktop.addEventListener("change", handleResize);
+    return () => {
+      document.removeEventListener("keydown", handleKey);
+      document.removeEventListener("pointerdown", handleOutsideClick);
+      desktop.removeEventListener("change", handleResize);
+    };
+  }, [isMobileMenuOpen]);
 
   React.useEffect(() => {
     let ticking = false;
@@ -97,8 +130,14 @@ export default function Navbar({
 
   return (
     <header
+      ref={headerRef}
+      onBlur={(event) => {
+        if (event.relatedTarget instanceof Node && !event.currentTarget.contains(event.relatedTarget)) {
+          setIsMobileMenuOpen(false);
+        }
+      }}
       className={`store-motion w-full transition-[transform,background-color,border-color,box-shadow] duration-300 ease-in-out z-50 ${
-        isVisible ? "translate-y-0" : "-translate-y-full pointer-events-none"
+        isVisible || isMobileMenuOpen ? "translate-y-0" : "-translate-y-full pointer-events-none"
       } ${
         isTransparent
           ? `fixed top-0 left-0 right-0 ${
@@ -113,13 +152,24 @@ export default function Navbar({
             }`
       }`}
     >
-      <div className="w-full max-w-[1650px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 py-2 sm:py-0 sm:h-16 sm:flex sm:justify-between sm:gap-4 lg:gap-8">
+      <div className="w-full max-w-[1650px] mx-auto px-3 sm:px-6 lg:px-10 xl:px-14 h-16 flex items-center justify-between gap-2 sm:gap-4 lg:gap-8">
         {/* Brand Logo PulsoTech + Nav en la esquina */}
-        <div className="contents sm:flex sm:items-center sm:gap-6 lg:gap-8 sm:shrink-0 min-w-0">
-          <Logo size="md" inverted={isTransparent} />
+        <div className="flex items-center gap-2 sm:gap-6 lg:gap-8 shrink-0 min-w-0">
+          <button
+            ref={menuButtonRef}
+            type="button"
+            aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="store-mobile-navigation"
+            onClick={() => setIsMobileMenuOpen((previous) => !previous)}
+            className="sm:hidden min-h-11 min-w-11 inline-flex items-center justify-center rounded-xl text-current hover:bg-current/10 active:scale-95 transition-transform cursor-pointer"
+          >
+            {isMobileMenuOpen ? <X aria-hidden="true" className="w-5 h-5" /> : <Menu aria-hidden="true" className="w-5 h-5" />}
+          </button>
+          <Logo size="md" inverted={isTransparent} onClick={() => setIsMobileMenuOpen(false)} className="gap-2 sm:gap-2.5 [&>div:first-child]:max-w-7 [&>div:first-child]:max-h-7 sm:[&>div:first-child]:max-w-none sm:[&>div:first-child]:max-h-none [&_span]:text-lg sm:[&_span]:text-xl" />
 
           {/* Menú de Navegación contextual en la esquina: Inicio y Catálogo */}
-          <nav aria-label="Navegación principal" className="col-span-2 row-start-2 flex items-center gap-1 sm:gap-2 text-sm font-bold">
+          <nav aria-label="Navegación principal" className="hidden sm:flex items-center gap-2 text-sm font-bold">
             <Link
               href="/#inicio"
               aria-current={isStartActive ? "location" : undefined}
@@ -154,7 +204,7 @@ export default function Navbar({
         </div>
 
         {/* Right Actions: Social Media (Desktop) + Favorites + Cart */}
-        <div className="col-start-2 row-start-1 flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {/* Social Media Links */}
           <div
             className={`hidden lg:flex items-center gap-0.5 sm:gap-1 p-1 rounded-xl shadow-2xs ${
@@ -222,7 +272,7 @@ export default function Navbar({
 
           {/* Favorites Button */}
           <button
-            onClick={() => setIsFavoritesOpen(true)}
+            onClick={() => { setIsMobileMenuOpen(false); setIsFavoritesOpen(true); }}
             aria-label="Ver favoritos guardados"
             className={`relative min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 flex items-center justify-center p-2 sm:p-2.5 rounded-xl transition-all duration-200 shadow-2xs hover:scale-105 active:scale-90 cursor-pointer shrink-0 ${
               isTransparent
@@ -245,7 +295,7 @@ export default function Navbar({
 
           {/* Cart Drawer Trigger */}
           <button
-            onClick={() => setIsCartOpen(true)}
+            onClick={() => { setIsMobileMenuOpen(false); setIsCartOpen(true); }}
             aria-label="Abrir bolsa de compra"
             className={`group/cart relative min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all duration-200 font-bold text-xs gap-2 sm:gap-2.5 shadow-sm hover:scale-105 active:scale-95 cursor-pointer shrink-0 ${
               isTransparent
@@ -269,6 +319,25 @@ export default function Navbar({
           </button>
         </div>
       </div>
+      <nav
+        id="store-mobile-navigation"
+        aria-label="Menú móvil"
+        hidden={!isMobileMenuOpen}
+        className={`absolute top-full inset-x-0 sm:hidden border-b shadow-xl px-5 py-4 ${
+          isTransparent ? "bg-neutral-950 text-white border-neutral-800" : "bg-white text-neutral-950 border-neutral-200"
+        }`}
+      >
+        <div className="space-y-1 text-base font-bold">
+          <Link href="/#inicio" onClick={closeMobileMenu} aria-current={isStartActive ? "location" : undefined} className={`block rounded-xl px-4 py-3 ${isStartActive ? (isTransparent ? "bg-white/10" : "bg-neutral-100") : ""}`}>Inicio</Link>
+          <Link href="/#catalogo" onClick={closeMobileMenu} aria-current={isCatalogActive ? "location" : undefined} className={`block rounded-xl px-4 py-3 ${isCatalogActive ? (isTransparent ? "bg-white/10" : "bg-neutral-100") : ""}`}>Catálogo</Link>
+          <Link href="/catalogo/?categoria=aud%C3%ADfonos#seccion-categoria" onClick={closeMobileMenu} className="block rounded-xl px-4 py-3">Audífonos</Link>
+        </div>
+        <div className={`mt-4 pt-4 border-t flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold ${isTransparent ? "border-white/15 text-neutral-300" : "border-neutral-200 text-neutral-600"}`}>
+          <a href={STORE_SETTINGS.social.instagram} target="_blank" rel="noopener noreferrer" onClick={closeMobileMenu} className="inline-flex min-h-11 items-center">Instagram</a>
+          <a href={STORE_SETTINGS.social.tiktok} target="_blank" rel="noopener noreferrer" onClick={closeMobileMenu} className="inline-flex min-h-11 items-center">TikTok</a>
+          <a href={STORE_SETTINGS.social.facebook} target="_blank" rel="noopener noreferrer" onClick={closeMobileMenu} className="inline-flex min-h-11 items-center">Facebook</a>
+        </div>
+      </nav>
     </header>
   );
 }

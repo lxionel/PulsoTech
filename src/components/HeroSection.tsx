@@ -26,8 +26,8 @@ export default function HeroSection() {
       </div>
 
       {/* Contenido comercial original perfectamente encajado con la composición */}
-      <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 xl:px-14 w-full pt-36 sm:pt-20 pb-8 sm:pb-8">
-        <div className="store-hero-copy max-w-[340px] sm:max-w-[440px] space-y-3 sm:space-y-4">
+      <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 xl:px-14 w-full pt-28 sm:pt-20 pb-8 sm:pb-8">
+        <div className="store-hero-copy max-w-[340px] sm:max-w-[440px] mx-auto sm:mx-0 text-center sm:text-left space-y-3 sm:space-y-4">
           {/* Badge original: Fondo negro y letras blancas, limpio y sin punto */}
           <div>
             <span className="inline-block px-2.5 sm:px-3 py-1 rounded-md text-[10px] sm:text-xs font-black tracking-widest uppercase bg-neutral-950 text-white shadow-xs border border-white/10 sm:border-transparent">
