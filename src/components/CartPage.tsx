@@ -123,36 +123,25 @@ export default function CartPage() {
       }
 
       const lines: string[] = [
-        `*PEDIDO EN PULSOTECH*`,
-        `━━━━━━━━━━━━━━━━━━━━━━`,
-        `• *Cliente:* ${customerName.trim()}`,
-        `• *Dirección de Entrega:* ${customerAddress.trim()}`,
-        ...(customerReference.trim() ? [`• *Referencia:* ${customerReference.trim()}`] : []),
-        `• *Pago:* ${paymentMethod === "contra_entrega" ? "Contra Entrega" : "Transferencia Bancaria"}`,
-        ``,
-        `*ARTÍCULOS:*`,
+        `Hola, PulsoTech. Mi nombre es ${customerName.trim()} y me gustaría realizar el siguiente pedido:`,
+        "",
       ];
 
       verified.items.forEach((item) => {
-        const colorName = item.selectedColor?.name || "Original";
+        const color = item.product.colors?.length ? item.selectedColor?.name : undefined;
         lines.push(
-          `• ${item.quantity}x ${item.product.name} (${colorName}) - ${STORE_SETTINGS.currencySymbol}${(
-            item.product.price * item.quantity
-          ).toFixed(2)}`
+          `${item.quantity} ${item.quantity === 1 ? "unidad" : "unidades"} de ${item.product.name}${color ? `, en color ${color}` : ""}.`
         );
       });
 
-      lines.push(``);
-      lines.push(`• *Entrega:* A coordinar por WhatsApp`);
-      if (appliedCoupon && verified.discountAmount > 0) {
-        lines.push(
-          `• *Cupón Aplicado:* ${appliedCoupon.code} (-${STORE_SETTINGS.currencySymbol}${verified.discountAmount.toFixed(2)})`
-        );
-      }
-      lines.push(`• *Total de productos:* ${STORE_SETTINGS.currencySymbol}${verified.total.toFixed(2)}`);
-      lines.push(`• *Costo de entrega:* A confirmar antes de aceptar el pedido`);
-      lines.push(`━━━━━━━━━━━━━━━━━━━━━━`);
-      lines.push(`¡Hola PulsoTech! Armé este pedido en la web. ¿Tienen disponibilidad para coordinar la entrega?`);
+      const discountNote = appliedCoupon && verified.discountAmount > 0
+        ? ` Este importe incluye un descuento de ${money(verified.discountAmount)} con el cupón ${appliedCoupon.code}.`
+        : "";
+      lines.push("", `El total de los productos indicado en la web es de ${money(verified.total)}.${discountNote}`);
+      lines.push("", `La entrega sería en ${customerAddress.trim()}.`);
+      if (customerReference.trim()) lines.push(`Como referencia: ${customerReference.trim()}.`);
+      lines.push(`Preferiría pagar ${paymentMethod === "contra_entrega" ? "contra entrega" : "por transferencia"}.`);
+      lines.push("", "¿Podrían confirmarme la disponibilidad, el costo de envío y la fecha de entrega? Muchas gracias.");
 
       const message = lines.join("\n");
       const encoded = encodeURIComponent(message);
