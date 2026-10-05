@@ -31,18 +31,10 @@ body {
     bottom: calc(16px + env(safe-area-inset-bottom));
   }
 
-  .store-drawer,
   .store-mobile-filters {
     padding-bottom: calc(20px + env(safe-area-inset-bottom));
   }
 
-  .store-drawer input:not([type="checkbox"]):not([type="range"]),
-  .store-drawer select {
-    font-size: 16px;
-    min-height: 44px;
-  }
-
-  .store-drawer button,
   .store-mobile-filters button {
     min-height: 44px;
   }

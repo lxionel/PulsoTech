@@ -27,7 +27,6 @@ export default function Navbar({
     setIsCartOpen,
     subtotal,
     favoritesCount,
-    setIsFavoritesOpen,
   } = useCart();
 
   const [isScrolled, setIsScrolled] = React.useState(false);
@@ -248,8 +247,10 @@ export default function Navbar({
           </div>
 
           {/* Favorites Button */}
-          <button
-            onClick={() => { setIsMobileMenuOpen(false); setIsFavoritesOpen(true); }}
+          <Link
+            href="/favoritos/"
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-current={pathname.startsWith("/favoritos") ? "page" : undefined}
             aria-label="Ver favoritos guardados"
             className="relative min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 flex items-center justify-center p-2 sm:p-2.5 rounded-xl transition-all duration-200 shadow-2xs hover:scale-105 active:scale-90 cursor-pointer shrink-0 bg-white/10 hover:bg-white/20 border border-white/15 text-white"
             title="Mis Favoritos"
@@ -264,7 +265,7 @@ export default function Navbar({
                 {favoritesCount}
               </span>
             )}
-          </button>
+          </Link>
 
           {/* Navigate to the full bag page. */}
           <button

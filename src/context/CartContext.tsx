@@ -77,8 +77,8 @@ interface CartContextType {
   toggleFavorite: (productId: string) => void;
   isFavorite: (productId: string) => boolean;
   favoritesCount: number;
+  isFavoritesLoading: boolean;
   isFavoritesOpen: boolean;
-  setIsFavoritesOpen: (isOpen: boolean) => void;
   // Cupones
   coupons: Coupon[];
   appliedCoupon: Coupon | null;
@@ -111,7 +111,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const cartOrigin = useRef("/#catalogo");
   const cartNavigationPending = useRef(false);
   const [isCartLoading, setIsCartLoading] = useState(true);
-  const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
+  const isFavoritesOpen = /^\/favoritos\/?$/.test(pathname || "");
+  const [isFavoritesLoading, setIsFavoritesLoading] = useState(true);
   const [checkoutDraft, setCheckoutDraft] = useState<CheckoutDraft>({
     customerName: "", customerAddress: "", customerReference: "", paymentMethod: "contra_entrega",
   });
@@ -133,7 +134,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const setIsCartOpen = (isOpen: boolean) => {
     if (isOpen) {
-      setIsFavoritesOpen(false);
       if (isCartOpen || cartNavigationPending.current) return;
       if (pathname?.startsWith("/") && !pathname.startsWith("//")) {
         cartOrigin.current = pathname + window.location.search + window.location.hash;
@@ -163,11 +163,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           if (!isCancelled) setIsCartLoading(false);
         }
 
-        const savedFavs = localStorage.getItem("pulsotech_favorites");
-        if (savedFavs) {
-          const parsedFavs = JSON.parse(savedFavs);
-          if (Array.isArray(parsedFavs)) setFavorites(parsedFavs);
-        }
+        try {
+          const savedFavs = localStorage.getItem("pulsotech_favorites");
+          if (savedFavs) {
+            const parsedFavs: unknown = JSON.parse(savedFavs);
+            if (Array.isArray(parsedFavs) && !isCancelled) {
+              setFavorites([...new Set(parsedFavs.filter((id): id is string => typeof id === "string"))]);
+            }
+          }
+        } catch { /* Favorites remain usable when their cache is unavailable. */ }
+        finally { if (!isCancelled) setIsFavoritesLoading(false); }
 
         const savedPhone = localStorage.getItem("pulsotech_phone");
         if (savedPhone && savedPhone !== "51987654321") {
@@ -221,12 +226,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     try {
       persistBrowserValues(localStorage, [
         ["pulsotech_cart", JSON.stringify(cartForCache(savedItems))],
-        ["pulsotech_favorites", JSON.stringify(favorites)],
         ["pulsotech_phone", whatsappNumber],
         ["pulsotech_coupons", JSON.stringify(coupons)],
       ]);
     } catch { /* Storage can be disabled entirely; the current session remains usable. */ }
-  }, [savedItems, favorites, whatsappNumber, coupons, isLoaded]);
+  }, [savedItems, whatsappNumber, coupons, isLoaded]);
+
+  useEffect(() => {
+    if (isFavoritesLoading) return;
+    try {
+      persistBrowserValues(localStorage, [["pulsotech_favorites", JSON.stringify(favorites)]]);
+    } catch { /* Favorites still work for this session when storage is disabled. */ }
+  }, [favorites, isFavoritesLoading]);
 
   const clearStockNotice = () => setCartState((previous) => ({ ...previous, notice: "" }));
   const setStockNotice = (notice: string) => setCartState((previous) => ({ ...previous, notice }));
@@ -421,8 +432,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         toggleFavorite,
         isFavorite,
         favoritesCount,
+        isFavoritesLoading,
         isFavoritesOpen,
-        setIsFavoritesOpen,
         coupons,
         appliedCoupon,
         applyCoupon,
