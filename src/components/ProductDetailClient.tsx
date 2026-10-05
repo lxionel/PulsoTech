@@ -377,13 +377,9 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
           <div className="store-product-information lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:row-span-2 space-y-5 sm:space-y-6">
             {/* Header: Brand & Title */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between gap-3 text-xs">
-                <span className="font-semibold text-neutral-500 tracking-wide uppercase">
-                  {product.brand}
-                </span>
-
-                <span className={`inline-flex items-center gap-1.5 ${isOutOfStock ? "text-neutral-500" : "text-emerald-700"}`}><span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${isOutOfStock ? "bg-neutral-400" : "bg-emerald-600"}`} />{isOutOfStock ? "Agotado" : "Disponible"}</span>
-              </div>
+              <p className="text-xs font-semibold text-neutral-500 tracking-wide uppercase">
+                {product.brand}
+              </p>
 
               <h1 className="text-2xl sm:text-3xl font-bold text-neutral-950 tracking-tight leading-tight">
                 {product.name}
