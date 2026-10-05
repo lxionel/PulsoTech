@@ -68,6 +68,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   const [purchaseActionsVisible, setPurchaseActionsVisible] = useState(false);
   const [galleryColorIndex, setGalleryColorIndex] = useState<number | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [imageSize, setImageSize] = useState<{ source: string; width: number; height: number } | null>(null);
   const [isVideoActive, setIsVideoActive] = useState(false);
   const isFav = isFavorite(product.id);
   const isOutOfStock = (product.stockCount ?? 0) <= 0 || product.inStock === false;
@@ -154,6 +155,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   }, [product, galleryColorIndex, fallbackImg]);
 
   const activeImage = galleryImages[selectedImageIndex] || galleryImages[0];
+  const currentImageSize = imageSize?.source === activeImage ? imageSize : null;
 
   const handleSelectColor = (index: number) => {
     setSelectedColorIndex(index);
@@ -232,7 +234,8 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
           {/* Gallery first on mobile; left column on desktop. */}
           <div className="store-product-gallery min-w-0 grid gap-3 lg:grid-cols-[64px_minmax(0,1fr)] lg:gap-4">
             {/* Main Stage Frame (Image or Video) */}
-            <div className="store-product-stage relative aspect-[6/5] sm:aspect-[4/3] lg:aspect-square w-full bg-[#fafafa] flex items-center justify-center overflow-hidden lg:col-start-2 lg:row-start-1">
+            <div className="store-product-stage relative w-full min-h-[240px] aspect-[6/5] sm:aspect-[var(--photo-ratio)] sm:max-h-[var(--photo-height)] bg-white flex items-center justify-center overflow-hidden lg:col-start-2 lg:row-start-1"
+              style={{ "--photo-ratio": !isVideoActive && currentImageSize ? `${currentImageSize.width} / ${currentImageSize.height}` : "1", "--photo-height": !isVideoActive && currentImageSize ? `${Math.min(currentImageSize.height + 32, 560)}px` : "560px" } as React.CSSProperties}>
               {isVideoActive && videoInfo ? (
                 <div className="relative w-full h-full flex items-center justify-center bg-black rounded-xl sm:rounded-2xl overflow-hidden">
                   {videoInfo.isYouTube ? (
@@ -254,26 +257,11 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                   )}
                 </div>
               ) : (
-                <div className="relative w-full h-full flex items-center justify-center">
-                  {activeImage?.startsWith("data:") ||
-                  activeImage?.startsWith("blob:") ||
-                  activeImage?.startsWith("http") ? (
-                    <img
-                      src={getAssetUrl(activeImage)}
-                      alt={product.name}
-                      className="w-full h-full object-contain max-w-full max-h-full"
-                    />
-                  ) : (
-                    <Image
-                      src={getAssetUrl(activeImage)}
-                      alt={product.name}
-                      fill
-                      unoptimized
-                      sizes="(max-width: 1024px) 100vw, 650px"
-                      className="object-contain"
-                      priority
-                    />
-                  )}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <img key={activeImage} src={getAssetUrl(activeImage)} alt={product.name}
+                    decoding="async" fetchPriority="high"
+                    onLoad={(event) => { const image = event.currentTarget; setImageSize({ source: activeImage, width: image.naturalWidth, height: image.naturalHeight }); }}
+                    className="block w-auto h-auto max-w-full max-h-full object-contain" />
                 </div>
               )}
 

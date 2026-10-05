@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import sharp from "sharp";
+import { CATALOG_IMAGE_VERSION, prepareCatalogImage } from "./lib/catalog-image.mjs";
 import nextEnv from "@next/env";
 
 nextEnv.loadEnvConfig(process.cwd());
@@ -17,14 +17,14 @@ let optimizedBytes = 0;
 
 async function optimize(image) {
   if (typeof image !== "string") return "";
-  const match = image.match(/^data:image\/(?:png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/);
+  const match = image.match(/^data:image\/(?:png|jpeg|webp|gif);base64,([A-Za-z0-9+/=]+)$/);
   if (!match) return image;
-  const hash = createHash("sha256").update(image).digest("hex").slice(0, 24);
+  const hash = createHash("sha256").update(CATALOG_IMAGE_VERSION).update(image).digest("hex").slice(0, 24);
   if (converted.has(hash)) return converted.get(hash);
   const input = Buffer.from(match[1], "base64");
-  const output = await sharp(input, { limitInputPixels: 40_000_000 }).rotate().resize({ width: 1200, height: 1200, fit: "inside", withoutEnlargement: true }).webp({ quality: 82 }).toBuffer();
-  const url = `/catalog-media/${hash}.webp`;
-  await fs.writeFile(path.join(target, `${hash}.webp`), output);
+  const { data: output, extension } = await prepareCatalogImage(input);
+  const url = `/catalog-media/${hash}.${extension}`;
+  await fs.writeFile(path.join(target, `${hash}.${extension}`), output);
   converted.set(hash, url);
   originalBytes += input.length;
   optimizedBytes += output.length;

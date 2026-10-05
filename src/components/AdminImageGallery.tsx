@@ -6,6 +6,16 @@ import { validateImageFile } from "@/lib/content-security";
 import { MAX_GALLERY_IMAGES, moveImage, uniqueImages } from "@/lib/product-media";
 import { getAssetUrl } from "@/utils/paths";
 
+function ImagePreview({ image, alt }: { image: string; alt: string }) {
+  const [size, setSize] = useState<{ width: number; height: number } | null>(null);
+  const lowResolution = size && Math.max(size.width, size.height) < 800;
+  return <>
+    <img src={getAssetUrl(image)} alt={alt} className="h-20 w-full object-contain"
+      onLoad={(event) => setSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })} />
+    {size && <p className={`mt-1 text-[10px] leading-4 tabular-nums ${lowResolution ? "text-amber-700" : "text-neutral-400"}`}>{size.width} × {size.height} px{lowResolution ? " · Baja resolución" : ""}</p>}
+  </>;
+}
+
 export default function AdminImageGallery({ title, hint, images, onChange, disabled = false, onBusyChange }: {
   title: string; hint: string; images: string[]; onChange: (images: string[]) => void;
   disabled?: boolean; onBusyChange: (busy: boolean) => void;
@@ -42,7 +52,7 @@ export default function AdminImageGallery({ title, hint, images, onChange, disab
       <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">{hint}</p></div>
     {images.length > 0 ? <div className="grid grid-cols-2 min-[420px]:grid-cols-3 sm:grid-cols-4 gap-2">
       {images.map((image, index) => <div key={image} className="rounded-xl border border-neutral-200 bg-white p-2 min-w-0">
-        <img src={getAssetUrl(image)} alt={`${title}, foto ${index + 1}`} className="h-20 w-full object-contain" />
+        <ImagePreview image={image} alt={`${title}, foto ${index + 1}`} />
         <div className="mt-2 flex items-center justify-between gap-1">
           <span className="text-[10px] font-semibold text-neutral-500">{index === 0 ? "Principal" : `Foto ${index + 1}`}</span>
           <button type="button" disabled={locked} aria-label={`Eliminar foto ${index + 1} de ${title}`} onClick={() => onChange(images.filter((_, i) => i !== index))} className="p-1.5 rounded-lg text-neutral-500 hover:bg-red-50 hover:text-red-600 disabled:opacity-40"><Trash2 className="w-3.5 h-3.5" /></button>
@@ -58,7 +68,7 @@ export default function AdminImageGallery({ title, hint, images, onChange, disab
       <Upload className="w-4 h-4" />{busy ? "Cargando fotos…" : "Añadir fotos"}
       <input aria-label={`Añadir fotos a ${title}`} type="file" multiple disabled={locked} accept="image/jpeg,image/png,image/webp,image/gif" onChange={upload} className="sr-only" />
     </label>
-    <span className="ml-2 text-[10px] text-neutral-400">Hasta 2 MB por foto</span>
+    <p className="text-[11px] text-neutral-500">Hasta 2 MB por foto. Para una imagen nítida, usa el archivo original de 1200 px o más.</p>
     {error && <p role="alert" className="text-xs text-red-600">{error}</p>}
   </section>;
 }

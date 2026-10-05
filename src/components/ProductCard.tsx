@@ -96,10 +96,10 @@ export default function ProductCard({ product }: { product: Product }) {
             <img
               src={primaryImage}
               alt={product.name}
-              className={`store-product-image-primary absolute inset-0 w-full h-full object-contain p-1 transition-[transform,scale,opacity] duration-500 ease-out ${
+              className={`store-product-image-primary absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto h-auto max-w-full max-h-full object-contain p-1 transition-opacity duration-500 ease-out ${
                 secondaryImage
-                  ? "opacity-100 group-hover/image:opacity-0 group-hover/image:scale-95"
-                  : "group-hover/image:scale-105"
+                  ? "opacity-100 group-hover/image:opacity-0"
+                  : ""
               }`}
             />
 
@@ -108,7 +108,7 @@ export default function ProductCard({ product }: { product: Product }) {
               <img
                 src={secondaryImage}
                 alt={`${product.name} detalle`}
-                className="store-product-image-secondary absolute inset-0 w-full h-full object-contain p-1 transition-[transform,scale,opacity] duration-500 ease-out opacity-0 group-hover/image:opacity-100 scale-95 group-hover/image:scale-100 pointer-events-none"
+                className="store-product-image-secondary absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto h-auto max-w-full max-h-full object-contain p-1 transition-opacity duration-500 ease-out opacity-0 group-hover/image:opacity-100 pointer-events-none"
               />
             )}
           </div>
