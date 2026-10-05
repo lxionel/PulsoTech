@@ -195,17 +195,17 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   };
 
   const relatedProducts = products.filter((p) => p.id !== product.id);
+  const hasOverview = Boolean(product.description || product.features.length);
 
   const colorLabel = colors.length && selectedColorIndex === null ? "Elige un color" : currentColor.name;
   const waMessage = `¡Hola PulsoTech! Deseo comprar el modelo *${product.name}* (Color: ${colors.length && selectedColorIndex === null ? "por elegir" : currentColor.name}, Precio: ${STORE_SETTINGS.currencySymbol}${product.price.toFixed(2)}). ¿Tienen stock disponible para entrega hoy?`;
 
   return (
-    <div data-purchase-actions-visible={purchaseActionsVisible} className="store-product-page min-h-screen flex flex-col bg-[#fbfbfd] text-[#111113]">
+    <div data-purchase-actions-visible={purchaseActionsVisible} className="store-product-page min-h-screen flex flex-col bg-[#f4f4f5] text-[#111113]">
       <Navbar currentCategory={product.category} />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 w-full pb-10">
-        {/* Breadcrumb Navigation (Más grande y legible) */}
-        <nav className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base text-neutral-500 mb-6 sm:mb-8 font-medium overflow-hidden sm:overflow-x-auto whitespace-nowrap py-1.5">
+      <main className="flex-1 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 md:py-7 w-full pb-8 sm:pb-12">
+        <nav aria-label="Ruta del producto" className="flex items-center gap-2 text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-5 font-medium overflow-hidden whitespace-nowrap py-1.5">
           <Link
             href="/"
             className="hover:text-neutral-950 transition-colors flex items-center gap-1.5 shrink-0"
@@ -226,11 +226,11 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
           </span>
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-[auto_1fr] gap-6 lg:gap-x-12 lg:gap-y-6 items-start">
+        <div className="store-product-summary grid grid-cols-1 lg:grid-cols-2 overflow-hidden rounded-2xl sm:rounded-3xl border border-neutral-200 bg-white shadow-[0_8px_32px_-24px_rgba(0,0,0,0.25)]">
           {/* Gallery first on mobile; left column on desktop. */}
-          <div className="store-product-gallery lg:col-span-7 lg:col-start-1 lg:row-start-1 space-y-4">
+          <div className="store-product-gallery min-w-0 bg-[#fafafa] p-3 sm:p-5 lg:p-6 lg:border-r border-neutral-200 space-y-3 sm:space-y-4">
             {/* Main Stage Frame (Image or Video) */}
-            <div className="relative aspect-square w-full rounded-2xl sm:rounded-3xl bg-white border border-neutral-200/90 p-3 sm:p-6 flex items-center justify-center shadow-xs overflow-hidden group">
+            <div className="relative aspect-[6/5] sm:aspect-square lg:aspect-[1.06/1] w-full rounded-xl sm:rounded-2xl bg-white border border-neutral-200/70 p-2 sm:p-4 flex items-center justify-center overflow-hidden group">
               {isVideoActive && videoInfo ? (
                 <div className="relative w-full h-full flex items-center justify-center bg-black rounded-xl sm:rounded-2xl overflow-hidden">
                   {videoInfo.isYouTube ? (
@@ -282,7 +282,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                     type="button"
                     onClick={handlePrevImage}
                     aria-label="Foto anterior"
-                    className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 hover:bg-white text-neutral-800 shadow-md border border-neutral-200 flex items-center justify-center transition-all opacity-80 hover:opacity-100 cursor-pointer"
+                    className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/95 hover:bg-white text-neutral-800 shadow-sm border border-neutral-200 flex items-center justify-center transition-colors cursor-pointer"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
@@ -290,7 +290,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                     type="button"
                     onClick={handleNextImage}
                     aria-label="Siguiente foto"
-                    className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 hover:bg-white text-neutral-800 shadow-md border border-neutral-200 flex items-center justify-center transition-all opacity-80 hover:opacity-100 cursor-pointer"
+                    className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/95 hover:bg-white text-neutral-800 shadow-sm border border-neutral-200 flex items-center justify-center transition-colors cursor-pointer"
                   >
                     <ChevronRight className="w-5 h-5" />
                   </button>
@@ -312,7 +312,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
 
             {/* Gallery Thumbnails (Photos & Video) */}
             {(galleryImages.length > 0 || !!videoInfo) && (
-              <div className="flex items-center gap-2.5 sm:gap-3 overflow-x-auto pb-1">
+              <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto px-0.5 py-1">
               {videoInfo && (
                 <button
                   type="button"
@@ -374,24 +374,29 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
           </div>
 
           {/* Right Column: Commercial Details & Purchase Actions */}
-          <div className="store-product-information lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:row-span-2 space-y-5 sm:space-y-6">
+          <div className="store-product-information min-w-0 p-4 sm:p-6 lg:p-8 flex flex-col gap-5 sm:gap-6">
             {/* Header: Brand & Title */}
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-neutral-500 tracking-wide uppercase">
-                {product.brand}
-              </p>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 space-y-2">
+                <p className="text-xs font-semibold text-neutral-500 tracking-wide uppercase">
+                  {product.brand}
+                </p>
 
-              <h1 className="text-2xl sm:text-3xl font-bold text-neutral-950 tracking-tight leading-tight">
-                {product.name}
-              </h1>
+                <h1 className="text-[26px] sm:text-[32px] xl:text-[36px] font-bold text-neutral-950 tracking-tight leading-[1.12]">
+                  {product.name}
+                </h1>
 
-              {product.subtitle && <p className="text-sm text-neutral-500 leading-relaxed">
-                {product.subtitle}
-              </p>}
+                {product.subtitle && <p className="text-sm text-neutral-500 leading-relaxed">
+                  {product.subtitle}
+                </p>}
+              </div>
+              <button type="button" onClick={() => toggleFavorite(product.id)} aria-label={isFav ? "Quitar de favoritos" : "Guardar en favoritos"} aria-pressed={isFav} title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"} className={`w-11 h-11 rounded-full border flex items-center justify-center shrink-0 transition-colors cursor-pointer ${isFav ? "border-red-200 bg-red-50 text-red-500" : "border-neutral-200 text-neutral-500 hover:border-neutral-950 hover:text-neutral-950"}`}>
+                <Heart className={`w-5 h-5 ${isFav ? "fill-current" : ""}`} />
+              </button>
             </div>
 
             {colors.length > 0 && (
-              <div ref={colorSelector} className="store-product-colors space-y-2.5">
+              <div ref={colorSelector} className="store-product-colors space-y-3">
                 <div className="text-sm text-neutral-700">
                   Color{selectedColorIndex !== null && <>: <span className="font-medium text-neutral-950">{currentColor.name}</span></>}
                 </div>
@@ -401,8 +406,9 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                     const preview = colorImages(color)[0];
                     return (
                       <button key={color.name + index} type="button" onClick={() => handleSelectColor(index)} aria-label={`Color ${color.name}`} aria-pressed={isSelected} title={color.name}
-                        className={`relative w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-xl border bg-white p-1.5 transition-colors duration-150 cursor-pointer flex items-center justify-center ${isSelected ? "border-neutral-950 ring-1 ring-neutral-950" : "border-neutral-200 hover:border-neutral-500"}`}>
-                        {preview ? <img src={getAssetUrl(preview)} alt="" className="w-full h-full object-contain" /> : <span aria-hidden="true" className="w-6 h-6 rounded-full border border-neutral-300" style={{ backgroundColor: color.hex }} />}
+                        className={`relative w-[76px] sm:w-[84px] rounded-xl border p-2 transition-colors duration-150 cursor-pointer flex flex-col items-center gap-1 ${isSelected ? "border-neutral-950 bg-neutral-50 ring-1 ring-neutral-950" : "border-neutral-200 bg-white hover:border-neutral-500"}`}>
+                        <span className="w-12 h-12 flex items-center justify-center">{preview ? <img src={getAssetUrl(preview)} alt="" className="w-full h-full object-contain" /> : <span aria-hidden="true" className="w-6 h-6 rounded-full border border-neutral-300" style={{ backgroundColor: color.hex }} />}</span>
+                        <span className="text-xs font-medium text-neutral-700 max-w-full truncate">{color.name}</span>
                       </button>
                     );
                   })}
@@ -411,16 +417,15 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
               </div>
             )}
 
-            <div className="store-product-price flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="text-3xl font-bold tracking-tight text-neutral-950 tabular-nums">{STORE_SETTINGS.currencySymbol}{product.price.toFixed(2)}</span>
-              {!!product.originalPrice && product.originalPrice > product.price && <span className="text-sm text-neutral-400 line-through tabular-nums">{STORE_SETTINGS.currencySymbol}{product.originalPrice.toFixed(2)}</span>}
-            </div>
-
-            {/* Quantity Selector, Cart Buttons & Favorites */}
-            <div className="space-y-3 pt-1">
+            <div className="store-product-purchase border-t border-neutral-200 pt-5 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-x-2 sm:gap-x-4 gap-y-3">
+                <div className="store-product-price flex flex-col items-start gap-0.5">
+                  <span className="text-[26px] min-[360px]:text-[32px] sm:text-4xl font-bold tracking-tight text-neutral-950 tabular-nums">{STORE_SETTINGS.currencySymbol}{product.price.toFixed(2)}</span>
+                  {!!product.originalPrice && product.originalPrice > product.price && <span className="text-sm text-neutral-400 line-through tabular-nums">{STORE_SETTINGS.currencySymbol}{product.originalPrice.toFixed(2)}</span>}
+                </div>
               {!isOutOfStock && (
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                  <span className="text-xs font-semibold text-neutral-700">Cantidad:</span>
+                <div className="flex items-center gap-2">
+                  <span className="sr-only">Cantidad</span>
                   <div className="flex items-center border border-neutral-200 rounded-xl bg-white shadow-2xs">
                     <button
                       onClick={() => setQuantity(Math.max(1, purchaseQuantity - 1))}
@@ -430,7 +435,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                     >
                       -
                     </button>
-                    <span className="px-3 py-2 text-xs font-bold text-neutral-900 min-w-8 text-center">
+                    <span className="px-2 py-2 text-sm font-semibold text-neutral-900 min-w-8 text-center">
                       {purchaseQuantity}
                     </span>
                     <button
@@ -442,58 +447,32 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                       +
                     </button>
                   </div>
-                  {purchaseQuantity > 1 && <span aria-live="polite" aria-atomic="true" className="text-sm font-semibold text-neutral-950 tabular-nums">Total {STORE_SETTINGS.currencySymbol}{purchaseTotal.toFixed(2)}</span>}
                 </div>
               )}
+              </div>
+              {purchaseQuantity > 1 && <p aria-live="polite" aria-atomic="true" className="text-sm text-neutral-600 tabular-nums">{purchaseQuantity} unidades · <span className="font-semibold text-neutral-950">Total {STORE_SETTINGS.currencySymbol}{purchaseTotal.toFixed(2)}</span></p>}
 
               {/* Action Buttons: Add to Cart + Buy Now + Favorite */}
-              <div ref={purchaseActions} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 pt-1">
+              <div ref={purchaseActions} className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {isOutOfStock ? (
-                  <div className="flex items-center gap-2 flex-1">
-                    <div className="flex-1 py-3.5 px-4 rounded-xl bg-neutral-100 border border-neutral-200 text-neutral-400 font-bold text-xs flex items-center justify-center gap-2 cursor-not-allowed">
-                      <span>Producto Agotado Temporalmente</span>
+                  <div className="sm:col-span-2">
+                    <div className="min-h-12 px-4 rounded-xl bg-neutral-100 border border-neutral-200 text-neutral-500 font-semibold text-sm flex items-center justify-center cursor-not-allowed">
+                      <span>Agotado</span>
                     </div>
-                    <button
-                      onClick={() => toggleFavorite(product.id)}
-                      aria-label="Guardar en favoritos"
-                      className={`p-3.5 rounded-xl border transition-all active:scale-90 cursor-pointer shrink-0 ${
-                        isFav
-                          ? "border-red-200 bg-red-50 text-red-500 shadow-xs"
-                          : "border-neutral-200 bg-white text-neutral-400 hover:text-red-500 hover:border-neutral-300"
-                      }`}
-                      title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
-                    >
-                      <Heart className={`w-5 h-5 ${isFav ? "fill-red-500" : ""}`} />
-                    </button>
                   </div>
                 ) : (
                   <>
-                    <div className="flex items-center gap-2 flex-1">
                       <button
                         onClick={handleAddToCart}
-                        className="flex-1 py-3.5 px-4 rounded-xl border border-neutral-300 hover:border-black bg-white text-neutral-900 font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xs cursor-pointer"
+                        className="min-h-12 px-3 rounded-xl border border-neutral-300 hover:border-black bg-white text-neutral-900 font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
                       >
                         <ShoppingBag className="w-4 h-4" />
                         <span>Añadir a la bolsa</span>
                       </button>
 
-                      <button
-                        onClick={() => toggleFavorite(product.id)}
-                        aria-label="Guardar en favoritos"
-                        className={`p-3.5 rounded-xl border transition-all active:scale-90 cursor-pointer shrink-0 ${
-                          isFav
-                            ? "border-red-200 bg-red-50 text-red-500 shadow-xs"
-                            : "border-neutral-200 bg-white text-neutral-400 hover:text-red-500 hover:border-neutral-300"
-                        }`}
-                        title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
-                      >
-                        <Heart className={`w-5 h-5 ${isFav ? "fill-red-500" : ""}`} />
-                      </button>
-                    </div>
-
                     <button
                       onClick={handleBuyNow}
-                      className="w-full sm:flex-1 py-3.5 px-4 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-98 shadow-sm cursor-pointer"
+                      className="min-h-12 px-3 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
                     >
                       <span>Comprar ahora</span>
                     </button>
@@ -510,7 +489,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="min-h-11 inline-flex items-center gap-2 text-sm text-[#15803d] hover:text-[#166534] transition-colors cursor-pointer"
+                className="min-h-12 w-full rounded-xl border border-emerald-200/70 bg-[#f1faf4] px-4 flex items-center justify-center gap-2 text-sm font-medium text-[#15803d] hover:bg-emerald-50 hover:border-emerald-300 transition-colors cursor-pointer"
               >
                 <MessageSquare className="w-4 h-4" />
                 <span>
@@ -519,70 +498,54 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                     : "Consultar por WhatsApp"}
                 </span>
               </a>
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-neutral-600">
-                <Link href="/garantia-y-entregas/" className="min-h-8 inline-flex items-center gap-1.5 hover:text-neutral-950"><ShieldCheck className="w-3.5 h-3.5" />Garantía</Link>
-                <Link href="/garantia-y-entregas/" className="min-h-8 inline-flex items-center gap-1.5 hover:text-neutral-950"><Truck className="w-3.5 h-3.5" />Entregas</Link>
-              </div>
             </div>
-
-            <div className="flex flex-wrap items-start gap-x-5 gap-y-2 border-t border-neutral-200 pt-2">
+            <div className="grid grid-cols-2 divide-x divide-neutral-200 rounded-xl border border-neutral-200 bg-neutral-50/70 text-sm text-neutral-700">
+              <Link href="/garantia-y-entregas/" className="min-h-12 px-3 flex items-center justify-center gap-2 hover:text-neutral-950"><ShieldCheck className="w-4 h-4" />Garantía<ChevronRight className="w-3.5 h-3.5 text-neutral-400" /></Link>
+              <Link href="/garantia-y-entregas/" className="min-h-12 px-3 flex items-center justify-center gap-2 hover:text-neutral-950"><Truck className="w-4 h-4" />Entregas<ChevronRight className="w-3.5 h-3.5 text-neutral-400" /></Link>
+            </div>
+            <div className="flex flex-wrap items-start gap-x-5 gap-y-2 border-t border-neutral-200 pt-1 mt-auto">
               <ShareProductButton key={product.id} product={product} compact />
               <CompareProductButton product={product} compact />
             </div>
-
-            {/* Description & Features */}
-            <div className="pt-4 border-t border-neutral-200 space-y-4">
-              <div>
-                <h2 className="text-base font-semibold text-neutral-950 mb-2">Descripción</h2>
-                <p className="text-xs text-neutral-600 leading-relaxed">{product.description}</p>
-              </div>
-
-              <div>
-                <h2 className="text-base font-semibold text-neutral-950 mb-2">Características</h2>
-                <ul className="space-y-2 text-xs text-neutral-600">
-                  {product.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <div className="w-4 h-4 rounded-full bg-neutral-100 text-neutral-900 flex items-center justify-center shrink-0 mt-0.5">
-                        <Check className="w-3 h-3 stroke-[3]" />
-                      </div>
-                      <span className="leading-relaxed">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
           </div>
-          {/* Technical Specification Grid */}
-          {allSpecsList.length > 0 && (
-            <div className="store-product-specs lg:col-span-7 lg:col-start-1 lg:row-start-2 pt-4 space-y-3">
-              <h2 className="text-base font-semibold text-neutral-950">Especificaciones</h2>
+        </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {(hasOverview || allSpecsList.length > 0) && <section aria-label="Detalles del producto" className="store-product-details mt-5 sm:mt-6 grid grid-cols-1 lg:grid-cols-12 rounded-2xl sm:rounded-3xl border border-neutral-200 bg-white overflow-hidden">
+          {hasOverview && <div className={`${allSpecsList.length ? "lg:col-span-4 lg:border-r" : "lg:col-span-12"} border-neutral-200 p-5 sm:p-6 lg:p-8 space-y-6`}>
+            {product.description && <div>
+              <h2 className="text-xl font-semibold tracking-tight text-neutral-950 mb-3">Descripción</h2>
+              <p className="text-sm text-neutral-600 leading-7">{product.description}</p>
+            </div>}
+            {product.features.length > 0 && <div>
+              <h2 className="text-base font-semibold text-neutral-950 mb-3">Características</h2>
+              <ul className="space-y-3 text-sm text-neutral-600">
+                {product.features.map((feature, idx) => <li key={idx} className="flex items-start gap-2.5"><Check className="w-4 h-4 text-neutral-900 shrink-0 mt-1" /><span className="leading-6">{feature}</span></li>)}
+              </ul>
+            </div>}
+          </div>}
+          {allSpecsList.length > 0 && (
+            <div className={`store-product-specs ${hasOverview ? "lg:col-span-8 border-t lg:border-t-0" : "lg:col-span-12"} border-neutral-200 p-5 sm:p-6 lg:p-8`}>
+              <h2 className="text-xl font-semibold tracking-tight text-neutral-950 mb-4">Especificaciones</h2>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 sm:gap-x-6">
                 {allSpecsList.map((spec, sIdx) => {
                   const IconComponent = getSpecIcon(spec.label);
                   return (
                     <div
                       key={spec.label + sIdx}
-                      className="p-3.5 rounded-2xl bg-white border border-neutral-200/80 shadow-2xs flex items-center gap-3 transition-colors hover:border-neutral-300"
+                      className="py-3.5 border-b border-neutral-200/80 flex items-center gap-3"
                     >
-                      <div className="w-10 h-10 rounded-xl bg-neutral-900 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                        <IconComponent className="w-5 h-5 text-neutral-100" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <span className="text-[10px] leading-relaxed text-neutral-400 font-bold uppercase tracking-wider block break-words">
-                          {spec.label}
-                        </span>
-                        <span className="text-xs leading-relaxed font-extrabold text-neutral-900 break-words block" title={spec.value}>
-                          {spec.value}
-                        </span>
-                      </div>
+                      <dt className="min-w-0 flex-1 flex items-center gap-2.5 text-xs leading-5 text-neutral-500">
+                        <span aria-hidden="true" className="w-8 h-8 rounded-lg bg-neutral-100 text-neutral-700 flex items-center justify-center shrink-0"><IconComponent className="w-4 h-4" /></span>
+                        <span className="break-words">{spec.label}</span>
+                      </dt>
+                      <dd className="max-w-[40%] text-right text-sm leading-6 font-semibold text-neutral-900 break-words" title={spec.value}>{spec.value}</dd>
                     </div>
                   );
                 })}
-              </div>
+              </dl>
             </div>
           )}
-        </div>
+        </section>}
 
         {/* Related Products Section */}
         {relatedProducts.length > 0 && (
