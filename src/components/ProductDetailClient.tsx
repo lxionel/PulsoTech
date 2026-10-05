@@ -68,6 +68,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   const isFav = isFavorite(product.id);
   const isOutOfStock = (product.stockCount ?? 0) <= 0 || product.inStock === false;
   const purchaseQuantity = isOutOfStock ? 0 : Math.min(quantity, product.stockCount);
+  const purchaseTotal = Math.round(product.price * purchaseQuantity * 100) / 100;
   const showMobilePurchase = !isCartOpen && !isFavoritesOpen && !(isComparisonOpen && selectedProducts.length === 2);
 
   // Consolidar especificaciones técnicas oficiales (customSpecs + specs estándar)
@@ -660,7 +661,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
       </main>
 
       {/* La barra comparte el color, la cantidad y el inventario de la ficha. */}
-      {showMobilePurchase && <aside aria-label="Compra rápida del producto" className="store-motion store-mobile-purchase sm:hidden fixed bottom-0 left-0 right-0 z-40 min-h-[calc(72px+env(safe-area-inset-bottom))] bg-white border-t border-neutral-200 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] px-4 flex items-center justify-between gap-3">
+      {showMobilePurchase && <aside aria-label="Compra rápida del producto" className="store-motion store-mobile-purchase sm:hidden fixed bottom-0 left-0 right-0 z-40 min-h-[calc(72px+env(safe-area-inset-bottom))] bg-white border-t border-neutral-200 shadow-[0_-6px_24px_rgba(0,0,0,0.05)] pt-2.5 pb-[calc(10px+env(safe-area-inset-bottom))] px-4 flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span
@@ -668,11 +669,12 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
               style={{ backgroundColor: selectedColorIndex === null && colors.length ? "transparent" : currentColor.hex }}
             />
             <span className="text-[11px] font-medium text-neutral-500 truncate">
-              {isOutOfStock ? "Agotado" : `${colorLabel} · ${purchaseQuantity} ud.`}
+              {isOutOfStock ? "Agotado" : colorLabel}
             </span>
           </div>
-          <div className="text-base min-[360px]:text-lg font-black text-neutral-950 tracking-tight leading-none mt-0.5 truncate">
-            {STORE_SETTINGS.currencySymbol}{product.price.toFixed(2)}
+          <div className="text-base min-[360px]:text-lg font-black text-neutral-950 tracking-tight leading-none mt-1 tabular-nums">
+            <span className="block text-[9px] font-semibold uppercase tracking-wider text-neutral-500 mb-1">Total · {purchaseQuantity} {purchaseQuantity === 1 ? "unidad" : "unidades"}</span>
+            <span aria-live="polite" aria-atomic="true">{STORE_SETTINGS.currencySymbol}{purchaseTotal.toFixed(2)}</span>
           </div>
         </div>
 
