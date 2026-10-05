@@ -12,14 +12,14 @@ import CompareProductButton from "./CompareProductButton";
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem, toggleFavorite, isFavorite } = useCart();
-  const [selectedColorIndex, setSelectedColorIndex] = useState(0);
+  const [selectedColorIndex, setSelectedColorIndex] = useState<number | null>(null);
   const [galleryColorIndex, setGalleryColorIndex] = useState<number | null>(null);
   const [justAdded, setJustAdded] = useState(false);
   const isFav = isFavorite(product.id);
 
   const colors = product.colors || [];
   const fallbackImg = getAssetUrl("/placeholder-earbuds.svg");
-  const currentColor = colors[selectedColorIndex] || colors[0] || {
+  const currentColor = (selectedColorIndex !== null ? colors[selectedColorIndex] : undefined) || colors[0] || {
     name: "Original",
     hex: "#18181b",
     image: product.images?.[0] || fallbackImg,
@@ -149,7 +149,7 @@ export default function ProductCard({ product }: { product: Product }) {
                 );
               })}
               <span className="text-[10px] font-semibold text-neutral-400 ml-1 truncate max-w-[80px]">
-                {currentColor?.name}
+                {selectedColorIndex === null ? "Elige color" : currentColor.name}
               </span>
             </div>
           )}
@@ -187,6 +187,11 @@ export default function ProductCard({ product }: { product: Product }) {
           >
             <span>Agotado</span>
           </button>
+        ) : colors.length > 0 && selectedColorIndex === null ? (
+          <Link href={`/producto/?id=${product.id}&slug=${product.slug}`} className="w-full min-h-12 sm:min-h-0 py-2.5 sm:py-3 px-4 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-extrabold text-sm flex items-center justify-center gap-2">
+            <ShoppingBag className="w-4 h-4 shrink-0" />
+            <span>Elegir color</span>
+          </Link>
         ) : (
           <button
             type="button"

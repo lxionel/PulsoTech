@@ -61,7 +61,7 @@ function DynamicProductContent() {
     );
   }
 
-  return <ProductDetailClient product={product} />;
+  return <ProductDetailClient key={product.id} product={product} />;
 }
 
 export default function ProductQueryPage() {

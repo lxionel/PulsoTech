@@ -59,7 +59,9 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   }, [products, initialProduct]);
 
   const [quantity, setQuantity] = useState(1);
-  const [selectedColorIndex, setSelectedColorIndex] = useState(0);
+  const [selectedColorIndex, setSelectedColorIndex] = useState<number | null>(null);
+  const [colorRequired, setColorRequired] = useState(false);
+  const colorSelector = React.useRef<HTMLDivElement>(null);
   const [galleryColorIndex, setGalleryColorIndex] = useState<number | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isVideoActive, setIsVideoActive] = useState(false);
@@ -124,7 +126,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   const fallbackImg = getAssetUrl("/placeholder-earbuds.svg");
   const currentColor = React.useMemo(() => {
     return (
-      colors[selectedColorIndex] ||
+      (selectedColorIndex !== null ? colors[selectedColorIndex] : undefined) ||
       colors[0] || {
         name: "Estándar",
         hex: "#18181b",
@@ -142,6 +144,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
 
   const handleSelectColor = (index: number) => {
     setSelectedColorIndex(index);
+    setColorRequired(false);
     setGalleryColorIndex(index);
     setIsVideoActive(false);
     setSelectedImageIndex(0);
@@ -157,20 +160,33 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
     setSelectedImageIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
   };
 
+  const requireColorSelection = () => {
+    if (colors.length && selectedColorIndex === null) {
+      setColorRequired(true);
+      colorSelector.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      colorSelector.current?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
+      return false;
+    }
+    return true;
+  };
+
   const handleAddToCart = () => {
     if (isOutOfStock) return;
+    if (!requireColorSelection()) return;
     addItem(product, currentColor, purchaseQuantity);
   };
 
   const handleBuyNow = () => {
     if (isOutOfStock) return;
+    if (!requireColorSelection()) return;
     addItem(product, currentColor, purchaseQuantity);
     setIsCartOpen(true);
   };
 
   const relatedProducts = products.filter((p) => p.id !== product.id);
 
-  const waMessage = `¡Hola PulsoTech! Deseo comprar el modelo *${product.name}* (Color: ${currentColor?.name || "Estándar"}, Precio: ${STORE_SETTINGS.currencySymbol}${product.price.toFixed(2)}). ¿Tienen stock disponible para entrega hoy?`;
+  const colorLabel = colors.length && selectedColorIndex === null ? "Elige un color" : currentColor.name;
+  const waMessage = `¡Hola PulsoTech! Deseo comprar el modelo *${product.name}* (Color: ${colors.length && selectedColorIndex === null ? "por elegir" : currentColor.name}, Precio: ${STORE_SETTINGS.currencySymbol}${product.price.toFixed(2)}). ¿Tienen stock disponible para entrega hoy?`;
 
   return (
     <div className="store-product-page min-h-screen flex flex-col bg-[#fbfbfd] text-[#111113]">
@@ -410,10 +426,10 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
 
             {/* Selector de Colores Disponibles */}
             {colors.length > 0 && (
-              <div className="p-4 rounded-2xl bg-white border border-neutral-200/90 shadow-2xs space-y-2.5">
+              <div ref={colorSelector} className="p-4 rounded-2xl bg-white border border-neutral-200/90 shadow-2xs space-y-2.5">
                 <div className="flex items-center gap-2 text-xs">
                   <span className="text-neutral-500 font-medium">Color:</span>
-                  <span className="font-extrabold text-neutral-950">{currentColor?.name}</span>
+                  <span className="font-extrabold text-neutral-950">{colorLabel}</span>
                 </div>
                 <div className="flex items-center gap-2.5 pt-1">
                   {colors.map((c, idx) => {
@@ -424,6 +440,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                         type="button"
                         onClick={() => handleSelectColor(idx)}
                         aria-label={`Color ${c.name}`}
+                        aria-pressed={isSelected}
                         title={c.name}
                         className={`relative rounded-full transition-all duration-200 cursor-pointer flex items-center justify-center ${
                           isSelected
@@ -441,6 +458,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                     );
                   })}
                 </div>
+                {colorRequired && <p role="alert" className="text-xs font-medium text-red-700">Elige un color para añadir el producto a la bolsa.</p>}
               </div>
             )}
 
@@ -647,10 +665,10 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
           <div className="flex items-center gap-1.5">
             <span
               className="w-2.5 h-2.5 rounded-full border border-neutral-300 inline-block shrink-0"
-              style={{ backgroundColor: currentColor?.hex || "#18181b" }}
+              style={{ backgroundColor: selectedColorIndex === null && colors.length ? "transparent" : currentColor.hex }}
             />
             <span className="text-[11px] font-medium text-neutral-500 truncate">
-              {isOutOfStock ? "Agotado" : `${currentColor.name} · ${purchaseQuantity} ud.`}
+              {isOutOfStock ? "Agotado" : `${colorLabel} · ${purchaseQuantity} ud.`}
             </span>
           </div>
           <div className="text-base min-[360px]:text-lg font-black text-neutral-950 tracking-tight leading-none mt-0.5 truncate">
