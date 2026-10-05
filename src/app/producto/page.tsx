@@ -4,6 +4,7 @@ import React, { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useProducts } from "@/context/ProductsContext";
 import ProductDetailClient from "@/components/ProductDetailClient";
+import ProductLoading from "@/components/ProductLoading";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
@@ -34,7 +35,7 @@ function DynamicProductContent() {
   }, [idParam, slugParam, products]);
 
   if (!product && isLoading) {
-    return <div role="status" className="min-h-screen flex items-center justify-center text-neutral-500">Cargando producto...</div>;
+    return <ProductLoading />;
   }
   if (!product) {
     return (
@@ -67,11 +68,7 @@ function DynamicProductContent() {
 export default function ProductQueryPage() {
   return (
     <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center bg-[#fbfbfd]">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-neutral-900 border-t-transparent" />
-        </div>
-      }
+      fallback={<ProductLoading />}
     >
       <DynamicProductContent />
     </Suspense>
