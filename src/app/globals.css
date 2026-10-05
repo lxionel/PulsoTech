@@ -21,6 +21,11 @@ body {
   scroll-margin-top: 64px;
 }
 
+/* The footer provides its own contact link, so the floating badge need not cover it. */
+body:has(.store-footer[data-in-view="true"]) .store-whatsapp-widget {
+  display: none;
+}
+
 /* Dejar libre la barra de compra en móvil, incluido el área segura del dispositivo. */
 @media (width < 640px) {
   #catalogo {
