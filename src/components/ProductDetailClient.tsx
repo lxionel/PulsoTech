@@ -200,6 +200,11 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
 
   const relatedProducts = products.filter((p) => p.id !== product.id);
   const hasOverview = Boolean(product.description || product.features.length);
+  const specificationMidpoint = Math.ceil(allSpecsList.length / 2);
+  const specificationColumns = [
+    allSpecsList.slice(0, specificationMidpoint),
+    allSpecsList.slice(specificationMidpoint),
+  ].filter((column) => column.length > 0);
 
   const colorLabel = colors.length && selectedColorIndex === null ? "Elige un color" : currentColor.name;
   const waMessage = `¡Hola PulsoTech! Deseo comprar el modelo *${product.name}* (Color: ${colors.length && selectedColorIndex === null ? "por elegir" : currentColor.name}, Precio: ${STORE_SETTINGS.currencySymbol}${product.price.toFixed(2)}). ¿Tienen stock disponible para entrega hoy?`;
@@ -464,22 +469,31 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
             </div>
           </div>
 
-        {(hasOverview || allSpecsList.length > 0) && <section aria-label="Detalles del producto" className="store-product-details min-w-0 border-t border-neutral-300 lg:col-start-1 lg:row-start-2 lg:ml-20">
-          {hasOverview && <details open className="group border-b border-neutral-200">
-            <summary className="min-h-16 sm:min-h-20 lg:min-h-16 flex items-center justify-between gap-4 list-none [&::-webkit-details-marker]:hidden cursor-pointer"><h2 className="text-lg sm:text-xl font-semibold text-neutral-950">Descripción</h2><Plus aria-hidden="true" className="w-5 h-5 text-neutral-500 transition-transform group-open:rotate-45" /></summary>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6 md:gap-12 lg:gap-4 pb-6 sm:pb-8 text-sm leading-7 text-neutral-600">
-              {product.description && <p>{product.description}</p>}
-              {product.features.length > 0 && <ul className="space-y-2">{product.features.map((feature, index) => <li key={index} className="flex items-start gap-2.5"><Check aria-hidden="true" className="w-4 h-4 mt-1.5 shrink-0 text-neutral-900" /><span>{feature}</span></li>)}</ul>}
-            </div>
-          </details>}
-          {allSpecsList.length > 0 && <details ref={specificationDetails} id="especificaciones" open className="store-product-specs group border-b border-neutral-200 scroll-mt-20">
-            <summary className="min-h-16 sm:min-h-20 lg:min-h-16 flex items-center justify-between gap-4 list-none [&::-webkit-details-marker]:hidden cursor-pointer"><h2 className="text-lg sm:text-xl font-semibold text-neutral-950">Especificaciones</h2><Plus aria-hidden="true" className="w-5 h-5 text-neutral-500 transition-transform group-open:rotate-45" /></summary>
-            <dl className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 md:gap-x-8 pb-6 sm:pb-8">
-              {allSpecsList.map((spec, index) => <div key={spec.label + index} className="grid grid-cols-2 gap-4 px-3 sm:px-4 py-3 text-sm even:bg-neutral-50 border-b border-neutral-100"><dt className="text-neutral-500 leading-6 break-words">{spec.label}</dt><dd className="font-medium text-neutral-950 leading-6 break-words">{spec.value}</dd></div>)}
-            </dl>
-          </details>}
-        </section>}
+          {hasOverview && <section aria-label="Descripción del producto" className="store-product-details min-w-0 border-t border-neutral-300 lg:col-start-1 lg:row-start-2 lg:ml-20">
+            <details open className="group border-b border-neutral-200">
+              <summary className="min-h-16 sm:min-h-20 lg:min-h-16 flex items-center justify-between gap-4 list-none [&::-webkit-details-marker]:hidden cursor-pointer"><h2 className="text-lg sm:text-xl font-semibold text-neutral-950">Descripción</h2><Plus aria-hidden="true" className="w-5 h-5 text-neutral-500 transition-transform group-open:rotate-45" /></summary>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6 md:gap-12 lg:gap-4 pb-6 sm:pb-8 text-sm leading-7 text-neutral-600">
+                {product.description && <p>{product.description}</p>}
+                {product.features.length > 0 && <ul className="space-y-2">{product.features.map((feature, index) => <li key={index} className="flex items-start gap-2.5"><Check aria-hidden="true" className="w-4 h-4 mt-1.5 shrink-0 text-neutral-900" /><span>{feature}</span></li>)}</ul>}
+              </div>
+            </details>
+          </section>}
         </div>
+
+        {allSpecsList.length > 0 && <details ref={specificationDetails} id="especificaciones" open className="store-product-specs group mt-6 sm:mt-8 border-y border-neutral-200 scroll-mt-20">
+          <summary className="min-h-16 sm:min-h-20 flex items-center justify-between gap-4 list-none [&::-webkit-details-marker]:hidden cursor-pointer">
+            <h2 className="text-lg sm:text-xl font-semibold text-neutral-950">Especificaciones</h2>
+            <Plus aria-hidden="true" className="w-5 h-5 text-neutral-500 transition-transform group-open:rotate-45" />
+          </summary>
+          <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-8 lg:gap-x-12 pb-6 sm:pb-8">
+            {specificationColumns.map((column, columnIndex) => <dl key={columnIndex} className="min-w-0">
+              {column.map((spec, index) => <div key={spec.label + index} className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] gap-4 px-3 sm:px-4 py-3 text-sm even:bg-neutral-50 border-b border-neutral-100">
+                <dt className="text-neutral-500 leading-6 break-words">{spec.label}</dt>
+                <dd className="font-medium text-neutral-950 leading-6 break-words">{spec.value}</dd>
+              </div>)}
+            </dl>)}
+          </div>
+        </details>}
 
         {/* Related Products Section */}
         {relatedProducts.length > 0 && (
