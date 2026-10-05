@@ -7,6 +7,8 @@ import { useCart } from "@/context/CartContext";
 import { ShoppingBag, Heart, Menu, X, Home, LayoutGrid, Headphones, ChevronRight } from "lucide-react";
 import { STORE_SETTINGS } from "@/data/products";
 import Logo from "./Logo";
+import SocialIcon from "./SocialIcon";
+import { isAudioCategory } from "@/lib/categories";
 
 interface NavbarProps {
   currentCategory?: string;
@@ -14,6 +16,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({
+  currentCategory,
   isTransparent = false,
 }: NavbarProps = {}) {
   const pathname = usePathname();
@@ -35,6 +38,7 @@ export default function Navbar({
   const menuButtonRef = React.useRef<HTMLButtonElement>(null);
   const isStartActive = isHome && !isCatalogVisible;
   const isCatalogActive = (isHome && isCatalogVisible) || (pathname.startsWith("/catalogo") || pathname.startsWith("/producto"));
+  const isAudioActive = !isHome && isAudioCategory(currentCategory || "");
   const lastScrollY = React.useRef(0);
 
   const closeMobileMenu = () => {
@@ -294,8 +298,8 @@ export default function Navbar({
         <div className="space-y-1">
           {[
             { label: "Inicio", href: "/#inicio", icon: Home, active: isStartActive },
-            { label: "Catálogo", href: "/#catalogo", icon: LayoutGrid, active: isCatalogActive },
-            { label: "Audífonos", href: "/catalogo/?categoria=aud%C3%ADfonos#seccion-categoria", icon: Headphones, active: false },
+            { label: "Catálogo", href: "/#catalogo", icon: LayoutGrid, active: isCatalogActive && !isAudioActive },
+            { label: "Audífonos", href: "/catalogo/?categoria=aud%C3%ADfonos#seccion-categoria", icon: Headphones, active: isAudioActive },
           ].map(({ label, href, icon: Icon, active }) => (
             <Link
               key={label}
@@ -311,9 +315,7 @@ export default function Navbar({
           ))}
         </div>
         <div className="mt-3 border-t border-white/10 pt-3 grid grid-cols-3 gap-2 text-[11px] font-medium text-neutral-400">
-          <a href={STORE_SETTINGS.social.instagram} target="_blank" rel="noopener noreferrer" onClick={closeMobileMenu} className="flex min-h-11 items-center justify-center rounded-lg border border-white/10 hover:bg-white/5 hover:text-white">Instagram</a>
-          <a href={STORE_SETTINGS.social.tiktok} target="_blank" rel="noopener noreferrer" onClick={closeMobileMenu} className="flex min-h-11 items-center justify-center rounded-lg border border-white/10 hover:bg-white/5 hover:text-white">TikTok</a>
-          <a href={STORE_SETTINGS.social.facebook} target="_blank" rel="noopener noreferrer" onClick={closeMobileMenu} className="flex min-h-11 items-center justify-center rounded-lg border border-white/10 hover:bg-white/5 hover:text-white">Facebook</a>
+          {(["instagram", "tiktok", "facebook"] as const).map((network) => <a key={network} href={STORE_SETTINGS.social[network]} target="_blank" rel="noopener noreferrer" onClick={closeMobileMenu} className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-white/10 hover:bg-white/5 hover:text-white"><SocialIcon network={network} className="h-3.5 w-3.5 shrink-0" />{network === "instagram" ? "Instagram" : network === "tiktok" ? "TikTok" : "Facebook"}</a>)}
         </div>
       </nav>
     </header>

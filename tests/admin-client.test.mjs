@@ -14,6 +14,9 @@ let options;
 let salesValue = [];
 let rpcError = null;
 let rpcOverride;
+let productWriteRows = [{ id: "audio" }];
+let tableError = null;
+const tableMutations = [];
 const databaseCalls = [];
 const client = {
   auth: {
@@ -34,14 +37,18 @@ const client = {
   from: (table) => {
     databaseCalls.push(table);
     let single = false;
+    let productWrite = false;
     const query = {
-      upsert: () => query, delete: () => query, update: () => query,
-      eq: () => query, neq: () => query, abortSignal: () => query,
+      upsert: () => { tableMutations.push("upsert"); return query; },
+      insert: () => { tableMutations.push("insert"); return query; },
+      delete: () => query,
+      update: (value) => { productWrite = table === "products"; tableMutations.push({ update: value }); return query; },
+      eq: (field, value) => { tableMutations.push({ eq: [field, value] }); return query; }, neq: () => query, abortSignal: () => query,
       maybeSingle: () => { single = true; return query; },
       order: () => query, limit: () => query, range: () => query,
       select: () => query,
       in: (_column, keys) => { databaseCalls.push(keys); return query; },
-      then: (resolve) => resolve({ data: single ? table === "complaints" ? { id: "test" } : { value: salesValue } : [], error: null }),
+      then: (resolve) => resolve({ data: productWrite ? productWriteRows : single ? table === "complaints" ? { id: "test" } : { value: salesValue } : [], error: tableError }),
     };
     return query;
   },
@@ -62,6 +69,8 @@ const sale = { id: "VTA-test", productName: "Modelo", quantity: 1, total: 90, cu
 const salesCommand = { kind: "create", sale, productId: "audio", expectedPrice: 90 };
 const protectedOperations = [
   () => api.upsertProductToSupabase(product),
+  () => api.createProductInSupabase(product),
+  () => api.updateProductInSupabase(product),
   () => api.deleteProductFromSupabase("audio"),
   () => api.updateStockInSupabase("audio", 1),
   () => api.saveStoreSettingsToSupabase("brands", ["Marca"]),
@@ -168,4 +177,59 @@ test("a missing backup function or network failure cannot produce a successful o
       assert.deepEqual(databaseCalls, ["export_store_backup"]);
     } finally { rpcError = null; }
   }
+});
+
+test("new product codes are inserted rather than overwriting an existing product", async () => {
+  user = { id: "administrator" }; allowed = true; assuranceLevel = "aal2";
+  tableMutations.length = 0;
+  assert.equal(await api.createProductInSupabase(product), true);
+  assert.deepEqual(tableMutations, ["insert"]);
+  tableError = { code: "23505", message: "Duplicate code" };
+  try { assert.equal(await api.createProductInSupabase(product), false); }
+  finally { tableError = null; }
+});
+
+test("editing a deleted product cannot recreate it or report a successful save", async () => {
+  productWriteRows = [];
+  try { assert.equal(await api.updateProductInSupabase(product), false); }
+  finally { productWriteRows = [{ id: "audio" }]; }
+});
+
+test("manual stock edits use an expected quantity and fail when a concurrent sale changes it", async () => {
+  tableMutations.length = 0;
+  assert.equal(await api.updateStockInSupabase("audio", 3, 2), true);
+  assert.ok(tableMutations.some((operation) => operation.eq?.[0] === "stock_count" && operation.eq[1] === 2));
+  productWriteRows = [];
+  try { assert.equal(await api.updateStockInSupabase("audio", 3, 2), false); }
+  finally { productWriteRows = [{ id: "audio" }]; }
+  tableMutations.length = 0;
+  for (const invalid of [-1, 0.5, NaN, 1000001]) assert.equal(await api.updateStockInSupabase("audio", invalid, 2), false);
+  assert.deepEqual(tableMutations, []);
+});
+
+test("database conversion retains general and color galleries without inventing missing stock or ratings", () => {
+  const colors = [{ name: "Negro", hex: "#111", image: "/front.png", images: ["/front.png", "/side.png", "/case.png"] }];
+  const original = { ...product, colors, images: ["/general1.png", "/general2.png", "/general3.png"], rating: 0, reviewsCount: 0, stockCount: 0 };
+  const decoded = api.dbRowToProduct(api.productToDbRow(original));
+  assert.deepEqual(decoded.colors, colors);
+  assert.deepEqual(decoded.images, original.images);
+  assert.equal(decoded.rating, 0);
+  assert.equal(decoded.reviewsCount, 0);
+  assert.equal(decoded.soundProfile, undefined);
+  assert.equal(api.dbRowToProduct({ id: "missing" }).stockCount, 0);
+});
+
+test("renaming a group updates only classification fields and requires MFA", async () => {
+  tableMutations.length = 0;
+  assert.equal(await api.renameProductGroupInSupabase("brand", ["audio"], "Marca"), true);
+  const change = tableMutations.find((operation) => operation.update).update;
+  assert.equal(change.brand, "Marca");
+  assert.equal("stock_count" in change, false);
+  assert.equal("colors" in change, false);
+  assuranceLevel = "aal1";
+  databaseCalls.length = 0;
+  try {
+    assert.equal(await api.renameProductGroupInSupabase("category", ["audio"], "Audio"), false);
+    assert.deepEqual(databaseCalls, []);
+  } finally { assuranceLevel = "aal2"; }
 });

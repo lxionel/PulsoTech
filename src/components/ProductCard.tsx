@@ -7,11 +7,13 @@ import { STORE_SETTINGS } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import { getAssetUrl } from "@/utils/paths";
 import { ShoppingBag, Heart, Check } from "lucide-react";
+import { productGallery } from "@/lib/product-media";
 import CompareProductButton from "./CompareProductButton";
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem, toggleFavorite, isFavorite } = useCart();
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
+  const [galleryColorIndex, setGalleryColorIndex] = useState<number | null>(null);
   const [justAdded, setJustAdded] = useState(false);
   const isFav = isFavorite(product.id);
 
@@ -23,11 +25,9 @@ export default function ProductCard({ product }: { product: Product }) {
     image: product.images?.[0] || fallbackImg,
   };
 
-  const primaryImage = getAssetUrl(currentColor?.image || product.images?.[0] || fallbackImg);
-  const secondaryImage =
-    product.images?.[1] && product.images[1] !== (currentColor?.image || product.images?.[0])
-      ? getAssetUrl(product.images[1])
-      : null;
+  const gallery = productGallery(product, galleryColorIndex, fallbackImg);
+  const primaryImage = getAssetUrl(gallery[0]);
+  const secondaryImage = gallery[1] ? getAssetUrl(gallery[1]) : null;
 
   const isOutOfStock = (product.stockCount ?? 0) <= 0 || product.inStock === false;
 
@@ -128,6 +128,7 @@ export default function ProductCard({ product }: { product: Product }) {
                       e.preventDefault();
                       e.stopPropagation();
                       setSelectedColorIndex(idx);
+                      setGalleryColorIndex(idx);
                     }}
                     aria-label={`Color ${color.name}`}
                     aria-pressed={isSelected}

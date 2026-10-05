@@ -96,9 +96,10 @@ export function validateProductContent(value: unknown): asserts value is Product
     throw new Error("El precio, stock o valoración del producto no tiene un valor válido.");
   }
   if (["isFeatured", "isNew"].some((key) => value[key] !== undefined && typeof value[key] !== "boolean")) throw new Error("Las opciones del producto tienen un formato inválido.");
-  if (!Array.isArray(value.colors) || value.colors.length > 30 || value.colors.some((color) => !record(color) || !text(color.name, 100, true) || !text(color.hex) || !/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i.test(color.hex) || (color.image !== "" && !isSafeImageSource(color.image)))) {
+  if (!Array.isArray(value.colors) || value.colors.length > 30 || value.colors.some((color) => !record(color) || !text(color.name, 100, true) || !text(color.hex) || !/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i.test(color.hex) || (color.image !== "" && !isSafeImageSource(color.image)) || (color.images !== undefined && (!Array.isArray(color.images) || color.images.length > 30 || !color.images.every(isSafeImageSource))))) {
     throw new Error("Revisa los colores y las direcciones de sus imágenes.");
   }
+  if (new Set(value.colors.map((color) => color.name.trim().toLocaleLowerCase())).size !== value.colors.length) throw new Error("Cada color debe tener un nombre diferente.");
   if (value.images !== undefined && (!Array.isArray(value.images) || value.images.length > 30 || !value.images.every(isSafeImageSource))) throw new Error("El producto contiene una dirección de imagen no admitida.");
   if (value.videoUrl !== undefined && value.videoUrl !== "" && (!text(value.videoUrl, 4096) || !getProductVideoInfo(value.videoUrl))) throw new Error("El video debe usar una dirección HTTP o HTTPS válida, o un enlace válido de YouTube.");
   if (!record(value.specs) || Object.entries(value.specs).some(([key, spec]) => BAD_KEYS.has(key) || key.length > 100 || (spec !== undefined && !text(spec, 1000)))) throw new Error("Las especificaciones del producto tienen un formato inválido.");

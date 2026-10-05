@@ -6,6 +6,8 @@ import { STORE_SETTINGS } from "@/data/products";
 import { getAssetUrl } from "@/utils/paths";
 import { useProducts } from "@/context/ProductsContext";
 import { addCartItem, setCartQuantity, inspectCart, cartQuantityLimit, cartTotals } from "@/lib/cart-stock";
+import { createMutationQueue, confirmMutation } from "@/lib/confirmed-mutation";
+import { validateCoupon } from "@/lib/coupon-validation";
 import {
   fetchCouponsFromSupabase,
   saveCouponsToSupabase,
@@ -57,7 +59,7 @@ interface CartContextType {
   itemsCount: number;
   freeShippingRemaining: number;
   whatsappNumber: string;
-  setWhatsappNumber: (num: string) => void;
+  setWhatsappNumber: (num: string) => Promise<void>;
   // Favorites
   favorites: string[];
   toggleFavorite: (productId: string) => void;
@@ -70,9 +72,9 @@ interface CartContextType {
   appliedCoupon: Coupon | null;
   applyCoupon: (code: string) => { success: boolean; message: string };
   removeCoupon: () => void;
-  addCoupon: (coupon: Omit<Coupon, "id">) => void;
-  deleteCoupon: (id: string) => void;
-  toggleCoupon: (id: string) => void;
+  addCoupon: (coupon: Omit<Coupon, "id">) => Promise<void>;
+  deleteCoupon: (id: string) => Promise<void>;
+  toggleCoupon: (id: string) => Promise<void>;
   syncCouponsToCloud: (overrideCoupons?: Coupon[]) => Promise<boolean>;
 }
 
@@ -98,8 +100,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Cupones
-  const [coupons, setCoupons] = useState<Coupon[]>(DEFAULT_COUPONS);
+  const [coupons, setCouponsState] = useState<Coupon[]>(DEFAULT_COUPONS);
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const couponsRef = useRef(coupons);
+  const [enqueue] = useState(() => createMutationQueue());
+  const setCoupons = (next: Coupon[]) => { couponsRef.current = next; setCouponsState(next); };
+  const effectiveCoupon = coupons.find((coupon) => coupon.id === appliedCoupon?.id && coupon.isActive) || null;
 
   // Cargar datos de localStorage una sola vez tras montar en el cliente y sincronizar cupones de Supabase
   useEffect(() => {
@@ -133,7 +139,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
         // Cargar cupones y teléfono receptor persistentes desde Supabase
         const cloudCoupons = await fetchCouponsFromSupabase();
-        if (!isCancelled && cloudCoupons && cloudCoupons.length > 0) {
+        if (!isCancelled && cloudCoupons !== null) {
           setCoupons(cloudCoupons);
           try {
             localStorage.setItem("pulsotech_coupons", JSON.stringify(cloudCoupons));
@@ -242,7 +248,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         return null;
       }
       clearStockNotice();
-      return { items: checked.items, ...cartTotals(checked.items, appliedCoupon) };
+      return { items: checked.items, ...cartTotals(checked.items, effectiveCoupon) };
     } catch {
       setStockNotice("No pudimos comprobar el stock. Intenta de nuevo antes de enviar tu pedido.");
       return null;
@@ -300,40 +306,28 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const addCoupon = (couponData: Omit<Coupon, "id">) => {
-    const newCoupon: Coupon = {
-      ...couponData,
-      id: `cp-${Date.now().toString().slice(-5)}`,
-      code: couponData.code.trim().toUpperCase(),
-    };
-    setCoupons((prev) => {
-      const next = [newCoupon, ...prev];
-      void saveCouponsToSupabase(next);
-      return next;
-    });
+  const persistCoupons = async (next: Coupon[]) => {
+    const commit = () => { couponsRef.current = next; setCoupons(next); };
+    if (isSupabaseReady()) await confirmMutation(() => saveCouponsToSupabase(next), commit);
+    else commit();
   };
 
-  const deleteCoupon = (id: string) => {
-    setCoupons((prev) => {
-      const next = prev.filter((c) => c.id !== id);
-      void saveCouponsToSupabase(next);
-      return next;
-    });
-    if (appliedCoupon?.id === id) {
-      setAppliedCoupon(null);
-    }
-  };
-
-  const toggleCoupon = (id: string) => {
-    setCoupons((prev) => {
-      const next = prev.map((c) => (c.id === id ? { ...c, isActive: !c.isActive } : c));
-      void saveCouponsToSupabase(next);
-      return next;
-    });
-  };
+  const addCoupon = (data: Omit<Coupon, "id">) => enqueue(async () => {
+    validateCoupon(data);
+    const code = data.code.trim().toUpperCase();
+    if (couponsRef.current.some((coupon) => coupon.code.toUpperCase() === code)) throw new Error("Ya existe ese cupón.");
+    await persistCoupons([{ ...data, code, id: crypto.randomUUID() }, ...couponsRef.current]);
+  });
+  const deleteCoupon = (id: string) => enqueue(async () => {
+    await persistCoupons(couponsRef.current.filter((coupon) => coupon.id !== id));
+    if (appliedCoupon?.id === id) setAppliedCoupon(null);
+  });
+  const toggleCoupon = (id: string) => enqueue(async () => {
+    await persistCoupons(couponsRef.current.map((coupon) => coupon.id === id ? { ...coupon, isActive: !coupon.isActive } : coupon));
+  });
 
   // Cálculos de Totales - El total es exactamente subtotal menos descuento (sin cargos ocultos de envío)
-  const { subtotal, discountAmount, total } = cartTotals(items, appliedCoupon);
+  const { subtotal, discountAmount, total } = cartTotals(items, effectiveCoupon);
 
   // Costo de envío es 0 ya que se coordina vía WhatsApp
   const shipping = 0;
@@ -341,15 +335,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const freeShippingRemaining = 0;
   const favoritesCount = favorites.length;
 
-  const handleSetWhatsappNumber = (num: string) => {
-    setWhatsappNumber(num);
-    try {
-      localStorage.setItem("pulsotech_phone", num);
-    } catch {
-      // Ignorar error de almacenamiento
-    }
-    void saveStoreSettingsToSupabase("whatsapp_number", num);
-  };
+  const handleSetWhatsappNumber = (num: string) => enqueue(async () => {
+    if (!/^51\d{9}$/.test(num)) throw new Error("Ingresa un número de Perú con el código 51 y nueve dígitos.");
+    const commit = () => setWhatsappNumber(num);
+    if (isSupabaseReady()) await confirmMutation(() => saveStoreSettingsToSupabase("whatsapp_number", num), commit);
+    else commit();
+  });
 
   return (
     <CartContext.Provider

@@ -14,9 +14,12 @@ import Logo from "@/components/Logo";
 import AdminAccess, { useAdministrator } from "@/components/AdminAccess";
 import AdminPasswordSettings from "@/components/AdminPasswordSettings";
 import AdminComplaints from "@/components/AdminComplaints";
+import AdminStockControl from "@/components/AdminStockControl";
+import AdminImageGallery from "@/components/AdminImageGallery";
+import { colorImages, withColorImages, uniqueImages } from "@/lib/product-media";
 import { isAudioCategory } from "@/lib/categories";
 import { parsePlaybackHours } from "@/lib/audio-filters";
-import { MAX_BACKUP_BYTES, csvCell, parseStoreBackup, restoreBackupLocally, validateImageFile, validateProductContent } from "@/lib/content-security";
+import { MAX_BACKUP_BYTES, csvCell, parseStoreBackup, restoreBackupLocally, validateProductContent } from "@/lib/content-security";
 import {
   Package,
   DollarSign,
@@ -31,13 +34,11 @@ import {
   Trash2,
   Edit3,
   Image as ImageIcon,
-  Sparkles,
   Tag,
   RefreshCw,
   Upload,
   Eye,
   Filter,
-  Video as VideoIcon,
   Plus,
   Layers,
   Check,
@@ -64,7 +65,6 @@ import {
   ExternalLink,
   Database,
   Smartphone,
-  HardDrive,
   Settings,
 } from "lucide-react";
 
@@ -206,7 +206,8 @@ function AdminWorkspace() {
   const handleLogout = () => { void logout(); };
 
   // Estados de WhatsApp y Ajustes
-  const [phoneInput, setPhoneInput] = useState(whatsappNumber);
+  const [phoneDraft, setPhoneInput] = useState<string | null>(null);
+  const phoneInput = phoneDraft ?? whatsappNumber;
   const [phoneSaved, setPhoneSaved] = useState(false);
   const [settingsViewTab, setSettingsViewTab] = useState<"whatsapp" | "security" | "backup" | "complaints">("whatsapp");
   const [isSyncingCloud, setIsSyncingCloud] = useState(false);
@@ -215,7 +216,7 @@ function AdminWorkspace() {
   // Estados de Cupones
   const [newCouponCode, setNewCouponCode] = useState("");
   const [newCouponType, setNewCouponType] = useState<"percentage" | "fixed">("percentage");
-  const [newCouponValue, setNewCouponValue] = useState<number>(10);
+  const [newCouponValue, setNewCouponValue] = useState<number>(0);
   const [newCouponMin, setNewCouponMin] = useState<number>(50);
 
   // Modal de Código QR de Producto
@@ -305,10 +306,6 @@ function AdminWorkspace() {
 
   // ====== ESTADO DEL FORMULARIO DE AGREGAR / EDITAR PRODUCTO (INICIALMENTE LIMPIO) ======
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
-  const [showAddBrandInline, setShowAddBrandInline] = useState(false);
-  const [inlineBrandName, setInlineBrandName] = useState("");
-  const [showAddCategoryInline, setShowAddCategoryInline] = useState(false);
-  const [inlineCategoryName, setInlineCategoryName] = useState("");
   const [formActiveStep, setFormActiveStep] = useState<1 | 2 | 3 | 4>(1);
   const [formCustomId, setFormCustomId] = useState(generate6DigitId());
   const [formName, setFormName] = useState("");
@@ -320,7 +317,6 @@ function AdminWorkspace() {
   const [formPrice, setFormPrice] = useState<number | "">("");
   const [formHasPromo, setFormHasPromo] = useState(false);
   const [formOriginalPrice, setFormOriginalPrice] = useState<number | "">("");
-  const [formPromoTag, setFormPromoTag] = useState("OFERTA FLASH");
   const [formStock, setFormStock] = useState<number>(10);
   const [formSubtitle, setFormSubtitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
@@ -336,8 +332,15 @@ function AdminWorkspace() {
   ]);
   const [previewColorIndex, setPreviewColorIndex] = useState(0);
 
-  // Imagen Secundaria (Para el efecto de transición / hover al pasar el cursor)
-  const [formSecondaryImage, setFormSecondaryImage] = useState("");
+  const [formProductImages, setFormProductImages] = useState<string[]>([]);
+  const [uploadingGalleries, setUploadingGalleries] = useState(0);
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
+  const productSaveInProgress = useRef(false);
+  const onGalleryBusyChange = (busy: boolean) => setUploadingGalleries((count) => Math.max(0, count + (busy ? 1 : -1)));
+  const runAdminAction = async (operation: () => Promise<void>) => {
+    try { await operation(); return true; }
+    catch (failure) { alert(failure instanceof Error ? failure.message : "No se pudo guardar el cambio."); return false; }
+  };
 
   // Especificaciones Técnicas Dinámicas por Categoría
   const [formCustomSpecs, setFormCustomSpecs] = useState<{ label: string; value: string }[]>(() => {
@@ -507,10 +510,13 @@ function AdminWorkspace() {
   const maxBarRevenue = Math.max(...chartBars.map((b) => b.revenue), 10);
   const bestDay = chartBars.length > 0 ? [...chartBars].sort((a, b) => b.revenue - a.revenue)[0] : null;
 
-  const handleSavePhone = (e: React.FormEvent) => {
+  const handleSavePhone = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanPhone = phoneInput.replace(/\D/g, "");
-    setWhatsappNumber(cleanPhone);
+    const rawPhone = phoneInput.replace(/\D/g, "");
+    const cleanPhone = rawPhone.length === 9 ? `51${rawPhone}` : rawPhone;
+    if (!/^51\d{9}$/.test(cleanPhone)) { alert("Ingresa el código 51 y los nueve dígitos del celular de Perú."); return; }
+    if (!await runAdminAction(() => setWhatsappNumber(cleanPhone))) return;
+    setPhoneInput(cleanPhone);
     setPhoneSaved(true);
     setSuccessNotice("Número de WhatsApp actualizado correctamente.");
     setTimeout(() => {
@@ -523,10 +529,11 @@ function AdminWorkspace() {
     setIsSyncingCloud(true);
     setSyncSuccessMessage("");
     try {
-      await refreshFromCloud();
+      const refreshed = await refreshFromCloud();
+      if (refreshed === null) throw new Error("No se pudo conectar con la nube.");
       setSyncSuccessMessage("Sincronización con la nube completada exitosamente.");
     } catch {
-      setSyncSuccessMessage("Modo local activo. Tus datos permanecen resguardados.");
+      setSyncSuccessMessage("No se pudo sincronizar. Revisa tu conexión; se conservaron los datos disponibles.");
     } finally {
       setIsSyncingCloud(false);
       setTimeout(() => setSyncSuccessMessage(""), 4000);
@@ -810,7 +817,7 @@ function AdminWorkspace() {
     URL.revokeObjectURL(url);
   };
 
-  const handleCreateCoupon = (e: React.FormEvent) => {
+  const handleCreateCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCouponCode.trim()) {
       alert("Por favor ingresa un código para el cupón (ej: VERANO10).");
@@ -821,13 +828,13 @@ function AdminWorkspace() {
       alert("Ya existe un cupón con este código.");
       return;
     }
-    addCoupon({
+    if (!await runAdminAction(() => addCoupon({
       code: newCouponCode.trim().toUpperCase(),
       discountType: newCouponType,
-      discountValue: Number(newCouponValue) || 1,
-      minPurchase: Number(newCouponMin) || 0,
+      discountValue: Number(newCouponValue),
+      minPurchase: Number(newCouponMin),
       isActive: true,
-    });
+    }))) return;
     setNewCouponCode("");
     setSuccessNotice(`¡Cupón ${newCouponCode.trim().toUpperCase()} creado con éxito!`);
     setTimeout(() => setSuccessNotice(""), 3000);
@@ -835,6 +842,8 @@ function AdminWorkspace() {
 
   // Manejadores de colores detallados
   const handleAddColor = () => {
+    if (uploadingGalleries || isSavingProduct) return;
+    if (formColors.length >= 30) { alert("Puedes añadir hasta 30 colores."); return; }
     const palette = [
       { name: "Negro", hex: "#18181b" },
       { name: "Blanco", hex: "#FFFFFF" },
@@ -844,66 +853,40 @@ function AdminWorkspace() {
       { name: "Gris", hex: "#64748b" },
       { name: "Rosa", hex: "#f43f5e" },
     ];
-    const nextColor = palette[formColors.length % palette.length];
+    const nextColor = palette.find((entry) => !formColors.some((color) => color.name.toLowerCase() === entry.name.toLowerCase())) || { name: `Color ${formColors.length + 1}`, hex: "#64748b" };
     setFormColors([
       ...formColors,
       {
         name: nextColor.name,
         hex: nextColor.hex,
-        image: formColors[0]?.image || getAssetUrl("/images/products/redmi-buds-6-play.png"),
+        image: "",
+        images: [],
       },
     ]);
   };
 
   const handleRemoveColor = (index: number) => {
+    if (uploadingGalleries || isSavingProduct) return;
     if (formColors.length <= 1) {
       alert("El producto debe tener al menos un color disponible.");
       return;
     }
     setFormColors(formColors.filter((_, i) => i !== index));
-    if (previewColorIndex >= formColors.length - 1) {
-      setPreviewColorIndex(0);
-    }
+    setPreviewColorIndex((previous) => previous === index ? 0 : previous > index ? previous - 1 : previous);
   };
 
-  const handleUpdateColor = (index: number, field: keyof ProductColor, value: string) => {
+  const handleUpdateColor = (index: number, field: "name" | "hex", value: string) => {
     setFormColors((prev) =>
       prev.map((c, i) => (i === index ? { ...c, [field]: value } : c))
     );
   };
 
-  const handleColorImageUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (file) {
-      try { await validateImageFile(file); } catch (failure) { alert(failure instanceof Error ? failure.message : "No se pudo leer la imagen."); return; }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === "string") {
-          handleUpdateColor(index, "image", reader.result);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSecondaryImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (file) {
-      try { await validateImageFile(file); } catch (failure) { alert(failure instanceof Error ? failure.message : "No se pudo leer la imagen."); return; }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === "string") {
-          setFormSecondaryImage(reader.result);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleColorGalleryChange = (index: number, images: string[]) => {
+    setFormColors((previous) => previous.map((color, i) => i === index ? withColorImages(color, images) : color));
   };
 
   // Handlers para Marcas y Categorías
-  const handleAddBrandSubmit = (e: React.FormEvent) => {
+  const handleAddBrandSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const val = newBrandInput.trim();
     if (!val) return;
@@ -911,13 +894,13 @@ function AdminWorkspace() {
       alert("Ya existe una marca con este nombre.");
       return;
     }
-    addBrand(val);
+    if (!await runAdminAction(() => addBrand(val))) return;
     setSuccessNotice(`Marca "${val}" agregada exitosamente.`);
     setNewBrandInput("");
     setTimeout(() => setSuccessNotice(""), 3500);
   };
 
-  const handleAddCategorySubmit = (e: React.FormEvent) => {
+  const handleAddCategorySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const val = newCategoryInput.trim();
     if (!val) return;
@@ -925,13 +908,13 @@ function AdminWorkspace() {
       alert("Ya existe una categoría con este nombre.");
       return;
     }
-    addCategory(val);
+    if (!await runAdminAction(() => addCategory(val))) return;
     setSuccessNotice(`Categoría "${val}" agregada exitosamente.`);
     setNewCategoryInput("");
     setTimeout(() => setSuccessNotice(""), 3500);
   };
 
-  const handleSaveBrandRename = () => {
+  const handleSaveBrandRename = async () => {
     if (!editingBrandName) return;
     const { original, current } = editingBrandName;
     const trimmed = current.trim();
@@ -943,13 +926,13 @@ function AdminWorkspace() {
       alert("Ya existe otra marca con este nombre.");
       return;
     }
-    updateBrand(original, trimmed);
+    if (!await runAdminAction(() => updateBrand(original, trimmed))) return;
     setSuccessNotice(`Marca actualizada a "${trimmed}".`);
     setEditingBrandName(null);
     setTimeout(() => setSuccessNotice(""), 3500);
   };
 
-  const handleSaveCategoryRename = () => {
+  const handleSaveCategoryRename = async () => {
     if (!editingCategoryName) return;
     const { original, current } = editingCategoryName;
     const trimmed = current.trim();
@@ -961,7 +944,7 @@ function AdminWorkspace() {
       alert("Ya existe otra categoría con este nombre.");
       return;
     }
-    updateCategory(original, trimmed);
+    if (!await runAdminAction(() => updateCategory(original, trimmed))) return;
     setSuccessNotice(`Categoría actualizada a "${trimmed}".`);
     setEditingCategoryName(null);
     setTimeout(() => setSuccessNotice(""), 3500);
@@ -979,13 +962,13 @@ function AdminWorkspace() {
     );
   };
 
-  const executeDeleteItem = () => {
+  const executeDeleteItem = async () => {
     if (!deleteConfirmItem) return;
     if (deleteConfirmItem.type === "brand") {
-      deleteBrand(deleteConfirmItem.name);
+      if (!await runAdminAction(() => deleteBrand(deleteConfirmItem.name))) return;
       setSuccessNotice(`Marca "${deleteConfirmItem.name}" eliminada.`);
     } else {
-      deleteCategory(deleteConfirmItem.name);
+      if (!await runAdminAction(() => deleteCategory(deleteConfirmItem.name))) return;
       setSuccessNotice(`Categoría "${deleteConfirmItem.name}" eliminada.`);
     }
     setDeleteConfirmItem(null);
@@ -994,18 +977,18 @@ function AdminWorkspace() {
 
   // Cargar datos en el formulario para editar
   const handleEditClick = (product: Product) => {
+    if (uploadingGalleries || isSavingProduct) return;
     setFormAudioType(product.specs?.audioType || "");
     setFormAncEnabled(product.specs?.ancEnabled || "");
     setFormPlaybackHours(product.specs?.playbackHours || "");
     setEditingProductId(product.id);
     setFormCustomId(product.id);
     setFormName(product.name);
-    setFormBrand(product.brand || brands[0] || "Xiaomi");
-    setFormCategory(product.category || categories[0] || "Audífonos Inalámbricos");
+    setFormBrand(brands.find((name) => name.toLowerCase() === product.brand.toLowerCase()) || product.brand);
+    setFormCategory(categories.find((name) => name.toLowerCase() === product.category.toLowerCase()) || product.category);
     setFormPrice(product.price);
     setFormHasPromo(!!product.originalPrice && product.originalPrice > product.price);
     setFormOriginalPrice(product.originalPrice || "");
-    setFormPromoTag("OFERTA FLASH");
     setFormStock(product.stockCount);
     setFormSubtitle(product.subtitle || "");
     setFormDescription(product.description || "");
@@ -1021,7 +1004,7 @@ function AdminWorkspace() {
             },
           ]
     );
-    setFormSecondaryImage(product.images?.[1] || "");
+    setFormProductImages(uniqueImages(product.images || []));
     setPreviewColorIndex(0);
 
     // Cargar especificaciones técnicas personalizadas
@@ -1036,6 +1019,7 @@ function AdminWorkspace() {
       if (product.specs.connectivity) loadedSpecs.push({ label: "Versión de Bluetooth", value: product.specs.connectivity });
       if (product.specs.driver) loadedSpecs.push({ label: "Driver Acústico", value: product.specs.driver });
       if (product.specs.latency) loadedSpecs.push({ label: "Latencia", value: product.specs.latency });
+      if (product.specs.weight) loadedSpecs.push({ label: "Peso", value: product.specs.weight });
     }
     if (loadedSpecs.length === 0) {
       const template = getCategorySpecTemplate(product.category || "Audífonos Inalámbricos");
@@ -1049,6 +1033,7 @@ function AdminWorkspace() {
 
   // Limpiar formulario para nuevo producto (100% LIMPIO, SIN EJEMPLOS PRECARGADOS)
   const handleNewProductClick = () => {
+    if (uploadingGalleries || isSavingProduct) return;
     setFormAudioType("");
     setFormAncEnabled("");
     setFormPlaybackHours("");
@@ -1056,14 +1041,13 @@ function AdminWorkspace() {
     setFormActiveStep(1);
     setFormCustomId(generate6DigitId());
     setFormName("");
-    setFormBrand(brands[0] || "Xiaomi");
-    const initialCat = categories[0] || "Audífonos Inalámbricos";
+    setFormBrand(brands[0] || "");
+    const initialCat = categories[0] || "";
     setFormCategory(initialCat);
     setFormPrice("");
     setFormHasPromo(false);
     setFormOriginalPrice("");
-    setFormPromoTag("OFERTA FLASH");
-    setFormStock(10);
+    setFormStock(0);
     setFormSubtitle("");
     setFormDescription("");
     setFormVideoUrl("");
@@ -1074,7 +1058,7 @@ function AdminWorkspace() {
         image: "",
       },
     ]);
-    setFormSecondaryImage("");
+    setFormProductImages([]);
     setPreviewColorIndex(0);
 
     const template = getCategorySpecTemplate(initialCat);
@@ -1084,8 +1068,10 @@ function AdminWorkspace() {
   };
 
   // Guardar producto nuevo o editado
-  const handleSaveProduct = (e: Pick<React.FormEvent, "preventDefault">) => {
+  const handleSaveProduct = async (e: Pick<React.FormEvent, "preventDefault">) => {
     e.preventDefault();
+    if (productSaveInProgress.current || uploadingGalleries) return;
+    const previousProduct = products.find((product) => product.id === editingProductId);
     const playbackHours = parsePlaybackHours(formPlaybackHours);
     if (isAudioCategory(formCategory) && formPlaybackHours.trim() && playbackHours === undefined) {
       alert("Ingresa las horas de autonomía por carga como un número mayor que cero.");
@@ -1095,44 +1081,31 @@ function AdminWorkspace() {
       alert("Por favor ingresa el nombre del producto.");
       return;
     }
+    if (!brands.some((name) => name.toLowerCase() === formBrand.toLowerCase()) || !categories.some((name) => name.toLowerCase() === formCategory.toLowerCase())) {
+      alert("Selecciona una marca y categoría existentes. Puedes crearlas desde Marcas y Categorías.");
+      return;
+    }
 
+    if (formPrice === "" || Number(formPrice) <= 0) { alert("Ingresa un precio de venta mayor que cero."); return; }
+    if (formHasPromo && (Number(formOriginalPrice) <= Number(formPrice))) { alert("El precio regular debe ser mayor que el precio de oferta."); return; }
     const priceNum = typeof formPrice === "number" ? formPrice : parseFloat(formPrice as string) || 0;
     const origPriceNum = typeof formOriginalPrice === "number" ? formOriginalPrice : parseFloat(formOriginalPrice as string) || 0;
 
-    // Validación de ID estricto a 6 dígitos numéricos
-    let finalId = formCustomId.replace(/\D/g, "").slice(0, 6);
-    if (!finalId || finalId.length < 6) {
-      if (editingProductId && /^\d{6}$/.test(editingProductId)) {
-        finalId = editingProductId;
-      } else {
-        finalId = generate6DigitId();
-      }
-    }
-
-    // Verificar si el ID ya existe en otro producto al crear uno nuevo
-    if (!editingProductId && products.some((p) => p.id === finalId)) {
-      finalId = generate6DigitId();
-    }
+    const finalId = editingProductId || formCustomId;
+    if (!/^\d{6}$/.test(finalId)) { alert("El código debe tener exactamente seis dígitos."); return; }
+    if (!editingProductId && products.some((product) => product.id === finalId)) { alert("Ese código ya existe. Usa un código diferente."); return; }
+    if (editingProductId && !previousProduct) { alert("Este producto ya no existe. Actualiza el inventario antes de editar."); return; }
 
     const slug = formName
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
       .trim()
       .replace(/[^\w\s-]/g, "")
       .replace(/[\s_-]+/g, "-")
       .replace(/^-+|-+$/g, "");
 
-    const validColors = formColors.filter(c => c.name.trim() || c.image.trim());
-    const finalColors = validColors.length > 0 ? validColors : [
-      {
-        name: "Original",
-        hex: "#18181b",
-        image: formColors[0]?.image || "",
-      },
-    ];
-
-    const primaryImg = finalColors[0]?.image || formColors[0]?.image || "";
-    const secImg = formSecondaryImage || finalColors[1]?.image || "";
-    const images = [primaryImg, secImg].filter(Boolean);
+    const finalColors = formColors.map((color) => withColorImages({ ...color, name: color.name.trim() }, colorImages(color)));
+    const images = uniqueImages(formProductImages);
 
     // Consolidar especificaciones técnicas válidas
     const validSpecs = formCustomSpecs
@@ -1148,10 +1121,10 @@ function AdminWorkspace() {
 
     const batteryVal = findSpecValue(["batería", "bateria", "autonomía", "autonomia"], "");
     const ancVal = findSpecValue(["cancelación", "cancelacion", "anc", "ruido"], "");
-    const driverVal = findSpecValue(["driver", "diafragma", "potencia"], "Dinámico");
+    const driverVal = findSpecValue(["driver", "diafragma", "potencia"], "");
     const connVal = findSpecValue(["bluetooth", "conectividad", "inalámbrico"], "");
-    const latencyVal = findSpecValue(["latencia", "ms"], "60ms");
-    const weightVal = findSpecValue(["peso", "gr", "gramos"], "4.2g");
+    const latencyVal = findSpecValue(["latencia"], "");
+    const weightVal = findSpecValue(["peso", "gramos"], "");
 
     const productPayload: Product = {
       id: finalId,
@@ -1165,15 +1138,16 @@ function AdminWorkspace() {
       category: formCategory,
       inStock: formStock > 0,
       stockCount: formStock,
-      isFeatured: true,
-      isNew: !editingProductId,
-      rating: 5.0,
-      reviewsCount: 1,
+      isFeatured: previousProduct?.isFeatured ?? true,
+      isNew: previousProduct?.isNew ?? true,
+      rating: previousProduct?.rating ?? 0,
+      reviewsCount: previousProduct?.reviewsCount ?? 0,
       videoUrl: formVideoUrl.trim() || undefined,
       colors: finalColors,
-      images: images.length > 0 ? images : [getAssetUrl("/images/products/redmi-buds-6-play.png")],
+      images,
       customSpecs: validSpecs.length > 0 ? validSpecs : undefined,
       specs: {
+        ...previousProduct?.specs,
         audioType: isAudioCategory(formCategory) ? formAudioType || undefined : undefined,
         ancEnabled: isAudioCategory(formCategory) ? formAncEnabled || undefined : undefined,
         playbackHours: isAudioCategory(formCategory) && playbackHours !== undefined ? String(playbackHours) : undefined,
@@ -1184,41 +1158,29 @@ function AdminWorkspace() {
         weight: weightVal,
         latency: latencyVal,
       },
-      soundProfile: {
-        type: "Equilibrado",
-        description: "Audio de alta fidelidad",
-        bass: 80,
-        mid: 80,
-        treble: 80,
-      },
-      features: validSpecs.length > 0
-        ? validSpecs.slice(0, 5).map((s) => `${s.label}: ${s.value}`)
-        : [
-            "100% Original Sellado",
-            ...(formSubtitle ? [formSubtitle] : []),
-          ],
-      tags: [formBrand.toLowerCase(), formCategory.toLowerCase(), "tecnología"],
+      soundProfile: previousProduct?.soundProfile,
+      features: previousProduct?.features || [],
+      tags: previousProduct?.tags || [formBrand.toLowerCase(), formCategory.toLowerCase()],
     };
 
     try { validateProductContent(productPayload); } catch (failure) {
       alert(failure instanceof Error ? failure.message : "Revisa los datos del producto.");
       return;
     }
-    if (editingProductId) {
-      if (editingProductId !== finalId) {
-        deleteProduct(editingProductId);
-        addProduct(productPayload);
-      } else {
-        updateProduct(productPayload);
-      }
-      setSuccessNotice(`¡Producto "${productPayload.name}" (#${productPayload.id}) actualizado exitosamente!`);
-    } else {
-      addProduct(productPayload);
-      setSuccessNotice(`¡Producto "${productPayload.name}" (#${productPayload.id}) guardado y publicado en la tienda!`);
+    productSaveInProgress.current = true;
+    setIsSavingProduct(true);
+    try {
+      if (editingProductId) await updateProduct(productPayload);
+      else await addProduct(productPayload);
+      setSuccessNotice(`Producto "${productPayload.name}" (#${productPayload.id}) guardado correctamente.`);
+      setTimeout(() => setSuccessNotice(""), 5000);
+      setActiveTab("inventory");
+    } catch (failure) {
+      alert(failure instanceof Error ? failure.message : "No se pudo guardar el producto. Tus datos siguen en el formulario.");
+    } finally {
+      productSaveInProgress.current = false;
+      setIsSavingProduct(false);
     }
-
-    setTimeout(() => setSuccessNotice(""), 5000);
-    setActiveTab("inventory");
   };
 
   const filteredInventory = products
@@ -2128,40 +2090,9 @@ function AdminWorkspace() {
                       </div>
 
                       {/* Bottom Bar: Control de Stock + Botones de Acción */}
-                      <div className="flex items-center justify-between pt-2 border-t border-neutral-100 gap-2">
+                      <div className="flex flex-wrap items-center justify-between pt-2 border-t border-neutral-100 gap-2">
                         {/* Control de Stock con Stepper & Entrada Directa */}
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => updateStock(item.id, -1, true)}
-                            disabled={item.stockCount <= 0}
-                            className="w-7 h-7 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-100 active:scale-90 text-neutral-800 font-black text-sm flex items-center justify-center transition-all cursor-pointer disabled:opacity-25 disabled:cursor-not-allowed select-none shadow-2xs"
-                            title="Restar 1 unidad"
-                          >
-                            -
-                          </button>
-                          <input
-                            type="number"
-                            min="0"
-                            value={item.stockCount}
-                            onChange={(e) => {
-                              const val = parseInt(e.target.value, 10);
-                              if (!isNaN(val) && val >= 0) {
-                                updateStock(item.id, val, false);
-                              }
-                            }}
-                            className="w-12 text-center py-1 rounded-lg border border-neutral-300 bg-white text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:border-neutral-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            title="Cantidad en stock"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => updateStock(item.id, 1, true)}
-                            className="w-7 h-7 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-100 active:scale-90 text-neutral-800 font-black text-sm flex items-center justify-center transition-all cursor-pointer select-none shadow-2xs"
-                            title="Sumar 1 unidad"
-                          >
-                            +
-                          </button>
-                        </div>
+                        <AdminStockControl stock={item.stockCount} onChange={(value, delta) => updateStock(item.id, value, delta)} />
 
                         {/* Botones de Acción */}
                         <div className="flex items-center gap-1">
@@ -2191,9 +2122,9 @@ function AdminWorkspace() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={async () => {
                               if (confirm(`¿Estás seguro de eliminar "${item.name}" del catálogo?`)) {
-                                deleteProduct(item.id);
+                                if (!await runAdminAction(() => deleteProduct(item.id))) return;
                                 setSuccessNotice(`Producto "${item.name}" eliminado del catálogo.`);
                                 setTimeout(() => setSuccessNotice(""), 4000);
                               }
@@ -2358,38 +2289,7 @@ function AdminWorkspace() {
 
                             {/* Control de Stock con Stepper & Entrada Directa */}
                             <td className="py-3.5 px-3 whitespace-nowrap">
-                              <div className="inline-flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => updateStock(item.id, -1, true)}
-                                  disabled={item.stockCount <= 0}
-                                  className="w-7 h-7 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-100 active:scale-90 text-neutral-800 font-black text-sm flex items-center justify-center transition-all cursor-pointer disabled:opacity-25 disabled:cursor-not-allowed select-none shadow-2xs"
-                                  title="Restar 1 unidad"
-                                >
-                                  -
-                                </button>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={item.stockCount}
-                                  onChange={(e) => {
-                                    const val = parseInt(e.target.value, 10);
-                                    if (!isNaN(val) && val >= 0) {
-                                      updateStock(item.id, val, false);
-                                    }
-                                  }}
-                                  className="w-12 text-center py-1 rounded-lg border border-neutral-300 bg-white text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:border-neutral-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                  title="Escribe directamente la cantidad de stock"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => updateStock(item.id, 1, true)}
-                                  className="w-7 h-7 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-100 active:scale-90 text-neutral-800 font-black text-sm flex items-center justify-center transition-all cursor-pointer select-none shadow-2xs"
-                                  title="Sumar 1 unidad"
-                                >
-                                  +
-                                </button>
-                              </div>
+                              <AdminStockControl stock={item.stockCount} onChange={(value, delta) => updateStock(item.id, value, delta)} />
                             </td>
 
                             {/* Acciones */}
@@ -2421,9 +2321,9 @@ function AdminWorkspace() {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    if (confirm(`¿Estás seguro de eliminar "${item.name}" del catálogo?`)) {
-                                      deleteProduct(item.id);
+                                  onClick={async () => {
+                              if (confirm(`¿Estás seguro de eliminar "${item.name}" del catálogo?`)) {
+                                      if (!await runAdminAction(() => deleteProduct(item.id))) return;
                                       setSuccessNotice(`Producto "${item.name}" eliminado del catálogo.`);
                                       setTimeout(() => setSuccessNotice(""), 4000);
                                     }
@@ -2481,12 +2381,13 @@ function AdminWorkspace() {
                 <button
                   type="button"
                   onClick={(e) => {
-                    handleSaveProduct(e);
+                    void handleSaveProduct(e);
                   }}
-                  className="px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
+                  disabled={isSavingProduct || uploadingGalleries > 0}
+                  className="disabled:opacity-50 px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
                 >
                   <Save className="w-3.5 h-3.5" />
-                  <span>Guardar Producto</span>
+                  <span>{isSavingProduct ? "Guardando…" : uploadingGalleries ? "Cargando fotos…" : "Guardar Producto"}</span>
                 </button>
               </div>
             </div>
@@ -2495,6 +2396,7 @@ function AdminWorkspace() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
               {/* Formulario Principal (7 Cols) */}
               <form onSubmit={handleSaveProduct} className="lg:col-span-7 space-y-4 bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs">
+                <fieldset disabled={isSavingProduct || uploadingGalleries > 0} className="min-w-0 space-y-4">
                 {/* Selector de Pasos */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
@@ -2559,6 +2461,7 @@ function AdminWorkspace() {
                             maxLength={6}
                             placeholder="000000"
                             value={formCustomId}
+                            disabled={!!editingProductId || isSavingProduct}
                             onChange={(e) => setFormCustomId(e.target.value.replace(/\D/g, "").slice(0, 6))}
                             className="w-full pl-7 pr-3 py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 tracking-wider"
                           />
@@ -2789,70 +2692,15 @@ function AdminWorkspace() {
                             ))}
                           </div>
 
-                          {/* Foto para este color (SIN muestras predeterminadas) */}
-                          <div className="pt-2 border-t border-neutral-200">
-                            <label className="text-[11px] font-bold text-neutral-700 block mb-1">
-                              Fotografía
-                            </label>
-                            <div className="flex items-center gap-3">
-                              <div className="w-12 h-12 rounded-xl bg-white border border-neutral-200 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
-                                {color.image ? (
-                                  <img
-                                    src={getAssetUrl(color.image)}
-                                    alt={color.name}
-                                    className="w-full h-full object-contain"
-                                  />
-                                ) : (
-                                  <ImageIcon className="w-5 h-5 text-neutral-300" />
-                                )}
-                              </div>
-
-                              <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-neutral-300 hover:border-neutral-900 text-xs font-bold text-neutral-900 cursor-pointer transition-colors shadow-2xs">
-                                <Upload className="w-3.5 h-3.5 text-neutral-600" />
-                                <span>Subir imagen</span>
-                                <input
-                                  type="file"
-                                  accept="image/jpeg,image/png,image/webp,image/gif"
-                                  onChange={(e) => handleColorImageUpload(idx, e)}
-                                  className="hidden"
-                                />
-                              </label>
-                            </div>
+                          <div className="pt-3 border-t border-neutral-200">
+                            <AdminImageGallery title={`Fotos de ${color.name || 'este color'}`} hint="Al elegir este color en la tienda, se mostrarán únicamente estas fotos." images={colorImages(color)} onChange={(images) => handleColorGalleryChange(idx, images)} disabled={isSavingProduct || uploadingGalleries > 0} onBusyChange={onGalleryBusyChange} />
                           </div>
                         </div>
                       ))}
                     </div>
 
-                    {/* Foto Secundaria (Simple, conciso, sin muestras) */}
-                    <div className="p-3.5 rounded-xl border border-neutral-200 bg-neutral-50/60 space-y-2">
-                      <span className="text-xs font-bold text-neutral-900 block">
-                        Foto Secundaria
-                      </span>
-
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-white border border-neutral-200 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
-                          {formSecondaryImage ? (
-                            <img
-                              src={getAssetUrl(formSecondaryImage)}
-                              alt="Secondary Preview"
-                              className="w-full h-full object-contain"
-                            />
-                          ) : (
-                            <ImageIcon className="w-5 h-5 text-neutral-300" />
-                          )}
-                        </div>
-
-                        <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-xs font-bold text-white cursor-pointer transition-colors shadow-2xs">
-                          <Upload className="w-3.5 h-3.5 text-white" />
-                          <span>Subir foto secundaria</span>
-                          <input
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp,image/gif"
-                            onChange={handleSecondaryImageUpload}
-                            className="hidden"
-                          />
-                        </label>
-                      </div>
+                    <div className="p-3.5 rounded-xl border border-neutral-200 bg-neutral-50/60">
+                      <AdminImageGallery title="Fotos generales del producto" hint="Se muestran al abrir la ficha. La primera es la portada; puedes reordenar las fotos." images={formProductImages} onChange={setFormProductImages} disabled={isSavingProduct || uploadingGalleries > 0} onBusyChange={onGalleryBusyChange} />
                     </div>
 
                     {/* Video del Producto (Simple y conciso) */}
@@ -2989,21 +2837,7 @@ function AdminWorkspace() {
                             />
                           </div>
 
-                          <div>
-                            <label className="text-[11px] font-bold text-neutral-700 block mb-1">
-                              Etiqueta
-                            </label>
-                            <select
-                              value={formPromoTag}
-                              onChange={(e) => setFormPromoTag(e.target.value)}
-                              className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 font-semibold focus:outline-none focus:border-neutral-900 cursor-pointer"
-                            >
-                              <option value="OFERTA FLASH">OFERTA FLASH</option>
-                              <option value="MÁS VENDIDO">MÁS VENDIDO</option>
-                              <option value="DESCUENTO ESPECIAL">DESCUENTO ESPECIAL</option>
-                              <option value="NUEVO LANZAMIENTO">NUEVO LANZAMIENTO</option>
-                            </select>
-                          </div>
+
 
                           {Number(formOriginalPrice) > Number(formPrice) && Number(formPrice) > 0 && (
                             <div className="sm:col-span-2 text-xs font-bold text-neutral-900 bg-white p-2.5 rounded-xl border border-neutral-200 flex items-center justify-between">
@@ -3208,14 +3042,16 @@ function AdminWorkspace() {
 
                       <button
                         type="submit"
-                        className="px-6 py-2.5 rounded-xl bg-neutral-950 text-white font-extrabold text-xs hover:bg-neutral-800 transition-all flex items-center gap-2 shadow-sm active:scale-95 cursor-pointer"
+                        disabled={isSavingProduct || uploadingGalleries > 0}
+                        className="disabled:opacity-50 disabled:cursor-wait px-6 py-2.5 rounded-xl bg-neutral-950 text-white font-extrabold text-xs hover:bg-neutral-800 transition-all flex items-center gap-2 shadow-sm active:scale-95 cursor-pointer"
                       >
                         <Save className="w-4 h-4 text-white" />
-                        <span>{editingProductId ? "Actualizar Producto" : "Publicar Producto"}</span>
+                        <span>{isSavingProduct ? "Guardando…" : uploadingGalleries ? "Cargando fotos…" : editingProductId ? "Actualizar Producto" : "Publicar Producto"}</span>
                       </button>
                     </div>
                   </div>
                 )}
+              </fieldset>
               </form>
 
               {/* Vista Previa en Vivo (5 Cols) */}
@@ -3243,7 +3079,7 @@ function AdminWorkspace() {
                       )}
                       {formHasPromo && (
                         <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-neutral-950 text-white tracking-wide uppercase">
-                          {formPromoTag}
+                          Oferta
                         </span>
                       )}
                     </div>
@@ -3257,7 +3093,9 @@ function AdminWorkspace() {
 
                   {/* Imagen con Transición en Hover */}
                   {(() => {
-                    const activePreviewImg = formColors[previewColorIndex]?.image || formColors[0]?.image;
+                    const previewImages = colorImages(formColors[previewColorIndex]);
+                    const activePreviewImg = previewImages[0] || formProductImages[0];
+                    const previewSecondaryImage = previewImages[0] ? previewImages[1] : formProductImages[1];
                     return (
                       <div className="relative w-full aspect-square rounded-xl bg-white flex items-center justify-center p-2 overflow-hidden border border-neutral-100 mb-3 group/preview-image">
                         {activePreviewImg ? (
@@ -3266,14 +3104,14 @@ function AdminWorkspace() {
                               src={getAssetUrl(activePreviewImg)}
                               alt="Preview"
                               className={`absolute inset-0 w-full h-full object-contain p-1 transition-all duration-500 ease-out ${
-                                formSecondaryImage
+                                previewSecondaryImage
                                   ? "opacity-100 group-hover/preview-image:opacity-0 group-hover/preview-image:scale-95"
                                   : "group-hover/preview-image:scale-105"
                               }`}
                             />
-                            {formSecondaryImage && (
+                            {previewSecondaryImage && (
                               <img
-                                src={getAssetUrl(formSecondaryImage)}
+                                src={getAssetUrl(previewSecondaryImage)}
                                 alt="Hover Preview"
                                 className="absolute inset-0 w-full h-full object-contain p-1 transition-all duration-500 ease-out opacity-0 group-hover/preview-image:opacity-100 scale-95 group-hover/preview-image:scale-100 pointer-events-none"
                               />
@@ -3733,7 +3571,7 @@ function AdminWorkspace() {
 
                                   <button
                                     type="button"
-                                    onClick={() => {
+                                    onClick={async () => {
                                       if (count > 0) {
                                         setDeleteConfirmItem({
                                           type: "brand",
@@ -3741,7 +3579,7 @@ function AdminWorkspace() {
                                           productCount: count,
                                         });
                                       } else {
-                                        deleteBrand(b);
+                                        if (!await runAdminAction(() => deleteBrand(b))) return;
                                         setSuccessNotice(`Marca "${b}" eliminada.`);
                                         setTimeout(() => setSuccessNotice(""), 3500);
                                       }
@@ -4010,7 +3848,7 @@ function AdminWorkspace() {
 
                                   <button
                                     type="button"
-                                    onClick={() => {
+                                    onClick={async () => {
                                       if (count > 0) {
                                         setDeleteConfirmItem({
                                           type: "category",
@@ -4018,7 +3856,7 @@ function AdminWorkspace() {
                                           productCount: count,
                                         });
                                       } else {
-                                        deleteCategory(c);
+                                        if (!await runAdminAction(() => deleteCategory(c))) return;
                                         setSuccessNotice(`Categoría "${c}" eliminada.`);
                                         setTimeout(() => setSuccessNotice(""), 3500);
                                       }
@@ -4147,7 +3985,7 @@ function AdminWorkspace() {
                       <p className="text-[11px] leading-relaxed text-amber-800">
                         Esta {deleteConfirmItem.type === "brand" ? "marca" : "categoría"} está asociada actualmente a{" "}
                         <strong>{deleteConfirmItem.productCount} {deleteConfirmItem.productCount === 1 ? "producto" : "productos"}</strong>.
-                        Si la eliminas, los productos permanecerán en el catálogo pero sin {deleteConfirmItem.type === "brand" ? "marca" : "categoría"} asignada.
+                        Primero edita estos productos y asígnales otra {deleteConfirmItem.type === "brand" ? "marca" : "categoría"}. Después podrás eliminar este nombre.
                       </p>
                     </div>
 
@@ -4161,10 +3999,10 @@ function AdminWorkspace() {
                       </button>
                       <button
                         type="button"
-                        onClick={executeDeleteItem}
+                        onClick={() => { if (deleteConfirmItem.productCount > 0) { setActiveTab("inventory"); if (deleteConfirmItem.type === "brand") setInventoryBrandFilter(deleteConfirmItem.name); else setInventoryCategoryFilter(deleteConfirmItem.name); setDeleteConfirmItem(null); } else void executeDeleteItem(); }}
                         className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs cursor-pointer shadow-xs transition-colors"
                       >
-                        Sí, Eliminar
+                        {deleteConfirmItem.productCount > 0 ? "Ver productos" : "Sí, eliminar"}
                       </button>
                     </div>
                   </div>
@@ -4324,7 +4162,7 @@ function AdminWorkspace() {
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           type="button"
-                          onClick={() => toggleCoupon(coupon.id)}
+                          onClick={() => { void runAdminAction(() => toggleCoupon(coupon.id)); }}
                           className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer border ${
                             coupon.isActive
                               ? "bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-neutral-200"
@@ -4338,7 +4176,7 @@ function AdminWorkspace() {
                           type="button"
                           onClick={() => {
                             if (confirm(`¿Eliminar el cupón ${coupon.code}?`)) {
-                              deleteCoupon(coupon.id);
+                              void runAdminAction(() => deleteCoupon(coupon.id));
                             }
                           }}
                           className="p-1.5 rounded-lg text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
@@ -5447,7 +5285,7 @@ function AdminWorkspace() {
 
         {/* ================= PESTAÑA: AJUSTES & WHATSAPP ================= */}
         {activeTab === "settings" && (() => {
-          const cleanPhoneDisplay = phoneInput ? phoneInput.replace(/^51/, "") : "";
+          const cleanPhoneDisplay = phoneInput.length === 11 && phoneInput.startsWith("51") ? phoneInput.slice(2) : phoneInput;
           const testWhatsAppUrl = `https://wa.me/51${cleanPhoneDisplay}?text=${encodeURIComponent(
             "Hola PulsoTech, prueba de conexión desde el Panel Administrativo POS."
           )}`;
@@ -5597,9 +5435,9 @@ function AdminWorkspace() {
                             <input
                               type="text"
                               inputMode="numeric"
-                              value={phoneInput}
-                              onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, "").slice(0, 15))}
-                              placeholder="51902377567"
+                              value={cleanPhoneDisplay}
+                              onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, "").slice(0, 9))}
+                              placeholder="902377567"
                               className="flex-1 px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-xs font-mono font-bold text-neutral-950 focus:outline-none focus:bg-white focus:border-neutral-900"
                             />
                           </div>
@@ -5651,6 +5489,13 @@ function AdminWorkspace() {
                         </span>
                       </div>
 
+                      <div className="rounded-xl border border-neutral-200 p-3 space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <p className="inline-flex items-center gap-2 text-xs font-semibold"><Database className="h-4 w-4" />{isCloudConnected ? "Catálogo conectado a Supabase" : "Conexión con la nube pendiente"}</p>
+                          <button type="button" onClick={handleForceCloudSync} disabled={isSyncingCloud} className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-xs font-semibold disabled:opacity-50"><RefreshCw className={`h-3.5 w-3.5 ${isSyncingCloud ? "animate-spin" : ""}`} />{isSyncingCloud ? "Comprobando…" : "Actualizar desde la nube"}</button>
+                        </div>
+                        {syncSuccessMessage && <p role="status" className="text-xs text-neutral-600">{syncSuccessMessage}</p>}
+                      </div>
                       <StoreBackupPanel />
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                         <button
@@ -5862,7 +5707,7 @@ function AdminWorkspace() {
                     PULSOTECH
                   </div>
                   <div className="text-[11px] text-neutral-500 font-medium">
-                    Accesorios Tecnológicos & Audio Original
+                    Accesorios tecnológicos y audio
                   </div>
                   <div className="text-[10px] text-neutral-400 mt-0.5">
                     Lima, Perú • WhatsApp: +{STORE_SETTINGS.whatsappNumber}

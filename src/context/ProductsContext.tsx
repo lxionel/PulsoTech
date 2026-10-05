@@ -1,38 +1,40 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { Product } from "@/types";
+import { createMutationQueue, confirmMutation } from "@/lib/confirmed-mutation";
+import { validateProductContent } from "@/lib/content-security";
 import { PRODUCTS } from "@/data/products";
 import {
   isSupabaseReady,
   fetchProductsFromSupabase,
-  upsertProductToSupabase,
+  createProductInSupabase,
+  updateProductInSupabase,
+  renameProductGroupInSupabase,
   deleteProductFromSupabase,
   updateStockInSupabase,
   fetchStoreSettingsFromSupabase,
   saveStoreSettingsToSupabase,
   getSupabaseClient,
-  clearAllProductsFromSupabase,
 } from "@/lib/supabase";
 
 interface ProductsContextType {
   isLoading: boolean;
   products: Product[];
-  addProduct: (product: Product) => void;
-  updateProduct: (product: Product) => void;
-  deleteProduct: (id: string) => void;
-  updateStock: (id: string, deltaOrExact: number, isDelta?: boolean) => void;
+  addProduct: (product: Product) => Promise<void>;
+  updateProduct: (product: Product) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
+  updateStock: (id: string, deltaOrExact: number, isDelta?: boolean) => Promise<void>;
   applyConfirmedStock: (stock: { id: string; stockCount: number; inStock: boolean }) => void;
-  resetToDefault: () => void;
   exportProductsJson: () => string;
   brands: string[];
-  addBrand: (brand: string) => void;
-  updateBrand: (oldBrand: string, newBrand: string) => void;
-  deleteBrand: (brand: string) => void;
+  addBrand: (brand: string) => Promise<void>;
+  updateBrand: (oldBrand: string, newBrand: string) => Promise<void>;
+  deleteBrand: (brand: string) => Promise<void>;
   categories: string[];
-  addCategory: (category: string) => void;
-  updateCategory: (oldCategory: string, newCategory: string) => void;
-  deleteCategory: (category: string) => void;
+  addCategory: (category: string) => Promise<void>;
+  updateCategory: (oldCategory: string, newCategory: string) => Promise<void>;
+  deleteCategory: (category: string) => Promise<void>;
   isCloudConnected: boolean;
   refreshFromCloud: () => Promise<Product[] | null>;
 }
@@ -54,7 +56,7 @@ function getInitialBrands(): string[] {
       const stored = localStorage.getItem(BRANDS_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {
       console.error(e);
@@ -69,7 +71,7 @@ function getInitialCategories(): string[] {
       const stored = localStorage.getItem(CATEGORIES_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {
       console.error(e);
@@ -97,10 +99,16 @@ function getInitialProducts(): Product[] {
 
 export function ProductsProvider({ children }: { children: React.ReactNode }) {
   // The server and the first client render must match. Restore saved data after mount.
-  const [products, setProducts] = useState<Product[]>(PRODUCTS);
-  const [brands, setBrands] = useState<string[]>(DEFAULT_BRANDS);
-  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
+  const [products, setProductsState] = useState<Product[]>(PRODUCTS);
+  const [brands, setBrandsState] = useState<string[]>(DEFAULT_BRANDS);
+  const [categories, setCategoriesState] = useState<string[]>(DEFAULT_CATEGORIES);
   const [isLoading, setIsLoading] = useState(true);
+
+  const state = useRef({ products, brands, categories });
+  const [enqueue] = useState(() => createMutationQueue());
+  const setProducts = useCallback((next: Product[]) => { state.current.products = next; setProductsState(next); }, []);
+  const setBrands = useCallback((next: string[]) => { state.current.brands = next; setBrandsState(next); }, []);
+  const setCategories = useCallback((next: string[]) => { state.current.categories = next; setCategoriesState(next); }, []);
 
   // Estado de Supabase Cloud
   const [isCloudConnected, setIsCloudConnected] = useState<boolean>(false);
@@ -136,10 +144,10 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
 
         // Cargar marcas y categorías de la nube si existen
         if (cloudSettings) {
-          if (cloudSettings.brands && cloudSettings.brands.length > 0) {
+          if (Array.isArray(cloudSettings.brands)) {
             setBrands(cloudSettings.brands);
           }
-          if (cloudSettings.categories && cloudSettings.categories.length > 0) {
+          if (Array.isArray(cloudSettings.categories)) {
             setCategories(cloudSettings.categories);
           }
         }
@@ -152,7 +160,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       setIsCloudConnected(false);
     }
     return null;
-  }, [saveProductsLocal]);
+  }, [saveProductsLocal, setProducts, setBrands, setCategories]);
 
   // Inicialización y suscripción en tiempo real
   useEffect(() => {
@@ -197,7 +205,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       isMounted = false;
       window.clearTimeout(timer);
     };
-  }, [refreshFromCloud, saveProductsLocal]);
+  }, [refreshFromCloud, saveProductsLocal, setProducts, setBrands, setCategories]);
 
   // Sincronizar storage entre pestañas cuando se usa modo local
   useEffect(() => {
@@ -215,229 +223,82 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
+  }, [setProducts]);
+
+  const commitProducts = useCallback((next: Product[]) => {
+    state.current.products = next; setProducts(next); saveProductsLocal(next);
+  }, [saveProductsLocal, setProducts]);
+
+  const writeConfirmed = useCallback(async (write: () => Promise<boolean>, commit: () => void) => {
+    if (isSupabaseReady()) await confirmMutation(write, commit);
+    else commit();
   }, []);
 
-  // Mutaciones de Productos (Sincronizan tanto local como en Supabase)
-  const addProduct = useCallback((newProduct: Product) => {
-    setProducts((prev) => {
-      const exists = prev.some((p) => p.id === newProduct.id);
-      const next = exists ? prev.map((p) => (p.id === newProduct.id ? newProduct : p)) : [newProduct, ...prev];
-      saveProductsLocal(next);
-      return next;
-    });
+  const addProduct = useCallback((product: Product) => enqueue(async () => {
+    validateProductContent(product);
+    if (state.current.products.some((item) => item.id === product.id)) throw new Error("El código de producto ya existe.");
+    await writeConfirmed(() => createProductInSupabase(product), () => commitProducts([product, ...state.current.products]));
+  }), [enqueue, writeConfirmed, commitProducts]);
 
-    if (isSupabaseReady()) {
-      upsertProductToSupabase(newProduct).catch((err) => {
-        console.error("Error guardando producto en Supabase:", err);
-      });
+  const updateProduct = useCallback((product: Product) => enqueue(async () => {
+    validateProductContent(product);
+    if (!state.current.products.some((item) => item.id === product.id)) throw new Error("El producto ya no existe. Actualiza el inventario.");
+    await writeConfirmed(() => updateProductInSupabase(product), () => commitProducts(state.current.products.map((item) => item.id === product.id ? product : item)));
+  }), [enqueue, writeConfirmed, commitProducts]);
+
+  const deleteProduct = useCallback((id: string) => enqueue(async () => {
+    await writeConfirmed(() => deleteProductFromSupabase(id), () => commitProducts(state.current.products.filter((item) => item.id !== id)));
+  }), [enqueue, writeConfirmed, commitProducts]);
+
+  const updateStock = useCallback((id: string, value: number, isDelta = false) => enqueue(async () => {
+    const target = state.current.products.find((item) => item.id === id);
+    if (!target) throw new Error("El producto ya no existe.");
+    const stock = isDelta ? Math.max(0, target.stockCount + value) : value;
+    if (!Number.isSafeInteger(stock) || stock < 0 || stock > 1e6) throw new Error("El stock debe ser un número entero entre 0 y 1 000 000.");
+    try {
+      await writeConfirmed(() => updateStockInSupabase(id, stock, target.stockCount), () => commitProducts(state.current.products.map((item) => item.id === id ? { ...item, stockCount: stock, inStock: stock > 0 } : item)));
+    } catch {
+      await refreshFromCloud();
+      throw new Error("No se confirmó el stock. Puede haber cambiado desde otro dispositivo o una venta. Revisa el inventario y vuelve a intentarlo.");
     }
-  }, [saveProductsLocal]);
+  }), [enqueue, writeConfirmed, commitProducts, refreshFromCloud]);
 
-  const updateProduct = useCallback((updatedProduct: Product) => {
-    setProducts((prev) => {
-      const next = prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p));
-      saveProductsLocal(next);
-      return next;
-    });
-
-    if (isSupabaseReady()) {
-      upsertProductToSupabase(updatedProduct).catch((err) => {
-        console.error("Error actualizando producto en Supabase:", err);
-      });
-    }
-  }, [saveProductsLocal]);
-
-  const deleteProduct = useCallback((id: string) => {
-    setProducts((prev) => {
-      const next = prev.filter((p) => p.id !== id);
-      saveProductsLocal(next);
-      return next;
-    });
-
-    if (isSupabaseReady()) {
-      deleteProductFromSupabase(id).catch((err) => {
-        console.error("Error eliminando producto en Supabase:", err);
-      });
-    }
-  }, [saveProductsLocal]);
-
-  const updateStock = useCallback((id: string, value: number, isDelta: boolean = false) => {
-    setProducts((prev) => {
-      const target = prev.find((p) => p.id === id);
-      if (!target) return prev;
-      const nextStock = isDelta ? Math.max(0, target.stockCount + value) : Math.max(0, value);
-
-      const next = prev.map((p) => {
-        if (p.id !== id) return p;
-        return {
-          ...p,
-          stockCount: nextStock,
-          inStock: nextStock > 0,
-        };
-      });
-      saveProductsLocal(next);
-
-      if (isSupabaseReady()) {
-        updateStockInSupabase(id, nextStock).catch((err) => {
-          console.error("Error actualizando stock en Supabase:", err);
-        });
-      }
-
-      return next;
-    });
-  }, [saveProductsLocal]);
-
-  // Apply a database receipt without performing another stock write.
+  // A receipt from the sales transaction is already persisted; do not write it again.
   const applyConfirmedStock = useCallback((stock: { id: string; stockCount: number; inStock: boolean }) => {
     if (!Number.isSafeInteger(stock.stockCount) || stock.stockCount < 0) return;
-    setProducts((previous) => {
-      const next = previous.map((product) => product.id === stock.id
-        ? { ...product, stockCount: stock.stockCount, inStock: stock.inStock } : product);
-      saveProductsLocal(next);
-      return next;
-    });
-  }, [saveProductsLocal]);
+    commitProducts(state.current.products.map((item) => item.id === stock.id ? { ...item, ...stock } : item));
+  }, [commitProducts]);
 
-  const addBrand = useCallback((newBrand: string) => {
-    const trimmed = newBrand.trim();
-    if (!trimmed) return;
-    setBrands((prev) => {
-      if (prev.some((b) => b.toLowerCase() === trimmed.toLowerCase())) return prev;
-      const next = [...prev, trimmed];
-      if (typeof window !== "undefined") {
-        localStorage.setItem(BRANDS_STORAGE_KEY, JSON.stringify(next));
-      }
-      if (isSupabaseReady()) {
-        saveStoreSettingsToSupabase("brands", next).catch(console.error);
-      }
-      return next;
-    });
-  }, []);
-
-  const deleteBrand = useCallback((brandToDelete: string) => {
-    setBrands((prev) => {
-      const next = prev.filter((b) => b.toLowerCase() !== brandToDelete.toLowerCase());
-      if (typeof window !== "undefined") {
-        localStorage.setItem(BRANDS_STORAGE_KEY, JSON.stringify(next));
-      }
-      if (isSupabaseReady()) {
-        saveStoreSettingsToSupabase("brands", next).catch(console.error);
-      }
-      return next;
-    });
-  }, []);
-
-  const updateBrand = useCallback((oldBrand: string, newBrand: string) => {
-    const trimmed = newBrand.trim();
-    if (!trimmed || trimmed.toLowerCase() === oldBrand.toLowerCase()) return;
-    setBrands((prev) => {
-      const next = prev.map((b) => (b.toLowerCase() === oldBrand.toLowerCase() ? trimmed : b));
-      if (typeof window !== "undefined") {
-        localStorage.setItem(BRANDS_STORAGE_KEY, JSON.stringify(next));
-      }
-      if (isSupabaseReady()) {
-        saveStoreSettingsToSupabase("brands", next).catch(console.error);
-      }
-      return next;
-    });
-
-    setProducts((prev) => {
-      let changed = false;
-      const next = prev.map((p) => {
-        if (p.brand?.toLowerCase() === oldBrand.toLowerCase()) {
-          changed = true;
-          return { ...p, brand: trimmed };
-        }
-        return p;
-      });
-      if (changed) {
-        saveProductsLocal(next);
-        if (isSupabaseReady()) {
-          next.filter((p) => p.brand === trimmed).forEach((p) => {
-            upsertProductToSupabase(p).catch(console.error);
-          });
-        }
-      }
-      return next;
-    });
-  }, [saveProductsLocal]);
-
-  const addCategory = useCallback((newCategory: string) => {
-    const trimmed = newCategory.trim();
-    if (!trimmed) return;
-    setCategories((prev) => {
-      if (prev.some((c) => c.toLowerCase() === trimmed.toLowerCase())) return prev;
-      const next = [...prev, trimmed];
-      if (typeof window !== "undefined") {
-        localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(next));
-      }
-      if (isSupabaseReady()) {
-        saveStoreSettingsToSupabase("categories", next).catch(console.error);
-      }
-      return next;
-    });
-  }, []);
-
-  const deleteCategory = useCallback((categoryToDelete: string) => {
-    setCategories((prev) => {
-      const next = prev.filter((c) => c.toLowerCase() !== categoryToDelete.toLowerCase());
-      if (typeof window !== "undefined") {
-        localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(next));
-      }
-      if (isSupabaseReady()) {
-        saveStoreSettingsToSupabase("categories", next).catch(console.error);
-      }
-      return next;
-    });
-  }, []);
-
-  const updateCategory = useCallback((oldCategory: string, newCategory: string) => {
-    const trimmed = newCategory.trim();
-    if (!trimmed || trimmed.toLowerCase() === oldCategory.toLowerCase()) return;
-    setCategories((prev) => {
-      const next = prev.map((c) => (c.toLowerCase() === oldCategory.toLowerCase() ? trimmed : c));
-      if (typeof window !== "undefined") {
-        localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(next));
-      }
-      if (isSupabaseReady()) {
-        saveStoreSettingsToSupabase("categories", next).catch(console.error);
-      }
-      return next;
-    });
-
-    setProducts((prev) => {
-      let changed = false;
-      const next = prev.map((p) => {
-        if (p.category?.toLowerCase() === oldCategory.toLowerCase()) {
-          changed = true;
-          return { ...p, category: trimmed };
-        }
-        return p;
-      });
-      if (changed) {
-        saveProductsLocal(next);
-        if (isSupabaseReady()) {
-          next.filter((p) => p.category === trimmed).forEach((p) => {
-            upsertProductToSupabase(p).catch(console.error);
-          });
-        }
-      }
-      return next;
-    });
-  }, [saveProductsLocal]);
-
-  const resetToDefault = useCallback(() => {
-    saveProductsLocal(PRODUCTS);
+  const changeGroup = useCallback((field: "brand" | "category", action: "add" | "rename" | "delete", name: string, replacement = "") => enqueue(async () => {
+    const key = field === "brand" ? "brands" : "categories";
+    const storageKey = field === "brand" ? BRANDS_STORAGE_KEY : CATEGORIES_STORAGE_KEY;
+    const previous = state.current[key];
+    const trimmed = (action === "rename" ? replacement : name).trim();
+    if (!trimmed || trimmed.length > 100) throw new Error("El nombre debe tener entre 1 y 100 caracteres.");
+    const equal = (a: string, b: string) => a.toLocaleLowerCase() === b.toLocaleLowerCase();
+    if (action !== "delete" && previous.some((item) => equal(item, trimmed) && !(action === "rename" && equal(item, name)))) throw new Error("Ya existe un elemento con ese nombre.");
+    const matching = state.current.products.filter((product) => equal(product[field], name));
+    if (action === "delete" && matching.length) throw new Error("Primero asigna otra marca o categoría a los productos que usan este nombre.");
+    const next = action === "add" ? [...previous, trimmed] : action === "rename" ? previous.map((item) => equal(item, name) ? trimmed : item) : previous.filter((item) => !equal(item, name));
     if (isSupabaseReady()) {
-      clearAllProductsFromSupabase()
-        .then(() => {
-          PRODUCTS.forEach((p) => {
-            void upsertProductToSupabase(p);
-          });
-        })
-        .catch(console.error);
+      if (action === "rename" && !await renameProductGroupInSupabase(field, matching.map((product) => product.id), trimmed)) throw new Error("No se pudo actualizar la clasificación de los productos.");
+      if (!await saveStoreSettingsToSupabase(key, next)) {
+        await refreshFromCloud();
+        throw new Error(action === "rename" ? "Algunos productos pueden haber cambiado de clasificación, pero no se guardó la lista. Revisa el inventario y vuelve a guardar el nombre." : "No se guardó la lista. Revisa tu conexión y tu sesión.");
+      }
     }
-  }, [saveProductsLocal]);
+    state.current[key] = next;
+    if (field === "brand") setBrands(next); else setCategories(next);
+    try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { /* The cloud remains authoritative. */ }
+    if (action === "rename") commitProducts(state.current.products.map((product) => equal(product[field], name) ? { ...product, [field]: trimmed } : product));
+  }), [enqueue, commitProducts, refreshFromCloud, setBrands, setCategories]);
+
+  const addBrand = useCallback((name: string) => changeGroup("brand", "add", name), [changeGroup]);
+  const updateBrand = useCallback((name: string, next: string) => changeGroup("brand", "rename", name, next), [changeGroup]);
+  const deleteBrand = useCallback((name: string) => changeGroup("brand", "delete", name), [changeGroup]);
+  const addCategory = useCallback((name: string) => changeGroup("category", "add", name), [changeGroup]);
+  const updateCategory = useCallback((name: string, next: string) => changeGroup("category", "rename", name, next), [changeGroup]);
+  const deleteCategory = useCallback((name: string) => changeGroup("category", "delete", name), [changeGroup]);
 
   const exportProductsJson = useCallback(() => {
     return JSON.stringify(products, null, 2);
@@ -453,7 +314,6 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         deleteProduct,
         updateStock,
         applyConfirmedStock,
-        resetToDefault,
         exportProductsJson,
         brands,
         addBrand,

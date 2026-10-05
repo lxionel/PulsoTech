@@ -136,26 +136,20 @@ export function dbRowToProduct(row: DbProductRow): Product {
     description: row.description || "",
     price: Number(row.price) || 0,
     originalPrice: row.original_price ? Number(row.original_price) : undefined,
-    brand: row.brand || "Xiaomi",
-    category: row.category || "Audífonos Inalámbricos",
+    brand: row.brand || "",
+    category: row.category || "",
     inStock: Boolean(row.in_stock),
-    stockCount: typeof row.stock_count === "number" ? row.stock_count : 10,
+    stockCount: typeof row.stock_count === "number" ? row.stock_count : 0,
     isFeatured: Boolean(row.is_featured),
     isNew: Boolean(row.is_new),
-    rating: Number(row.rating) || 5.0,
-    reviewsCount: Number(row.reviews_count) || 1,
+    rating: Number(row.rating) || 0,
+    reviewsCount: Number(row.reviews_count) || 0,
     videoUrl: row.video_url || undefined,
     colors: Array.isArray(row.colors) ? row.colors : [],
     images: Array.isArray(row.images) ? row.images : [],
     customSpecs: Array.isArray(row.custom_specs) ? row.custom_specs : undefined,
     specs: row.specs || {},
-    soundProfile: (row.sound_profile as Product["soundProfile"]) || {
-      type: "Equilibrado",
-      description: "Audio de alta fidelidad",
-      bass: 80,
-      mid: 80,
-      treble: 80,
-    },
+    soundProfile: (row.sound_profile as Product["soundProfile"]) || undefined,
     features: Array.isArray(row.features) ? row.features : [],
     tags: Array.isArray(row.tags) ? row.tags : [],
   };
@@ -241,6 +235,38 @@ export async function upsertProductToSupabase(product: Product): Promise<boolean
   }
 }
 
+/** Creating never overwrites a product with an already existing code. */
+export async function createProductInSupabase(product: Product): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+  try {
+    await requireStoreAdmin(client);
+    const { error } = await client.from("products").insert(productToDbRow(product)).abortSignal(AbortSignal.timeout(15000));
+    return !error;
+  } catch { return false; }
+}
+
+export async function updateProductInSupabase(product: Product): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+  try {
+    await requireStoreAdmin(client);
+    const { data, error } = await client.from("products").update(productToDbRow(product)).eq("id", product.id).select("id").abortSignal(AbortSignal.timeout(15000));
+    return !error && Array.isArray(data) && data.length === 1;
+  } catch { return false; }
+}
+
+export async function renameProductGroupInSupabase(field: "brand" | "category", ids: string[], name: string): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+  try {
+    await requireStoreAdmin(client);
+    if (!ids.length) return true;
+    const { error } = await client.from("products").update({ [field]: name, updated_at: new Date().toISOString() }).in("id", ids).abortSignal(AbortSignal.timeout(15000));
+    return !error;
+  } catch { return false; }
+}
+
 export async function deleteProductFromSupabase(id: string): Promise<boolean> {
   const client = getSupabaseClient();
   if (!client) return false;
@@ -259,13 +285,14 @@ export async function deleteProductFromSupabase(id: string): Promise<boolean> {
   }
 }
 
-export async function updateStockInSupabase(id: string, newStock: number): Promise<boolean> {
+export async function updateStockInSupabase(id: string, newStock: number, expectedStock?: number): Promise<boolean> {
   const client = getSupabaseClient();
   if (!client) return false;
 
   try {
     await requireStoreAdmin(client);
-    const { error } = await client
+    if (!Number.isSafeInteger(newStock) || newStock < 0 || newStock > 1e6) return false;
+    let query = client
       .from("products")
       .update({
         stock_count: newStock,
@@ -273,12 +300,14 @@ export async function updateStockInSupabase(id: string, newStock: number): Promi
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);
+    if (expectedStock !== undefined) query = query.eq("stock_count", expectedStock);
+    const { error, data } = await query.select("id").abortSignal(AbortSignal.timeout(15000));
 
     if (error) {
       console.error("Error updating stock in Supabase:", error);
       return false;
     }
-    return true;
+    return expectedStock === undefined || (Array.isArray(data) && data.length === 1);
   } catch (err) {
     console.error("Exception updating stock:", err);
     return false;

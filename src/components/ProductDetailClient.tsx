@@ -8,6 +8,7 @@ import { STORE_SETTINGS } from "@/data/products";
 import { getAssetUrl } from "@/utils/paths";
 import { AUDIO_TYPE_OPTIONS, parsePlaybackHours } from "@/lib/audio-filters";
 import { getProductVideoInfo } from "@/lib/content-security";
+import { productGallery } from "@/lib/product-media";
 import { useCart } from "@/context/CartContext";
 import { useProducts } from "@/context/ProductsContext";
 import Navbar from "@/components/Navbar";
@@ -53,17 +54,13 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   // Obtener siempre la versión más actualizada en vivo desde useProducts()
   const product = React.useMemo(() => {
     return (
-      products.find(
-        (p) =>
-          p.id === initialProduct.id ||
-          p.slug.toLowerCase() === initialProduct.slug.toLowerCase() ||
-          p.name.toLowerCase() === initialProduct.name.toLowerCase()
-      ) || initialProduct
+      products.find((p) => p.id === initialProduct.id) || initialProduct
     );
   }, [products, initialProduct]);
 
   const [quantity, setQuantity] = useState(1);
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
+  const [galleryColorIndex, setGalleryColorIndex] = useState<number | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isVideoActive, setIsVideoActive] = useState(false);
   const isFav = isFavorite(product.id);
@@ -138,31 +135,16 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   const videoInfo = React.useMemo(() => getProductVideoInfo(product.videoUrl), [product.videoUrl]);
 
   const galleryImages = React.useMemo(() => {
-    const list: string[] = [];
-    if (currentColor?.image) list.push(currentColor.image);
-    (product.images || []).forEach((img) => {
-      if (img && !list.includes(img)) list.push(img);
-    });
-    colors.forEach((c) => {
-      if (c.image && !list.includes(c.image)) list.push(c.image);
-    });
-    return list.length > 0 ? list : [fallbackImg];
-  }, [product, currentColor, colors, fallbackImg]);
+    return productGallery(product, galleryColorIndex, fallbackImg);
+  }, [product, galleryColorIndex, fallbackImg]);
 
   const activeImage = galleryImages[selectedImageIndex] || galleryImages[0];
 
   const handleSelectColor = (index: number) => {
     setSelectedColorIndex(index);
+    setGalleryColorIndex(index);
     setIsVideoActive(false);
-    const chosenColor = colors[index];
-    if (chosenColor?.image) {
-      const idx = galleryImages.indexOf(chosenColor.image);
-      if (idx !== -1) {
-        setSelectedImageIndex(idx);
-      } else {
-        setSelectedImageIndex(0);
-      }
-    }
+    setSelectedImageIndex(0);
   };
 
   const handleNextImage = () => {
@@ -192,7 +174,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
 
   return (
     <div className="store-product-page min-h-screen flex flex-col bg-[#fbfbfd] text-[#111113]">
-      <Navbar />
+      <Navbar currentCategory={product.category} />
 
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 w-full pb-10">
         {/* Breadcrumb Navigation (Más grande y legible) */}
@@ -360,6 +342,10 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                 })}
               </div>
             )}
+            <div className="flex items-center justify-between gap-3 text-xs text-neutral-500">
+              <span>{galleryColorIndex === null ? "Fotos del producto" : `Fotos de ${currentColor.name}`}</span>
+              {!!product.images?.length && galleryColorIndex !== null && <button type="button" onClick={() => { setGalleryColorIndex(null); setSelectedImageIndex(0); setIsVideoActive(false); }} className="font-semibold underline underline-offset-4 hover:text-black">Ver fotos generales</button>}
+            </div>
           </div>
 
           {/* Right Column: Commercial Details & Purchase Actions */}
@@ -610,10 +596,10 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                         <IconComponent className="w-5 h-5 text-neutral-100" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block truncate">
+                        <span className="text-[10px] leading-relaxed text-neutral-400 font-bold uppercase tracking-wider block break-words">
                           {spec.label}
                         </span>
-                        <span className="text-xs font-extrabold text-neutral-900 truncate block" title={spec.value}>
+                        <span className="text-xs leading-relaxed font-extrabold text-neutral-900 break-words block" title={spec.value}>
                           {spec.value}
                         </span>
                       </div>
@@ -656,18 +642,18 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
       </main>
 
       {/* La barra comparte el color, la cantidad y el inventario de la ficha. */}
-      {showMobilePurchase && <aside aria-label="Compra rápida del producto" className="store-motion store-mobile-purchase sm:hidden fixed bottom-0 left-0 right-0 z-40 min-h-[calc(72px+env(safe-area-inset-bottom))] bg-black border-t border-white/10 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] px-4 flex items-center justify-between gap-3">
+      {showMobilePurchase && <aside aria-label="Compra rápida del producto" className="store-motion store-mobile-purchase sm:hidden fixed bottom-0 left-0 right-0 z-40 min-h-[calc(72px+env(safe-area-inset-bottom))] bg-white border-t border-neutral-200 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] px-4 flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span
-              className="w-2.5 h-2.5 rounded-full border border-white/40 inline-block shrink-0"
+              className="w-2.5 h-2.5 rounded-full border border-neutral-300 inline-block shrink-0"
               style={{ backgroundColor: currentColor?.hex || "#18181b" }}
             />
-            <span className="text-[11px] font-medium text-neutral-400 truncate">
+            <span className="text-[11px] font-medium text-neutral-500 truncate">
               {isOutOfStock ? "Agotado" : `${currentColor.name} · ${purchaseQuantity} ud.`}
             </span>
           </div>
-          <div className="text-base min-[360px]:text-lg font-black text-white tracking-tight leading-none mt-0.5 truncate">
+          <div className="text-base min-[360px]:text-lg font-black text-neutral-950 tracking-tight leading-none mt-0.5 truncate">
             {STORE_SETTINGS.currencySymbol}{product.price.toFixed(2)}
           </div>
         </div>
@@ -677,7 +663,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
             type="button"
             onClick={handleAddToCart}
             disabled={isOutOfStock}
-            className="min-h-11 min-w-11 flex items-center justify-center rounded-xl border border-white/20 bg-white/5 text-white font-bold hover:bg-white/10 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="min-h-11 min-w-11 flex items-center justify-center rounded-xl border border-neutral-200 bg-neutral-50 text-neutral-900 font-bold hover:bg-neutral-100 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             title="Añadir a la bolsa"
             aria-label="Añadir a la bolsa"
           >
