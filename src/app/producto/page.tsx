@@ -13,7 +13,7 @@ function DynamicProductContent() {
   const searchParams = useSearchParams();
   const idParam = searchParams.get("id");
   const slugParam = searchParams.get("slug");
-  const { products, isLoading } = useProducts();
+  const { products, isLoading, isCloudConnected } = useProducts();
 
   const product = React.useMemo(() => {
     if (idParam) {
@@ -44,9 +44,9 @@ function DynamicProductContent() {
           <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center text-neutral-400 mb-4 border border-neutral-200">
             <AlertCircle className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-black text-neutral-950 mb-2">Producto no encontrado</h1>
+          <h1 className="text-2xl font-black text-neutral-950 mb-2">{isCloudConnected ? "Producto no encontrado" : "No pudimos cargar el producto"}</h1>
           <p className="text-xs sm:text-sm text-neutral-500 mb-6 max-w-sm">
-            El producto solicitado no está disponible o el enlace ha expirado.
+            {isCloudConnected ? "El producto solicitado no está disponible o el enlace ha expirado." : "Revisa tu conexión y vuelve a cargar la página para consultar la disponibilidad actual."}
           </p>
           <Link
             href="/#catalogo"

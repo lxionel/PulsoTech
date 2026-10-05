@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { Product } from "@/types";
 import { createMutationQueue, confirmMutation } from "@/lib/confirmed-mutation";
 import { validateProductContent } from "@/lib/content-security";
+import { productForCache } from "@/lib/browser-cache";
 import { PRODUCTS } from "@/data/products";
 import {
   isSupabaseReady,
@@ -117,7 +118,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const saveProductsLocal = useCallback((newProducts: Product[]) => {
     if (typeof window !== "undefined") {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newProducts));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(isSupabaseReady() ? newProducts.map(productForCache) : newProducts));
         localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
       } catch (e) {
         console.error("Error writing to localStorage:", e);
@@ -167,7 +168,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     let isMounted = true;
 
     const timer = window.setTimeout(() => {
-      setProducts(getInitialProducts());
+      setProducts(isSupabaseReady() ? PRODUCTS : getInitialProducts());
       setBrands(getInitialBrands());
       setCategories(getInitialCategories());
       void refreshFromCloud().finally(() => {
@@ -210,6 +211,8 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   // Sincronizar storage entre pestañas cuando se usa modo local
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
+      // A compact local cache must never replace the full cloud galleries in another tab.
+      if (isSupabaseReady()) return;
       if (e.key === STORAGE_KEY && e.newValue) {
         try {
           const parsed = JSON.parse(e.newValue);

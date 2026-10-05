@@ -21,6 +21,7 @@
 - El stock se guarda al salir del campo o pulsar Enter. Las operaciones se serializan y la base comprueba la cantidad anterior para detectar una venta o modificación concurrente.
 - Renombrar una clasificación modifica solo su campo, sin volver a escribir fotos, precios o stock. No se elimina una clasificación usada por productos hasta reasignarlos.
 - El número de WhatsApp acepta nueve dígitos con el código de Perú, parte del valor real cargado de Supabase y confirma el guardado. La actualización manual desde la nube comunica fallos reales.
+- Las fotos incrustadas ya no se duplican en la caché del catálogo ni en la bolsa guardada. Así se evita llenar localStorage e impedir que se guarden favoritos o preferencias. Las fotos originales permanecen en Supabase y en las copias; el catálogo conectado se carga desde la nube para evitar mostrar la caché antigua.
 
 ## Comprobación y límites
 

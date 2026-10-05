@@ -8,6 +8,7 @@ import { useProducts } from "@/context/ProductsContext";
 import { addCartItem, setCartQuantity, inspectCart, cartQuantityLimit, cartTotals } from "@/lib/cart-stock";
 import { createMutationQueue, confirmMutation } from "@/lib/confirmed-mutation";
 import { validateCoupon } from "@/lib/coupon-validation";
+import { cartForCache, persistBrowserValues } from "@/lib/browser-cache";
 import {
   fetchCouponsFromSupabase,
   saveCouponsToSupabase,
@@ -174,13 +175,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isLoaded) return;
     try {
-      localStorage.setItem("pulsotech_cart", JSON.stringify(savedItems));
-      localStorage.setItem("pulsotech_favorites", JSON.stringify(favorites));
-      localStorage.setItem("pulsotech_phone", whatsappNumber);
-      localStorage.setItem("pulsotech_coupons", JSON.stringify(coupons));
-    } catch {
-      // Ignorar error de almacenamiento
-    }
+      persistBrowserValues(localStorage, [
+        ["pulsotech_cart", JSON.stringify(cartForCache(savedItems))],
+        ["pulsotech_favorites", JSON.stringify(favorites)],
+        ["pulsotech_phone", whatsappNumber],
+        ["pulsotech_coupons", JSON.stringify(coupons)],
+      ]);
+    } catch { /* Storage can be disabled entirely; the current session remains usable. */ }
   }, [savedItems, favorites, whatsappNumber, coupons, isLoaded]);
 
   const clearStockNotice = () => setCartState((previous) => ({ ...previous, notice: "" }));
