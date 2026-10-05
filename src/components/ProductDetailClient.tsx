@@ -302,7 +302,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
             </div>
 
             {/* Gallery Thumbnails (Photos & Video) */}
-            {(galleryImages.length > 1 || !!videoInfo) && (
+            {(galleryImages.length > 0 || !!videoInfo) && (
               <div className="flex items-center gap-2.5 sm:gap-3 overflow-x-auto pb-1">
               {videoInfo && (
                 <button
@@ -328,6 +328,8 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                   <button
                     key={idx}
                     type="button"
+                    aria-label={`Ver foto ${idx + 1} de ${galleryColorIndex === null ? "producto" : currentColor.name}`}
+                    aria-pressed={isSelected}
                     onClick={() => {
                       setIsVideoActive(false);
                       setSelectedImageIndex(idx);
@@ -661,20 +663,17 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
       </main>
 
       {/* La barra comparte el color, la cantidad y el inventario de la ficha. */}
-      {showMobilePurchase && <aside aria-label="Compra rápida del producto" className="store-motion store-mobile-purchase sm:hidden fixed bottom-0 left-0 right-0 z-40 min-h-[calc(72px+env(safe-area-inset-bottom))] bg-white border-t border-neutral-200 shadow-[0_-6px_24px_rgba(0,0,0,0.05)] pt-2.5 pb-[calc(10px+env(safe-area-inset-bottom))] px-4 flex items-center justify-between gap-3">
+      {showMobilePurchase && <aside aria-label="Compra rápida del producto" className="store-motion store-mobile-purchase sm:hidden fixed bottom-0 left-0 right-0 z-40 min-h-[calc(72px+env(safe-area-inset-bottom))] bg-white border-t border-neutral-200 shadow-[0_-4px_20px_rgba(0,0,0,0.04)] pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] px-4 flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
+          <p aria-live="polite" aria-atomic="true" className="text-xl font-extrabold text-neutral-950 tracking-tight leading-none tabular-nums"><span className="sr-only">Total: </span>{STORE_SETTINGS.currencySymbol}{purchaseTotal.toFixed(2)}</p>
           <div className="flex items-center gap-1.5">
             <span
-              className="w-2.5 h-2.5 rounded-full border border-neutral-300 inline-block shrink-0"
+              className="w-2 h-2 rounded-full border border-neutral-300 inline-block shrink-0 mt-1.5"
               style={{ backgroundColor: selectedColorIndex === null && colors.length ? "transparent" : currentColor.hex }}
             />
-            <span className="text-[11px] font-medium text-neutral-500 truncate">
-              {isOutOfStock ? "Agotado" : colorLabel}
+            <span className="text-[11px] text-neutral-500 truncate mt-1.5">
+              {isOutOfStock ? "Agotado" : `${colorLabel} · ${purchaseQuantity} ${purchaseQuantity === 1 ? "ud." : "uds."}`}
             </span>
-          </div>
-          <div className="text-base min-[360px]:text-lg font-black text-neutral-950 tracking-tight leading-none mt-1 tabular-nums">
-            <span className="block text-[9px] font-semibold uppercase tracking-wider text-neutral-500 mb-1">Total · {purchaseQuantity} {purchaseQuantity === 1 ? "unidad" : "unidades"}</span>
-            <span aria-live="polite" aria-atomic="true">{STORE_SETTINGS.currencySymbol}{purchaseTotal.toFixed(2)}</span>
           </div>
         </div>
 
@@ -683,7 +682,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
             type="button"
             onClick={handleAddToCart}
             disabled={isOutOfStock}
-            className="min-h-11 min-w-11 flex items-center justify-center rounded-xl border border-neutral-200 bg-neutral-50 text-neutral-900 font-bold hover:bg-neutral-100 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="min-h-12 min-w-12 flex items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-50 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             title="Añadir a la bolsa"
             aria-label="Añadir a la bolsa"
           >
@@ -693,9 +692,9 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
             type="button"
             onClick={handleBuyNow}
             disabled={isOutOfStock}
-            className="min-h-11 px-2 min-[360px]:px-3 py-2.5 rounded-xl bg-[#15803d] hover:bg-[#166534] text-white font-extrabold text-[10px] min-[360px]:text-xs uppercase active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="min-h-12 px-4 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {isOutOfStock ? "Agotado" : "Comprar ahora"}
+            {isOutOfStock ? "Agotado" : "Comprar"}
           </button>
         </div>
       </aside>}

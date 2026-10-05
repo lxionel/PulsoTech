@@ -117,7 +117,7 @@ export default function ProductCard({ product }: { product: Product }) {
         {/* Selector de Colores Disponibles (Swatches con aro activo, selección SOLO al hacer clic) */}
         <div className="min-h-11 sm:min-h-0 sm:h-7 flex items-center gap-1.5 pt-2 pb-0.5 shrink-0">
           {colors.length > 0 && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               {colors.map((color, idx) => {
                 const isSelected = selectedColorIndex === idx;
                 return (
@@ -133,7 +133,7 @@ export default function ProductCard({ product }: { product: Product }) {
                     aria-label={`Color ${color.name}`}
                     aria-pressed={isSelected}
                     title={color.name}
-                    className="w-11 h-11 sm:w-6 sm:h-6 flex items-center justify-center cursor-pointer shrink-0 transition-transform duration-150 hover:scale-115 active:scale-90"
+                    className="w-8 h-11 sm:w-6 sm:h-6 flex items-center justify-center cursor-pointer shrink-0 transition-transform duration-150 hover:scale-115 active:scale-90"
                   >
                     <span
                       className={`rounded-full border border-neutral-300 transition-all duration-150 block ${

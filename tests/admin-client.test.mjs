@@ -5,6 +5,7 @@ import { createRequire } from "node:module";
 import ts from "typescript";
 import { verifyAdminAccess, isPublicSupabaseKey } from "../src/lib/admin-auth.ts";
 import { normalizeSalesRecords } from "../src/lib/private-sales.ts";
+import { attachCatalogMedia } from "../src/lib/catalog-media.ts";
 
 const require = createRequire(import.meta.url);
 let user = null;
@@ -61,6 +62,7 @@ new Function("require", "module", "exports", source)((name) => {
   if (name === "@supabase/supabase-js") return { createClient: (_url, _key, config) => { options = config; return client; } };
   if (name === "./admin-auth") return { verifyAdminAccess, isPublicSupabaseKey };
   if (name === "./private-sales") return { normalizeSalesRecords };
+  if (name === "./catalog-media") return { attachCatalogMedia };
   return require(name);
 }, compiledModule, compiledModule.exports);
 const api = compiledModule.exports;

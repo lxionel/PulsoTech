@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import "./prepare-catalog-media.mjs";
 
 // npm_execpath identifies npm without launching a shell or interpolating commands.
 if (!process.env.npm_execpath) throw new Error("Ejecuta npm run build:cloudflare.");

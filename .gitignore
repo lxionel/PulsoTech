@@ -44,3 +44,6 @@ next-env.d.ts
 *.pulsobackup
 *.recovery.sql
 /private-backups/
+
+# Generated public image assets, rebuilt from the live public catalog.
+/public/catalog-media/

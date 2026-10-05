@@ -2,6 +2,7 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { Product, ProductColor, ProductSpecs, ProductSpecItem, SoundProfile, Coupon, SaleRecord } from "@/types";
 import { isPublicSupabaseKey, verifyAdminAccess } from "./admin-auth";
 import { normalizeSalesRecords, type SaleCommand, type SaleCommandResult } from "./private-sales";
+import { attachCatalogMedia, type CatalogMediaManifest } from "./catalog-media";
 
 const LOCAL_STORAGE_URL_KEY = "pulsotech_supabase_url";
 const LOCAL_STORAGE_KEY_KEY = "pulsotech_supabase_anon_key";
@@ -187,11 +188,39 @@ export function productToDbRow(p: Product): DbProductRow {
 
 // ================= API CALLS =================
 
+let publicMediaRequest: Promise<CatalogMediaManifest | null> | null = null;
+function fetchPublicMedia(): Promise<CatalogMediaManifest | null> {
+  publicMediaRequest ??= fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? (process.env.NODE_ENV === "production" ? "/PulsoTech" : "")}/catalog-media/manifest.json`, { signal: AbortSignal.timeout(3000) })
+    .then(async (response) => response.ok ? await response.json() as CatalogMediaManifest : null)
+    .catch(() => null);
+  return publicMediaRequest;
+}
+
+const PRODUCT_METADATA_COLUMNS = "id,name,slug,subtitle,description,price,original_price,brand,category,in_stock,stock_count,is_featured,is_new,rating,reviews_count,video_url,custom_specs,specs,sound_profile,features,tags,created_at,updated_at";
+
 export async function fetchProductsFromSupabase(): Promise<Product[] | null> {
   const client = getSupabaseClient();
   if (!client) return null;
 
   try {
+    // Admin editors and backups retain original full-resolution data.
+    const isPublicStore = typeof window !== "undefined" && !window.location.pathname.includes("Lionel260606");
+    if (isPublicStore) {
+      const [metadata, manifest] = await Promise.all([
+        client.from("products").select(PRODUCT_METADATA_COLUMNS).order("created_at", { ascending: false }).abortSignal(AbortSignal.timeout(10000)),
+        fetchPublicMedia(),
+      ]);
+      if (metadata.error) { console.warn("Supabase fetch error:", metadata.error.message); return null; }
+      const rows = (metadata.data || []) as DbProductRow[];
+      const prepared = rows.map((row) => attachCatalogMedia(row, manifest, getSupabaseConfig().url));
+      const missing = rows.filter((_, index) => !prepared[index]).map((row) => row.id);
+      if (!missing.length) return prepared.map((row) => dbRowToProduct(row!));
+      // Newly edited products bypass old assets until the next deployment rebuilds them.
+      const full = await client.from("products").select("*").in("id", missing).abortSignal(AbortSignal.timeout(10000));
+      if (full.error) { console.warn("Supabase fetch error:", full.error.message); return null; }
+      const fullRows = new Map((full.data as DbProductRow[] || []).map((row) => [String(row.id), row]));
+      return rows.flatMap((row, index) => { const fresh = prepared[index] || fullRows.get(String(row.id)); return fresh ? [dbRowToProduct(fresh)] : []; });
+    }
     const { data, error } = await client
       .from("products")
       .select("*")

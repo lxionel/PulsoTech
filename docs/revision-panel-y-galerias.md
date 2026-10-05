@@ -25,6 +25,12 @@
 
 ## Comprobación y límites
 
+### Carga pública de imágenes
+
+La compilación para Cloudflare genera WebP de hasta 1200 px y reutiliza fotos idénticas. El manifiesto contiene únicamente galerías públicas y su versión; precio, stock y detalles se consultan en Supabase antes de mostrar el producto. Las fotos originales del administrador y las copias permanecen intactas. Si un producto fue editado después de la compilación, la tienda utiliza su fila actual completa, sin mezclar galerías antiguas; el siguiente despliegue vuelve a optimizar esa versión. Un fallo de esta preparación conserva la carga directa desde Supabase.
+
+La bolsa ocupa toda la pantalla en móvil, conserva el panel lateral en escritorio y mantiene dirección y referencia como datos separados. La referencia es opcional y se incluye por separado en el pedido de WhatsApp. Las galerías muestran miniatura también cuando el color dispone de una sola foto.
+
 Se revisaron inventario y editor, galerías, clasificación, cupones, ajustes, ventas, copias, acceso administrativo y presentación móvil. Las pruebas cubren validación de contenido, separación de fotos, conservación en base y respaldo, errores de persistencia, stock concurrente, permisos y MFA, ventas atómicas y recuperación de copias.
 
 Las ventas y copias mantienen sus transacciones y controles anteriores. La comprobación visual del editor se realiza sin guardar productos o ventas de prueba en producción.

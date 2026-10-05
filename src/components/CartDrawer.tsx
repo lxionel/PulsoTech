@@ -49,6 +49,7 @@ export default function CartDrawer() {
 
   const [customerName, setCustomerName] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
+  const [customerReference, setCustomerReference] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"contra_entrega" | "transferencia">("contra_entrega");
   const [errorMsg, setErrorMsg] = useState("");
   const [couponCodeInput, setCouponCodeInput] = useState("");
@@ -60,7 +61,7 @@ export default function CartDrawer() {
   const contentPanel = useRef<HTMLDivElement>(null);
   const checkoutSignature = JSON.stringify({
     items: items.map((item) => [item.product.id, item.selectedColor?.name, item.quantity, item.product.price]),
-    total, coupon: appliedCoupon?.code, customerName, customerAddress, paymentMethod,
+    total, coupon: appliedCoupon?.code, customerName, customerAddress, customerReference, paymentMethod,
   });
 
   useBodyScrollLock(isCartOpen);
@@ -134,6 +135,7 @@ export default function CartDrawer() {
         `━━━━━━━━━━━━━━━━━━━━━━`,
         `• *Cliente:* ${customerName.trim()}`,
         `• *Dirección de Entrega:* ${customerAddress.trim()}`,
+        ...(customerReference.trim() ? [`• *Referencia:* ${customerReference.trim()}`] : []),
         `• *Pago:* ${paymentMethod === "contra_entrega" ? "Contra Entrega" : "Transferencia Bancaria"}`,
         ``,
         `*ARTÍCULOS:*`,
@@ -190,13 +192,12 @@ export default function CartDrawer() {
           if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
           else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
         }}
-        className="store-drawer store-cart-drawer relative flex flex-col w-full max-h-[90dvh] sm:h-dvh sm:max-h-dvh sm:max-w-[440px] rounded-t-3xl sm:rounded-none bg-white shadow-2xl text-neutral-950 overflow-hidden"
+        className="store-drawer store-cart-drawer relative flex flex-col w-full h-dvh max-h-dvh sm:max-w-[440px] bg-white shadow-2xl text-neutral-950 overflow-hidden"
       >
-        <header className="shrink-0 px-5 pt-3 sm:pt-5 pb-4 border-b border-neutral-100">
-          <div className="w-9 h-1 rounded-full bg-neutral-200 mx-auto mb-3 sm:hidden" aria-hidden="true" />
+        <header className="shrink-0 px-4 sm:px-5 pt-[calc(12px+env(safe-area-inset-top))] pb-4 border-b border-neutral-100">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <span className="w-9 h-9 rounded-xl bg-neutral-100 flex items-center justify-center"><ShoppingBag className="w-[18px] h-[18px]" /></span>
+              <button type="button" disabled={isCheckingStock} onClick={() => checkoutStep === "delivery" ? changeStep("bag") : closeCart()} aria-label={checkoutStep === "delivery" ? "Volver a la bolsa" : "Seguir comprando"} title={checkoutStep === "delivery" ? "Volver a la bolsa" : "Seguir comprando"} className="w-11 h-11 -ml-2 rounded-full flex items-center justify-center text-neutral-700 hover:bg-neutral-100 cursor-pointer"><ArrowLeft className="w-5 h-5" /></button>
               <div>
                 <h2 id="cart-drawer-title" className="text-lg font-extrabold tracking-tight">{checkoutStep === "bag" || !items.length ? "Tu bolsa" : "Coordinar entrega"}</h2>
                 <p className="text-[11px] text-neutral-500">{itemsCount} {itemsCount === 1 ? "unidad" : "unidades"} · Pedido por WhatsApp</p>
@@ -211,7 +212,7 @@ export default function CartDrawer() {
           </ol>}
         </header>
 
-        <div ref={contentPanel} className="min-h-0 sm:flex-1 overflow-y-auto overscroll-contain px-5 py-4 space-y-4">
+        <div ref={contentPanel} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 sm:px-5 py-4 space-y-4">
           {stockNotice && <div role="status" className="flex items-start gap-2 p-3 rounded-xl border border-neutral-200 bg-neutral-50 text-xs text-neutral-700">
             <p className="flex-1 leading-relaxed">{stockNotice}</p>
             <button type="button" onClick={clearStockNotice} aria-label="Cerrar aviso de disponibilidad" className="shrink-0 w-8 flex items-center justify-center cursor-pointer"><X className="w-4 h-4" /></button>
@@ -274,14 +275,13 @@ export default function CartDrawer() {
                   {couponNotice && <p role="status" className={"text-xs " + (couponNotice.isError ? "text-red-700" : "text-emerald-700")}>{couponNotice.text}</p>}
                 </div>
               </details>
-              <Link href="/#catalogo" onClick={closeCart} className="inline-flex items-center gap-1.5 min-h-11 text-xs font-semibold text-neutral-500 hover:text-black"><ArrowLeft className="w-3.5 h-3.5" />Seguir comprando</Link>
             </>
           ) : (
             <div className="space-y-4">
-              <button type="button" disabled={isCheckingStock} onClick={() => changeStep("bag")} className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 cursor-pointer"><ArrowLeft className="w-4 h-4" />Volver a la bolsa</button>
               <div className="space-y-3">
                 <label className="block text-xs font-semibold" htmlFor="cart-customer-name">Nombre completo<input id="cart-customer-name" autoComplete="name" maxLength={150} disabled={isCheckingStock} placeholder="¿Quién recibirá el pedido?" value={customerName} onChange={(event) => { setCustomerName(event.target.value); setErrorMsg(""); }} className="block w-full mt-1.5 px-3 h-11 rounded-xl border border-neutral-200 text-sm font-normal focus:outline-none focus:border-neutral-950" /></label>
-                <label className="block text-xs font-semibold" htmlFor="cart-customer-address">Dirección de entrega<input id="cart-customer-address" autoComplete="street-address" maxLength={300} disabled={isCheckingStock} placeholder="Calle, número y referencia" value={customerAddress} onChange={(event) => { setCustomerAddress(event.target.value); setErrorMsg(""); }} className="block w-full mt-1.5 px-3 h-11 rounded-xl border border-neutral-200 text-sm font-normal focus:outline-none focus:border-neutral-950" /></label>
+                <label className="block text-xs font-semibold" htmlFor="cart-customer-address">Dirección de entrega<input id="cart-customer-address" autoComplete="street-address" maxLength={300} disabled={isCheckingStock} placeholder="Calle, número, urbanización" value={customerAddress} onChange={(event) => { setCustomerAddress(event.target.value); setErrorMsg(""); }} className="block w-full mt-1.5 px-3 h-11 rounded-xl border border-neutral-200 text-sm font-normal focus:outline-none focus:border-neutral-950" /></label>
+                <label className="block text-xs font-semibold" htmlFor="cart-customer-reference">Referencia <span className="font-normal text-neutral-500">(opcional)</span><input id="cart-customer-reference" maxLength={300} disabled={isCheckingStock} placeholder="Ej.: frente al parque, puerta azul" value={customerReference} onChange={(event) => { setCustomerReference(event.target.value); setErrorMsg(""); }} className="block w-full mt-1.5 px-3 h-11 rounded-xl border border-neutral-200 text-sm font-normal focus:outline-none focus:border-neutral-950" /></label>
               </div>
               <fieldset>
                 <legend className="text-xs font-semibold mb-2">Forma de pago</legend>
