@@ -33,6 +33,7 @@ import {
   Check,
   Heart,
   Play,
+  Plus,
 } from "lucide-react";
 
 function getSpecIcon(label: string) {
@@ -63,6 +64,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   const [colorRequired, setColorRequired] = useState(false);
   const colorSelector = React.useRef<HTMLDivElement>(null);
   const purchaseActions = React.useRef<HTMLDivElement>(null);
+  const specificationDetails = React.useRef<HTMLDetailsElement>(null);
   const [purchaseActionsVisible, setPurchaseActionsVisible] = useState(false);
   const [galleryColorIndex, setGalleryColorIndex] = useState<number | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -201,11 +203,11 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   const waMessage = `¡Hola PulsoTech! Deseo comprar el modelo *${product.name}* (Color: ${colors.length && selectedColorIndex === null ? "por elegir" : currentColor.name}, Precio: ${STORE_SETTINGS.currencySymbol}${product.price.toFixed(2)}). ¿Tienen stock disponible para entrega hoy?`;
 
   return (
-    <div data-purchase-actions-visible={purchaseActionsVisible} className="store-product-page min-h-screen flex flex-col bg-[#f4f4f5] text-[#111113]">
+    <div data-purchase-actions-visible={purchaseActionsVisible} className="store-product-page min-h-screen flex flex-col bg-white text-[#111113]">
       <Navbar currentCategory={product.category} />
 
-      <main className="flex-1 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 md:py-7 w-full pb-8 sm:pb-12">
-        <nav aria-label="Ruta del producto" className="flex items-center gap-2 text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-5 font-medium overflow-hidden whitespace-nowrap py-1.5">
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-7 w-full pb-8 sm:pb-12">
+        <nav aria-label="Ruta del producto" className="flex items-center gap-2 text-xs text-neutral-500 mb-4 sm:mb-6 font-medium overflow-hidden whitespace-nowrap py-1.5">
           <Link
             href="/"
             className="hover:text-neutral-950 transition-colors flex items-center gap-1.5 shrink-0"
@@ -226,11 +228,11 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
           </span>
         </nav>
 
-        <div className="store-product-summary grid grid-cols-1 lg:grid-cols-2 overflow-hidden rounded-2xl sm:rounded-3xl border border-neutral-200 bg-white shadow-[0_8px_32px_-24px_rgba(0,0,0,0.25)]">
+        <div className="store-product-summary grid grid-cols-1 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] gap-6 sm:gap-8 lg:gap-12 items-start">
           {/* Gallery first on mobile; left column on desktop. */}
-          <div className="store-product-gallery min-w-0 bg-[#fafafa] p-3 sm:p-5 lg:p-6 lg:border-r border-neutral-200 space-y-3 sm:space-y-4">
+          <div className="store-product-gallery min-w-0 grid gap-3 lg:grid-cols-[64px_minmax(0,1fr)] lg:gap-4">
             {/* Main Stage Frame (Image or Video) */}
-            <div className="relative aspect-[6/5] sm:aspect-square lg:aspect-[1.06/1] w-full rounded-xl sm:rounded-2xl bg-white border border-neutral-200/70 p-2 sm:p-4 flex items-center justify-center overflow-hidden group">
+            <div className="store-product-stage relative aspect-[6/5] sm:aspect-[4/3] lg:aspect-square w-full bg-[#fafafa] flex items-center justify-center overflow-hidden lg:col-start-2 lg:row-start-1">
               {isVideoActive && videoInfo ? (
                 <div className="relative w-full h-full flex items-center justify-center bg-black rounded-xl sm:rounded-2xl overflow-hidden">
                   {videoInfo.isYouTube ? (
@@ -259,7 +261,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                     <img
                       src={getAssetUrl(activeImage)}
                       alt={product.name}
-                      className="w-full h-full object-contain p-2 max-w-full max-h-full"
+                      className="w-full h-full object-contain max-w-full max-h-full"
                     />
                   ) : (
                     <Image
@@ -267,8 +269,8 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                       alt={product.name}
                       fill
                       unoptimized
-                      sizes="(max-width: 1024px) 100vw, 750px"
-                      className="object-contain p-2 transition-transform duration-300 group-hover:scale-105"
+                      sizes="(max-width: 1024px) 100vw, 650px"
+                      className="object-contain"
                       priority
                     />
                   )}
@@ -282,7 +284,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                     type="button"
                     onClick={handlePrevImage}
                     aria-label="Foto anterior"
-                    className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/95 hover:bg-white text-neutral-800 shadow-sm border border-neutral-200 flex items-center justify-center transition-colors cursor-pointer"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/90 hover:bg-white text-neutral-800 flex items-center justify-center transition-colors cursor-pointer"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
@@ -290,7 +292,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                     type="button"
                     onClick={handleNextImage}
                     aria-label="Siguiente foto"
-                    className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/95 hover:bg-white text-neutral-800 shadow-sm border border-neutral-200 flex items-center justify-center transition-colors cursor-pointer"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/90 hover:bg-white text-neutral-800 flex items-center justify-center transition-colors cursor-pointer"
                   >
                     <ChevronRight className="w-5 h-5" />
                   </button>
@@ -312,12 +314,12 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
 
             {/* Gallery Thumbnails (Photos & Video) */}
             {(galleryImages.length > 0 || !!videoInfo) && (
-              <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto px-0.5 py-1">
+              <div className="store-product-thumbnails flex items-center gap-2 overflow-x-auto p-0.5 lg:flex-col lg:justify-start lg:overflow-x-hidden lg:overflow-y-auto lg:max-h-[560px] lg:col-start-1 lg:row-start-1">
               {videoInfo && (
                 <button
                   type="button"
                   onClick={() => setIsVideoActive(true)}
-                  className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl overflow-hidden border p-1.5 sm:p-2 bg-neutral-950 text-white transition-all cursor-pointer shrink-0 flex flex-col items-center justify-center gap-1 ${
+                  className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-md overflow-hidden border p-1 bg-neutral-950 text-white transition-all cursor-pointer shrink-0 flex flex-col items-center justify-center gap-1 ${
                     isVideoActive
                       ? "border-red-600 ring-2 ring-red-600/30 shadow-xs"
                       : "border-neutral-700 opacity-80 hover:opacity-100"
@@ -343,10 +345,10 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                       setIsVideoActive(false);
                       setSelectedImageIndex(idx);
                     }}
-                    className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl overflow-hidden border p-1.5 sm:p-2 bg-white transition-all cursor-pointer shrink-0 ${
+                    className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-md overflow-hidden border bg-white transition-colors cursor-pointer shrink-0 ${
                       isSelected
-                        ? "border-neutral-900 ring-2 ring-neutral-900/20 shadow-xs"
-                        : "border-neutral-200 hover:border-neutral-300 opacity-70 hover:opacity-100"
+                        ? "border-neutral-950 ring-1 ring-neutral-950"
+                        : "border-neutral-200 hover:border-neutral-500"
                     }`}
                   >
                       {img?.startsWith("data:") ||
@@ -368,13 +370,13 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                     </button>
                   );
                 })}
-                {!!product.images?.length && galleryColorIndex !== null && <button type="button" onClick={() => { setGalleryColorIndex(null); setSelectedImageIndex(0); setIsVideoActive(false); }} className="min-h-11 shrink-0 px-2 text-xs text-neutral-500 underline underline-offset-4 hover:text-black cursor-pointer">Ver todas</button>}
+                {!!product.images?.length && galleryColorIndex !== null && <button type="button" onClick={() => { setGalleryColorIndex(null); setSelectedImageIndex(0); setIsVideoActive(false); }} className="min-h-11 shrink-0 px-1 text-xs lg:text-[11px] whitespace-nowrap text-neutral-500 underline underline-offset-4 hover:text-black cursor-pointer">Ver todas</button>}
               </div>
             )}
           </div>
 
           {/* Right Column: Commercial Details & Purchase Actions */}
-          <div className="store-product-information min-w-0 p-4 sm:p-6 lg:p-8 flex flex-col gap-5 sm:gap-6">
+          <div className="store-product-information min-w-0 flex flex-col gap-5 sm:gap-6">
             {/* Header: Brand & Title */}
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 space-y-2">
@@ -382,7 +384,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                   {product.brand}
                 </p>
 
-                <h1 className="text-[26px] sm:text-[32px] xl:text-[36px] font-bold text-neutral-950 tracking-tight leading-[1.12]">
+                <h1 className="text-2xl sm:text-[30px] xl:text-[32px] font-semibold text-neutral-950 tracking-tight leading-tight">
                   {product.name}
                 </h1>
 
@@ -390,7 +392,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                   {product.subtitle}
                 </p>}
               </div>
-              <button type="button" onClick={() => toggleFavorite(product.id)} aria-label={isFav ? "Quitar de favoritos" : "Guardar en favoritos"} aria-pressed={isFav} title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"} className={`w-11 h-11 rounded-full border flex items-center justify-center shrink-0 transition-colors cursor-pointer ${isFav ? "border-red-200 bg-red-50 text-red-500" : "border-neutral-200 text-neutral-500 hover:border-neutral-950 hover:text-neutral-950"}`}>
+              <button type="button" onClick={() => toggleFavorite(product.id)} aria-label={isFav ? "Quitar de favoritos" : "Guardar en favoritos"} aria-pressed={isFav} title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"} className={`w-11 h-11 flex items-center justify-center shrink-0 transition-colors cursor-pointer ${isFav ? "text-red-500" : "text-neutral-500 hover:text-neutral-950"}`}>
                 <Heart className={`w-5 h-5 ${isFav ? "fill-current" : ""}`} />
               </button>
             </div>
@@ -406,9 +408,8 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                     const preview = colorImages(color)[0];
                     return (
                       <button key={color.name + index} type="button" onClick={() => handleSelectColor(index)} aria-label={`Color ${color.name}`} aria-pressed={isSelected} title={color.name}
-                        className={`relative w-[76px] sm:w-[84px] rounded-xl border p-2 transition-colors duration-150 cursor-pointer flex flex-col items-center gap-1 ${isSelected ? "border-neutral-950 bg-neutral-50 ring-1 ring-neutral-950" : "border-neutral-200 bg-white hover:border-neutral-500"}`}>
-                        <span className="w-12 h-12 flex items-center justify-center">{preview ? <img src={getAssetUrl(preview)} alt="" className="w-full h-full object-contain" /> : <span aria-hidden="true" className="w-6 h-6 rounded-full border border-neutral-300" style={{ backgroundColor: color.hex }} />}</span>
-                        <span className="text-xs font-medium text-neutral-700 max-w-full truncate">{color.name}</span>
+                        className={`relative w-16 h-16 sm:w-[68px] sm:h-[68px] rounded-md border p-1.5 transition-colors duration-150 cursor-pointer flex items-center justify-center ${isSelected ? "border-neutral-950 ring-1 ring-neutral-950" : "border-neutral-200 hover:border-neutral-500"}`}>
+                        {preview ? <img src={getAssetUrl(preview)} alt="" className="w-full h-full object-contain" /> : <span aria-hidden="true" className="w-6 h-6 rounded-full border border-neutral-300" style={{ backgroundColor: color.hex }} />}
                       </button>
                     );
                   })}
@@ -417,70 +418,27 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
               </div>
             )}
 
-            <div className="store-product-purchase border-t border-neutral-200 pt-5 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-x-2 sm:gap-x-4 gap-y-3">
-                <div className="store-product-price flex flex-col items-start gap-0.5">
-                  <span className="text-[26px] min-[360px]:text-[32px] sm:text-4xl font-bold tracking-tight text-neutral-950 tabular-nums">{STORE_SETTINGS.currencySymbol}{product.price.toFixed(2)}</span>
-                  {!!product.originalPrice && product.originalPrice > product.price && <span className="text-sm text-neutral-400 line-through tabular-nums">{STORE_SETTINGS.currencySymbol}{product.originalPrice.toFixed(2)}</span>}
-                </div>
-              {!isOutOfStock && (
-                <div className="flex items-center gap-2">
-                  <span className="sr-only">Cantidad</span>
-                  <div className="flex items-center border border-neutral-200 rounded-xl bg-white shadow-2xs">
-                    <button
-                      onClick={() => setQuantity(Math.max(1, purchaseQuantity - 1))}
-                      disabled={purchaseQuantity <= 1}
-                      aria-label="Reducir cantidad"
-                      className="w-11 h-11 text-neutral-600 hover:text-black font-bold text-sm cursor-pointer disabled:opacity-40"
-                    >
-                      -
-                    </button>
-                    <span className="px-2 py-2 text-sm font-semibold text-neutral-900 min-w-8 text-center">
-                      {purchaseQuantity}
-                    </span>
-                    <button
-                      onClick={() => setQuantity(Math.min(product.stockCount, purchaseQuantity + 1))}
-                      disabled={purchaseQuantity >= product.stockCount}
-                      aria-label="Aumentar cantidad"
-                      className="w-11 h-11 text-neutral-600 hover:text-black font-bold text-sm cursor-pointer disabled:opacity-40"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              )}
+            <div className="store-product-purchase space-y-4">
+              <div className="store-product-price flex flex-wrap items-baseline gap-3">
+                <span className="text-[32px] font-semibold tracking-tight text-neutral-950 tabular-nums">{STORE_SETTINGS.currencySymbol}{product.price.toFixed(2)}</span>
+                {!!product.originalPrice && product.originalPrice > product.price && <span className="text-sm text-neutral-400 line-through tabular-nums">{STORE_SETTINGS.currencySymbol}{product.originalPrice.toFixed(2)}</span>}
               </div>
               {purchaseQuantity > 1 && <p aria-live="polite" aria-atomic="true" className="text-sm text-neutral-600 tabular-nums">{purchaseQuantity} unidades · <span className="font-semibold text-neutral-950">Total {STORE_SETTINGS.currencySymbol}{purchaseTotal.toFixed(2)}</span></p>}
-
-              {/* Action Buttons: Add to Cart + Buy Now + Favorite */}
-              <div ref={purchaseActions} className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {isOutOfStock ? (
-                  <div className="sm:col-span-2">
-                    <div className="min-h-12 px-4 rounded-xl bg-neutral-100 border border-neutral-200 text-neutral-500 font-semibold text-sm flex items-center justify-center cursor-not-allowed">
-                      <span>Agotado</span>
+              <div ref={purchaseActions} className="space-y-3">
+                {isOutOfStock ? <div className="min-h-12 rounded-md bg-neutral-100 text-neutral-500 font-medium text-sm flex items-center justify-center">Agotado</div> : <>
+                  <div className="flex gap-3">
+                    <div role="group" aria-label="Cantidad" className="flex shrink-0 items-center border border-neutral-300 rounded-md">
+                      <button type="button" onClick={() => setQuantity(Math.max(1, purchaseQuantity - 1))} disabled={purchaseQuantity <= 1} aria-label="Reducir cantidad" className="w-11 min-h-12 text-neutral-600 hover:text-black cursor-pointer disabled:opacity-40">−</button>
+                      <span className="w-8 text-center text-sm font-medium tabular-nums">{purchaseQuantity}</span>
+                      <button type="button" onClick={() => setQuantity(Math.min(product.stockCount, purchaseQuantity + 1))} disabled={purchaseQuantity >= product.stockCount} aria-label="Aumentar cantidad" className="w-11 min-h-12 text-neutral-600 hover:text-black cursor-pointer disabled:opacity-40">+</button>
                     </div>
-                  </div>
-                ) : (
-                  <>
-                      <button
-                        onClick={handleAddToCart}
-                        className="min-h-12 px-3 rounded-xl border border-neutral-300 hover:border-black bg-white text-neutral-900 font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
-                      >
-                        <ShoppingBag className="w-4 h-4" />
-                        <span>Añadir a la bolsa</span>
-                      </button>
-
-                    <button
-                      onClick={handleBuyNow}
-                      className="min-h-12 px-3 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
-                    >
-                      <span>Comprar ahora</span>
+                    <button type="button" onClick={handleAddToCart} className="flex-1 min-w-0 min-h-12 px-2 sm:px-4 rounded-md bg-neutral-950 hover:bg-neutral-800 text-white text-[13px] sm:text-sm font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer">
+                      <ShoppingBag className="hidden min-[360px]:block w-4 h-4 shrink-0" />Añadir a la bolsa
                     </button>
-                  </>
-                )}
+                  </div>
+                  <button type="button" onClick={handleBuyNow} className="w-full min-h-12 rounded-md border border-neutral-950 text-neutral-950 hover:bg-neutral-50 text-sm font-semibold transition-colors cursor-pointer">Comprar ahora</button>
+                </>}
               </div>
-
-              {/* Primary WhatsApp Action */}
               <a
                 href={`https://wa.me/${(whatsappNumber || "").replace(/\D/g, "")}?text=${encodeURIComponent(
                   isOutOfStock
@@ -489,7 +447,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="min-h-12 w-full rounded-xl border border-emerald-200/70 bg-[#f1faf4] px-4 flex items-center justify-center gap-2 text-sm font-medium text-[#15803d] hover:bg-emerald-50 hover:border-emerald-300 transition-colors cursor-pointer"
+                className="min-h-11 inline-flex items-center gap-2 text-sm text-[#15803d] hover:text-[#166534] transition-colors cursor-pointer"
               >
                 <MessageSquare className="w-4 h-4" />
                 <span>
@@ -499,52 +457,40 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                 </span>
               </a>
             </div>
-            <div className="grid grid-cols-2 divide-x divide-neutral-200 rounded-xl border border-neutral-200 bg-neutral-50/70 text-sm text-neutral-700">
-              <Link href="/garantia-y-entregas/" className="min-h-12 px-3 flex items-center justify-center gap-2 hover:text-neutral-950"><ShieldCheck className="w-4 h-4" />Garantía<ChevronRight className="w-3.5 h-3.5 text-neutral-400" /></Link>
-              <Link href="/garantia-y-entregas/" className="min-h-12 px-3 flex items-center justify-center gap-2 hover:text-neutral-950"><Truck className="w-4 h-4" />Entregas<ChevronRight className="w-3.5 h-3.5 text-neutral-400" /></Link>
+            {allSpecsList.length > 0 && <div className="border-t border-neutral-200 pt-5">
+              <dl className="grid grid-cols-2 gap-4">
+                {allSpecsList.slice(0, 2).map((spec) => {
+                  const SpecIcon = getSpecIcon(spec.label);
+                  return <div key={spec.label} className="relative min-w-0 pl-8"><dt className="text-xs text-neutral-500 leading-5"><SpecIcon aria-hidden="true" className="absolute left-0 top-0.5 w-5 h-5 text-neutral-600" />{spec.label}</dt><dd className="text-sm text-neutral-900 font-medium leading-6">{spec.value}</dd></div>;
+                })}
+              </dl>
+              <a href="#especificaciones" onClick={() => { if (specificationDetails.current) specificationDetails.current.open = true; }} className="inline-flex items-center min-h-11 text-xs text-neutral-600 underline underline-offset-4 hover:text-black">Ver especificaciones</a>
+            </div>}
+            <div className="border-y border-neutral-200 divide-y divide-neutral-200 text-sm text-neutral-700">
+              <Link href="/garantia-y-entregas/" className="min-h-12 flex items-center gap-3 hover:text-neutral-950"><Truck className="w-5 h-5 text-neutral-600" /><span className="flex-1">Entregas</span><ChevronRight className="w-4 h-4 text-neutral-400" /></Link>
+              <Link href="/garantia-y-entregas/" className="min-h-12 flex items-center gap-3 hover:text-neutral-950"><ShieldCheck className="w-5 h-5 text-neutral-600" /><span className="flex-1">Garantía</span><ChevronRight className="w-4 h-4 text-neutral-400" /></Link>
             </div>
-            <div className="flex flex-wrap items-start gap-x-5 gap-y-2 border-t border-neutral-200 pt-1 mt-auto">
+            <div className="flex flex-wrap items-start gap-x-5 gap-y-2 -mt-3">
               <ShareProductButton key={product.id} product={product} compact />
               <CompareProductButton product={product} compact />
             </div>
           </div>
         </div>
 
-        {(hasOverview || allSpecsList.length > 0) && <section aria-label="Detalles del producto" className="store-product-details mt-5 sm:mt-6 grid grid-cols-1 lg:grid-cols-12 rounded-2xl sm:rounded-3xl border border-neutral-200 bg-white overflow-hidden">
-          {hasOverview && <div className={`${allSpecsList.length ? "lg:col-span-4 lg:border-r" : "lg:col-span-12"} border-neutral-200 p-5 sm:p-6 lg:p-8 space-y-6`}>
-            {product.description && <div>
-              <h2 className="text-xl font-semibold tracking-tight text-neutral-950 mb-3">Descripción</h2>
-              <p className="text-sm text-neutral-600 leading-7">{product.description}</p>
-            </div>}
-            {product.features.length > 0 && <div>
-              <h2 className="text-base font-semibold text-neutral-950 mb-3">Características</h2>
-              <ul className="space-y-3 text-sm text-neutral-600">
-                {product.features.map((feature, idx) => <li key={idx} className="flex items-start gap-2.5"><Check className="w-4 h-4 text-neutral-900 shrink-0 mt-1" /><span className="leading-6">{feature}</span></li>)}
-              </ul>
-            </div>}
-          </div>}
-          {allSpecsList.length > 0 && (
-            <div className={`store-product-specs ${hasOverview ? "lg:col-span-8 border-t lg:border-t-0" : "lg:col-span-12"} border-neutral-200 p-5 sm:p-6 lg:p-8`}>
-              <h2 className="text-xl font-semibold tracking-tight text-neutral-950 mb-4">Especificaciones</h2>
-              <dl className="grid grid-cols-1 sm:grid-cols-2 sm:gap-x-6">
-                {allSpecsList.map((spec, sIdx) => {
-                  const IconComponent = getSpecIcon(spec.label);
-                  return (
-                    <div
-                      key={spec.label + sIdx}
-                      className="py-3.5 border-b border-neutral-200/80 flex items-center gap-3"
-                    >
-                      <dt className="min-w-0 flex-1 flex items-center gap-2.5 text-xs leading-5 text-neutral-500">
-                        <span aria-hidden="true" className="w-8 h-8 rounded-lg bg-neutral-100 text-neutral-700 flex items-center justify-center shrink-0"><IconComponent className="w-4 h-4" /></span>
-                        <span className="break-words">{spec.label}</span>
-                      </dt>
-                      <dd className="max-w-[40%] text-right text-sm leading-6 font-semibold text-neutral-900 break-words" title={spec.value}>{spec.value}</dd>
-                    </div>
-                  );
-                })}
-              </dl>
+        {(hasOverview || allSpecsList.length > 0) && <section aria-label="Detalles del producto" className="store-product-details mt-8 sm:mt-12 border-t border-neutral-300">
+          {hasOverview && <details open className="group border-b border-neutral-200">
+            <summary className="min-h-16 sm:min-h-20 flex items-center justify-between gap-4 list-none [&::-webkit-details-marker]:hidden cursor-pointer"><h2 className="text-lg sm:text-xl font-semibold text-neutral-950">Descripción</h2><Plus aria-hidden="true" className="w-5 h-5 text-neutral-500 transition-transform group-open:rotate-45" /></summary>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 pb-6 sm:pb-8 text-sm leading-7 text-neutral-600">
+              {product.description && <p>{product.description}</p>}
+              {product.features.length > 0 && <ul className="space-y-2">{product.features.map((feature, index) => <li key={index} className="flex items-start gap-2.5"><Check aria-hidden="true" className="w-4 h-4 mt-1.5 shrink-0 text-neutral-900" /><span>{feature}</span></li>)}</ul>}
             </div>
-          )}
+          </details>}
+          {allSpecsList.length > 0 && <details ref={specificationDetails} id="especificaciones" open className="store-product-specs group border-b border-neutral-200 scroll-mt-20">
+            <summary className="min-h-16 sm:min-h-20 flex items-center justify-between gap-4 list-none [&::-webkit-details-marker]:hidden cursor-pointer"><h2 className="text-lg sm:text-xl font-semibold text-neutral-950">Especificaciones</h2><Plus aria-hidden="true" className="w-5 h-5 text-neutral-500 transition-transform group-open:rotate-45" /></summary>
+            <dl className="grid grid-cols-1 md:grid-cols-2 md:gap-x-8 pb-6 sm:pb-8">
+              {allSpecsList.map((spec, index) => <div key={spec.label + index} className="grid grid-cols-2 gap-4 px-3 sm:px-4 py-3 text-sm even:bg-neutral-50 border-b border-neutral-100"><dt className="text-neutral-500 leading-6 break-words">{spec.label}</dt><dd className="font-medium text-neutral-950 leading-6 break-words">{spec.value}</dd></div>)}
+            </dl>
+          </details>}
         </section>}
 
         {/* Related Products Section */}
