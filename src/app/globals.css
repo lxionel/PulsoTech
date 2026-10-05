@@ -58,6 +58,10 @@ body {
   .store-product-page:has(.store-mobile-purchase) .store-footer {
     padding-bottom: calc(72px + env(safe-area-inset-bottom));
   }
+
+  body:has(.store-product-page[data-purchase-actions-visible="true"]) .store-whatsapp-widget {
+    display: none;
+  }
 }
 
 .store-motion .store-menu-toggle:focus-visible {

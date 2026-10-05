@@ -170,9 +170,6 @@ export default function ProductCard({ product }: { product: Product }) {
       <div className="p-3.5 sm:p-4 pt-3.5 border-t border-neutral-100 mt-auto bg-neutral-50/50 flex flex-col gap-3">
         {/* Row 1: Full-width clear price, NO extra tags */}
         <div>
-          <span className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider block leading-none mb-1">
-            Precio Directo
-          </span>
           <span className="text-xl sm:text-2xl font-black text-neutral-950 tracking-tight whitespace-nowrap">
             {STORE_SETTINGS.currencySymbol.trim()} {product.price.toFixed(2)}
           </span>

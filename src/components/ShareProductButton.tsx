@@ -9,7 +9,7 @@ import {
   buildWhatsAppShareUrl,
 } from "@/lib/product-share";
 
-export default function ShareProductButton({ product }: { product: ShareableProduct }) {
+export default function ShareProductButton({ product, compact = false }: { product: ShareableProduct; compact?: boolean }) {
   const panelId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const linkRef = useRef<HTMLInputElement>(null);
@@ -83,10 +83,10 @@ export default function ShareProductButton({ product }: { product: ShareableProd
         disabled={isSharing}
         aria-expanded={isOpen}
         aria-controls={isOpen ? panelId : undefined}
-        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-neutral-200 bg-white text-neutral-600 hover:text-neutral-950 hover:border-neutral-300 text-xs font-bold transition-colors active:scale-95 disabled:opacity-60 cursor-pointer disabled:cursor-wait"
+        className={compact ? "min-h-11 inline-flex items-center gap-2 text-xs font-medium text-neutral-500 hover:text-neutral-950 disabled:opacity-60 cursor-pointer" : "inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-neutral-200 bg-white text-neutral-600 hover:text-neutral-950 hover:border-neutral-300 text-xs font-bold transition-colors active:scale-95 disabled:opacity-60 cursor-pointer disabled:cursor-wait"}
       >
         <Share2 aria-hidden="true" className="w-3.5 h-3.5" />
-        {isSharing ? "Compartiendo…" : "Compartir producto"}
+        {isSharing ? "Compartiendo…" : compact ? "Compartir" : "Compartir producto"}
       </button>
 
       {isOpen && data && (

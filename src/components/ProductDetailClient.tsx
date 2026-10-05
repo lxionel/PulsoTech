@@ -8,7 +8,7 @@ import { STORE_SETTINGS } from "@/data/products";
 import { getAssetUrl } from "@/utils/paths";
 import { AUDIO_TYPE_OPTIONS, parsePlaybackHours } from "@/lib/audio-filters";
 import { getProductVideoInfo } from "@/lib/content-security";
-import { productGallery } from "@/lib/product-media";
+import { colorImages, productGallery } from "@/lib/product-media";
 import { useCart } from "@/context/CartContext";
 import { useProducts } from "@/context/ProductsContext";
 import Navbar from "@/components/Navbar";
@@ -62,6 +62,8 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   const [selectedColorIndex, setSelectedColorIndex] = useState<number | null>(null);
   const [colorRequired, setColorRequired] = useState(false);
   const colorSelector = React.useRef<HTMLDivElement>(null);
+  const purchaseActions = React.useRef<HTMLDivElement>(null);
+  const [purchaseActionsVisible, setPurchaseActionsVisible] = useState(false);
   const [galleryColorIndex, setGalleryColorIndex] = useState<number | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isVideoActive, setIsVideoActive] = useState(false);
@@ -69,7 +71,15 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   const isOutOfStock = (product.stockCount ?? 0) <= 0 || product.inStock === false;
   const purchaseQuantity = isOutOfStock ? 0 : Math.min(quantity, product.stockCount);
   const purchaseTotal = Math.round(product.price * purchaseQuantity * 100) / 100;
-  const showMobilePurchase = !isCartOpen && !isFavoritesOpen && !(isComparisonOpen && selectedProducts.length === 2);
+  const showMobilePurchase = !purchaseActionsVisible && !isCartOpen && !isFavoritesOpen && !(isComparisonOpen && selectedProducts.length === 2);
+
+  React.useEffect(() => {
+    const target = purchaseActions.current;
+    if (!target) return;
+    const observer = new IntersectionObserver(([entry]) => setPurchaseActionsVisible(entry.isIntersecting && entry.intersectionRatio > 0.15), { rootMargin: "0px 0px -80px 0px", threshold: [0, 0.15] });
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, []);
 
   // Consolidar especificaciones técnicas oficiales (customSpecs + specs estándar)
   const allSpecsList = React.useMemo(() => {
@@ -190,7 +200,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   const waMessage = `¡Hola PulsoTech! Deseo comprar el modelo *${product.name}* (Color: ${colors.length && selectedColorIndex === null ? "por elegir" : currentColor.name}, Precio: ${STORE_SETTINGS.currencySymbol}${product.price.toFixed(2)}). ¿Tienen stock disponible para entrega hoy?`;
 
   return (
-    <div className="store-product-page min-h-screen flex flex-col bg-[#fbfbfd] text-[#111113]">
+    <div data-purchase-actions-visible={purchaseActionsVisible} className="store-product-page min-h-screen flex flex-col bg-[#fbfbfd] text-[#111113]">
       <Navbar currentCategory={product.category} />
 
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 w-full pb-10">
@@ -216,10 +226,9 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
           </span>
         </nav>
 
-        {/* Full Product Grid (Despegatec & Miccell Inspired) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-[auto_1fr] gap-8 lg:gap-x-12 lg:gap-y-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-[auto_1fr] gap-6 lg:gap-x-12 lg:gap-y-6 items-start">
           {/* Gallery first on mobile; left column on desktop. */}
-          <div className="store-product-gallery lg:col-span-7 lg:col-start-1 lg:row-start-1 space-y-6">
+          <div className="store-product-gallery lg:col-span-7 lg:col-start-1 lg:row-start-1 space-y-4">
             {/* Main Stage Frame (Image or Video) */}
             <div className="relative aspect-square w-full rounded-2xl sm:rounded-3xl bg-white border border-neutral-200/90 p-3 sm:p-6 flex items-center justify-center shadow-xs overflow-hidden group">
               {isVideoActive && videoInfo ? (
@@ -359,104 +368,45 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                     </button>
                   );
                 })}
+                {!!product.images?.length && galleryColorIndex !== null && <button type="button" onClick={() => { setGalleryColorIndex(null); setSelectedImageIndex(0); setIsVideoActive(false); }} className="min-h-11 shrink-0 px-2 text-xs text-neutral-500 underline underline-offset-4 hover:text-black cursor-pointer">Ver todas</button>}
               </div>
             )}
-            <div className="flex items-center justify-between gap-3 text-xs text-neutral-500">
-              <span>{galleryColorIndex === null ? "Fotos del producto" : `Fotos de ${currentColor.name}`}</span>
-              {!!product.images?.length && galleryColorIndex !== null && <button type="button" onClick={() => { setGalleryColorIndex(null); setSelectedImageIndex(0); setIsVideoActive(false); }} className="font-semibold underline underline-offset-4 hover:text-black">Ver fotos generales</button>}
-            </div>
           </div>
 
           {/* Right Column: Commercial Details & Purchase Actions */}
-          <div className="store-product-information lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:row-span-2 space-y-6">
+          <div className="store-product-information lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:row-span-2 space-y-5 sm:space-y-6">
             {/* Header: Brand & Title */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-1 rounded-md text-xs font-bold bg-neutral-100 text-neutral-800 border border-neutral-200 tracking-wider uppercase">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3 text-xs">
+                <span className="font-semibold text-neutral-500 tracking-wide uppercase">
                   {product.brand}
                 </span>
 
-                {/* Etiqueta Stock */}
-                {isOutOfStock ? (
-                  <span className="px-3 py-1 rounded-md text-xs font-bold bg-neutral-100 text-neutral-500 border border-neutral-200 tracking-wide">
-                    Agotado
-                  </span>
-                ) : (
-                  <span className="px-3 py-1 rounded-md text-xs font-bold bg-neutral-950 text-white tracking-wide">
-                    En Stock
-                  </span>
-                )}
+                <span className={`inline-flex items-center gap-1.5 ${isOutOfStock ? "text-neutral-500" : "text-emerald-700"}`}><span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${isOutOfStock ? "bg-neutral-400" : "bg-emerald-600"}`} />{isOutOfStock ? "Agotado" : "Disponible"}</span>
               </div>
 
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-neutral-950 tracking-tight leading-tight">
+              <h1 className="text-2xl sm:text-3xl font-bold text-neutral-950 tracking-tight leading-tight">
                 {product.name}
               </h1>
 
-              <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed">
+              {product.subtitle && <p className="text-sm text-neutral-500 leading-relaxed">
                 {product.subtitle}
-              </p>
-              <ShareProductButton key={product.id} product={product} />
-              <CompareProductButton product={product} />
+              </p>}
             </div>
 
-            {/* Price Box (Retail Style) */}
-            <div className="p-5 rounded-2xl bg-white border border-neutral-200/90 shadow-xs space-y-4">
-              <div>
-                <span className="text-[11px] text-neutral-400 uppercase font-bold tracking-wider block">
-                  Precio de Venta Directo
-                </span>
-                <div className="flex items-baseline gap-2 mt-0.5">
-                  <span className="text-3xl sm:text-4xl font-extrabold text-neutral-950 tracking-tight">
-                    {STORE_SETTINGS.currencySymbol}
-                    {product.price.toFixed(2)}
-                  </span>
-                  <span className="text-xs text-neutral-400 font-medium">PEN</span>
-                </div>
-              </div>
-
-              {/* Trust & Guarantee Indicators */}
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <Link href="/garantia-y-entregas/" className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200/70 text-xs text-neutral-800 font-medium hover:border-neutral-400 transition-colors">
-                  <ShieldCheck className="w-4 h-4 text-neutral-700 shrink-0" />
-                  <span className="truncate">Garantía PulsoTech</span>
-                </Link>
-                <Link href="/garantia-y-entregas/" className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200/70 text-xs text-neutral-800 font-medium hover:border-neutral-400 transition-colors">
-                  <Truck className="w-4 h-4 text-neutral-700 shrink-0" />
-                  <span className="truncate">Entrega coordinada</span>
-                </Link>
-              </div>
-            </div>
-
-            {/* Selector de Colores Disponibles */}
             {colors.length > 0 && (
-              <div ref={colorSelector} className="p-4 rounded-2xl bg-white border border-neutral-200/90 shadow-2xs space-y-2.5">
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-neutral-500 font-medium">Color:</span>
-                  <span className="font-extrabold text-neutral-950">{colorLabel}</span>
+              <div ref={colorSelector} className="store-product-colors space-y-2.5">
+                <div className="text-sm text-neutral-700">
+                  Color{selectedColorIndex !== null && <>: <span className="font-medium text-neutral-950">{currentColor.name}</span></>}
                 </div>
-                <div className="flex items-center gap-2.5 pt-1">
-                  {colors.map((c, idx) => {
-                    const isSelected = selectedColorIndex === idx;
+                <div className="flex flex-wrap items-center gap-2">
+                  {colors.map((color, index) => {
+                    const isSelected = selectedColorIndex === index;
+                    const preview = colorImages(color)[0];
                     return (
-                      <button
-                        key={c.name + idx}
-                        type="button"
-                        onClick={() => handleSelectColor(idx)}
-                        aria-label={`Color ${c.name}`}
-                        aria-pressed={isSelected}
-                        title={c.name}
-                        className={`relative rounded-full transition-all duration-200 cursor-pointer flex items-center justify-center ${
-                          isSelected
-                            ? "w-8 h-8 ring-2 ring-offset-2 ring-neutral-900 shadow-sm"
-                            : "w-7 h-7 hover:scale-105 opacity-75 hover:opacity-100"
-                        }`}
-                      >
-                        <span
-                          className={`w-full h-full rounded-full border border-neutral-300 block ${
-                            c.hex?.toLowerCase() === "#ffffff" ? "bg-white" : ""
-                          }`}
-                          style={{ backgroundColor: c.hex }}
-                        />
+                      <button key={color.name + index} type="button" onClick={() => handleSelectColor(index)} aria-label={`Color ${color.name}`} aria-pressed={isSelected} title={color.name}
+                        className={`relative w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-xl border bg-white p-1.5 transition-colors duration-150 cursor-pointer flex items-center justify-center ${isSelected ? "border-neutral-950 ring-1 ring-neutral-950" : "border-neutral-200 hover:border-neutral-500"}`}>
+                        {preview ? <img src={getAssetUrl(preview)} alt="" className="w-full h-full object-contain" /> : <span aria-hidden="true" className="w-6 h-6 rounded-full border border-neutral-300" style={{ backgroundColor: color.hex }} />}
                       </button>
                     );
                   })}
@@ -465,17 +415,22 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
               </div>
             )}
 
+            <div className="store-product-price flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span className="text-3xl font-bold tracking-tight text-neutral-950 tabular-nums">{STORE_SETTINGS.currencySymbol}{product.price.toFixed(2)}</span>
+              {!!product.originalPrice && product.originalPrice > product.price && <span className="text-sm text-neutral-400 line-through tabular-nums">{STORE_SETTINGS.currencySymbol}{product.originalPrice.toFixed(2)}</span>}
+            </div>
+
             {/* Quantity Selector, Cart Buttons & Favorites */}
             <div className="space-y-3 pt-1">
               {!isOutOfStock && (
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                   <span className="text-xs font-semibold text-neutral-700">Cantidad:</span>
                   <div className="flex items-center border border-neutral-200 rounded-xl bg-white shadow-2xs">
                     <button
                       onClick={() => setQuantity(Math.max(1, purchaseQuantity - 1))}
                       disabled={purchaseQuantity <= 1}
                       aria-label="Reducir cantidad"
-                      className="px-3.5 py-2 text-neutral-600 hover:text-black font-bold text-sm cursor-pointer"
+                      className="w-11 h-11 text-neutral-600 hover:text-black font-bold text-sm cursor-pointer disabled:opacity-40"
                     >
                       -
                     </button>
@@ -486,16 +441,17 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                       onClick={() => setQuantity(Math.min(product.stockCount, purchaseQuantity + 1))}
                       disabled={purchaseQuantity >= product.stockCount}
                       aria-label="Aumentar cantidad"
-                      className="px-3.5 py-2 text-neutral-600 hover:text-black font-bold text-sm cursor-pointer"
+                      className="w-11 h-11 text-neutral-600 hover:text-black font-bold text-sm cursor-pointer disabled:opacity-40"
                     >
                       +
                     </button>
                   </div>
+                  {purchaseQuantity > 1 && <span aria-live="polite" aria-atomic="true" className="text-sm font-semibold text-neutral-950 tabular-nums">Total {STORE_SETTINGS.currencySymbol}{purchaseTotal.toFixed(2)}</span>}
                 </div>
               )}
 
               {/* Action Buttons: Add to Cart + Buy Now + Favorite */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 pt-1">
+              <div ref={purchaseActions} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 pt-1">
                 {isOutOfStock ? (
                   <div className="flex items-center gap-2 flex-1">
                     <div className="flex-1 py-3.5 px-4 rounded-xl bg-neutral-100 border border-neutral-200 text-neutral-400 font-bold text-xs flex items-center justify-center gap-2 cursor-not-allowed">
@@ -522,7 +478,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                         className="flex-1 py-3.5 px-4 rounded-xl border border-neutral-300 hover:border-black bg-white text-neutral-900 font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xs cursor-pointer"
                       >
                         <ShoppingBag className="w-4 h-4" />
-                        <span>Añadir al Carrito</span>
+                        <span>Añadir a la bolsa</span>
                       </button>
 
                       <button
@@ -543,7 +499,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                       onClick={handleBuyNow}
                       className="w-full sm:flex-1 py-3.5 px-4 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-98 shadow-sm cursor-pointer"
                     >
-                      <span>Comprar Ahora</span>
+                      <span>Comprar ahora</span>
                     </button>
                   </>
                 )}
@@ -558,28 +514,35 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`w-full py-3.5 sm:py-4 px-4 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-98 cursor-pointer ${
-                  isOutOfStock ? "bg-neutral-900 hover:bg-neutral-800" : "bg-[#15803d] hover:bg-[#166534]"
-                }`}
+                className="min-h-11 inline-flex items-center gap-2 text-sm text-[#15803d] hover:text-[#166534] transition-colors cursor-pointer"
               >
-                <MessageSquare className="w-4 h-4 fill-white text-white" />
+                <MessageSquare className="w-4 h-4" />
                 <span>
                   {isOutOfStock
-                    ? "Consultar próxima llegada por WhatsApp"
-                    : "Contactar con un asesor por WhatsApp"}
+                    ? "Consultar disponibilidad"
+                    : "Consultar por WhatsApp"}
                 </span>
               </a>
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-neutral-600">
+                <Link href="/garantia-y-entregas/" className="min-h-8 inline-flex items-center gap-1.5 hover:text-neutral-950"><ShieldCheck className="w-3.5 h-3.5" />Garantía</Link>
+                <Link href="/garantia-y-entregas/" className="min-h-8 inline-flex items-center gap-1.5 hover:text-neutral-950"><Truck className="w-3.5 h-3.5" />Entregas</Link>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-start gap-x-5 gap-y-2 border-t border-neutral-200 pt-2">
+              <ShareProductButton key={product.id} product={product} compact />
+              <CompareProductButton product={product} compact />
             </div>
 
             {/* Description & Features */}
             <div className="pt-4 border-t border-neutral-200 space-y-4">
               <div>
-                <h3 className="text-sm font-bold text-neutral-950 mb-2">Descripción del Producto</h3>
+                <h2 className="text-base font-semibold text-neutral-950 mb-2">Descripción</h2>
                 <p className="text-xs text-neutral-600 leading-relaxed">{product.description}</p>
               </div>
 
               <div>
-                <h3 className="text-sm font-bold text-neutral-950 mb-2">Características Principales</h3>
+                <h2 className="text-base font-semibold text-neutral-950 mb-2">Características</h2>
                 <ul className="space-y-2 text-xs text-neutral-600">
                   {product.features.map((feature, idx) => (
                     <li key={idx} className="flex items-start gap-2">
@@ -596,14 +559,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
           {/* Technical Specification Grid */}
           {allSpecsList.length > 0 && (
             <div className="store-product-specs lg:col-span-7 lg:col-start-1 lg:row-start-2 pt-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-                  Ficha Técnica de Rendimiento
-                </h3>
-                <span className="text-[11px] font-semibold text-neutral-400">
-                  Especificaciones Oficiales
-                </span>
-              </div>
+              <h2 className="text-base font-semibold text-neutral-950">Especificaciones</h2>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {allSpecsList.map((spec, sIdx) => {
