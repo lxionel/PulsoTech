@@ -65,6 +65,7 @@ export default function CartPage() {
     total, coupon: appliedCoupon?.code, customerName, customerAddress, customerReference, paymentMethod,
   });
   const money = (amount: number) => STORE_SETTINGS.currencySymbol + amount.toFixed(2);
+  const hasDiscount = Boolean(appliedCoupon && discountAmount > 0);
   const closeCart = () => { if (!isCheckingStock) setIsCartOpen(false); };
   const changeStep = (next: "bag" | "delivery") => {
     setCheckoutStep(next);
@@ -262,13 +263,12 @@ export default function CartPage() {
                       <p className="text-xs sm:text-sm text-neutral-500 mt-1 tabular-nums">{money(item.product.price)} / unidad</p>
                     </div>
                     <button type="button" disabled={isCheckingStock} onClick={() => removeItem(item.product.id, colorName)} aria-label={"Eliminar " + item.product.name + ", " + colorName} title="Eliminar producto" className="absolute right-0 top-3 first:top-0 min-w-11 min-h-11 inline-flex items-center justify-center text-neutral-500 hover:text-red-700 cursor-pointer"><Trash2 aria-hidden="true" className="w-4 h-4" /></button>
-                    <div className="col-start-2 flex flex-wrap items-center justify-between gap-3 mt-4">
+                    <div className="col-start-2 mt-4">
                       <div role="group" aria-label={"Cantidad de " + item.product.name + ", " + colorName} className="inline-flex items-center rounded-lg border border-neutral-300">
                         <button type="button" disabled={isCheckingStock || isInventoryLoading || item.quantity <= 1} aria-label={"Reducir cantidad de " + item.product.name + ", " + colorName} onClick={() => updateQuantity(item.product.id, colorName, item.quantity - 1)} className="w-11 h-11 flex items-center justify-center hover:bg-neutral-50 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"><Minus aria-hidden="true" className="w-3.5 h-3.5" /></button>
                         <span className="min-w-6 text-center text-sm font-medium tabular-nums" aria-label={"Cantidad: " + item.quantity}>{item.quantity}</span>
                         <button type="button" disabled={isCheckingStock || isInventoryLoading || item.quantity >= limit || Boolean(stockIssue)} aria-label={"Aumentar cantidad de " + item.product.name + ", " + colorName} title={item.quantity >= limit ? "Has alcanzado el stock disponible" : "Aumentar cantidad"} onClick={() => updateQuantity(item.product.id, colorName, item.quantity + 1)} className="w-11 h-11 flex items-center justify-center hover:bg-neutral-50 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"><Plus aria-hidden="true" className="w-3.5 h-3.5" /></button>
                       </div>
-                      <span className="text-sm min-[360px]:text-base sm:text-lg font-semibold tabular-nums" aria-label={"Total de " + item.product.name}>{money(Math.round(item.product.price * item.quantity * 100) / 100)}</span>
                     </div>
                     {stockIssue && <p role="status" className="col-span-2 mt-3 text-sm text-red-700">{stockIssue}</p>}
                   </article>;
@@ -300,20 +300,22 @@ export default function CartPage() {
             </>}
           </section>
 
-          <aside aria-label="Resumen del pedido" className="min-w-0 lg:sticky lg:top-6 rounded-xl border border-neutral-200 bg-neutral-50/70 p-5 sm:p-6">
-            <h2 className="text-xl font-semibold tracking-tight">Resumen</h2>
+          <aside aria-label="Resumen del pedido" className="min-w-0 border-t border-neutral-200 pt-5 lg:sticky lg:top-6 lg:rounded-xl lg:border lg:bg-neutral-50/70 lg:p-6">
+            <h2 className={"text-xl font-semibold tracking-tight " + (checkoutStep === "bag" ? "hidden lg:block" : "")}>Resumen</h2>
             {checkoutStep === "delivery" && <div className="mt-5 space-y-4 pb-5 border-b border-neutral-200">
               {items.map((item) => <div key={item.product.id + item.selectedColor?.name} className="flex items-center gap-3">
                 <img src={getAssetUrl(colorImages(item.selectedColor)[0] || item.product.images?.[0] || "/placeholder-earbuds.svg")} alt="" className="w-12 h-14 shrink-0 object-contain rounded-md bg-white p-1" />
                 <div className="min-w-0 flex-1"><p className="text-xs font-medium leading-5">{item.product.name}</p><p className="text-xs text-neutral-500 mt-1">{item.selectedColor?.name || "Original"} · {item.quantity} {item.quantity === 1 ? "ud." : "uds."}</p></div>
-                <span className="text-xs font-semibold tabular-nums shrink-0">{money(item.product.price * item.quantity)}</span>
+                <span className="text-xs tabular-nums shrink-0 text-neutral-500">{money(item.product.price)} / ud.</span>
               </div>)}
             </div>}
-            <dl className="mt-5 space-y-3 text-sm">
-              <div className="flex justify-between gap-4"><dt className="text-neutral-600">Subtotal</dt><dd className="tabular-nums">{money(subtotal)}</dd></div>
-              {appliedCoupon && discountAmount > 0 && <div className="flex justify-between gap-4 text-emerald-700"><dt>Descuento · {appliedCoupon.code}</dt><dd className="tabular-nums">−{money(discountAmount)}</dd></div>}
+            <dl className={(checkoutStep === "delivery" ? "mt-5" : "lg:mt-5") + " space-y-3 text-sm"}>
+              {hasDiscount && <>
+                <div className="flex justify-between gap-4"><dt className="text-neutral-600">Subtotal</dt><dd className="tabular-nums">{money(subtotal)}</dd></div>
+                <div className="flex justify-between gap-4 text-emerald-700"><dt>Descuento · {appliedCoupon?.code}</dt><dd className="tabular-nums">−{money(discountAmount)}</dd></div>
+              </>}
               <div className="flex justify-between gap-4"><dt className="text-neutral-600">Entrega</dt><dd className="text-neutral-500">Por coordinar</dd></div>
-              <div className="flex justify-between items-baseline gap-4 pt-5 border-t border-neutral-200"><dt className="font-semibold">Total de productos</dt><dd aria-live="polite" aria-atomic="true" className="text-2xl font-semibold tracking-tight tabular-nums">{money(total)}</dd></div>
+              <div className="hidden lg:flex justify-between items-baseline gap-4 pt-5 border-t border-neutral-200"><dt className="font-semibold">Total de productos</dt><dd aria-live="polite" aria-atomic="true" className="text-2xl font-semibold tracking-tight tabular-nums">{money(total)}</dd></div>
             </dl>
             <details className="group mt-5 border-t border-neutral-200" open={appliedCoupon ? true : undefined}>
               <summary className="min-h-12 flex items-center justify-between gap-2 text-sm cursor-pointer list-none [&::-webkit-details-marker]:hidden">
