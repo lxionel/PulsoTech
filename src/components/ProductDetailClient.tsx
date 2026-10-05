@@ -48,7 +48,7 @@ function getSpecIcon(label: string) {
 }
 
 export default function ProductDetailClient({ product: initialProduct }: { product: Product }) {
-  const { addItem, setIsCartOpen, whatsappNumber, toggleFavorite, isFavorite, isCartOpen, isFavoritesOpen } = useCart();
+  const { addItem, whatsappNumber, toggleFavorite, isFavorite, isCartOpen, isFavoritesOpen } = useCart();
   const { isOpen: isComparisonOpen, selectedProducts } = useComparison();
   const { products } = useProducts();
 
@@ -195,7 +195,6 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
     if (isOutOfStock) return;
     if (!requireColorSelection()) return;
     addItem(product, currentColor, purchaseQuantity);
-    setIsCartOpen(true);
   };
 
   const relatedProducts = products.filter((p) => p.id !== product.id);

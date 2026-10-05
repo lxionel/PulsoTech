@@ -4,7 +4,6 @@ import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { ProductsProvider } from "@/context/ProductsContext";
 import FloatingWidgets from "@/components/FloatingWidgets";
-import CartDrawer from "@/components/CartDrawer";
 import FavoritesDrawer from "@/components/FavoritesDrawer";
 import { ComparisonProvider } from "@/context/ComparisonContext";
 import ProductComparison from "@/components/ProductComparison";
@@ -51,7 +50,6 @@ export default function RootLayout({
           <CartProvider>
             <ComparisonProvider>
               {children}
-              <CartDrawer />
               <FavoritesDrawer />
               <FloatingWidgets />
               <ProductComparison />

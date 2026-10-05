@@ -266,7 +266,7 @@ export default function Navbar({
             )}
           </button>
 
-          {/* Cart Drawer Trigger */}
+          {/* Navigate to the full bag page. */}
           <button
             onClick={() => { setIsMobileMenuOpen(false); setIsCartOpen(true); }}
             aria-label="Abrir bolsa de compra"

@@ -8,8 +8,9 @@ export default function FloatingWidgets() {
   const pathname = usePathname();
   const { whatsappNumber } = useCart();
 
-  // No mostrar el botón flotante de atención al cliente dentro del panel de administración
+  // Keep checkout actions clear and omit customer support inside administration.
   if (
+    /^\/bolsa\/?$/.test(pathname || "") ||
     (pathname && pathname.includes("Lionel260606")) ||
     (typeof window !== "undefined" && window.location.pathname.includes("Lionel260606"))
   ) {

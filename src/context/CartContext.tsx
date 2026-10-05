@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Product, ProductColor, CartItem, Coupon } from "@/types";
 import { STORE_SETTINGS } from "@/data/products";
 import { getAssetUrl } from "@/utils/paths";
@@ -36,6 +37,13 @@ export const DEFAULT_COUPONS: Coupon[] = [
   },
 ];
 
+export interface CheckoutDraft {
+  customerName: string;
+  customerAddress: string;
+  customerReference: string;
+  paymentMethod: "contra_entrega" | "transferencia";
+}
+
 interface CartContextType {
   items: CartItem[];
   stockIssues: Map<string, string>;
@@ -43,6 +51,7 @@ interface CartContextType {
   clearStockNotice: () => void;
   isCheckingStock: boolean;
   isInventoryLoading: boolean;
+  isCartLoading: boolean;
   quantityLimit: (productId: string, color: string) => number;
   validateCart: () => Promise<{ items: CartItem[]; discountAmount: number; total: number } | null>;
   addItem: (product: Product, color?: ProductColor, quantity?: number) => void;
@@ -51,6 +60,8 @@ interface CartContextType {
   clearCart: () => void;
   isCartOpen: boolean;
   setIsCartOpen: (isOpen: boolean) => void;
+  checkoutDraft: CheckoutDraft;
+  setCheckoutDraft: React.Dispatch<React.SetStateAction<CheckoutDraft>>;
   selectedProductForModal: Product | null;
   setSelectedProductForModal: (product: Product | null) => void;
   subtotal: number;
@@ -82,6 +93,8 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter();
   const { products, isLoading: isInventoryLoading, refreshFromCloud } = useProducts();
   const [cartState, setCartState] = useState<{ items: CartItem[]; notice: string }>({ items: [], notice: "" });
   const savedItems = cartState.items;
@@ -94,8 +107,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [isCheckingStock, setIsCheckingStock] = useState(false);
   const checkingStock = useRef(false);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  const isCartOpen = /^\/bolsa\/?$/.test(pathname || "");
+  const cartOrigin = useRef("/#catalogo");
+  const cartNavigationPending = useRef(false);
+  const [isCartLoading, setIsCartLoading] = useState(true);
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
+  const [checkoutDraft, setCheckoutDraft] = useState<CheckoutDraft>({
+    customerName: "", customerAddress: "", customerReference: "", paymentMethod: "contra_entrega",
+  });
   const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
   const [whatsappNumber, setWhatsappNumber] = useState<string>(STORE_SETTINGS.whatsappNumber);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -108,15 +127,40 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const setCoupons = (next: Coupon[]) => { couponsRef.current = next; setCouponsState(next); };
   const effectiveCoupon = coupons.find((coupon) => coupon.id === appliedCoupon?.id && coupon.isActive) || null;
 
+  useEffect(() => {
+    cartNavigationPending.current = false;
+  }, [pathname]);
+
+  const setIsCartOpen = (isOpen: boolean) => {
+    if (isOpen) {
+      setIsFavoritesOpen(false);
+      if (isCartOpen || cartNavigationPending.current) return;
+      if (pathname?.startsWith("/") && !pathname.startsWith("//")) {
+        cartOrigin.current = pathname + window.location.search + window.location.hash;
+      }
+      cartNavigationPending.current = true;
+      router.push("/bolsa/");
+    } else if (isCartOpen && !cartNavigationPending.current) {
+      cartNavigationPending.current = true;
+      router.push(cartOrigin.current);
+    }
+  };
+
   // Cargar datos de localStorage una sola vez tras montar en el cliente y sincronizar cupones de Supabase
   useEffect(() => {
     let isCancelled = false;
     const timer = setTimeout(async () => {
       try {
-        const savedCart = localStorage.getItem("pulsotech_cart");
-        if (savedCart) {
-          const parsed = JSON.parse(savedCart);
-          if (Array.isArray(parsed)) setItems(parsed);
+        try {
+          const savedCart = localStorage.getItem("pulsotech_cart");
+          if (savedCart) {
+            const parsed = JSON.parse(savedCart);
+            if (Array.isArray(parsed) && !isCancelled) setItems(parsed);
+          }
+        } catch {
+          // An unavailable or invalid cache starts an empty, usable bag.
+        } finally {
+          if (!isCancelled) setIsCartLoading(false);
         }
 
         const savedFavs = localStorage.getItem("pulsotech_favorites");
@@ -352,6 +396,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         clearStockNotice,
         isCheckingStock,
         isInventoryLoading,
+        isCartLoading,
         quantityLimit,
         validateCart,
         addItem,
@@ -360,6 +405,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         clearCart,
         isCartOpen,
         setIsCartOpen,
+        checkoutDraft,
+        setCheckoutDraft,
         selectedProductForModal,
         setSelectedProductForModal,
         subtotal,
