@@ -230,9 +230,9 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
           </span>
         </nav>
 
-        <div className="store-product-summary grid grid-cols-1 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] gap-6 sm:gap-8 lg:gap-12 items-start">
+        <div className="store-product-summary grid grid-cols-1 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:grid-rows-[max-content_1fr] gap-6 sm:gap-8 lg:gap-x-12 lg:gap-y-6 items-start">
           {/* Gallery first on mobile; left column on desktop. */}
-          <div className="store-product-gallery min-w-0 grid gap-3 lg:grid-cols-[64px_minmax(0,1fr)] lg:gap-4">
+          <div className="store-product-gallery min-w-0 grid gap-3 lg:grid-cols-[64px_minmax(0,1fr)] lg:gap-4 lg:col-start-1 lg:row-start-1">
             {/* Main Stage Frame (Image or Video) */}
             <div className="store-product-stage relative w-full min-h-[240px] aspect-[6/5] sm:aspect-[var(--photo-ratio)] sm:max-h-[var(--photo-height)] bg-white flex items-center justify-center overflow-hidden lg:col-start-2 lg:row-start-1"
               style={{ "--photo-ratio": !isVideoActive && currentImageSize ? `${currentImageSize.width} / ${currentImageSize.height}` : "1", "--photo-height": !isVideoActive && currentImageSize ? `${Math.min(currentImageSize.height + 32, 560)}px` : "560px" } as React.CSSProperties}>
@@ -364,7 +364,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
           </div>
 
           {/* Right Column: Commercial Details & Purchase Actions */}
-          <div className="store-product-information min-w-0 flex flex-col gap-5 sm:gap-6">
+          <div className="store-product-information min-w-0 flex flex-col gap-5 sm:gap-6 lg:col-start-2 lg:row-start-1 lg:row-span-2">
             {/* Header: Brand & Title */}
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 space-y-2">
@@ -463,23 +463,23 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
               <CompareProductButton product={product} compact />
             </div>
           </div>
-        </div>
 
-        {(hasOverview || allSpecsList.length > 0) && <section aria-label="Detalles del producto" className="store-product-details mt-8 sm:mt-12 border-t border-neutral-300">
+        {(hasOverview || allSpecsList.length > 0) && <section aria-label="Detalles del producto" className="store-product-details min-w-0 border-t border-neutral-300 lg:col-start-1 lg:row-start-2 lg:ml-20">
           {hasOverview && <details open className="group border-b border-neutral-200">
-            <summary className="min-h-16 sm:min-h-20 flex items-center justify-between gap-4 list-none [&::-webkit-details-marker]:hidden cursor-pointer"><h2 className="text-lg sm:text-xl font-semibold text-neutral-950">Descripción</h2><Plus aria-hidden="true" className="w-5 h-5 text-neutral-500 transition-transform group-open:rotate-45" /></summary>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 pb-6 sm:pb-8 text-sm leading-7 text-neutral-600">
+            <summary className="min-h-16 sm:min-h-20 lg:min-h-16 flex items-center justify-between gap-4 list-none [&::-webkit-details-marker]:hidden cursor-pointer"><h2 className="text-lg sm:text-xl font-semibold text-neutral-950">Descripción</h2><Plus aria-hidden="true" className="w-5 h-5 text-neutral-500 transition-transform group-open:rotate-45" /></summary>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6 md:gap-12 lg:gap-4 pb-6 sm:pb-8 text-sm leading-7 text-neutral-600">
               {product.description && <p>{product.description}</p>}
               {product.features.length > 0 && <ul className="space-y-2">{product.features.map((feature, index) => <li key={index} className="flex items-start gap-2.5"><Check aria-hidden="true" className="w-4 h-4 mt-1.5 shrink-0 text-neutral-900" /><span>{feature}</span></li>)}</ul>}
             </div>
           </details>}
           {allSpecsList.length > 0 && <details ref={specificationDetails} id="especificaciones" open className="store-product-specs group border-b border-neutral-200 scroll-mt-20">
-            <summary className="min-h-16 sm:min-h-20 flex items-center justify-between gap-4 list-none [&::-webkit-details-marker]:hidden cursor-pointer"><h2 className="text-lg sm:text-xl font-semibold text-neutral-950">Especificaciones</h2><Plus aria-hidden="true" className="w-5 h-5 text-neutral-500 transition-transform group-open:rotate-45" /></summary>
-            <dl className="grid grid-cols-1 md:grid-cols-2 md:gap-x-8 pb-6 sm:pb-8">
+            <summary className="min-h-16 sm:min-h-20 lg:min-h-16 flex items-center justify-between gap-4 list-none [&::-webkit-details-marker]:hidden cursor-pointer"><h2 className="text-lg sm:text-xl font-semibold text-neutral-950">Especificaciones</h2><Plus aria-hidden="true" className="w-5 h-5 text-neutral-500 transition-transform group-open:rotate-45" /></summary>
+            <dl className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 md:gap-x-8 pb-6 sm:pb-8">
               {allSpecsList.map((spec, index) => <div key={spec.label + index} className="grid grid-cols-2 gap-4 px-3 sm:px-4 py-3 text-sm even:bg-neutral-50 border-b border-neutral-100"><dt className="text-neutral-500 leading-6 break-words">{spec.label}</dt><dd className="font-medium text-neutral-950 leading-6 break-words">{spec.value}</dd></div>)}
             </dl>
           </details>}
         </section>}
+        </div>
 
         {/* Related Products Section */}
         {relatedProducts.length > 0 && (
