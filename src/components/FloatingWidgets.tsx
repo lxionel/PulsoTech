@@ -11,6 +11,7 @@ export default function FloatingWidgets() {
   // Keep checkout actions clear and omit customer support inside administration.
   if (
     /^\/bolsa\/?$/.test(pathname || "") ||
+    /^\/favoritos\/?$/.test(pathname || "") ||
     (pathname && pathname.includes("Lionel260606")) ||
     (typeof window !== "undefined" && window.location.pathname.includes("Lionel260606"))
   ) {

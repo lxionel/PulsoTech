@@ -141,7 +141,7 @@ export default function Navbar({
         }
       }}
       className={`store-motion w-full transition-[transform,background-color,border-color,box-shadow] duration-300 ease-in-out z-50 ${
-        isVisible || isMobileMenuOpen ? "translate-y-0" : "-translate-y-full pointer-events-none"
+        isVisible || isMobileMenuOpen ? "translate-y-0" : "-translate-y-full pointer-events-none focus-within:translate-y-0 focus-within:pointer-events-auto"
       } ${
         overlaysHero
           ? `fixed top-0 left-0 right-0 ${

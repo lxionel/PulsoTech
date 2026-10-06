@@ -11,6 +11,7 @@
 - El comprobante administrativo muestra Chimbote y el WhatsApp configurado; se retiraron referencias antiguas a Lima.
 - La preferencia de movimiento reducido conserva el centrado de las imágenes.
 - El botón flotante de WhatsApp usa su versión compacta en pantallas menores a 1440 px para no cubrir los nombres de categorías en portátiles.
+- Favoritos deja libre el botón de cada producto al omitir el contacto flotante. Conserva el contacto del pie de página. La cabecera oculta al desplazarse vuelve a mostrarse cuando recibe el foco del teclado.
 - Revisión de código sin errores ni advertencias. El flujo de GitHub comprueba también ESLint.
 
 ## Limpieza
