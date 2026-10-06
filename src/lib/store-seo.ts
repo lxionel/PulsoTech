@@ -1,9 +1,9 @@
 import type { Product } from "../types/index.ts";
-import { productCommerce, productRequirements, STORE_MODE } from "./commerce.ts";
+import { productCommerce, productRequirements } from "./commerce.ts";
 
 export const STORE_URL = (process.env.NEXT_PUBLIC_STORE_URL || "https://pulsotech.pages.dev").replace(/\/$/, "");
-export function productStructuredData(product: Product) {
-  if (STORE_MODE !== "live" || productCommerce(product).status !== "live" || productRequirements(product).length) return null;
+export function productStructuredData(product: Product, storeIndexable = false) {
+  if (!storeIndexable || !productCommerce(product).visible || productRequirements(product).length) return null;
   return {
     "@context": "https://schema.org", "@type": "Product", name: product.name, description: product.description,
     sku: product.id, brand: { "@type": "Brand", name: product.brand },

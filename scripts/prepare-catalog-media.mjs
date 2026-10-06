@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { CATALOG_IMAGE_VERSION, prepareCatalogImage } from "./lib/catalog-image.mjs";
 import nextEnv from "@next/env";
 import { catalogProduct, exportableRow } from "./lib/catalog-snapshot.mjs";
+import { DEFAULT_COMMERCE_SETTINGS, parseCommerceSettings } from "../src/lib/commerce.ts";
 
 nextEnv.loadEnvConfig(process.cwd());
 const configSource = await fs.readFile("src/lib/supabase.ts", "utf8");
@@ -13,6 +14,7 @@ const target = path.resolve("public/catalog-media");
 await fs.mkdir(target, { recursive: true });
 const manifest = { source, entries: [] };
 const catalog = [];
+let commerce = { settings: DEFAULT_COMMERCE_SETTINGS, installed: false };
 const converted = new Map();
 let originalBytes = 0;
 let optimizedBytes = 0;
@@ -36,11 +38,18 @@ async function optimize(image) {
 try {
   // Only anonymous, publicly readable product media is exported. Never use an admin key.
   if (!(key.startsWith("sb_publishable_") || key.split(".").length === 3 && JSON.parse(Buffer.from(key.split(".")[1], "base64url").toString()).role === "anon")) throw new Error("Public key required");
-  const response = await fetch(`${source}/rest/v1/products?select=*`, { headers: { apikey: key }, signal: AbortSignal.timeout(20000) });
+  const [response, settingsResponse] = await Promise.all([
+    fetch(`${source}/rest/v1/products?select=*`, { headers: { apikey: key }, signal: AbortSignal.timeout(20000) }),
+    fetch(`${source}/rest/v1/store_settings?select=key,value&key=in.(commerce_settings,commerce_schema_version)`, { headers: { apikey: key }, signal: AbortSignal.timeout(10000) }),
+  ]);
   if (!response.ok) throw new Error("Catalog unavailable");
+  if (settingsResponse.ok) {
+    const settings = await settingsResponse.json();
+    commerce = { settings: parseCommerceSettings(settings.find(row => row.key === "commerce_settings")?.value), installed: settings.find(row => row.key === "commerce_schema_version")?.value === 1 };
+  }
   const rows = await response.json();
   for (const row of rows) {
-    if (!exportableRow(row, process.env.NEXT_PUBLIC_STORE_MODE === "live")) continue;
+    if (!exportableRow(row)) continue;
     const images = [];
     for (const image of row.images || []) images.push(await optimize(image));
     const colors = [];
@@ -54,10 +63,12 @@ try {
   }
   console.log(`Public media: ${manifest.entries.length} products, ${converted.size} unique photos, ${Math.round(originalBytes / 1024)} KB → ${Math.round(optimizedBytes / 1024)} KB.`);
 } catch (error) {
-  if (process.env.NEXT_PUBLIC_STORE_MODE === "live") throw new Error("No se pudo preparar el catálogo para ventas. Revisa Supabase antes de publicar.", { cause: error });
+  if (process.env.npm_lifecycle_event === "prebuild") throw new Error("No se pudo preparar el catálogo. Revisa Supabase antes de publicar.", { cause: error });
   manifest.entries = [];
   catalog.length = 0;
+  commerce = { settings: DEFAULT_COMMERCE_SETTINGS, installed: false };
   console.warn("Public media unavailable during build; the store will use live Supabase photos.");
 }
 await fs.writeFile(path.join(target, "manifest.json"), JSON.stringify(manifest));
 await fs.writeFile("src/data/catalog-build.json", JSON.stringify(catalog));
+await fs.writeFile("src/data/commerce-build.json", JSON.stringify(commerce));

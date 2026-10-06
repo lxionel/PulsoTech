@@ -10,12 +10,6 @@ export function catalogProduct(row, media) {
   };
 }
 
-export function exportableRow(row, live = false) {
-  const status = row.specs?.storeStatus;
-  if (status === "draft") return false;
-  if (!live) return true;
-  return status === "live" && row.specs?.storeVerified === "true" && Boolean(row.specs.storeWarranty?.trim())
-    && Boolean(row.specs.storeIncluded?.trim()) && Boolean(row.name?.trim()) && Boolean(row.brand?.trim())
-    && Boolean(row.category?.trim()) && Boolean(row.description?.trim()) && Number(row.price) > 0
-    && Boolean(row.images?.length || row.colors?.some(color => color.image || color.images?.length));
+export function exportableRow(row) {
+  return row.specs?.storeStatus !== "draft";
 }

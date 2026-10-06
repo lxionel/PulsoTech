@@ -7,7 +7,7 @@ import { createMutationQueue, confirmMutation } from "@/lib/confirmed-mutation";
 import { validateProductContent } from "@/lib/content-security";
 import { productForCache } from "@/lib/browser-cache";
 import { PRODUCTS } from "@/data/products";
-import { DEFAULT_COMMERCE_SETTINGS, isStorefrontProduct, parseCommerceSettings, type CommerceSettings } from "@/lib/commerce";
+import { canAcceptOrders, DEFAULT_COMMERCE_SETTINGS, isStorefrontProduct, parseCommerceSettings, type CommerceSettings } from "@/lib/commerce";
 import {
   isSupabaseReady,
   fetchProductsFromSupabase,
@@ -42,6 +42,7 @@ interface ProductsContextType {
   refreshFromCloud: () => Promise<Product[] | null>;
   commerceSettings: CommerceSettings;
   commerceReady: boolean;
+  canReceiveOrders: () => boolean;
   saveCommerceSettings: (settings: CommerceSettings) => Promise<void>;
 }
 
@@ -112,6 +113,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [commerceSettings, setCommerceSettings] = useState<CommerceSettings>(DEFAULT_COMMERCE_SETTINGS);
   const [commerceReady, setCommerceReady] = useState(false);
+  const latestCommerce = useRef({ settings: DEFAULT_COMMERCE_SETTINGS, ready: false });
 
   const state = useRef({ products, brands, categories });
   const [enqueue] = useState(() => createMutationQueue());
@@ -146,8 +148,10 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         fetchProductsFromSupabase(),
         fetchStoreSettingsFromSupabase(),
       ]);
-      if (cloudSettings?.commerce) setCommerceSettings(cloudSettings.commerce);
-      setCommerceReady(cloudSettings?.commerceReady === true);
+      const commercial = { settings: parseCommerceSettings(cloudSettings?.commerce), ready: cloudSettings?.commerceReady === true };
+      latestCommerce.current = commercial;
+      setCommerceSettings(commercial.settings);
+      setCommerceReady(commercial.ready);
       if (cloudProds !== null) {
         setIsCloudConnected(true);
         setProducts(cloudProds);
@@ -168,6 +172,9 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e) {
       console.error("Error en refreshFromCloud:", e);
+      latestCommerce.current = { settings: DEFAULT_COMMERCE_SETTINGS, ready: false };
+      setCommerceSettings(DEFAULT_COMMERCE_SETTINGS);
+      setCommerceReady(false);
       setIsCloudConnected(false);
     }
     return null;
@@ -202,6 +209,11 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
               }
             });
           }
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "store_settings", filter: "key=eq.commerce_settings" },
+          () => { if (isMounted) void refreshFromCloud(); }
         )
         .subscribe();
 
@@ -323,11 +335,15 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         commerceSettings,
         commerceReady,
+        canReceiveOrders: () => latestCommerce.current.ready && canAcceptOrders(latestCommerce.current.settings),
         saveCommerceSettings: async (settings) => {
           if (!commerceReady) throw new Error("Activa primero la migración comercial en Supabase.");
           const next = parseCommerceSettings(settings);
           if (!isSupabaseReady()) throw new Error("Conecta Supabase para guardar la configuración comercial.");
-          await confirmMutation(() => saveStoreSettingsToSupabase("commerce_settings", next), () => setCommerceSettings(next));
+          await confirmMutation(() => saveStoreSettingsToSupabase("commerce_settings", next), () => {
+            latestCommerce.current = { settings: next, ready: true };
+            setCommerceSettings(next);
+          });
         },
         products: isAdmin ? products : products.filter(p => isStorefrontProduct(p)),
         addProduct,

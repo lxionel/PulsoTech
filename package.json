@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/prepare-catalog-media.mjs",
+    "predev": "node --experimental-strip-types scripts/prepare-catalog-media.mjs",
     "dev": "next dev",
-    "prebuild": "node scripts/prepare-catalog-media.mjs",
+    "prebuild": "node --experimental-strip-types scripts/prepare-catalog-media.mjs",
     "build": "next build",
     "postbuild": "node scripts/security-headers.mjs",
     "build:cloudflare": "node scripts/build-cloudflare.mjs",

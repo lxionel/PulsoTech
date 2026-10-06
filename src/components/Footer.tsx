@@ -6,7 +6,6 @@ import { ArrowUpRight } from "lucide-react";
 import { STORE_SETTINGS } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import { useProducts } from "@/context/ProductsContext";
-import { STORE_MODE } from "@/lib/commerce";
 import { COMPLAINT_BOOK_ENABLED } from "@/data/store-policies";
 import Logo from "./Logo";
 import SocialIcon from "./SocialIcon";
@@ -66,7 +65,6 @@ export default function Footer() {
             <Logo size="lg" inverted className="w-fit" />
             <p className="mt-3 text-sm leading-relaxed">Chimbote, Perú</p>
             {commerceSettings.owner && <p className="mt-2 text-xs leading-6">{commerceSettings.owner}{commerceSettings.ruc && <> · RUC {commerceSettings.ruc}</>}</p>}
-            {STORE_MODE === "preparation" && <p className="mt-2 text-xs leading-6 text-white/70">Tienda en preparación · Apertura prevista para 2027</p>}
           </div>
           <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 w-fit items-center justify-center gap-5 rounded-lg border border-white px-5 py-3 text-sm font-semibold transition-colors hover:bg-white hover:text-black focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
             Contactar por WhatsApp <ArrowUpRight className="h-4 w-4" aria-hidden="true" />

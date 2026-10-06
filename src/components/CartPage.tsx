@@ -9,7 +9,7 @@ import { STORE_SETTINGS } from "@/data/products";
 import { getAssetUrl } from "@/utils/paths";
 import { colorImages } from "@/lib/product-media";
 import { useProducts } from "@/context/ProductsContext";
-import { canAcceptOrders, STORE_MODE } from "@/lib/commerce";
+import { canAcceptOrders } from "@/lib/commerce";
 import Logo from "@/components/Logo";
 import {
   X,
@@ -53,9 +53,8 @@ export default function CartPage() {
     isCartLoading,
   } = useCart();
 
-  const { products, commerceSettings, commerceReady } = useProducts();
-  const isPreparation = STORE_MODE === "preparation";
-  const ordersBlocked = !isPreparation && (!commerceReady || !canAcceptOrders(commerceSettings));
+  const { products, commerceSettings, commerceReady, canReceiveOrders } = useProducts();
+  const ordersBlocked = !commerceReady || !canAcceptOrders(commerceSettings);
   const { customerName, customerAddress, customerReference, paymentMethod } = checkoutDraft;
   const [errorMsg, setErrorMsg] = useState("");
   const [couponCodeInput, setCouponCodeInput] = useState("");
@@ -116,9 +115,14 @@ export default function CartPage() {
         popup?.close();
         return;
       }
+      if (!canReceiveOrders()) {
+        popup?.close();
+        setErrorMsg("Los pedidos no están disponibles en este momento.");
+        return;
+      }
 
       const lines: string[] = [
-        isPreparation ? `Hola, PulsoTech. Soy ${customerName.trim()}. Estoy probando la tienda en preparación; este mensaje no es una compra real.` : `Hola, PulsoTech. Mi nombre es ${customerName.trim()} y me gustaría realizar el siguiente pedido:`,
+        `Hola, PulsoTech. Mi nombre es ${customerName.trim()} y me gustaría realizar el siguiente pedido:`,
         "",
       ];
 
@@ -158,12 +162,12 @@ export default function CartPage() {
       type={checkoutStep === "bag" ? "button" : "submit"}
       form={checkoutStep === "delivery" ? "cart-delivery-form" : undefined}
       onClick={checkoutStep === "bag" ? (event) => { event.preventDefault(); changeStep("delivery"); } : undefined}
-      disabled={ordersBlocked || isCheckingStock || isInventoryLoading || stockIssues.size > 0}
+      disabled={(checkoutStep === "delivery" && ordersBlocked) || isCheckingStock || isInventoryLoading || stockIssues.size > 0}
       aria-busy={isCheckingStock}
       className="w-full min-h-12 px-4 py-3 rounded-lg bg-[#15803d] hover:bg-[#166534] text-white font-semibold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {checkoutStep === "delivery" && <MessageCircle aria-hidden="true" className="w-[18px] h-[18px]" />}
-      <span>{ordersBlocked ? "Pedidos aún no habilitados" : isCheckingStock ? "Comprobando stock…" : isInventoryLoading ? "Cargando disponibilidad…" : checkoutStep === "bag" ? "Continuar" : isPreparation ? "Probar por WhatsApp" : "Pedir por WhatsApp"}</span>
+      <span>{isCheckingStock ? "Comprobando stock…" : isInventoryLoading ? "Cargando disponibilidad…" : checkoutStep === "bag" ? "Continuar" : ordersBlocked ? "Pedidos no disponibles" : "Pedir por WhatsApp"}</span>
       {checkoutStep === "bag" && <ArrowRight aria-hidden="true" className="w-4 h-4" />}
     </button>
     {stockIssues.size > 0 && <p role="status" className="text-xs text-neutral-600">Corrige o retira los productos marcados para continuar.</p>}
@@ -182,7 +186,6 @@ export default function CartPage() {
       </header>
 
       <main className={"flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-7 sm:pt-10 " + (items.length ? "pb-44 lg:pb-16" : "pb-12 sm:pb-16")}>
-        {isPreparation && <p className="mb-6 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm leading-6">Estamos preparando la tienda para 2027. Puedes probar la bolsa; todavía no recibimos compras reales. Usa datos de prueba al completar la entrega.</p>}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 pb-6 sm:pb-8 border-b border-neutral-200">
           <div>
             <h1 ref={pageHeading} tabIndex={-1} className="text-3xl sm:text-4xl font-semibold tracking-tight outline-none">{checkoutStep === "delivery" && items.length ? "Entrega" : "Tu bolsa"}</h1>

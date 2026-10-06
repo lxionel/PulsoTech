@@ -1,7 +1,6 @@
 "use client";
 
 import { productHref } from "@/lib/catalog-links";
-import { productCommerce, STORE_MODE } from "@/lib/commerce";
 
 import React, { useState } from "react";
 import Link from "next/link";
@@ -163,7 +162,6 @@ export default function ProductCard({ product }: { product: Product }) {
           <h3 className="text-lg font-extrabold text-neutral-950 leading-snug line-clamp-2 sm:line-clamp-1 min-h-[1.75rem]">
             {product.name}
           </h3>
-          {STORE_MODE === "preparation" && productCommerce(product).status === "demo" && <p className="mt-1 text-xs text-neutral-500">Modelo de prueba</p>}
           <p className="text-sm sm:text-xs text-neutral-500 line-clamp-2 leading-relaxed min-h-[2.5rem] mt-1">
             {product.subtitle}
           </p>

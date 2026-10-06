@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { STORE_POLICIES } from "@/data/store-policies";
-import { STORE_MODE } from "@/lib/commerce";
 import { CommercialIdentity } from "./CommercialInformation";
 
 const pages = [
@@ -30,7 +29,6 @@ export default function PolicyPage({ title, intro, current, children }: { title:
         <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">PulsoTech · Información de la tienda</p>
         <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-neutral-950 leading-tight">{title}</h1>
         <p className="text-sm text-neutral-600 leading-7">{intro}</p>
-        {STORE_MODE === "preparation" && <p className="rounded-lg border border-neutral-200 bg-white p-3 text-xs leading-6 text-neutral-600">Tienda en preparación. Estas condiciones se están revisando antes de la apertura; actualmente no aceptamos compras reales.</p>}
         <p className="text-xs text-neutral-400">Actualización: {STORE_POLICIES.updatedAt}</p>
       </header>
       <nav aria-label="Políticas de la tienda" className="flex flex-wrap gap-2 mb-8">

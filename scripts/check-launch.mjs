@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import nextEnv from "@next/env";
-import { commerceRequirements, parseCommerceSettings, productRequirements, productCommerce, STORE_MODE } from "../src/lib/commerce.ts";
+import { commerceRequirements, parseCommerceSettings, productRequirements } from "../src/lib/commerce.ts";
 import { catalogProduct, exportableRow } from "./lib/catalog-snapshot.mjs";
 
 nextEnv.loadEnvConfig(process.cwd());
@@ -17,15 +17,14 @@ try {
   if (settings.find(row => row.key === "commerce_schema_version")?.value !== 1) pending.push("Activar supabase/activate-commerce.sql");
   pending.push(...commerceRequirements(config));
   if (!config.ordersEnabled) pending.push("Habilitar pedidos después de probar la operación");
-  const live = rows.filter(row => exportableRow(row, true));
-  if (!live.length) pending.push("Publicar al menos un producto real verificado");
-  for (const row of rows) {
+  const visible = rows.filter(exportableRow);
+  if (!visible.length) pending.push("Agregar al menos un producto visible");
+  for (const row of visible) {
     const product = catalogProduct(row, { colors: row.colors || [], images: row.images || [] });
-    if (productCommerce(product).status === "live") pending.push(...productRequirements(product).map(item => `${product.id}: ${item}`));
+    pending.push(...productRequirements(product).map(item => `${product.id}: ${item}`));
   }
-  if (process.env.NEXT_PUBLIC_STORE_MODE !== "live") pending.push("Publicar en modo ventas cuando completes los pendientes");
   if (process.env.NEXT_PUBLIC_COMPLAINT_BOOK_ENABLED !== "true" || config.ruc !== process.env.NEXT_PUBLIC_STORE_RUC?.trim()) pending.push("Configurar y probar el Libro de Reclamaciones con el mismo RUC");
-  console.log(`Productos reales revisados: ${live.length}. Modo de esta comprobación: ${process.env.NEXT_PUBLIC_STORE_MODE || STORE_MODE}.`);
+  console.log(`Productos visibles: ${visible.length}. Pedidos: ${config.ordersEnabled ? "habilitados" : "pausados"}.`);
   for (const item of new Set(pending)) console.log(`Pendiente: ${item}.`);
   if (!pending.length) console.log("Controles automáticos completos. Falta la prueba operativa de entrega, atención, respaldo y confirmación de pedidos.");
   process.exitCode = pending.length ? 1 : 0;

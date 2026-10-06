@@ -2,6 +2,7 @@ import test, { before, after } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
+import { commerceSpecs } from "../src/lib/commerce.ts";
 
 const db = new PGlite();
 const sql = await readFile(new URL("../supabase/activate-commerce.sql", import.meta.url), "utf8");
@@ -47,5 +48,18 @@ test("installation is repeatable, preserves stock and restricts administrator wr
   const backup = (await db.query("select export_store_backup() snapshot")).rows[0].snapshot;
   assert.ok(backup.tables.store_settings.some(row => row.key === "commerce_settings"));
   assert.ok(backup.tables.store_settings.some(row => row.key === "sales_records"));
+  await db.exec("reset role");
+});
+
+test("the visibility switch hides and restores a product with the already-installed policy", async () => {
+  await db.query("select set_config('test.admin','yes',false)");
+  await db.exec("set role authenticated");
+  await db.query("update products set specs=$1::jsonb where id='real'", [JSON.stringify(commerceSpecs({ visible: false, warranty: "", included: "", delivery: "" }))]);
+  await db.exec("reset role; set role anon");
+  assert.equal((await db.query("select id from products where id='real'")).rows.length, 0);
+  await db.exec("reset role; set role authenticated");
+  await db.query("update products set specs=$1::jsonb where id='real'", [JSON.stringify(commerceSpecs({ visible: true, warranty: "", included: "", delivery: "" }))]);
+  await db.exec("reset role; set role anon");
+  assert.equal((await db.query("select stock_count from products where id='real'")).rows[0].stock_count, 5);
   await db.exec("reset role");
 });

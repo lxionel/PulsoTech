@@ -6,7 +6,7 @@ import { ProductsProvider } from "@/context/ProductsContext";
 import FloatingWidgets from "@/components/FloatingWidgets";
 import { ComparisonProvider } from "@/context/ComparisonContext";
 import ProductComparison from "@/components/ProductComparison";
-import { STORE_MODE } from "@/lib/commerce";
+import { STORE_INDEXABLE } from "@/data/storefront";
 
 const plusJakarta = localFont({
   src: "./fonts/plus-jakarta-sans-latin.woff2",
@@ -25,7 +25,7 @@ const spaceGrotesk = localFont({
 });
 
 export const metadata: Metadata = {
-  robots: STORE_MODE === "preparation" ? { index: false, follow: false } : { index: true, follow: true },
+  robots: { index: STORE_INDEXABLE, follow: STORE_INDEXABLE },
   title: "PulsoTech",
   description:
     "Tecnología para tu día a día en Chimbote. Pedidos por WhatsApp, entregas coordinadas y atención personalizada.",

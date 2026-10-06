@@ -11,7 +11,7 @@ import { getProductVideoInfo } from "@/lib/content-security";
 import { colorImages, productGallery } from "@/lib/product-media";
 import { useCart } from "@/context/CartContext";
 import { useProducts } from "@/context/ProductsContext";
-import { productCommerce, STORE_MODE } from "@/lib/commerce";
+import { productCommerce } from "@/lib/commerce";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -207,7 +207,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   ].filter((column) => column.length > 0);
 
   const colorLabel = colors.length && selectedColorIndex === null ? "Elige un color" : currentColor.name;
-  const waMessage = STORE_MODE === "preparation" ? `Hola, PulsoTech. Estoy probando la ficha de ${product.name} en la tienda en preparación. Este mensaje es una prueba, no una compra real.` : `Hola, PulsoTech. Me interesa ${product.name}${selectedColorIndex === null ? "" : ` en color ${currentColor.name}`}. ¿Podrían indicarme la disponibilidad y las condiciones de entrega?`;
+  const waMessage = `Hola, PulsoTech. Me interesa ${product.name}${selectedColorIndex === null ? "" : ` en color ${currentColor.name}`}. ¿Podrían indicarme la disponibilidad y las condiciones de entrega?`;
 
   return (
     <div data-purchase-actions-visible={purchaseActionsVisible} className="store-product-page min-h-screen flex flex-col bg-white text-[#111113]">
@@ -384,7 +384,6 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                 {product.subtitle && <p className="text-sm text-neutral-500 leading-relaxed">
                   {product.subtitle}
                 </p>}
-                {STORE_MODE === "preparation" && <p className="text-xs leading-5 text-neutral-500">{commercial.status === "demo" ? "Producto de demostración · Datos de prueba" : "Vista previa · Ventas aún no habilitadas"}</p>}
               </div>
               <button type="button" onClick={() => toggleFavorite(product.id)} aria-label={isFav ? "Quitar de favoritos" : "Guardar en favoritos"} aria-pressed={isFav} title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"} className={`w-11 h-11 flex items-center justify-center shrink-0 transition-colors cursor-pointer ${isFav ? "text-red-500" : "text-neutral-500 hover:text-neutral-950"}`}>
                 <Heart className={`w-5 h-5 ${isFav ? "fill-current" : ""}`} />

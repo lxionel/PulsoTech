@@ -1,8 +1,6 @@
 import type { Product } from '../types/index.ts';
 
-export const STORE_MODE = process.env.NEXT_PUBLIC_STORE_MODE === 'live' ? 'live' : 'preparation';
-export type PublicationStatus = 'draft' | 'demo' | 'live';
-export interface ProductCommerce { status: PublicationStatus; warranty: string; included: string; delivery: string; verified: boolean; }
+export interface ProductCommerce { visible: boolean; warranty: string; included: string; delivery: string; }
 export interface CommerceSettings {
   owner: string; ruc: string; address: string; email: string; hours: string;
   deliveryArea: string; deliveryCost: string; deliveryTime: string;
@@ -33,10 +31,11 @@ export function commerceRequirements(config: CommerceSettings): string[] {
 }
 export function productCommerce(product: Pick<Product, 'specs'>): ProductCommerce {
   const specs = product.specs || {};
-  return { status: specs.storeStatus === 'live' || specs.storeStatus === 'draft' ? specs.storeStatus : 'demo', warranty: specs.storeWarranty || '', included: specs.storeIncluded || '', delivery: specs.storeDelivery || '', verified: specs.storeVerified === 'true' };
+  // Retain the existing database contract: hidden products stay protected by RLS.
+  return { visible: specs.storeStatus !== 'draft', warranty: specs.storeWarranty || '', included: specs.storeIncluded || '', delivery: specs.storeDelivery || '' };
 }
 export function commerceSpecs(commerce: ProductCommerce): Product['specs'] {
-  return { storeStatus: commerce.status, storeWarranty: commerce.warranty.trim(), storeIncluded: commerce.included.trim(), storeDelivery: commerce.delivery.trim(), storeVerified: String(commerce.verified) };
+  return { storeStatus: commerce.visible ? 'live' : 'draft', storeWarranty: commerce.warranty.trim(), storeIncluded: commerce.included.trim(), storeDelivery: commerce.delivery.trim(), storeVerified: undefined };
 }
 export function productRequirements(product: Product): string[] {
   const commerce = productCommerce(product);
@@ -47,15 +46,13 @@ export function productRequirements(product: Product): string[] {
   if (!product.images?.length && !product.colors.some(c => c.image || c.images?.length)) missing.push('Fotografías');
   if (!commerce.warranty.trim()) missing.push('Condiciones de garantía');
   if (!commerce.included.trim()) missing.push('Contenido de la caja');
-  if (!commerce.verified) missing.push('Verificación de datos y fotografías');
   return missing;
 }
-export function isStorefrontProduct(product: Product, mode = STORE_MODE): boolean {
-  const status = productCommerce(product).status;
-  return mode === 'live' ? status === 'live' && productRequirements(product).length === 0 : status !== 'draft';
+export function isStorefrontProduct(product: Product): boolean {
+  return productCommerce(product).visible;
 }
 export function canAcceptOrders(config: CommerceSettings): boolean {
-  return STORE_MODE === 'live' && config.ordersEnabled && commerceRequirements(config).length === 0
+  return config.ordersEnabled && commerceRequirements(config).length === 0
     && process.env.NEXT_PUBLIC_COMPLAINT_BOOK_ENABLED === 'true'
     && config.ruc === process.env.NEXT_PUBLIC_STORE_RUC?.trim();
 }

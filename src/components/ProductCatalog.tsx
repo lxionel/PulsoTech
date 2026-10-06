@@ -600,7 +600,7 @@ export default function ProductCatalog({
           ) : products.length === 0 ? (
             <div className="text-center py-20 rounded-2xl border border-dashed border-neutral-200 bg-white p-8 space-y-2">
               <p className="text-neutral-900 font-extrabold text-base">
-                Catálogo en preparación
+                No hay productos disponibles
               </p>
               <p className="text-neutral-500 text-xs">
                 Pronto agregaremos nuevos productos y stock disponible.

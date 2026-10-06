@@ -1,12 +1,24 @@
 # PulsoTech
 
-Tienda de tecnología con catálogo, galerías por color, favoritos, bolsa y atención por WhatsApp. Next.js genera una exportación estática para Cloudflare Pages; Supabase guarda el catálogo y las operaciones administrativas protegidas por MFA.
+Tienda de tecnología con catálogo, galerías por color, favoritos, bolsa y atención por WhatsApp. Next.js exporta el sitio para Cloudflare Pages; Supabase guarda el catálogo y las operaciones administrativas protegidas por MFA.
 
-## Estado actual: preparación para 2027
+## Administración sencilla
 
-La configuración predeterminada es `preparation`. La bolsa permite ensayar el flujo y el mensaje de WhatsApp se identifica como prueba. No se registran ventas ni se descuenta stock al abrir WhatsApp. Las páginas llevan `noindex`, robots bloquea el rastreo y el sitemap queda vacío durante esta etapa.
+Cada producto tiene una sola opción: **Visible en la tienda**. Desactivarla lo oculta del catálogo, fichas, favoritos y comparaciones. La base de datos también impide leer productos ocultos con acceso anónimo.
 
-Los productos anteriores son de demostración hasta que se revisen. No se cambiaron sus datos por información inferida de fabricantes.
+Los productos existentes conservan su visibilidad. Las clasificaciones anteriores ya no aparecen en la interfaz. Se mantiene el formato interno de datos compatible con la migración comercial instalada: `storeStatus=draft` significa oculto; los demás valores son visibles. No es necesario ejecutar otro SQL para este cambio.
+
+Un producto nuevo se guarda visible por defecto. Puedes ocultarlo mientras completas sus datos. Garantía, contenido de caja y entrega particular se editan en el formulario normal. Revisar marca, modelo, características, precio y fotografías antes de empezar a vender.
+
+## Datos de la tienda y pedidos
+
+En Administrador → Ajustes → **Tienda y pedidos**, completar responsable, RUC, dirección, correo, horario y condiciones de entrega. La opción **Recibir pedidos por WhatsApp** permite pausar o habilitar solicitudes sin cambiar modos de despliegue. Guardar los cambios para aplicarlos.
+
+Habilitar pedidos exige datos comerciales completos y Libro de Reclamaciones configurado con el mismo RUC. La tienda no inventa valores para completar esos requisitos. Pausar pedidos permite seguir viendo productos, editando la bolsa y completando la entrega; el envío final queda deshabilitado. Antes de abrir WhatsApp se vuelven a consultar disponibilidad, precios y el control de pedidos.
+
+El mensaje de compra mantiene un formato formal. Abrir WhatsApp no confirma que el cliente lo haya enviado ni que la compra esté aceptada. Confirmar disponibilidad, costo de transporte y fecha con el cliente antes de registrar una venta.
+
+La venta registrada en administración utiliza la operación atómica existente, que descuenta stock y evita descuentos duplicados. **Eliminar un registro de venta no repone automáticamente las unidades.** Después de una prueba, revisar el inventario; no borrar ventas reales para corregir stock.
 
 ## Desarrollo y comprobaciones
 
@@ -18,56 +30,34 @@ npm run build:cloudflare
 npm run launch:check
 ```
 
-`predev` y `prebuild` preparan un catálogo público inicial y fotografías locales desde Supabase. Los archivos generados se excluyen de Git. Solo se admite una clave pública anónima: nunca usar una clave de servicio para preparar el catálogo. En preparación, una consulta fallida permite seguir con el catálogo en vivo; en modo ventas impide publicar un catálogo incompleto.
+`predev` y `prebuild` generan un catálogo público inicial y fotografías locales desde Supabase. También se obtiene una copia de la configuración comercial pública para generar los metadatos. Estos archivos se excluyen de Git. Solo usar una clave pública anónima, nunca una clave de servicio.
 
-`launch:check` es de lectura y devuelve código 1 mientras existan pendientes. Eso es esperado durante la preparación; no modifica datos ni habilita ventas.
+Un error de consulta del catálogo impide publicar una compilación incompleta. En desarrollo se permite consultar el catálogo en vivo si la preparación inicial no está disponible.
 
-## Activar la preparación comercial en Supabase
+`launch:check` es de lectura. Revisa datos del negocio, productos visibles, condiciones, habilitación de pedidos y configuración del Libro de Reclamaciones. Devuelve código 1 mientras existan pendientes, sin modificar datos. No sustituye la revisión de productos ni una prueba completa de la operación.
 
-Después de las migraciones de seguridad, MFA, ventas atómicas y respaldos, ejecutar **`supabase/activate-commerce.sql`** en el editor SQL del proyecto correspondiente. También se incluye como migración `20261005000000_commerce_preparation.sql`.
+## Base de datos y seguridad
 
-El script se puede repetir, oculta los borradores a consultas anónimas, permite leer únicamente los ajustes comerciales públicos y añade esos ajustes al respaldo cifrado. No modifica productos, ventas ni cantidades de inventario. Las operaciones administrativas conservan sus restricciones de MFA.
+Para un proyecto nuevo, instalar seguridad administrativa, MFA, ventas atómicas, respaldos y **`supabase/activate-commerce.sql`**. No volver a ejecutar el esquema completo sobre una base que ya está en funcionamiento.
 
-La interfaz verifica la instalación mediante `commerce_schema_version`. Si falta, bloquea guardar borradores y ajustes comerciales para evitar anunciar una protección que todavía no existe en la base de datos. No usar `supabase_schema.sql` para sobrescribir una base en funcionamiento.
+La migración comercial se puede repetir. Oculta productos desactivados, expone solo los ajustes comerciales públicos y añade esos ajustes al respaldo cifrado. No modifica productos, ventas ni inventario. La interfaz verifica su instalación mediante `commerce_schema_version`.
 
-## Cargar información real
+Mantener CAPTCHA y MFA. Para el Libro de Reclamaciones, seguir `supabase/activate-complaints.sql` y la función protegida con Turnstile. Configurar `NEXT_PUBLIC_STORE_RUC` con el RUC real y `NEXT_PUBLIC_COMPLAINT_BOOK_ENABLED=true` después de probar la atención de reclamos. Los secretos de Turnstile permanecen únicamente en Supabase.
 
-En Administrador → Ajustes → Preparación comercial, completar responsable, RUC, dirección, correo, horario, zonas, costo y plazo de entrega. Esa información debe corresponder a la operación real; no publicar datos provisionales como definitivos.
+## Catálogo, imágenes y buscadores
 
-Al editar un producto, el último paso permite elegir:
+Los productos presentes al publicar tienen páginas `/productos/<id>/` con título, descripción, enlace canónico e imagen para compartir. Los enlaces antiguos `/producto/?id=...` funcionan; los productos nuevos usan ese enlace hasta la siguiente publicación.
 
-- **Borrador:** oculto a visitantes, conservado en administración.
-- **Demostración:** visible durante preparación y señalado como prueba.
-- **Producto real:** exige descripción, fotografías, precio, marca y categoría, garantía, contenido de caja y revisión explícita de la información.
+El catálogo inicial reduce la espera por la nube y se refresca en segundo plano. No constituye una reserva de inventario. Mantener originales de las fotografías; el administrador avisa cuando tienen poca resolución. Ampliar una fotografía pequeña no recupera detalles.
 
-En modo ventas solo aparecen productos reales completos. Los borradores también quedan fuera del catálogo generado y de sus archivos de imágenes. Las condiciones particulares aparecen en la ficha y los datos generales de entrega en la página de políticas.
+El sitio queda fuera de la indexación mientras falten los datos comerciales necesarios. No depende de un modo de prueba. Una pausa temporal de pedidos no elimina una tienda configurada de los buscadores. Los datos estructurados de productos solo se generan para fichas visibles con información comercial suficiente, sin inventar reseñas ni valoraciones.
 
-El administrador indica la resolución de fotografías pequeñas. Conservar originales y subir fotos de al menos 1200 px cuando sea posible: ampliar una imagen pequeña no recupera sus detalles. No se reemplazan ni se inventan las imágenes del producto.
+Los cambios del administrador se reflejan en el catálogo en vivo. Volver a publicar para actualizar el HTML, sitemap y metadatos de enlaces compartidos. Usar `NEXT_PUBLIC_STORE_URL` para la URL definitiva. La antigua variable `NEXT_PUBLIC_STORE_MODE` ya no se utiliza.
 
-## Abrir ventas a inicios de 2027
+## Antes de empezar a vender
 
-1. Completar datos del negocio y revisar las políticas publicadas, incluida la regla actual de cambios voluntarios. Definir condiciones reales de cada producto.
-2. Habilitar y probar el Libro de Reclamaciones siguiendo `supabase/activate-complaints.sql` y su función protegida con Turnstile. Verificar atención y respuesta desde administración.
-3. Elegir dominio y correo del negocio; revisar los enlaces actuales de redes sociales. Configurar monitoreo y analítica con las cuentas del negocio antes de invertir en campañas.
-4. Probar celular y escritorio: elegir color, revisar galería, favoritos, cantidades, cupones, dirección y referencia. Probar actualización de precio y falta de stock. Ensayar el mensaje de WhatsApp sin enviar una compra involuntaria.
-5. Verificar recuperación de un respaldo cifrado en una base de prueba. No restaurar sobre una base con ventas activas.
-6. En el entorno de publicación, configurar `NEXT_PUBLIC_STORE_MODE=live`, `NEXT_PUBLIC_STORE_URL` con la URL definitiva, `NEXT_PUBLIC_STORE_RUC` con el RUC real y `NEXT_PUBLIC_COMPLAINT_BOOK_ENABLED=true`. Mantener la protección CAPTCHA y sus claves existentes. Las claves privadas de Turnstile permanecen únicamente en Supabase.
-7. Volver a publicar; activar pedidos en Preparación comercial después de completar los requisitos. Ejecutar `launch:check` con el mismo entorno de publicación y una prueba operativa final.
+Completar datos del negocio, fotografías y condiciones reales. Revisar las políticas, incluida la regla actual de cambios voluntarios. Elegir dominio, correo y redes del negocio, y configurar monitoreo y analítica antes de invertir en campañas.
 
-Abrir WhatsApp prepara una solicitud; **no confirma que el cliente la haya enviado ni que la compra esté aceptada**. La disponibilidad, transporte y fecha se confirman con el cliente. Registrar una venta confirmada en administración utiliza la operación atómica existente, que verifica stock y evita descontarlo dos veces. Nunca tomar una visita o apertura de WhatsApp como una venta automática.
+Probar en celular y escritorio: colores y galerías, favoritos, cantidades, cupones, dirección y referencia, cambios de precio, agotados y envío de la solicitud. Verificar también registro de ventas, stock y atención de reclamos.
 
-No fijar fecha de apertura ni prometer condiciones que todavía no estén definidas.
-
-## Catálogo, rendimiento y buscadores
-
-Los productos presentes al publicar tienen páginas `/productos/<id>/` con título, descripción, enlace canónico e imagen para compartir. Los enlaces antiguos `/producto/?id=...` siguen funcionando; los productos nuevos usan ese enlace hasta la próxima publicación.
-
-El catálogo inicial reduce la espera por la consulta de la nube. Se refresca en segundo plano y la bolsa vuelve a comprobar stock y precios antes de continuar. No se considera el catálogo estático una reserva de inventario.
-
-Los datos estructurados Product/Offer se generan únicamente en modo ventas para productos reales verificados, sin inventar reseñas o valoraciones. Cambiar la ficha en administración actualiza la tienda en vivo, pero hay que volver a publicar para actualizar HTML, sitemap e información de enlaces compartidos. Evitar campañas con fichas cuyos metadatos aún no se hayan republicado.
-
-## Operación
-
-Revisar existencias, solicitudes y reclamos durante el horario de atención. Generar un respaldo cifrado después de cargas importantes y periódicamente según el volumen; guardarlo fuera del repositorio. `npm run backup:verify -- <archivo>` ayuda a preparar una recuperación sin publicar datos personales.
-
-Las comprobaciones automáticas no sustituyen la definición real de garantías, atención, entrega ni la prueba completa de operación. No habilitar ventas solo porque una compilación terminó correctamente.
+Guardar respaldos cifrados fuera del repositorio y ensayar una recuperación en una base separada. `npm run backup:verify -- <archivo>` ayuda a preparar la recuperación sin publicar datos personales. No restaurar sobre una base con inventario, clientes o ventas activas.

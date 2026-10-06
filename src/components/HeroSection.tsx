@@ -4,7 +4,6 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { getAssetUrl } from "@/utils/paths";
-import { STORE_MODE } from "@/lib/commerce";
 
 export default function HeroSection() {
   return (
@@ -31,7 +30,7 @@ export default function HeroSection() {
           {/* Badge original: Fondo negro y letras blancas, limpio y sin punto */}
           <div>
             <span className="inline-block px-2.5 sm:px-3 py-1 rounded-md text-[10px] sm:text-xs font-black tracking-widest uppercase bg-neutral-950 text-white shadow-xs border border-white/10 sm:border-transparent">
-              {STORE_MODE === "preparation" ? "APERTURA 2027" : "STOCK DISPONIBLE"}
+              STOCK DISPONIBLE
             </span>
           </div>
 
