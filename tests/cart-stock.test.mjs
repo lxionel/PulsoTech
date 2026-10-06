@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { availableStock, addCartItem, setCartQuantity, inspectCart, cartQuantityLimit, cartTotals } from "../src/lib/cart-stock.ts";
+import { availableStock, addCartItem, setCartQuantity, inspectCart, inspectCheckout, cartQuantityLimit, cartTotals } from "../src/lib/cart-stock.ts";
 
 const black = { name: "Negro", hex: "#111", image: "/black.svg" };
 const white = { name: "Blanco", hex: "#fff", image: "/white.svg" };
@@ -79,4 +79,33 @@ test("a corrected cart validates with current totals and coupon thresholds", () 
   assert.equal(cartTotals([line(black, 1)], coupon).discountAmount, 0);
   assert.equal(cartTotals(items, { ...coupon, isActive: false }).discountAmount, 0);
   assert.equal(cartTotals(items, { ...coupon, discountType: "fixed", discountValue: 500 }).total, 0);
+});
+
+test("checkout checks fresh coupon terms and requires a review when the offer changed or was withdrawn", () => {
+  const items = [line(black, 2)];
+  const coupon = { id: "discount", code: "OFERTA", isActive: true, minPurchase: 100, discountType: "percentage", discountValue: 10 };
+  const unchanged = inspectCheckout(items, [product], coupon, [coupon]);
+  assert.equal(unchanged.couponChanged, false);
+  assert.equal(unchanged.total, 162);
+  for (const replacement of [[], [{ ...coupon, isActive: false }], [{ ...coupon, code: "OTRO" }]]) {
+    const checked = inspectCheckout(items, [product], coupon, replacement);
+    assert.equal(checked.couponChanged, true);
+    assert.equal(checked.coupon, null);
+    assert.equal(checked.total, 180);
+  }
+  const reduced = inspectCheckout(items, [product], coupon, [{ ...coupon, discountValue: 5 }]);
+  assert.equal(reduced.couponChanged, true);
+  assert.equal(reduced.total, 171);
+  const threshold = inspectCheckout(items, [product], coupon, [{ ...coupon, minPurchase: 200 }]);
+  assert.equal(threshold.couponChanged, true);
+  assert.equal(threshold.discountAmount, 0);
+  assert.equal(inspectCheckout(reduced.items, [product], reduced.coupon, [reduced.coupon]).couponChanged, false);
+});
+
+test("amounts use whole cents so discounted totals agree with the displayed amounts", () => {
+  const items = [line(black, 3, { ...product, price: 0.1 })];
+  const coupon = { isActive: true, minPurchase: 0, discountType: "percentage", discountValue: 15 };
+  assert.deepEqual(cartTotals(items, coupon), { subtotal: 0.3, discountAmount: 0.05, total: 0.25 });
+  assert.deepEqual(cartTotals([line(black, 3, { ...product, price: 19.99 })], coupon), { subtotal: 59.97, discountAmount: 9, total: 50.97 });
+  for (const price of [NaN, Infinity, -10, 0]) assert.equal(inspectCart([line(black, 1)], [{ ...product, price }]).issues.size, 1);
 });

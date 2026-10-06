@@ -6,10 +6,10 @@ import { Product, ProductColor, CartItem, Coupon } from "@/types";
 import { STORE_SETTINGS } from "@/data/products";
 import { getAssetUrl } from "@/utils/paths";
 import { useProducts } from "@/context/ProductsContext";
-import { addCartItem, setCartQuantity, inspectCart, cartQuantityLimit, cartTotals } from "@/lib/cart-stock";
+import { addCartItem, setCartQuantity, inspectCart, inspectCheckout, cartQuantityLimit, cartTotals } from "@/lib/cart-stock";
 import { createMutationQueue, confirmMutation } from "@/lib/confirmed-mutation";
-import { validateCoupon } from "@/lib/coupon-validation";
-import { cartForCache, persistBrowserValues } from "@/lib/browser-cache";
+import { validateCoupon, parseCoupons } from "@/lib/coupon-validation";
+import { cartForCache, restoreCart, persistBrowserValues } from "@/lib/browser-cache";
 import {
   fetchCouponsFromSupabase,
   saveCouponsToSupabase,
@@ -18,24 +18,7 @@ import {
   isSupabaseReady,
 } from "@/lib/supabase";
 
-export const DEFAULT_COUPONS: Coupon[] = [
-  {
-    id: "cp-1",
-    code: "PULSO10",
-    discountType: "percentage",
-    discountValue: 10,
-    minPurchase: 50,
-    isActive: true,
-  },
-  {
-    id: "cp-2",
-    code: "BIENVENIDA",
-    discountType: "fixed",
-    discountValue: 15,
-    minPurchase: 80,
-    isActive: true,
-  },
-];
+export const DEFAULT_COUPONS: Coupon[] = [];
 
 export interface CheckoutDraft {
   customerName: string;
@@ -53,7 +36,7 @@ interface CartContextType {
   isInventoryLoading: boolean;
   isCartLoading: boolean;
   quantityLimit: (productId: string, color: string) => number;
-  validateCart: () => Promise<{ items: CartItem[]; discountAmount: number; total: number } | null>;
+  validateCart: () => Promise<{ items: CartItem[]; discountAmount: number; total: number; coupon: Coupon | null; whatsappNumber: string } | null>;
   addItem: (product: Product, color?: ProductColor, quantity?: number) => void;
   removeItem: (productId: string, colorName: string) => void;
   updateQuantity: (productId: string, colorName: string, quantity: number) => void;
@@ -87,7 +70,6 @@ interface CartContextType {
   addCoupon: (coupon: Omit<Coupon, "id">) => Promise<void>;
   deleteCoupon: (id: string) => Promise<void>;
   toggleCoupon: (id: string) => Promise<void>;
-  syncCouponsToCloud: (overrideCoupons?: Coupon[]) => Promise<boolean>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -123,6 +105,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // Cupones
   const [coupons, setCouponsState] = useState<Coupon[]>(DEFAULT_COUPONS);
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [couponsReady, setCouponsReady] = useState(!isSupabaseReady());
   const couponsRef = useRef(coupons);
   const [enqueue] = useState(() => createMutationQueue());
   const setCoupons = (next: Coupon[]) => { couponsRef.current = next; setCouponsState(next); };
@@ -154,8 +137,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         try {
           const savedCart = localStorage.getItem("pulsotech_cart");
           if (savedCart) {
-            const parsed = JSON.parse(savedCart);
-            if (Array.isArray(parsed) && !isCancelled) setItems(parsed);
+            if (!isCancelled) setItems(restoreCart(JSON.parse(savedCart)));
           }
         } catch {
           // An unavailable or invalid cache starts an empty, usable bag.
@@ -174,38 +156,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         } catch { /* Favorites remain usable when their cache is unavailable. */ }
         finally { if (!isCancelled) setIsFavoritesLoading(false); }
 
-        const savedPhone = localStorage.getItem("pulsotech_phone");
-        if (savedPhone && savedPhone !== "51987654321") {
-          setWhatsappNumber(savedPhone);
-        }
-
-        const savedCoupons = localStorage.getItem("pulsotech_coupons");
-        let initialCoupons = DEFAULT_COUPONS;
-        if (savedCoupons) {
-          const parsedCoupons = JSON.parse(savedCoupons);
-          if (Array.isArray(parsedCoupons)) initialCoupons = parsedCoupons;
-        }
-        if (!isCancelled) setCoupons(initialCoupons);
-
-        // Cargar cupones y teléfono receptor persistentes desde Supabase
-        const cloudCoupons = await fetchCouponsFromSupabase();
-        if (!isCancelled && cloudCoupons !== null) {
-          setCoupons(cloudCoupons);
-          try {
-            localStorage.setItem("pulsotech_coupons", JSON.stringify(cloudCoupons));
-          } catch {
-            // Ignorar error de almacenamiento
+        if (isSupabaseReady()) {
+          // Optional browser storage cannot interrupt authoritative settings reads.
+          const [cloudCoupons, cloudSettings] = await Promise.all([fetchCouponsFromSupabase(), fetchStoreSettingsFromSupabase()]);
+          if (!isCancelled) {
+            setCoupons(cloudCoupons || []);
+            setCouponsReady(cloudCoupons !== null);
+            if (cloudSettings?.whatsappNumber && /^51\d{9}$/.test(cloudSettings.whatsappNumber)) setWhatsappNumber(cloudSettings.whatsappNumber);
           }
-        }
-
-        const cloudSettings = await fetchStoreSettingsFromSupabase();
-        if (!isCancelled && cloudSettings?.whatsappNumber) {
-          setWhatsappNumber(cloudSettings.whatsappNumber);
+        } else {
           try {
-            localStorage.setItem("pulsotech_phone", cloudSettings.whatsappNumber);
-          } catch {
-            // Ignorar
-          }
+            const savedCoupons = localStorage.getItem("pulsotech_coupons");
+            if (savedCoupons && !isCancelled) setCoupons(parseCoupons(JSON.parse(savedCoupons)));
+            const savedPhone = localStorage.getItem("pulsotech_phone");
+            if (savedPhone && /^51\d{9}$/.test(savedPhone) && !isCancelled) setWhatsappNumber(savedPhone);
+          } catch { /* Invalid optional settings leave an empty coupon list. */ }
         }
       } catch {
         // Ignorar error de parsing
@@ -288,12 +253,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     checkingStock.current = true;
     setIsCheckingStock(true);
     try {
-      const latestProducts = isSupabaseReady() ? await refreshFromCloud() : products;
-      if (latestProducts === null) {
-        setStockNotice("No pudimos comprobar el stock. Intenta de nuevo antes de enviar tu pedido.");
+      const cloud = isSupabaseReady();
+      const [latestProducts, latestCoupons, latestSettings] = cloud
+        ? await Promise.all([refreshFromCloud(), fetchCouponsFromSupabase(), fetchStoreSettingsFromSupabase()])
+        : [products, coupons, { whatsappNumber }];
+      if (latestProducts === null || latestCoupons === null || latestSettings === null) {
+        setStockNotice("No pudimos comprobar la disponibilidad y las condiciones de tu pedido. Intenta de nuevo.");
         return null;
       }
-      const checked = inspectCart(savedItems, latestProducts);
+      const recipient = latestSettings.whatsappNumber || STORE_SETTINGS.whatsappNumber;
+      if (!/^51\d{9}$/.test(recipient)) { setStockNotice("El contacto de la tienda no está disponible. Intenta más tarde."); return null; }
+      setWhatsappNumber(recipient);
+      const checked = inspectCheckout(savedItems, latestProducts, effectiveCoupon, latestCoupons);
+      setCoupons(latestCoupons); setCouponsReady(true);
+      setAppliedCoupon(checked.coupon);
       setItems(checked.items);
       if (checked.issues.size > 0) {
         setStockNotice("Revisa los productos marcados en tu bolsa antes de continuar.");
@@ -303,8 +276,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setStockNotice("Se actualizaron los precios de tu bolsa. Revisa el total y vuelve a pulsar Pedir por WhatsApp.");
         return null;
       }
+      if (checked.couponChanged) {
+        setStockNotice("El cupón cambió o ya no está disponible. Actualizamos el total; revísalo antes de continuar.");
+        return null;
+      }
       clearStockNotice();
-      return { items: checked.items, ...cartTotals(checked.items, effectiveCoupon) };
+      return { items: checked.items, discountAmount: checked.discountAmount, total: checked.total, coupon: checked.coupon, whatsappNumber: recipient };
     } catch {
       setStockNotice("No pudimos comprobar el stock. Intenta de nuevo antes de enviar tu pedido.");
       return null;
@@ -328,6 +305,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Manejadores de Cupones
   const applyCoupon = (code: string): { success: boolean; message: string } => {
+    if (!couponsReady) return { success: false, message: "No pudimos cargar los cupones. Vuelve a cargar la página e intenta de nuevo." };
     const cleanCode = code.trim().toUpperCase();
     const found = coupons.find((c) => c.code.toUpperCase() === cleanCode);
 
@@ -352,18 +330,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setAppliedCoupon(null);
   };
 
-  const syncCouponsToCloud = async (overrideCoupons?: Coupon[]): Promise<boolean> => {
-    try {
-      const toSync = overrideCoupons || coupons;
-      return await saveCouponsToSupabase(toSync);
-    } catch (err) {
-      console.error("Error al sincronizar cupones a la nube:", err);
-      return false;
-    }
-  };
-
   const persistCoupons = async (next: Coupon[]) => {
-    const commit = () => { couponsRef.current = next; setCoupons(next); };
+    if (!couponsReady) throw new Error("Carga los cupones actuales antes de modificarlos para evitar reemplazar la lista.");
+    const commit = () => { couponsRef.current = next; setCoupons(next); setCouponsReady(true); };
     if (isSupabaseReady()) await confirmMutation(() => saveCouponsToSupabase(next), commit);
     else commit();
   };
@@ -435,13 +404,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         isFavoritesLoading,
         isFavoritesOpen,
         coupons,
-        appliedCoupon,
+        appliedCoupon: effectiveCoupon,
         applyCoupon,
         removeCoupon,
         addCoupon,
         deleteCoupon,
         toggleCoupon,
-        syncCouponsToCloud,
       }}
     >
       {children}

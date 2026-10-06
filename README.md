@@ -20,6 +20,10 @@ El mensaje de compra mantiene un formato formal. Abrir WhatsApp no confirma que 
 
 La venta registrada en administración utiliza la operación atómica existente, que descuenta stock y evita descuentos duplicados. **Eliminar un registro de venta no repone automáticamente las unidades.** Después de una prueba, revisar el inventario; no borrar ventas reales para corregir stock.
 
+Cancelar una orden la conserva en el historial y la excluye de ingresos, unidades vendidas, canales y gráficos. Revisar aparte las unidades efectivamente devueltas al inventario. Una venta nueva se registra pendiente, en camino o entregada; se cancela desde su orden.
+
+La edición de productos comprueba el stock y la versión que había al abrir el formulario. Si una venta u otra edición los cambió, se rechaza el guardado, se actualiza el inventario y se conservan los datos del formulario para revisarlos. Los cupones y el contacto receptor se consultan nuevamente antes del pedido; un cambio de oferta pide revisar el total. Los importes se calculan en céntimos.
+
 ## Desarrollo y comprobaciones
 
 ```powershell
@@ -61,3 +65,5 @@ Completar datos del negocio, fotografías y condiciones reales. Revisar las pol�
 Probar en celular y escritorio: colores y galerías, favoritos, cantidades, cupones, dirección y referencia, cambios de precio, agotados y envío de la solicitud. Verificar también registro de ventas, stock y atención de reclamos.
 
 Guardar respaldos cifrados fuera del repositorio y ensayar una recuperación en una base separada. `npm run backup:verify -- <archivo>` ayuda a preparar la recuperación sin publicar datos personales. No restaurar sobre una base con inventario, clientes o ventas activas.
+
+La exportación del catálogo JSON es una copia de productos y fotografías; no restaura Supabase desde el navegador. Seguir [la guía de recuperación](docs/respaldos-y-recuperacion.md) para las copias operativas cifradas. Consultar [la revisión funcional](docs/revision-operativa-2026-10-06.md) para los cambios y comprobaciones del panel y la compra.

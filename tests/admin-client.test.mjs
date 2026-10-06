@@ -7,6 +7,7 @@ import { verifyAdminAccess, isPublicSupabaseKey } from "../src/lib/admin-auth.ts
 import { normalizeSalesRecords } from "../src/lib/private-sales.ts";
 import { attachCatalogMedia } from "../src/lib/catalog-media.ts";
 import { parseCommerceSettings } from "../src/lib/commerce.ts";
+import { parseCoupons } from "../src/lib/coupon-validation.ts";
 
 const require = createRequire(import.meta.url);
 let user = null;
@@ -65,10 +66,11 @@ new Function("require", "module", "exports", source)((name) => {
   if (name === "./private-sales") return { normalizeSalesRecords };
   if (name === "./catalog-media") return { attachCatalogMedia };
   if (name === "./commerce") return { parseCommerceSettings };
+  if (name === "./coupon-validation") return { parseCoupons };
   return require(name);
 }, compiledModule, compiledModule.exports);
 const api = compiledModule.exports;
-const product = { id: "audio", name: "Modelo", price: 90, specs: {}, colors: [] };
+const product = { id: "audio", name: "Modelo", price: 90, stockCount: 5, specs: {}, colors: [] };
 const sale = { id: "VTA-test", productName: "Modelo", quantity: 1, total: 90, customerName: "Cliente", channel: "WhatsApp", date: "2026-10-04", timestamp: 1791090000000 };
 const salesCommand = { kind: "create", sale, productId: "audio", expectedPrice: 90 };
 const protectedOperations = [
@@ -209,6 +211,36 @@ test("manual stock edits use an expected quantity and fail when a concurrent sal
   tableMutations.length = 0;
   for (const invalid of [-1, 0.5, NaN, 1000001]) assert.equal(await api.updateStockInSupabase("audio", invalid, 2), false);
   assert.deepEqual(tableMutations, []);
+});
+
+test("a product form guards the stock and version from when it was opened, even when its draft changes stock", async () => {
+  const opened = { ...product, updatedAt: "2026-10-06T12:00:00.000Z" };
+  const draft = { ...opened, stockCount: 8, images: ["/new-photo.png"], updatedAt: "2026-10-06T13:00:00.000Z" };
+  tableMutations.length = 0;
+  assert.equal(await api.updateProductInSupabase(draft, opened), true);
+  assert.ok(tableMutations.some((operation) => operation.eq?.[0] === "stock_count" && operation.eq[1] === 5));
+  assert.ok(tableMutations.some((operation) => operation.eq?.[0] === "updated_at" && operation.eq[1] === opened.updatedAt));
+  assert.equal(tableMutations.find((operation) => operation.update).update.stock_count, 8);
+  productWriteRows = [];
+  try { assert.equal(await api.updateProductInSupabase(draft, opened), false); }
+  finally { productWriteRows = [{ id: "audio" }]; }
+  assert.equal(api.dbRowToProduct({ id: "audio", updated_at: opened.updatedAt }).updatedAt, opened.updatedAt);
+});
+
+test("an unavailable or corrupt coupon list is not reported as an empty successful read", async () => {
+  const coupon = { id: "offer", code: "OFERTA", discountType: "percentage", discountValue: 10, minPurchase: 50, isActive: true };
+  salesValue = [coupon];
+  assert.deepEqual(await api.fetchCouponsFromSupabase(), [coupon]);
+  const warn = console.warn, error = console.error;
+  console.warn = () => {}; console.error = () => {};
+  try {
+    for (const value of [{}, [{ ...coupon, discountValue: 150 }], [coupon, coupon]]) {
+      salesValue = value;
+      assert.equal(await api.fetchCouponsFromSupabase(), null);
+    }
+    tableError = { code: "unavailable" };
+    assert.equal(await api.fetchCouponsFromSupabase(), null);
+  } finally { salesValue = []; tableError = null; console.warn = warn; console.error = error; }
 });
 
 test("database conversion retains general and color galleries without inventing missing stock or ratings", () => {

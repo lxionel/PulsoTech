@@ -4,6 +4,7 @@ import { isPublicSupabaseKey, verifyAdminAccess } from "./admin-auth";
 import { normalizeSalesRecords, type SaleCommand, type SaleCommandResult } from "./private-sales";
 import { attachCatalogMedia, type CatalogMediaManifest } from "./catalog-media";
 import { parseCommerceSettings, type CommerceSettings } from "./commerce";
+import { parseCoupons } from "./coupon-validation";
 
 const LOCAL_STORAGE_URL_KEY = "pulsotech_supabase_url";
 const LOCAL_STORAGE_KEY_KEY = "pulsotech_supabase_anon_key";
@@ -132,6 +133,7 @@ export interface DbStoreSettingRow {
 export function dbRowToProduct(row: DbProductRow): Product {
   return {
     id: String(row.id),
+    updatedAt: row.updated_at,
     name: row.name || "",
     slug: row.slug || "",
     subtitle: row.subtitle || "",
@@ -183,7 +185,7 @@ export function productToDbRow(p: Product): DbProductRow {
     sound_profile: p.soundProfile || undefined,
     features: p.features || [],
     tags: p.tags || [],
-    updated_at: new Date().toISOString(),
+    updated_at: p.updatedAt || new Date().toISOString(),
   };
 }
 
@@ -276,12 +278,16 @@ export async function createProductInSupabase(product: Product): Promise<boolean
   } catch { return false; }
 }
 
-export async function updateProductInSupabase(product: Product): Promise<boolean> {
+export async function updateProductInSupabase(product: Product, expected: Product = product): Promise<boolean> {
   const client = getSupabaseClient();
   if (!client) return false;
   try {
     await requireStoreAdmin(client);
-    const { data, error } = await client.from("products").update(productToDbRow(product)).eq("id", product.id).select("id").abortSignal(AbortSignal.timeout(15000));
+    let query = client.from("products").update(productToDbRow(product)).eq("id", product.id);
+    // A form opened before a sale or another edit must not restore obsolete stock or photos.
+    query = query.eq("stock_count", expected.stockCount);
+    if (expected.updatedAt) query = query.eq("updated_at", expected.updatedAt);
+    const { data, error } = await query.select("id").abortSignal(AbortSignal.timeout(15000));
     return !error && Array.isArray(data) && data.length === 1;
   } catch { return false; }
 }
@@ -315,7 +321,7 @@ export async function deleteProductFromSupabase(id: string): Promise<boolean> {
   }
 }
 
-export async function updateStockInSupabase(id: string, newStock: number, expectedStock?: number): Promise<boolean> {
+export async function updateStockInSupabase(id: string, newStock: number, expectedStock?: number, updatedAt = new Date().toISOString()): Promise<boolean> {
   const client = getSupabaseClient();
   if (!client) return false;
 
@@ -327,7 +333,7 @@ export async function updateStockInSupabase(id: string, newStock: number, expect
       .update({
         stock_count: newStock,
         in_stock: newStock > 0,
-        updated_at: new Date().toISOString(),
+        updated_at: updatedAt,
       })
       .eq("id", id);
     if (expectedStock !== undefined) query = query.eq("stock_count", expectedStock);
@@ -491,6 +497,7 @@ export async function fetchCouponsFromSupabase(): Promise<Coupon[] | null> {
       .from("store_settings")
       .select("value")
       .eq("key", "coupons")
+      .abortSignal(AbortSignal.timeout(10000))
       .maybeSingle();
 
     if (error) {
@@ -498,10 +505,7 @@ export async function fetchCouponsFromSupabase(): Promise<Coupon[] | null> {
       return null;
     }
 
-    if (data && Array.isArray(data.value)) {
-      return data.value as Coupon[];
-    }
-    return [];
+    return data ? parseCoupons(data.value) : [];
   } catch (err) {
     console.error("Exception fetching coupons from Supabase:", err);
     return null;

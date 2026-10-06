@@ -25,7 +25,7 @@ interface ProductsContextType {
   isLoading: boolean;
   products: Product[];
   addProduct: (product: Product) => Promise<void>;
-  updateProduct: (product: Product) => Promise<void>;
+  updateProduct: (product: Product, expected?: Product) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   updateStock: (id: string, deltaOrExact: number, isDelta?: boolean) => Promise<void>;
   applyConfirmedStock: (stock: { id: string; stockCount: number; inStock: boolean }) => void;
@@ -262,14 +262,22 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const addProduct = useCallback((product: Product) => enqueue(async () => {
     validateProductContent(product);
     if (state.current.products.some((item) => item.id === product.id)) throw new Error("El código de producto ya existe.");
-    await writeConfirmed(() => createProductInSupabase(product), () => commitProducts([product, ...state.current.products]));
+    const next = { ...product, updatedAt: new Date().toISOString() };
+    await writeConfirmed(() => createProductInSupabase(next), () => commitProducts([next, ...state.current.products]));
   }), [enqueue, writeConfirmed, commitProducts]);
 
-  const updateProduct = useCallback((product: Product) => enqueue(async () => {
+  const updateProduct = useCallback((product: Product, expected?: Product) => enqueue(async () => {
     validateProductContent(product);
-    if (!state.current.products.some((item) => item.id === product.id)) throw new Error("El producto ya no existe. Actualiza el inventario.");
-    await writeConfirmed(() => updateProductInSupabase(product), () => commitProducts(state.current.products.map((item) => item.id === product.id ? product : item)));
-  }), [enqueue, writeConfirmed, commitProducts]);
+    const current = state.current.products.find((item) => item.id === product.id);
+    if (!current) throw new Error("El producto ya no existe. Actualiza el inventario.");
+    const next = { ...product, updatedAt: new Date().toISOString() };
+    try {
+      await writeConfirmed(() => updateProductInSupabase(next, expected || current), () => commitProducts(state.current.products.map((item) => item.id === product.id ? next : item)));
+    } catch {
+      await refreshFromCloud();
+      throw new Error("No se confirmó la edición. El producto o su stock pueden haber cambiado. Tus datos siguen en el formulario; revisa el inventario y vuelve a abrir la ficha antes de guardar.");
+    }
+  }), [enqueue, writeConfirmed, commitProducts, refreshFromCloud]);
 
   const deleteProduct = useCallback((id: string) => enqueue(async () => {
     await writeConfirmed(() => deleteProductFromSupabase(id), () => commitProducts(state.current.products.filter((item) => item.id !== id)));
@@ -280,8 +288,9 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     if (!target) throw new Error("El producto ya no existe.");
     const stock = isDelta ? Math.max(0, target.stockCount + value) : value;
     if (!Number.isSafeInteger(stock) || stock < 0 || stock > 1e6) throw new Error("El stock debe ser un número entero entre 0 y 1 000 000.");
+    const updatedAt = new Date().toISOString();
     try {
-      await writeConfirmed(() => updateStockInSupabase(id, stock, target.stockCount), () => commitProducts(state.current.products.map((item) => item.id === id ? { ...item, stockCount: stock, inStock: stock > 0 } : item)));
+      await writeConfirmed(() => updateStockInSupabase(id, stock, target.stockCount, updatedAt), () => commitProducts(state.current.products.map((item) => item.id === id ? { ...item, stockCount: stock, inStock: stock > 0, updatedAt } : item)));
     } catch {
       await refreshFromCloud();
       throw new Error("No se confirmó el stock. Puede haber cambiado desde otro dispositivo o una venta. Revisa el inventario y vuelve a intentarlo.");

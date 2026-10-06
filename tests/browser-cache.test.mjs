@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { productForCache, cartForCache, persistBrowserValues } from "../src/lib/browser-cache.ts";
+import { productForCache, cartForCache, restoreCart, persistBrowserValues } from "../src/lib/browser-cache.ts";
 import { inspectCart } from "../src/lib/cart-stock.ts";
 
 const photo = "data:image/png;base64," + "A".repeat(2 * 1024 * 1024);
@@ -29,4 +29,16 @@ test("a failed cache write does not stop independent favorites and preferences f
   const storage = { setItem: (key, value) => { if (key === "cart") throw Error("quota"); saved.set(key, value); } };
   assert.deepEqual(persistBrowserValues(storage, [["cart", "data"], ["favorites", "[]"], ["phone", "51902377567"]]), ["cart"]);
   assert.deepEqual([...saved], [["favorites", "[]"], ["phone", "51902377567"]]);
+});
+
+test("a damaged saved bag preserves valid products and merges duplicate color lines without crashing", () => {
+  const model = productForCache(product);
+  const line = { product: model, selectedColor: model.colors[0], quantity: 1 };
+  const restored = restoreCart([null, {}, { ...line, quantity: -1 }, { ...line, product: { id: "broken" } }, line, { ...line, quantity: 2 }]);
+  assert.equal(restored.length, 1);
+  assert.equal(restored[0].quantity, 3);
+  assert.equal(restored[0].product.id, product.id);
+  assert.equal(inspectCart(restored, [product]).issues.size, 0);
+  for (const value of [null, "wrong", {}, Array(201).fill(line)]) assert.deepEqual(restoreCart(value), []);
+  assert.equal(line.quantity, 1);
 });

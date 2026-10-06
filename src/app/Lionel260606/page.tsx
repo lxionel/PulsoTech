@@ -8,6 +8,7 @@ import { STORE_SETTINGS } from "@/data/products";
 import { getAssetUrl } from "@/utils/paths";
 import { Product, ProductColor, SaleRecord } from "@/types";
 import { usePrivateSales } from "@/hooks/usePrivateSales";
+import { salesForAccounting, prepareSaleValues } from "@/lib/sales-validation";
 import LegacySalesBackup from "@/components/LegacySalesBackup";
 import StoreBackupPanel from "@/components/StoreBackupPanel";
 import Logo from "@/components/Logo";
@@ -22,7 +23,7 @@ import { commerceSpecs, productCommerce, type ProductCommerce } from "@/lib/comm
 import { colorImages, withColorImages, uniqueImages } from "@/lib/product-media";
 import { isAudioCategory } from "@/lib/categories";
 import { parsePlaybackHours } from "@/lib/audio-filters";
-import { MAX_BACKUP_BYTES, csvCell, parseStoreBackup, restoreBackupLocally, validateProductContent } from "@/lib/content-security";
+import { csvCell, validateProductContent } from "@/lib/content-security";
 import {
   Package,
   DollarSign,
@@ -39,7 +40,6 @@ import {
   Image as ImageIcon,
   Tag,
   RefreshCw,
-  Upload,
   Eye,
   Filter,
   Plus,
@@ -182,6 +182,7 @@ function AdminWorkspace() {
   } = useCart();
   const {
     products,
+    isLoading: isCatalogLoading,
     addProduct,
     updateProduct,
     deleteProduct,
@@ -310,6 +311,7 @@ function AdminWorkspace() {
 
   // ====== ESTADO DEL FORMULARIO DE AGREGAR / EDITAR PRODUCTO (INICIALMENTE LIMPIO) ======
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editingProductSnapshot, setEditingProductSnapshot] = useState<Product | null>(null);
   const [formActiveStep, setFormActiveStep] = useState<1 | 2 | 3 | 4>(1);
   const [formCustomId, setFormCustomId] = useState(generate6DigitId());
   const [formName, setFormName] = useState("");
@@ -371,7 +373,7 @@ function AdminWorkspace() {
   };
 
   // Métricas Generales
-  const totalRevenue = sales.reduce((acc, s) => acc + s.total, 0);
+  const totalRevenue = salesForAccounting(sales).reduce((acc, s) => acc + s.total, 0);
   const lowStockCount = products.filter((p) => (p.stockCount || 0) > 0 && (p.stockCount || 0) <= 5).length;
   const outOfStockCount = products.filter((p) => (p.stockCount || 0) <= 0).length;
   const inStockCount = products.filter((p) => (p.stockCount || 0) > 5).length;
@@ -451,9 +453,10 @@ function AdminWorkspace() {
   });
 
   // KPIs del Período
-  const periodRevenue = periodSales.reduce((acc, s) => acc + s.total, 0);
-  const periodOrdersCount = periodSales.length;
-  const periodUnitsCount = periodSales.reduce((acc, s) => acc + s.quantity, 0);
+  const accountedSales = salesForAccounting(periodSales);
+  const periodRevenue = accountedSales.reduce((acc, s) => acc + s.total, 0);
+  const periodOrdersCount = accountedSales.length;
+  const periodUnitsCount = accountedSales.reduce((acc, s) => acc + s.quantity, 0);
   const periodAvgTicket = periodOrdersCount > 0 ? periodRevenue / periodOrdersCount : 0;
 
   const periodLabel =
@@ -468,9 +471,9 @@ function AdminWorkspace() {
       : "Todo el Historial";
 
   // Distribución por canal en el período seleccionado
-  const whatsappSales = periodSales.filter((s) => s.channel === "WhatsApp");
-  const presencialSales = periodSales.filter((s) => s.channel === "Presencial");
-  const webSales = periodSales.filter((s) => s.channel === "Web");
+  const whatsappSales = accountedSales.filter((s) => s.channel === "WhatsApp");
+  const presencialSales = accountedSales.filter((s) => s.channel === "Presencial");
+  const webSales = accountedSales.filter((s) => s.channel === "Web");
 
   const whatsappRevenue = whatsappSales.reduce((acc, s) => acc + s.total, 0);
   const presencialRevenue = presencialSales.reduce((acc, s) => acc + s.total, 0);
@@ -478,7 +481,7 @@ function AdminWorkspace() {
 
   // Top productos más vendidos en el período
   const productSalesMap = new Map<string, { name: string; units: number; revenue: number }>();
-  periodSales.forEach((s) => {
+  accountedSales.forEach((s) => {
     const key = s.productName || "Producto";
     const existing = productSalesMap.get(key) || { name: key, units: 0, revenue: 0 };
     existing.units += s.quantity;
@@ -494,7 +497,7 @@ function AdminWorkspace() {
     string,
     { label: string; sublabel: string; revenue: number; orders: number; ts: number }
   >();
-  periodSales.forEach((s) => {
+  accountedSales.forEach((s) => {
     const d = new Date(s.timestamp || 0);
     const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     const dayLabel = `${d.getDate()} ${monthNames[d.getMonth()].slice(0, 3)}`;
@@ -545,37 +548,6 @@ function AdminWorkspace() {
     }
   };
 
-  const handleRestoreBackupJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = "";
-    if (!/\.json$/i.test(file.name) || file.size > MAX_BACKUP_BYTES) {
-      alert("Selecciona un respaldo JSON de como máximo 10 MB.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const raw = event.target?.result;
-        if (typeof raw !== "string") return;
-        const parsed = parseStoreBackup(raw);
-        if (
-          confirm(
-            `Se detectaron ${parsed.products.length} productos en el respaldo.\n\n¿Deseas restaurar este catálogo ahora? Esta acción actualizará los datos locales.${parsed.sales?.length ? "\nEl archivo también contiene ventas, que no se importarán. El historial privado de Supabase se conserva." : ""}`
-          )
-        ) {
-          restoreBackupLocally(localStorage, parsed);
-          alert("Copia de seguridad restaurada correctamente. Recargando el panel...");
-          window.location.reload();
-        }
-      } catch (failure) {
-        alert(failure instanceof SyntaxError ? "El archivo no contiene un JSON válido." : failure instanceof Error ? failure.message : "No se pudo procesar el respaldo.");
-      }
-    };
-    reader.onerror = () => alert("No se pudo leer el archivo de respaldo.");
-    reader.readAsText(file);
-  };
-
   const handleRecordManualSale = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!salesReady || salesLoading || salesSaving) return;
@@ -599,14 +571,14 @@ function AdminWorkspace() {
         return;
       }
       productName = manualProductName.trim();
-      const customPriceParsed = parseFloat(newSaleCustomPrice);
-      if (isNaN(customPriceParsed) || customPriceParsed <= 0) {
+      const customPriceParsed = Number(newSaleCustomPrice);
+      if (!Number.isFinite(customPriceParsed) || customPriceParsed <= 0) {
         setSaleFormError("Por favor ingresa el precio total en Soles (ej: 89.00).");
         return;
       }
       unitPrice = customPriceParsed / (newSaleQty || 1);
     } else {
-      selectedProd = products.find((i) => i.id === newSaleProduct) || products[0];
+      selectedProd = products.find((i) => i.id === newSaleProduct);
       if (!selectedProd) {
         setSaleFormError("No se encontró el producto. Puedes usar la opción 'Escribir producto manual'.");
         return;
@@ -621,17 +593,10 @@ function AdminWorkspace() {
 
     }
 
-    const nowRef = new Date();
-    const [yStr, mStr, dStr] = (newSaleDate || getLocalDateString()).split("-");
-    const [hStr, minStr] = (newSaleTime || "12:00").split(":");
-    const year = parseInt(yStr) || nowRef.getFullYear();
-    const month = (parseInt(mStr) || (nowRef.getMonth() + 1)) - 1;
-    const day = parseInt(dStr) || nowRef.getDate();
-    const parsedHours = parseInt(hStr);
-    const hours = Number.isFinite(parsedHours) ? parsedHours : 12;
-    const mins = parseInt(minStr) || 0;
-
-    const saleDateObj = new Date(year, month, day, hours, mins, 0);
+    let values: ReturnType<typeof prepareSaleValues>;
+    try { values = prepareSaleValues({ quantity: newSaleQty, customTotal: newSaleCustomPrice, unitPrice, date: newSaleDate, time: newSaleTime }); }
+    catch (failure) { setSaleFormError(failure instanceof Error ? failure.message : "Revisa los datos de la venta."); return; }
+    const saleDateObj = values.date;
     const timestamp = saleDateObj.getTime();
 
     const dateFormatted = `${saleDateObj.toLocaleDateString("es-PE", {
@@ -643,10 +608,7 @@ function AdminWorkspace() {
       minute: "2-digit",
     })}`;
 
-    const computedTotal = Math.round((
-      newSaleCustomPrice !== ""
-        ? parseFloat(newSaleCustomPrice) || 0
-        : unitPrice * newSaleQty) * 100) / 100;
+    const computedTotal = values.total;
 
     const newRecord: SaleRecord = {
       id: draftSaleId.current ?? `VTA-${crypto.randomUUID()}`,
@@ -672,7 +634,7 @@ function AdminWorkspace() {
     if (!saved?.sale) return;
     draftSaleId.current = null;
     // This is a local display update, not a second inventory write.
-    if (saved.stock) applyConfirmedStock(saved.stock);
+    if (saved.stock) { applyConfirmedStock(saved.stock); void refreshFromCloud(); }
     setLastRegisteredSale(saved.sale);
     setNewSaleCustomer("");
     setNewSaleCustomerPhone("");
@@ -703,8 +665,8 @@ function AdminWorkspace() {
     status: "pending" | "shipped" | "delivered" | "cancelled"
   ) => {
     if (!await executeSale({ kind: "status", id: saleId, status })) return;
-    setSuccessNotice(`Estado de la orden #${saleId} actualizado.`);
-    setTimeout(() => setSuccessNotice(""), 3000);
+    setSuccessNotice(status === "cancelled" ? `Orden #${saleId} cancelada y excluida de los ingresos. Revisa el inventario: las unidades no se reponen automáticamente.` : `Estado de la orden #${saleId} actualizado.`);
+    setTimeout(() => setSuccessNotice(""), status === "cancelled" ? 8000 : 3000);
   };
 
   const handleDeleteSale = async (saleId: string) => {
@@ -732,7 +694,8 @@ function AdminWorkspace() {
       alert("Carga y comprueba el historial antes de exportar ventas.");
       return;
     }
-    const dataToExport = displayedSales.length > 0 ? displayedSales : sales;
+    const dataToExport = displayedSales;
+    if (!dataToExport.length) { alert("No hay ventas que coincidan con los filtros seleccionados."); return; }
     if (dataToExport.length === 0) {
       alert("No hay ventas registradas para exportar en este período.");
       return;
@@ -775,6 +738,7 @@ function AdminWorkspace() {
   };
 
   const handleExportProductsCSV = () => {
+    if (isCatalogLoading || !isCloudConnected) { alert("Actualiza el catálogo desde la nube antes de exportar."); return; }
     if (products.length === 0) {
       alert("No hay productos en inventario para exportar.");
       return;
@@ -803,6 +767,7 @@ function AdminWorkspace() {
   };
 
   const handleExportBackupJSON = () => {
+    if (isCatalogLoading || !isCloudConnected) { alert("Actualiza el catálogo desde la nube antes de exportar."); return; }
     const backupData = {
       store: "PulsoTech",
       exportedAt: new Date().toISOString(),
@@ -983,6 +948,8 @@ function AdminWorkspace() {
   // Cargar datos en el formulario para editar
   const handleEditClick = (product: Product) => {
     if (uploadingGalleries || isSavingProduct) return;
+    if (isCatalogLoading || !isCloudConnected) { setSuccessNotice("Espera a que se cargue el inventario desde la nube antes de editar."); return; }
+    setEditingProductSnapshot(product);
     setFormCommerce(productCommerce(product));
     setFormAudioType(product.specs?.audioType || "");
     setFormAncEnabled(product.specs?.ancEnabled || "");
@@ -1040,6 +1007,8 @@ function AdminWorkspace() {
   // Limpiar formulario para nuevo producto (100% LIMPIO, SIN EJEMPLOS PRECARGADOS)
   const handleNewProductClick = () => {
     if (uploadingGalleries || isSavingProduct) return;
+    if (isCatalogLoading || !isCloudConnected) { setSuccessNotice("Espera a que se cargue el inventario desde la nube antes de crear un producto."); return; }
+    setEditingProductSnapshot(null);
     setFormCommerce({ visible: true, warranty: "", included: "", delivery: "" });
     setFormAudioType("");
     setFormAncEnabled("");
@@ -1078,6 +1047,7 @@ function AdminWorkspace() {
   const handleSaveProduct = async (e: Pick<React.FormEvent, "preventDefault">) => {
     e.preventDefault();
     if (productSaveInProgress.current || uploadingGalleries) return;
+    if (isCatalogLoading || !isCloudConnected) { alert("Actualiza el inventario desde la nube antes de guardar."); return; }
     const previousProduct = products.find((product) => product.id === editingProductId);
     const playbackHours = parsePlaybackHours(formPlaybackHours);
     if (isAudioCategory(formCategory) && formPlaybackHours.trim() && playbackHours === undefined) {
@@ -1182,7 +1152,7 @@ function AdminWorkspace() {
     productSaveInProgress.current = true;
     setIsSavingProduct(true);
     try {
-      if (editingProductId) await updateProduct(productPayload);
+      if (editingProductId) await updateProduct(productPayload, editingProductSnapshot || undefined);
       else await addProduct(productPayload);
       setSuccessNotice(`Producto "${productPayload.name}" (#${productPayload.id}) guardado correctamente.`);
       setTimeout(() => setSuccessNotice(""), 5000);
@@ -4728,7 +4698,7 @@ function AdminWorkspace() {
                             type="number"
                             min={1}
                             value={newSaleQty}
-                            onChange={(e) => setNewSaleQty(parseInt(e.target.value) || 1)}
+                            onChange={(e) => setNewSaleQty(Number(e.target.value))}
                             className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-neutral-300 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:border-neutral-900"
                           />
                         </div>
@@ -4869,7 +4839,6 @@ function AdminWorkspace() {
                             <option value="pending">Pendiente de Despacho</option>
                             <option value="shipped">En Camino (Courier / Motorizado)</option>
                             <option value="delivered">Entregado y Cobrado</option>
-                            <option value="cancelled">Cancelado</option>
                           </select>
                         </div>
 
@@ -5023,7 +4992,7 @@ function AdminWorkspace() {
                     <div className="text-2xl sm:text-3xl font-black text-neutral-950 font-mono tracking-tight mt-1">
                       {periodOrdersCount} <span className="text-xs font-semibold text-neutral-500 font-sans">pedidos</span>
                     </div>
-                    <span className="text-[11px] text-neutral-400 mt-1 block">Registrados en rango</span>
+                    <span className="text-[11px] text-neutral-400 mt-1 block">Sin órdenes canceladas</span>
                   </div>
 
                   <div className="p-4 sm:p-5 rounded-2xl border border-neutral-200/90 bg-white shadow-2xs">
@@ -5039,7 +5008,7 @@ function AdminWorkspace() {
                     <div className="text-2xl sm:text-3xl font-black text-neutral-950 font-mono tracking-tight mt-1">
                       {periodUnitsCount} <span className="text-xs font-semibold text-neutral-500 font-sans">uds</span>
                     </div>
-                    <span className="text-[11px] text-neutral-400 mt-1 block">Descontadas de stock</span>
+                    <span className="text-[11px] text-neutral-400 mt-1 block">Sin órdenes canceladas</span>
                   </div>
                 </div>
 
@@ -5556,30 +5525,7 @@ function AdminWorkspace() {
                         </button>
                       </div>
 
-                      {/* Restaurar Respaldo JSON */}
-                      <div className="pt-2 border-t border-neutral-100">
-                        <div className="p-3 rounded-xl bg-neutral-50/80 border border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div>
-                            <span className="text-xs font-bold text-neutral-900 block">
-                              Restaurar desde Respaldo JSON
-                            </span>
-                            <span className="text-[10px] text-neutral-500">
-                              Carga un archivo de respaldo previo para restablecer el catálogo.
-                            </span>
-                          </div>
-
-                          <label className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-neutral-300 hover:border-neutral-900 text-neutral-900 text-xs font-bold cursor-pointer transition-colors shadow-2xs shrink-0">
-                            <Upload className="w-3.5 h-3.5 text-neutral-600" />
-                            <span>Cargar Archivo</span>
-                            <input
-                              type="file"
-                              accept=".json,application/json"
-                              onChange={handleRestoreBackupJSON}
-                              className="hidden"
-                            />
-                          </label>
-                        </div>
-                      </div>
+                      <p className="border-t border-neutral-100 pt-3 text-[11px] leading-relaxed text-neutral-500">La copia cifrada permite recuperar la tienda en una base separada. La exportación del catálogo en JSON conserva productos y fotografías, pero no reemplaza el respaldo completo.</p>
                   </div>
                 )}
               </div>

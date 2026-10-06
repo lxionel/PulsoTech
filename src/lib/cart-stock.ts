@@ -27,6 +27,7 @@ export function inspectCart(items: CartItem[], products: Product[]) {
     const product = products.find((candidate) => candidate.id === item.product.id);
     let message = "";
     if (!product) message = "Este producto ya no está disponible. Retíralo de la bolsa.";
+    else if (!Number.isFinite(product.price) || product.price <= 0) message = "No pudimos comprobar el precio. Retira el producto o consulta con la tienda.";
     else if (availableStock(product) === 0) message = "Producto agotado. Retíralo para continuar.";
     else if (product.colors?.length && !product.colors.some((color) => color.name === colorName(item))) {
       message = "Este color ya no está disponible. Retíralo y elige otro en la ficha.";
@@ -72,11 +73,19 @@ export function setCartQuantity(items: CartItem[], products: Product[], productI
 }
 
 export function cartTotals(items: CartItem[], coupon: Coupon | null) {
-  const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-  let discountAmount = 0;
+  const subtotalCents = items.reduce((sum, item) => sum + Math.round(item.product.price * 100) * item.quantity, 0);
+  const subtotal = subtotalCents / 100;
+  let discountCents = 0;
   if (coupon?.isActive && subtotal >= (coupon.minPurchase || 0)) {
-    discountAmount = coupon.discountType === "percentage" ? subtotal * coupon.discountValue / 100 : coupon.discountValue;
-    discountAmount = Math.max(0, Math.min(subtotal, discountAmount));
+    discountCents = Math.round(coupon.discountType === "percentage" ? subtotalCents * coupon.discountValue / 100 : coupon.discountValue * 100);
+    discountCents = Math.max(0, Math.min(subtotalCents, discountCents));
   }
-  return { subtotal, discountAmount, total: Math.max(0, subtotal - discountAmount) };
+  return { subtotal, discountAmount: discountCents / 100, total: Math.max(0, subtotalCents - discountCents) / 100 };
+}
+
+export function inspectCheckout(items: CartItem[], products: Product[], applied: Coupon | null, coupons: Coupon[]) {
+  const checked = inspectCart(items, products);
+  const coupon = coupons.find((candidate) => candidate.id === applied?.id && candidate.code === applied?.code && candidate.isActive) || null;
+  const couponChanged = Boolean(applied && (!coupon || ["discountType", "discountValue", "minPurchase"].some((key) => applied[key as keyof Coupon] !== coupon[key as keyof Coupon])));
+  return { ...checked, coupon, couponChanged, ...cartTotals(checked.items, coupon) };
 }

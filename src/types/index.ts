@@ -33,6 +33,7 @@ export interface SoundProfile {
 
 export interface Product {
   id: string; // Código numérico de 6 dígitos (ej: 100234)
+  updatedAt?: string;
   name: string;
   slug: string;
   subtitle: string;

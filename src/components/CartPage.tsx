@@ -37,7 +37,6 @@ export default function CartPage() {
     discountAmount,
     total,
     itemsCount,
-    whatsappNumber,
     appliedCoupon,
     applyCoupon,
     removeCoupon,
@@ -133,8 +132,8 @@ export default function CartPage() {
         );
       });
 
-      const discountNote = appliedCoupon && verified.discountAmount > 0
-        ? ` Este importe incluye un descuento de ${money(verified.discountAmount)} con el cupón ${appliedCoupon.code}.`
+      const discountNote = verified.coupon && verified.discountAmount > 0
+        ? ` Este importe incluye un descuento de ${money(verified.discountAmount)} con el cupón ${verified.coupon.code}.`
         : "";
       lines.push("", `El total de los productos indicado en la web es de ${money(verified.total)}.${discountNote}`);
       lines.push("", `La entrega sería en ${customerAddress.trim()}.`);
@@ -144,7 +143,7 @@ export default function CartPage() {
 
       const message = lines.join("\n");
       const encoded = encodeURIComponent(message);
-      const cleanNumber = (whatsappNumber || STORE_SETTINGS.whatsappNumber).replace(/\D/g, "");
+      const cleanNumber = verified.whatsappNumber;
       const waUrl = `https://wa.me/${cleanNumber}?text=${encoded}`;
 
       if (popup && !popup.closed) popup.location.replace(waUrl);
@@ -171,7 +170,7 @@ export default function CartPage() {
       {checkoutStep === "bag" && <ArrowRight aria-hidden="true" className="w-4 h-4" />}
     </button>
     {stockIssues.size > 0 && <p role="status" className="text-xs text-neutral-600">Corrige o retira los productos marcados para continuar.</p>}
-    {readyCheckout?.signature === checkoutSignature && stockIssues.size === 0 && <a href={readyCheckout.url} target="_blank" rel="noopener noreferrer" className="block min-h-11 text-center text-sm font-semibold underline underline-offset-4">Abrir pedido en WhatsApp</a>}
+    {readyCheckout?.signature === checkoutSignature && !ordersBlocked && stockIssues.size === 0 && <a href={readyCheckout.url} target="_blank" rel="noopener noreferrer" className="block min-h-11 text-center text-sm font-semibold underline underline-offset-4">Abrir pedido en WhatsApp</a>}
   </>;
 
   return (
