@@ -37,6 +37,7 @@ export default function CartPage() {
     discountAmount,
     total,
     itemsCount,
+    whatsappNumber,
     appliedCoupon,
     applyCoupon,
     removeCoupon,
@@ -64,7 +65,7 @@ export default function CartPage() {
   const pageHeading = useRef<HTMLHeadingElement>(null);
   const checkoutSignature = JSON.stringify({
     items: items.map((item) => [item.product.id, item.selectedColor?.name, item.quantity, item.product.price]),
-    total, coupon: appliedCoupon?.code, customerName, customerAddress, customerReference, paymentMethod,
+    total, coupon: appliedCoupon?.code, whatsappNumber, customerName, customerAddress, customerReference, paymentMethod,
   });
   const money = (amount: number) => STORE_SETTINGS.currencySymbol + amount.toFixed(2);
   const hasDiscount = Boolean(appliedCoupon && discountAmount > 0);

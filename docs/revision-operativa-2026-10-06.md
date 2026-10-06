@@ -2,6 +2,8 @@
 
 ## Correcciones
 
+- Al entrar al panel, el catálogo se vuelve a leer después de verificar cuenta y MFA. Una lectura anterior con acceso público no puede sustituir el catálogo administrativo ni esconder sus productos ocultos; las respuestas antiguas tampoco pueden deshacer una escritura confirmada.
+
 - Un formulario de producto conserva el stock y la versión de cuando se abrió. La escritura en Supabase requiere que ambos sigan coincidiendo; un conflicto no sobrescribe stock ni galerías y conserva el formulario. Los controles de stock conservan también la versión confirmada. Crear, editar y exportar catálogo requieren haber cargado el inventario de la nube.
 - La bolsa empieza sin descuentos inventados. Una lectura fallida de cupones no se convierte en una lista vacía que el administrador pueda sobrescribir. Se valida su formato y se consultan otra vez cupones y contacto receptor antes del pedido. Si la oferta cambia, se actualiza el total y se pide revisarlo antes de continuar.
 - Los precios, descuentos y totales se calculan en céntimos. Un precio inválido bloquea el pedido.

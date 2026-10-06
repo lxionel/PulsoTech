@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { Product } from "@/types";
-import { createMutationQueue, confirmMutation } from "@/lib/confirmed-mutation";
+import { createMutationQueue, confirmMutation, createReadGuard } from "@/lib/confirmed-mutation";
 import { validateProductContent } from "@/lib/content-security";
 import { productForCache } from "@/lib/browser-cache";
 import { PRODUCTS } from "@/data/products";
@@ -114,6 +114,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const [commerceSettings, setCommerceSettings] = useState<CommerceSettings>(DEFAULT_COMMERCE_SETTINGS);
   const [commerceReady, setCommerceReady] = useState(false);
   const latestCommerce = useRef({ settings: DEFAULT_COMMERCE_SETTINGS, ready: false });
+  const [cloudReads] = useState(() => createReadGuard());
 
   const state = useRef({ products, brands, categories });
   const [enqueue] = useState(() => createMutationQueue());
@@ -138,16 +139,19 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
 
   // Función para refrescar desde Supabase
   const refreshFromCloud = useCallback(async () => {
+    const revision = cloudReads.begin();
     if (!isSupabaseReady()) {
       setIsCloudConnected(false);
+      setIsLoading(false);
       return null;
     }
-
+    setIsLoading(true);
     try {
       const [cloudProds, cloudSettings] = await Promise.all([
         fetchProductsFromSupabase(),
         fetchStoreSettingsFromSupabase(),
       ]);
+      if (!cloudReads.isCurrent(revision)) return null;
       const commercial = { settings: parseCommerceSettings(cloudSettings?.commerce), ready: cloudSettings?.commerceReady === true };
       latestCommerce.current = commercial;
       setCommerceSettings(commercial.settings);
@@ -171,14 +175,17 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         setIsCloudConnected(false);
       }
     } catch (e) {
+      if (!cloudReads.isCurrent(revision)) return null;
       console.error("Error en refreshFromCloud:", e);
       latestCommerce.current = { settings: DEFAULT_COMMERCE_SETTINGS, ready: false };
       setCommerceSettings(DEFAULT_COMMERCE_SETTINGS);
       setCommerceReady(false);
       setIsCloudConnected(false);
+    } finally {
+      if (cloudReads.isCurrent(revision)) setIsLoading(false);
     }
     return null;
-  }, [saveProductsLocal, setProducts, setBrands, setCategories, isAdmin]);
+  }, [saveProductsLocal, setProducts, setBrands, setCategories, isAdmin, cloudReads]);
 
   // Inicialización y suscripción en tiempo real
   useEffect(() => {
@@ -188,9 +195,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       setProducts(isSupabaseReady() ? PRODUCTS : getInitialProducts());
       setBrands(getInitialBrands());
       setCategories(getInitialCategories());
-      void refreshFromCloud().finally(() => {
-        if (isMounted) setIsLoading(false);
-      });
+      void refreshFromCloud();
     }, 0);
 
     // Suscripción Realtime en Supabase si está disponible
@@ -201,14 +206,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "products" },
-          () => {
-            fetchProductsFromSupabase().then((data) => {
-              if (data && Array.isArray(data) && isMounted) {
-                setProducts(data);
-                saveProductsLocal(data);
-              }
-            });
-          }
+          () => { if (isMounted) void refreshFromCloud(); }
         )
         .on(
           "postgres_changes",
@@ -219,6 +217,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
 
       return () => {
         isMounted = false;
+        cloudReads.invalidate();
         window.clearTimeout(timer);
         client.removeChannel(channel);
       };
@@ -226,9 +225,10 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       isMounted = false;
+      cloudReads.invalidate();
       window.clearTimeout(timer);
     };
-  }, [refreshFromCloud, saveProductsLocal, setProducts, setBrands, setCategories]);
+  }, [refreshFromCloud, saveProductsLocal, setProducts, setBrands, setCategories, cloudReads]);
 
   // Sincronizar storage entre pestañas cuando se usa modo local
   useEffect(() => {
@@ -251,8 +251,11 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   }, [setProducts]);
 
   const commitProducts = useCallback((next: Product[]) => {
+    // A response started before this confirmed write cannot undo its local receipt.
+    cloudReads.invalidate();
+    setIsLoading(false);
     state.current.products = next; setProducts(next); saveProductsLocal(next);
-  }, [saveProductsLocal, setProducts]);
+  }, [saveProductsLocal, setProducts, cloudReads]);
 
   const writeConfirmed = useCallback(async (write: () => Promise<boolean>, commit: () => void) => {
     if (isSupabaseReady()) await confirmMutation(write, commit);

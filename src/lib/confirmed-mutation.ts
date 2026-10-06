@@ -12,3 +12,13 @@ export async function confirmMutation(write: () => Promise<boolean>, commit: () 
   if (!await write()) throw new Error("No se pudo guardar en la nube. Revisa tu conexión y tu sesión de administrador; los cambios no se confirmaron.");
   commit();
 }
+
+/** Ignore older reads after a newer request, confirmed mutation, or provider teardown. */
+export function createReadGuard() {
+  let revision = 0;
+  return {
+    begin: () => ++revision,
+    isCurrent: (request: number) => request === revision,
+    invalidate: () => { revision++; },
+  };
+}

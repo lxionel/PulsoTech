@@ -201,6 +201,13 @@ function AdminWorkspace() {
     commerceReady,
   } = useProducts();
 
+  useEffect(() => {
+    // This workspace mounts only after AdminAccess verifies the account and MFA.
+    // Reload with that session so hidden products and original galleries are included.
+    const timer = window.setTimeout(() => { void refreshFromCloud(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [refreshFromCloud]);
+
   // Navegación por pestañas
   const [activeTab, setActiveTab] = useState<
     "inventory" | "add_product" | "filters" | "coupons" | "sales" | "settings"
