@@ -10,7 +10,7 @@ export interface StoreSnapshot {
 }
 const productColumns = "id name slug subtitle description price original_price brand category in_stock stock_count is_featured is_new rating reviews_count video_url colors images custom_specs specs sound_profile features tags created_at updated_at".split(" ");
 const complaintColumns = "id reference created_at provider submission status response responded_at".split(" ");
-const settingKeys = ["brands", "categories", "whatsapp_number", "coupons", "sales_records"];
+const settingKeys = ["brands", "categories", "whatsapp_number", "coupons", "sales_records", "commerce_settings", "commerce_schema_version"];
 const isRow = (value: unknown): value is Row => Boolean(value) && typeof value === "object" && !Array.isArray(value);
 const json = (value: unknown) => JSON.stringify(value);
 function rows(value: unknown, key: string, columns: string[], max: number): asserts value is Row[] {
@@ -29,12 +29,15 @@ export function validateStoreSnapshot(value: unknown): asserts value is StoreSna
       Object.keys(value.tables).some((key) => !["products", "store_settings", "sale_operations", "complaints"].includes(key))) throw new Error("Formato de copia no admitido.");
   const tables = value.tables;
   rows(tables.products, "id", productColumns, 10000);
-  rows(tables.store_settings, "key", ["key", "value", "updated_at"], 5);
+  rows(tables.store_settings, "key", ["key", "value", "updated_at"], settingKeys.length);
   rows(tables.sale_operations, "id", ["id", "request_hash", "product_id", "created_at"], 100000);
   if (tables.products.some((p) => typeof p.name !== "string" || typeof p.price !== "number" || !Number.isFinite(p.price) || p.price < 0 ||
       !Number.isSafeInteger(p.stock_count) || Number(p.stock_count) < 0 || typeof p.in_stock !== "boolean")) throw new Error("Inventario inválido.");
   for (const setting of tables.store_settings) {
     if (!settingKeys.includes(String(setting.key)) || !Object.hasOwn(setting, "value")) throw new Error("Configuración no admitida.");
+    if (setting.key === "commerce_settings" && (!isRow(setting.value) || Object.entries(setting.value).some(([key, value]) =>
+      key === "ordersEnabled" ? typeof value !== "boolean" : !["owner", "ruc", "address", "email", "hours", "deliveryArea", "deliveryCost", "deliveryTime"].includes(key) || typeof value !== "string" || value.length > 500))) throw new Error("Configuración comercial inválida.");
+    if (setting.key === "commerce_schema_version" && setting.value !== 1) throw new Error("Versión comercial no admitida.");
     if (setting.key === "sales_records") {
       rows(setting.value, "id", ["id", "productName", "quantity", "total", "channel", "customerName", "date", "timestamp", "paymentMethod", "notes", "customerPhone", "customerAddress", "deliveryStatus", "trackingNumber"], 10000);
       if (setting.value.some((sale) => !Number.isSafeInteger(sale.quantity) || Number(sale.quantity) < 1 || typeof sale.total !== "number" || !Number.isFinite(sale.total) || sale.total < 0)) throw new Error("Ventas inválidas.");
@@ -100,7 +103,7 @@ export function createRecoverySql(snapshot: StoreSnapshot): string {
   validateStoreSnapshot(snapshot);
   const literal = (value: unknown) => "'" + json(value).replaceAll("'", "''") + "'::jsonb";
   const insert = (table: string, values: Row[], identity = false) =>
-    `insert into public.${table}${identity ? " overriding system value" : ""} select * from jsonb_populate_recordset(null::public.${table}, ${literal(values)});`;
+    `insert into public.${table}${identity ? " overriding system value" : ""} select * from jsonb_populate_recordset(null::public.${table}, ${literal(values)})${table === "store_settings" ? " on conflict (key) do update set value = excluded.value, updated_at = excluded.updated_at" : ""};`;
   return `-- COPIA PRIVADA. Usar solo en un proyecto VACÍO de recuperación.
 -- Instalar antes esquema, administrador/MFA, ventas seguras y, si corresponde, Libro.
 -- No restaura cuentas Auth, autenticadores, secretos, archivos Storage ni configuración del alojamiento.
@@ -108,7 +111,7 @@ begin;
 set local standard_conforming_strings = on;
 lock table public.products, public.store_settings, public.sale_operations in access exclusive mode;
 do $$ begin
-  if exists(select 1 from public.products) or exists(select 1 from public.store_settings) or exists(select 1 from public.sale_operations) then
+  if exists(select 1 from public.products) or exists(select 1 from public.store_settings where key <> 'commerce_schema_version' or value is distinct from '1'::jsonb) or exists(select 1 from public.sale_operations) then
     raise exception 'Recuperación detenida: el destino debe estar vacío. No se reemplazaron datos.';
   end if;
 end $$;

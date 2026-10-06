@@ -1,5 +1,6 @@
 import { Product } from "@/types";
 import { getAssetUrl } from "@/utils/paths";
+import catalog from "./catalog-build.json";
 
 export const STORE_SETTINGS = {
   name: "PulsoTech",
@@ -24,4 +25,4 @@ export const TECH_CATEGORIES = [
   { id: "audifonos", name: "Audífonos Inalámbricos", count: 3, active: true },
 ];
 
-export const PRODUCTS: Product[] = [];
+export const PRODUCTS: Product[] = catalog as Product[];

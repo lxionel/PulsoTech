@@ -11,6 +11,7 @@ import { getProductVideoInfo } from "@/lib/content-security";
 import { colorImages, productGallery } from "@/lib/product-media";
 import { useCart } from "@/context/CartContext";
 import { useProducts } from "@/context/ProductsContext";
+import { productCommerce, STORE_MODE } from "@/lib/commerce";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -58,6 +59,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
       products.find((p) => p.id === initialProduct.id) || initialProduct
     );
   }, [products, initialProduct]);
+  const commercial = productCommerce(product);
 
   const [quantity, setQuantity] = useState(1);
   const [selectedColorIndex, setSelectedColorIndex] = useState<number | null>(null);
@@ -101,13 +103,12 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
     if (product.specs) {
       const addRecordedSpec = (label: string, value: string) => {
         const existing = list.find((spec) => spec.label.toLowerCase() === label.toLowerCase());
-        if (existing) existing.value = value;
-        else list.push({ label, value });
+        if (!existing) list.push({ label, value });
       };
       const audioType = AUDIO_TYPE_OPTIONS.find((option) => option.value === product.specs.audioType);
       if (audioType) addRecordedSpec("Tipo de audífono", audioType.label);
       const playbackHours = parsePlaybackHours(product.specs.playbackHours);
-      if (playbackHours !== undefined) {
+      if (playbackHours !== undefined && !list.some(s => /autonom[ií]a|bater[ií]a/i.test(s.label) && !/estuche/i.test(s.label))) {
         addRecordedSpec("Autonomía por carga", `${playbackHours} horas (sin estuche)`);
       }
       if (product.specs.ancEnabled === "yes" || product.specs.ancEnabled === "no") {
@@ -206,7 +207,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   ].filter((column) => column.length > 0);
 
   const colorLabel = colors.length && selectedColorIndex === null ? "Elige un color" : currentColor.name;
-  const waMessage = `¡Hola PulsoTech! Deseo comprar el modelo *${product.name}* (Color: ${colors.length && selectedColorIndex === null ? "por elegir" : currentColor.name}, Precio: ${STORE_SETTINGS.currencySymbol}${product.price.toFixed(2)}). ¿Tienen stock disponible para entrega hoy?`;
+  const waMessage = STORE_MODE === "preparation" ? `Hola, PulsoTech. Estoy probando la ficha de ${product.name} en la tienda en preparación. Este mensaje es una prueba, no una compra real.` : `Hola, PulsoTech. Me interesa ${product.name}${selectedColorIndex === null ? "" : ` en color ${currentColor.name}`}. ¿Podrían indicarme la disponibilidad y las condiciones de entrega?`;
 
   return (
     <div data-purchase-actions-visible={purchaseActionsVisible} className="store-product-page min-h-screen flex flex-col bg-white text-[#111113]">
@@ -383,6 +384,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                 {product.subtitle && <p className="text-sm text-neutral-500 leading-relaxed">
                   {product.subtitle}
                 </p>}
+                {STORE_MODE === "preparation" && <p className="text-xs leading-5 text-neutral-500">{commercial.status === "demo" ? "Producto de demostración · Datos de prueba" : "Vista previa · Ventas aún no habilitadas"}</p>}
               </div>
               <button type="button" onClick={() => toggleFavorite(product.id)} aria-label={isFav ? "Quitar de favoritos" : "Guardar en favoritos"} aria-pressed={isFav} title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"} className={`w-11 h-11 flex items-center justify-center shrink-0 transition-colors cursor-pointer ${isFav ? "text-red-500" : "text-neutral-500 hover:text-neutral-950"}`}>
                 <Heart className={`w-5 h-5 ${isFav ? "fill-current" : ""}`} />
@@ -459,6 +461,9 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
               <a href="#especificaciones" onClick={() => { if (specificationDetails.current) specificationDetails.current.open = true; }} className="inline-flex items-center min-h-11 text-xs text-neutral-600 underline underline-offset-4 hover:text-black">Ver especificaciones</a>
             </div>}
             <div className="border-y border-neutral-200 divide-y divide-neutral-200 text-sm text-neutral-700">
+              {commercial.included && <details className="py-3"><summary className="cursor-pointer min-h-9 flex items-center font-medium">Contenido de la caja</summary><p className="pt-2 text-sm leading-6 whitespace-pre-line">{commercial.included}</p></details>}
+              {commercial.warranty && <details className="py-3"><summary className="cursor-pointer min-h-9 flex items-center font-medium">Garantía del producto</summary><p className="pt-2 text-sm leading-6 whitespace-pre-line">{commercial.warranty}</p></details>}
+              {commercial.delivery && <p className="py-3 text-sm leading-6 whitespace-pre-line">{commercial.delivery}</p>}
               <Link href="/garantia-y-entregas/" className="min-h-12 flex items-center gap-3 hover:text-neutral-950"><Truck className="w-5 h-5 text-neutral-600" /><span className="flex-1">Entregas</span><ChevronRight className="w-4 h-4 text-neutral-400" /></Link>
               <Link href="/garantia-y-entregas/" className="min-h-12 flex items-center gap-3 hover:text-neutral-950"><ShieldCheck className="w-5 h-5 text-neutral-600" /><span className="flex-1">Garantía</span><ChevronRight className="w-4 h-4 text-neutral-400" /></Link>
             </div>

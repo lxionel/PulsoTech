@@ -6,6 +6,7 @@ import ts from "typescript";
 import { verifyAdminAccess, isPublicSupabaseKey } from "../src/lib/admin-auth.ts";
 import { normalizeSalesRecords } from "../src/lib/private-sales.ts";
 import { attachCatalogMedia } from "../src/lib/catalog-media.ts";
+import { parseCommerceSettings } from "../src/lib/commerce.ts";
 
 const require = createRequire(import.meta.url);
 let user = null;
@@ -63,6 +64,7 @@ new Function("require", "module", "exports", source)((name) => {
   if (name === "./admin-auth") return { verifyAdminAccess, isPublicSupabaseKey };
   if (name === "./private-sales") return { normalizeSalesRecords };
   if (name === "./catalog-media") return { attachCatalogMedia };
+  if (name === "./commerce") return { parseCommerceSettings };
   return require(name);
 }, compiledModule, compiledModule.exports);
 const api = compiledModule.exports;
@@ -134,7 +136,7 @@ test("every private operation blocks a password-only administrator before contac
 test("the public settings request cannot fetch sales or other private settings", async () => {
   databaseCalls.length = 0;
   await api.fetchStoreSettingsFromSupabase();
-  assert.deepEqual(databaseCalls, ["store_settings", ["brands", "categories", "whatsapp_number"]]);
+  assert.deepEqual(databaseCalls, ["store_settings", ["brands", "categories", "whatsapp_number", "commerce_settings", "commerce_schema_version"]]);
 });
 
 test("a corrupt private sales value is reported as a failed read rather than an empty history", async () => {

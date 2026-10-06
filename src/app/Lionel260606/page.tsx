@@ -16,6 +16,9 @@ import AdminPasswordSettings from "@/components/AdminPasswordSettings";
 import AdminComplaints from "@/components/AdminComplaints";
 import AdminStockControl from "@/components/AdminStockControl";
 import AdminImageGallery from "@/components/AdminImageGallery";
+import AdminCommerceSettings from "@/components/AdminCommerceSettings";
+import ProductCommercialFields from "@/components/ProductCommercialFields";
+import { commerceSpecs, productCommerce, productRequirements, type ProductCommerce } from "@/lib/commerce";
 import { colorImages, withColorImages, uniqueImages } from "@/lib/product-media";
 import { isAudioCategory } from "@/lib/categories";
 import { parsePlaybackHours } from "@/lib/audio-filters";
@@ -194,6 +197,7 @@ function AdminWorkspace() {
     deleteCategory,
     isCloudConnected,
     refreshFromCloud,
+    commerceReady,
   } = useProducts();
 
   // Navegación por pestañas
@@ -209,7 +213,7 @@ function AdminWorkspace() {
   const [phoneDraft, setPhoneInput] = useState<string | null>(null);
   const phoneInput = phoneDraft ?? whatsappNumber;
   const [phoneSaved, setPhoneSaved] = useState(false);
-  const [settingsViewTab, setSettingsViewTab] = useState<"whatsapp" | "security" | "backup" | "complaints">("whatsapp");
+  const [settingsViewTab, setSettingsViewTab] = useState<"commerce" | "whatsapp" | "security" | "backup" | "complaints">("commerce");
   const [isSyncingCloud, setIsSyncingCloud] = useState(false);
   const [syncSuccessMessage, setSyncSuccessMessage] = useState("");
 
@@ -309,6 +313,7 @@ function AdminWorkspace() {
   const [formActiveStep, setFormActiveStep] = useState<1 | 2 | 3 | 4>(1);
   const [formCustomId, setFormCustomId] = useState(generate6DigitId());
   const [formName, setFormName] = useState("");
+  const [formCommerce, setFormCommerce] = useState<ProductCommerce>({ status: "draft", warranty: "", included: "", delivery: "", verified: false });
   const [formBrand, setFormBrand] = useState(brands[0] || "Xiaomi");
   const [formCategory, setFormCategory] = useState(categories[0] || "Audífonos Inalámbricos");
   const [formAudioType, setFormAudioType] = useState<"earbuds" | "headband" | "">("");
@@ -978,6 +983,7 @@ function AdminWorkspace() {
   // Cargar datos en el formulario para editar
   const handleEditClick = (product: Product) => {
     if (uploadingGalleries || isSavingProduct) return;
+    setFormCommerce(productCommerce(product));
     setFormAudioType(product.specs?.audioType || "");
     setFormAncEnabled(product.specs?.ancEnabled || "");
     setFormPlaybackHours(product.specs?.playbackHours || "");
@@ -1034,6 +1040,7 @@ function AdminWorkspace() {
   // Limpiar formulario para nuevo producto (100% LIMPIO, SIN EJEMPLOS PRECARGADOS)
   const handleNewProductClick = () => {
     if (uploadingGalleries || isSavingProduct) return;
+    setFormCommerce({ status: "draft", warranty: "", included: "", delivery: "", verified: false });
     setFormAudioType("");
     setFormAncEnabled("");
     setFormPlaybackHours("");
@@ -1148,6 +1155,7 @@ function AdminWorkspace() {
       customSpecs: validSpecs.length > 0 ? validSpecs : undefined,
       specs: {
         ...previousProduct?.specs,
+        ...commerceSpecs(formCommerce),
         audioType: isAudioCategory(formCategory) ? formAudioType || undefined : undefined,
         ancEnabled: isAudioCategory(formCategory) ? formAncEnabled || undefined : undefined,
         playbackHours: isAudioCategory(formCategory) && playbackHours !== undefined ? String(playbackHours) : undefined,
@@ -1163,6 +1171,14 @@ function AdminWorkspace() {
       tags: previousProduct?.tags || [formBrand.toLowerCase(), formCategory.toLowerCase()],
     };
 
+    if (formCommerce.status === "draft" && !commerceReady) {
+      alert("Activa la migración comercial en Supabase antes de guardar un borrador. Debe quedar oculto también en la base de datos.");
+      return;
+    }
+    if (formCommerce.status === "live" && productRequirements(productPayload).length) {
+      alert(`Para publicar un producto real completa: ${productRequirements(productPayload).join(", ")}.`);
+      return;
+    }
     try { validateProductContent(productPayload); } catch (failure) {
       alert(failure instanceof Error ? failure.message : "Revisa los datos del producto.");
       return;
@@ -2996,6 +3012,7 @@ function AdminWorkspace() {
                     </div>
 
                     {/* Resumen Final */}
+                    <ProductCommercialFields value={formCommerce} onChange={setFormCommerce} />
                     <div className="p-3.5 rounded-xl border border-neutral-200 bg-neutral-50/70 text-xs space-y-1.5">
                       <div className="font-bold text-neutral-900 flex items-center justify-between">
                         <span>Resumen</span>
@@ -5309,6 +5326,7 @@ function AdminWorkspace() {
                 {/* Sub-views / Segmented Pills */}
                 <div className="flex items-center gap-1.5 bg-neutral-100 p-1 rounded-xl border border-neutral-200/80 shrink-0 overflow-x-auto max-w-full">
                   {[
+                    { id: "commerce", label: "Preparación comercial" },
                     { id: "whatsapp", label: "WhatsApp" },
                     { id: "complaints", label: "Reclamos" },
                     { id: "security", label: "Seguridad de la cuenta" },
@@ -5317,7 +5335,7 @@ function AdminWorkspace() {
                     <button
                       key={tab.id}
                       type="button"
-                      onClick={() => setSettingsViewTab(tab.id as "whatsapp" | "security" | "backup")}
+                      onClick={() => setSettingsViewTab(tab.id as typeof settingsViewTab)}
                       className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                         settingsViewTab === tab.id
                           ? "bg-white text-neutral-950 shadow-xs"
@@ -5473,6 +5491,7 @@ function AdminWorkspace() {
                     )}
 
                 {/* Cuenta y seguridad */}
+                {settingsViewTab === "commerce" && <AdminCommerceSettings />}
                 {settingsViewTab === "security" && <AdminPasswordSettings />}
                 {settingsViewTab === "complaints" && <AdminComplaints />}
                 {/* CARD 3: RESPALDOS Y EXPORTACIÓN */}

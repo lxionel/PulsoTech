@@ -3,13 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/prepare-catalog-media.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/prepare-catalog-media.mjs",
     "build": "next build",
     "postbuild": "node scripts/security-headers.mjs",
     "build:cloudflare": "node scripts/build-cloudflare.mjs",
     "start": "next start",
     "lint": "eslint",
-    "backup:verify": "node --experimental-strip-types scripts/recover-backup.mjs"
+    "backup:verify": "node --experimental-strip-types scripts/recover-backup.mjs",
+    "launch:check": "node --experimental-strip-types scripts/check-launch.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.1",

@@ -1,5 +1,7 @@
 "use client";
 
+import { productHref } from "@/lib/catalog-links";
+
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, Heart, RotateCcw } from "lucide-react";
@@ -17,7 +19,7 @@ function SavedProduct({ product, onRemove, saved = true }: {
   onRemove?: () => void;
   saved?: boolean;
 }) {
-  const href = `/producto/?id=${encodeURIComponent(product.id)}&slug=${encodeURIComponent(product.slug)}`;
+  const href = productHref(product);
   const image = getAssetUrl(productGallery(product, null, getAssetUrl("/placeholder-earbuds.svg"))[0]);
   const unavailable = product.inStock === false || (product.stockCount ?? 0) <= 0;
 
@@ -60,7 +62,7 @@ export default function FavoritesPage() {
   const { products, isLoading } = useProducts();
   const [removed, setRemoved] = useState<{ id: string; name: string } | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
-  const loading = isFavoritesLoading || isLoading;
+  const loading = isFavoritesLoading || (isLoading && products.length === 0);
   const savedProducts = [...favorites].reverse().flatMap((id) => {
     const product = products.find((item) => item.id === id);
     return product ? [product] : [];

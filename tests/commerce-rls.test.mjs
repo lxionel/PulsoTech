@@ -1,0 +1,51 @@
+import test, { before, after } from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { PGlite } from "@electric-sql/pglite";
+
+const db = new PGlite();
+const sql = await readFile(new URL("../supabase/activate-commerce.sql", import.meta.url), "utf8");
+before(async () => {
+  await db.exec(`create role anon; create role authenticated;
+    create function public.is_store_admin() returns boolean language sql stable as $$select current_setting('test.admin',true) = 'yes'$$;
+    create function public.is_store_admin_account() returns boolean language sql stable as $$select public.is_store_admin()$$;
+    create function public.record_sale(jsonb,text,numeric) returns jsonb language sql as $$select '{}'::jsonb$$;
+    create function public.export_store_backup() returns jsonb language sql as $$select '{}'::jsonb$$;
+    create table products(id text primary key, specs jsonb, stock_count integer);
+    create table store_settings(key text primary key, value jsonb, updated_at timestamptz);
+    create table sale_operations(id text primary key);
+    alter table products enable row level security; alter table store_settings enable row level security;
+    grant select on products, store_settings to anon, authenticated;
+    grant insert, update, delete on products, store_settings to authenticated;
+    create policy products_public_read on products for select using(true);
+    create policy products_admin_write on products for all to authenticated using(public.is_store_admin()) with check(public.is_store_admin());
+    create policy settings_admin_write on store_settings for all to authenticated using(public.is_store_admin()) with check(public.is_store_admin());
+    insert into products values ('old','{}',3),('draft','{"storeStatus":"draft"}',4),('real','{"storeStatus":"live"}',5);
+    insert into store_settings values ('sales_records','[{"customerName":"Privado"}]',now()),('commerce_settings','{"owner":"Negocio"}',now());`);
+  await db.exec(sql);
+});
+after(async () => { await db.close(); });
+
+test("anonymous readers cannot discover drafts or private sales, but can read configured business data", async () => {
+  await db.exec("set role anon");
+  assert.deepEqual((await db.query("select id from products order by id")).rows.map(r => r.id), ["old", "real"]);
+  assert.equal((await db.query("select * from products where id='draft'")).rows.length, 0);
+  assert.equal((await db.query("select * from store_settings where key='sales_records'")).rows.length, 0);
+  assert.equal((await db.query("select value from store_settings where key='commerce_settings'")).rows[0].value.owner, "Negocio");
+  await db.exec("reset role");
+});
+
+test("installation is repeatable, preserves stock and restricts administrator writes", async () => {
+  await db.exec(sql);
+  assert.deepEqual((await db.query("select stock_count from products order by id")).rows.map(r => r.stock_count), [4, 3, 5]);
+  await db.exec("set role authenticated");
+  await assert.rejects(db.query("select export_store_backup()"), /MFA requerido/);
+  await assert.rejects(db.query("insert into products values ('unauthorized','{}',1)"), /row-level security/);
+  await db.query("select set_config('test.admin','yes',false)");
+  assert.equal((await db.query("select * from products where id='draft'")).rows.length, 1);
+  await db.query("update products set stock_count=stock_count where id='draft'");
+  const backup = (await db.query("select export_store_backup() snapshot")).rows[0].snapshot;
+  assert.ok(backup.tables.store_settings.some(row => row.key === "commerce_settings"));
+  assert.ok(backup.tables.store_settings.some(row => row.key === "sales_records"));
+  await db.exec("reset role");
+});

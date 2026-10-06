@@ -1,5 +1,8 @@
 "use client";
 
+import { productHref } from "@/lib/catalog-links";
+import { productCommerce, STORE_MODE } from "@/lib/commerce";
+
 import React, { useState } from "react";
 import Link from "next/link";
 import { Product } from "@/types";
@@ -49,7 +52,7 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <div className="store-motion store-product-card group relative rounded-2xl bg-white border border-neutral-200/90 hover:border-neutral-400 hover:shadow-xl transition-[transform,box-shadow,border-color] duration-300 flex flex-col justify-between overflow-hidden h-full">
       {/* Top Card Image Link */}
-      <Link href={`/producto/?id=${product.id}&slug=${product.slug}`} className="block p-4 sm:p-5 pb-0 flex-1">
+      <Link href={productHref(product)} className="block p-4 sm:p-5 pb-0 flex-1">
         {/* Top Header: Brand, New Tag & Favorite */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
@@ -160,6 +163,7 @@ export default function ProductCard({ product }: { product: Product }) {
           <h3 className="text-lg font-extrabold text-neutral-950 leading-snug line-clamp-2 sm:line-clamp-1 min-h-[1.75rem]">
             {product.name}
           </h3>
+          {STORE_MODE === "preparation" && productCommerce(product).status === "demo" && <p className="mt-1 text-xs text-neutral-500">Modelo de prueba</p>}
           <p className="text-sm sm:text-xs text-neutral-500 line-clamp-2 leading-relaxed min-h-[2.5rem] mt-1">
             {product.subtitle}
           </p>
@@ -185,7 +189,7 @@ export default function ProductCard({ product }: { product: Product }) {
             <span>Agotado</span>
           </button>
         ) : colors.length > 0 && selectedColorIndex === null ? (
-          <Link href={`/producto/?id=${product.id}&slug=${product.slug}`} className="w-full min-h-12 sm:min-h-0 py-2.5 sm:py-3 px-4 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-extrabold text-sm flex items-center justify-center gap-2">
+          <Link href={productHref(product)} className="w-full min-h-12 sm:min-h-0 py-2.5 sm:py-3 px-4 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-extrabold text-sm flex items-center justify-center gap-2">
             <ShoppingBag className="w-4 h-4 shrink-0" />
             <span>Elegir color</span>
           </Link>

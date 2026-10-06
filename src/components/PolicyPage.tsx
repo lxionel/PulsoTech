@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { STORE_POLICIES } from "@/data/store-policies";
+import { STORE_MODE } from "@/lib/commerce";
+import { CommercialIdentity } from "./CommercialInformation";
 
 const pages = [
   { href: "/terminos/", label: "Términos" },
@@ -16,12 +18,7 @@ export function PolicySection({ title, children }: { title: string; children: Re
 }
 
 export function PolicyIdentity() {
-  return <address className="not-italic text-sm leading-7 text-neutral-600">
-    <span className="block font-semibold text-neutral-900">PulsoTech · {STORE_POLICIES.owner}</span>
-    <span className="block">{STORE_POLICIES.address}</span>
-    {STORE_POLICIES.ruc && <span className="block">RUC: {STORE_POLICIES.ruc}</span>}
-    <a href={`mailto:${STORE_POLICIES.email}`} className="underline underline-offset-4 hover:text-neutral-950 break-all">{STORE_POLICIES.email}</a>
-  </address>;
+  return <CommercialIdentity />;
 }
 
 export default function PolicyPage({ title, intro, current, children }: { title: string; intro: string; current: string; children: ReactNode }) {
@@ -33,6 +30,7 @@ export default function PolicyPage({ title, intro, current, children }: { title:
         <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">PulsoTech · Información de la tienda</p>
         <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-neutral-950 leading-tight">{title}</h1>
         <p className="text-sm text-neutral-600 leading-7">{intro}</p>
+        {STORE_MODE === "preparation" && <p className="rounded-lg border border-neutral-200 bg-white p-3 text-xs leading-6 text-neutral-600">Tienda en preparación. Estas condiciones se están revisando antes de la apertura; actualmente no aceptamos compras reales.</p>}
         <p className="text-xs text-neutral-400">Actualización: {STORE_POLICIES.updatedAt}</p>
       </header>
       <nav aria-label="Políticas de la tienda" className="flex flex-wrap gap-2 mb-8">

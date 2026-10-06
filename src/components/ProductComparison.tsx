@@ -1,5 +1,7 @@
 "use client";
 
+import { productHref } from "@/lib/catalog-links";
+
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -134,7 +136,7 @@ export default function ProductComparison() {
                   <th scope="row" className="p-2 sm:p-4 text-left font-semibold text-neutral-600">Ver detalle</th>
                   {selectedProducts.map((product) => (
                     <td key={product.id} className="p-2 sm:p-4">
-                      <Link href={`/producto/?${new URLSearchParams({ id: product.id, slug: product.slug }).toString()}`} onClick={() => setIsOpen(false)} className="inline-flex justify-center px-2 sm:px-3 py-2 rounded-lg bg-neutral-950 hover:bg-neutral-800 text-white text-[11px] sm:text-xs font-bold">Ver modelo</Link>
+                      <Link href={productHref(product)} onClick={() => setIsOpen(false)} className="inline-flex justify-center px-2 sm:px-3 py-2 rounded-lg bg-neutral-950 hover:bg-neutral-800 text-white text-[11px] sm:text-xs font-bold">Ver modelo</Link>
                     </td>
                   ))}
                 </tr>

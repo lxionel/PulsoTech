@@ -3,6 +3,7 @@ import { Product, ProductColor, ProductSpecs, ProductSpecItem, SoundProfile, Cou
 import { isPublicSupabaseKey, verifyAdminAccess } from "./admin-auth";
 import { normalizeSalesRecords, type SaleCommand, type SaleCommandResult } from "./private-sales";
 import { attachCatalogMedia, type CatalogMediaManifest } from "./catalog-media";
+import { parseCommerceSettings, type CommerceSettings } from "./commerce";
 
 const LOCAL_STORAGE_URL_KEY = "pulsotech_supabase_url";
 const LOCAL_STORAGE_KEY_KEY = "pulsotech_supabase_anon_key";
@@ -343,23 +344,25 @@ export async function updateStockInSupabase(id: string, newStock: number, expect
   }
 }
 
-export async function fetchStoreSettingsFromSupabase(): Promise<{ brands?: string[]; categories?: string[]; whatsappNumber?: string } | null> {
+export async function fetchStoreSettingsFromSupabase(): Promise<{ brands?: string[]; categories?: string[]; whatsappNumber?: string; commerce?: CommerceSettings; commerceReady?: boolean } | null> {
   const client = getSupabaseClient();
   if (!client) return null;
 
   try {
     const { data, error } = await client.from("store_settings").select("key,value")
-      .in("key", ["brands", "categories", "whatsapp_number"]).abortSignal(AbortSignal.timeout(10000));
+      .in("key", ["brands", "categories", "whatsapp_number", "commerce_settings", "commerce_schema_version"]).abortSignal(AbortSignal.timeout(10000));
     if (error) {
       console.warn("Store settings fetch error:", error.message);
       return null;
     }
 
-    const result: { brands?: string[]; categories?: string[]; whatsappNumber?: string } = {};
+    const result: { brands?: string[]; categories?: string[]; whatsappNumber?: string; commerce?: CommerceSettings; commerceReady?: boolean } = {};
     (data || []).forEach((item: DbStoreSettingRow) => {
       if (item.key === "brands" && Array.isArray(item.value)) result.brands = item.value as string[];
       if (item.key === "categories" && Array.isArray(item.value)) result.categories = item.value as string[];
       if (item.key === "whatsapp_number" && typeof item.value === "string") result.whatsappNumber = item.value;
+      if (item.key === "commerce_settings") result.commerce = parseCommerceSettings(item.value);
+      if (item.key === "commerce_schema_version") result.commerceReady = item.value === 1;
     });
 
     return result;
@@ -369,7 +372,7 @@ export async function fetchStoreSettingsFromSupabase(): Promise<{ brands?: strin
   }
 }
 
-export async function saveStoreSettingsToSupabase(key: "brands" | "categories" | "whatsapp_number", value: unknown): Promise<boolean> {
+export async function saveStoreSettingsToSupabase(key: "brands" | "categories" | "whatsapp_number" | "commerce_settings", value: unknown): Promise<boolean> {
   const client = getSupabaseClient();
   if (!client) return false;
 

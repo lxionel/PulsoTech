@@ -1,11 +1,13 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { Product } from "@/types";
 import { createMutationQueue, confirmMutation } from "@/lib/confirmed-mutation";
 import { validateProductContent } from "@/lib/content-security";
 import { productForCache } from "@/lib/browser-cache";
 import { PRODUCTS } from "@/data/products";
+import { DEFAULT_COMMERCE_SETTINGS, isStorefrontProduct, parseCommerceSettings, type CommerceSettings } from "@/lib/commerce";
 import {
   isSupabaseReady,
   fetchProductsFromSupabase,
@@ -38,6 +40,9 @@ interface ProductsContextType {
   deleteCategory: (category: string) => Promise<void>;
   isCloudConnected: boolean;
   refreshFromCloud: () => Promise<Product[] | null>;
+  commerceSettings: CommerceSettings;
+  commerceReady: boolean;
+  saveCommerceSettings: (settings: CommerceSettings) => Promise<void>;
 }
 
 const ProductsContext = createContext<ProductsContextType | undefined>(undefined);
@@ -99,11 +104,14 @@ function getInitialProducts(): Product[] {
 }
 
 export function ProductsProvider({ children }: { children: React.ReactNode }) {
+  const isAdmin = usePathname().startsWith("/Lionel260606");
   // The server and the first client render must match. Restore saved data after mount.
   const [products, setProductsState] = useState<Product[]>(PRODUCTS);
   const [brands, setBrandsState] = useState<string[]>(DEFAULT_BRANDS);
   const [categories, setCategoriesState] = useState<string[]>(DEFAULT_CATEGORIES);
   const [isLoading, setIsLoading] = useState(true);
+  const [commerceSettings, setCommerceSettings] = useState<CommerceSettings>(DEFAULT_COMMERCE_SETTINGS);
+  const [commerceReady, setCommerceReady] = useState(false);
 
   const state = useRef({ products, brands, categories });
   const [enqueue] = useState(() => createMutationQueue());
@@ -138,6 +146,8 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         fetchProductsFromSupabase(),
         fetchStoreSettingsFromSupabase(),
       ]);
+      if (cloudSettings?.commerce) setCommerceSettings(cloudSettings.commerce);
+      setCommerceReady(cloudSettings?.commerceReady === true);
       if (cloudProds !== null) {
         setIsCloudConnected(true);
         setProducts(cloudProds);
@@ -152,7 +162,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
             setCategories(cloudSettings.categories);
           }
         }
-        return cloudProds;
+        return isAdmin ? cloudProds : cloudProds.filter(p => isStorefrontProduct(p));
       } else {
         setIsCloudConnected(false);
       }
@@ -161,7 +171,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       setIsCloudConnected(false);
     }
     return null;
-  }, [saveProductsLocal, setProducts, setBrands, setCategories]);
+  }, [saveProductsLocal, setProducts, setBrands, setCategories, isAdmin]);
 
   // Inicialización y suscripción en tiempo real
   useEffect(() => {
@@ -311,7 +321,15 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     <ProductsContext.Provider
       value={{
         isLoading,
-        products,
+        commerceSettings,
+        commerceReady,
+        saveCommerceSettings: async (settings) => {
+          if (!commerceReady) throw new Error("Activa primero la migración comercial en Supabase.");
+          const next = parseCommerceSettings(settings);
+          if (!isSupabaseReady()) throw new Error("Conecta Supabase para guardar la configuración comercial.");
+          await confirmMutation(() => saveStoreSettingsToSupabase("commerce_settings", next), () => setCommerceSettings(next));
+        },
+        products: isAdmin ? products : products.filter(p => isStorefrontProduct(p)),
         addProduct,
         updateProduct,
         deleteProduct,

@@ -38,3 +38,8 @@ test("WhatsApp sharing opens recipient selection with the model and its exact li
   assert.equal(url.pathname, "/");
   assert.equal(url.searchParams.get("text"), `${data.text}\n${data.url}`);
 });
+
+test("static product links retain their canonical path without adding query identifiers", () => {
+  const current = `https://example.com/productos/${encodeURIComponent(product.id)}/?campaign=test#gallery`;
+  assert.equal(buildProductShareData(product, current).url, `https://example.com/productos/${encodeURIComponent(product.id)}/`);
+});

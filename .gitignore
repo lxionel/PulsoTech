@@ -47,3 +47,4 @@ next-env.d.ts
 
 # Generated public image assets, rebuilt from the live public catalog.
 /public/catalog-media/
+/src/data/catalog-build.json

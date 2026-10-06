@@ -11,6 +11,7 @@ const schema = await readFile(new URL("../supabase_schema.sql", import.meta.url)
 const atomic = await readFile(new URL("../supabase/activate-atomic-sales.sql", import.meta.url), "utf8");
 const backups = await readFile(new URL("../supabase/activate-backups.sql", import.meta.url), "utf8");
 const complaints = await readFile(new URL("../supabase/activate-complaints.sql", import.meta.url), "utf8");
+const commerce = await readFile(new URL("../supabase/activate-commerce.sql", import.meta.url), "utf8");
 const source = new PGlite();
 const target = new PGlite();
 let snapshot, encrypted;
@@ -34,10 +35,12 @@ async function setup(db) {
   await db.query("insert into public.store_admins(user_id) values ($1)", [owner]);
   await db.exec(atomic);
   await db.exec(backups);
+  await db.exec(commerce);
 }
 before(async () => {
   await setup(source); await setup(target);
   await source.exec("insert into products(id,name,slug,price,stock_count,in_stock) values('audio','Modelo','modelo',90,5,true); insert into store_settings(key,value) values('brands','[\"Xiaomi\"]'),('whatsapp_number','\"51999999999\"'),('internal_secret','\"not-exported\"')");
+  await source.query("insert into store_settings(key,value) values ('commerce_settings',$1::jsonb)", [JSON.stringify({ owner: "Negocio", ordersEnabled: false })]);
   await role(source, "authenticated");
   await source.query("select record_sale($1::jsonb,'audio',90)", [JSON.stringify(sale)]);
   snapshot = (await source.query("select export_store_backup() result")).rows[0].result;
@@ -54,6 +57,7 @@ test("the private snapshot uses database rows, includes exact stock and replay i
   assert.equal(JSON.stringify(snapshot).includes("not-exported"), false);
   assert.equal(JSON.stringify(snapshot).includes("admin@example.com"), false);
   assert.equal(snapshot.tables.store_settings.find((s) => s.key === "sales_records").value[0].customerName, sale.customerName);
+  assert.equal(snapshot.tables.store_settings.find((s) => s.key === "commerce_settings").value.owner, "Negocio");
 });
 test("guests, unrelated accounts and administrators without MFA cannot export private data", async () => {
   for (const [name, userId, aal] of [["anon", "", "aal1"], ["authenticated", ordinary, "aal2"], ["authenticated", owner, "aal1"]]) {
@@ -107,6 +111,7 @@ test("installed complaints are included and their identity sequence resumes afte
   await role(source, "postgres"); await source.exec(complaints);
   await source.exec("insert into complaints(reference,provider,submission) overriding system value values(15,'{\"name\":\"PulsoTech\"}','{\"detail\":\"Reclamo privado\"}')");
   await source.exec(backups); // repeat installation preserves records
+  await source.exec(commerce);
   await role(source, "authenticated");
   const current = (await source.query("select export_store_backup() result")).rows[0].result;
   assert.equal(backupSummary(current).complaints, 1);

@@ -15,8 +15,10 @@ export function buildProductShareData(product: ShareableProduct, currentPage: st
   // Keep the deployed host and base path; share only the product's identity.
   url.search = "";
   url.hash = "";
-  url.searchParams.set("id", product.id);
-  if (product.slug) url.searchParams.set("slug", product.slug);
+  if (!url.pathname.endsWith(`/productos/${encodeURIComponent(product.id)}/`) && !url.pathname.endsWith(`/productos/${encodeURIComponent(product.id)}`)) {
+    url.searchParams.set("id", product.id);
+    if (product.slug) url.searchParams.set("slug", product.slug);
+  }
   return {
     title: `${product.name} | PulsoTech`,
     text: `Mira este producto en PulsoTech: ${product.name}`,

@@ -1,13 +1,15 @@
 "use client";
 
+import { productHref } from "@/lib/catalog-links";
+
 import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { STORE_SETTINGS } from "@/data/products";
 import { getAssetUrl } from "@/utils/paths";
 import { colorImages } from "@/lib/product-media";
-import confetti from "canvas-confetti";
 import { useProducts } from "@/context/ProductsContext";
+import { canAcceptOrders, STORE_MODE } from "@/lib/commerce";
 import Logo from "@/components/Logo";
 import {
   X,
@@ -51,7 +53,9 @@ export default function CartPage() {
     isCartLoading,
   } = useCart();
 
-  const { products } = useProducts();
+  const { products, commerceSettings, commerceReady } = useProducts();
+  const isPreparation = STORE_MODE === "preparation";
+  const ordersBlocked = !isPreparation && (!commerceReady || !canAcceptOrders(commerceSettings));
   const { customerName, customerAddress, customerReference, paymentMethod } = checkoutDraft;
   const [errorMsg, setErrorMsg] = useState("");
   const [couponCodeInput, setCouponCodeInput] = useState("");
@@ -91,6 +95,7 @@ export default function CartPage() {
   };
 
   const handleWhatsAppCheckout = async () => {
+    if (ordersBlocked) { setErrorMsg("Los pedidos todavía no están habilitados."); return; }
     if (items.length === 0 || checkoutInProgress.current || isInventoryLoading || stockIssues.size > 0) return;
 
     if (!customerName.trim() || !customerAddress.trim()) {
@@ -112,18 +117,8 @@ export default function CartPage() {
         return;
       }
 
-      try {
-        confetti({
-          particleCount: 70,
-          spread: 60,
-          origin: { y: 0.6 },
-        });
-      } catch {
-        // Ignorar si falla canvas
-      }
-
       const lines: string[] = [
-        `Hola, PulsoTech. Mi nombre es ${customerName.trim()} y me gustaría realizar el siguiente pedido:`,
+        isPreparation ? `Hola, PulsoTech. Soy ${customerName.trim()}. Estoy probando la tienda en preparación; este mensaje no es una compra real.` : `Hola, PulsoTech. Mi nombre es ${customerName.trim()} y me gustaría realizar el siguiente pedido:`,
         "",
       ];
 
@@ -163,12 +158,12 @@ export default function CartPage() {
       type={checkoutStep === "bag" ? "button" : "submit"}
       form={checkoutStep === "delivery" ? "cart-delivery-form" : undefined}
       onClick={checkoutStep === "bag" ? (event) => { event.preventDefault(); changeStep("delivery"); } : undefined}
-      disabled={isCheckingStock || isInventoryLoading || stockIssues.size > 0}
+      disabled={ordersBlocked || isCheckingStock || isInventoryLoading || stockIssues.size > 0}
       aria-busy={isCheckingStock}
       className="w-full min-h-12 px-4 py-3 rounded-lg bg-[#15803d] hover:bg-[#166534] text-white font-semibold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {checkoutStep === "delivery" && <MessageCircle aria-hidden="true" className="w-[18px] h-[18px]" />}
-      <span>{isCheckingStock ? "Comprobando stock…" : isInventoryLoading ? "Cargando disponibilidad…" : checkoutStep === "bag" ? "Continuar con mi pedido" : "Pedir por WhatsApp"}</span>
+      <span>{ordersBlocked ? "Pedidos aún no habilitados" : isCheckingStock ? "Comprobando stock…" : isInventoryLoading ? "Cargando disponibilidad…" : checkoutStep === "bag" ? "Continuar" : isPreparation ? "Probar por WhatsApp" : "Pedir por WhatsApp"}</span>
       {checkoutStep === "bag" && <ArrowRight aria-hidden="true" className="w-4 h-4" />}
     </button>
     {stockIssues.size > 0 && <p role="status" className="text-xs text-neutral-600">Corrige o retira los productos marcados para continuar.</p>}
@@ -187,6 +182,7 @@ export default function CartPage() {
       </header>
 
       <main className={"flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-7 sm:pt-10 " + (items.length ? "pb-44 lg:pb-16" : "pb-12 sm:pb-16")}>
+        {isPreparation && <p className="mb-6 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm leading-6">Estamos preparando la tienda para 2027. Puedes probar la bolsa; todavía no recibimos compras reales. Usa datos de prueba al completar la entrega.</p>}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 pb-6 sm:pb-8 border-b border-neutral-200">
           <div>
             <h1 ref={pageHeading} tabIndex={-1} className="text-3xl sm:text-4xl font-semibold tracking-tight outline-none">{checkoutStep === "delivery" && items.length ? "Entrega" : "Tu bolsa"}</h1>
@@ -225,7 +221,7 @@ export default function CartPage() {
           {suggestedProducts.length > 0 && <section className="border-t border-neutral-200 pt-7 sm:pt-9">
             <h2 className="text-lg font-semibold mb-5">Explora la tienda</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {suggestedProducts.map((product) => <Link key={product.id} href={"/producto/?id=" + encodeURIComponent(product.id) + "&slug=" + encodeURIComponent(product.slug)} className="flex items-center gap-5 p-4 sm:p-5 rounded-xl border border-neutral-200 hover:border-neutral-400 transition-colors">
+              {suggestedProducts.map((product) => <Link key={product.id} href={productHref(product)} className="flex items-center gap-5 p-4 sm:p-5 rounded-xl border border-neutral-200 hover:border-neutral-400 transition-colors">
                 <img src={getAssetUrl(product.images?.[0] || "/placeholder-earbuds.svg")} alt="" className="w-24 h-24 object-contain shrink-0" />
                 <div className="min-w-0"><h3 className="text-sm font-semibold leading-6">{product.name}</h3><p className="text-sm mt-2 tabular-nums">{money(product.price)}</p></div>
               </Link>)}
@@ -240,14 +236,14 @@ export default function CartPage() {
                   const colorName = item.selectedColor?.name || "Original";
                   const stockIssue = stockIssues.get(item.product.id + ":" + colorName);
                   const limit = quantityLimit(item.product.id, colorName);
-                  const productHref = "/producto/?id=" + encodeURIComponent(item.product.id) + "&slug=" + encodeURIComponent(item.product.slug);
+                  const itemHref = productHref(item.product);
                   return <article key={item.product.id + "-" + colorName} className="relative grid grid-cols-[64px_minmax(0,1fr)] min-[360px]:grid-cols-[80px_minmax(0,1fr)] sm:grid-cols-[128px_minmax(0,1fr)] gap-x-3 min-[360px]:gap-x-4 sm:gap-x-6 py-5 sm:py-6 first:pt-0">
-                    <Link href={productHref} aria-label={"Ver " + item.product.name} className="row-span-2 w-16 h-20 min-[360px]:w-20 min-[360px]:h-24 sm:w-32 sm:h-36 flex items-center justify-center rounded-xl bg-neutral-50 overflow-hidden">
+                    <Link href={itemHref} aria-label={"Ver " + item.product.name} className="row-span-2 w-16 h-20 min-[360px]:w-20 min-[360px]:h-24 sm:w-32 sm:h-36 flex items-center justify-center rounded-xl bg-neutral-50 overflow-hidden">
                       <img src={getAssetUrl(imgUrl)} alt={item.product.name} className="w-auto h-auto max-w-full max-h-full object-contain p-2" />
                     </Link>
                     <div className="min-w-0 pr-9">
                       <p className="hidden sm:block text-xs text-neutral-500 uppercase tracking-wide mb-1">{item.product.brand}</p>
-                      <Link href={productHref} className="block text-sm sm:text-base font-semibold leading-6 hover:underline underline-offset-4">{item.product.name}</Link>
+                      <Link href={itemHref} className="block text-sm sm:text-base font-semibold leading-6 hover:underline underline-offset-4">{item.product.name}</Link>
                       <p className="text-xs sm:text-sm text-neutral-500 mt-2 flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full border border-neutral-300" style={{ backgroundColor: item.selectedColor?.hex }} aria-hidden="true" />{colorName}</p>
                       <p className="text-xs sm:text-sm text-neutral-500 mt-1 tabular-nums">{money(item.product.price)} / unidad</p>
                     </div>
