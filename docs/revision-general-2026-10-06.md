@@ -10,6 +10,7 @@
 - Los enlaces de correo de privacidad y atención siguen el correo configurado en administración, con el mismo respaldo existente que la identidad comercial.
 - El comprobante administrativo muestra Chimbote y el WhatsApp configurado; se retiraron referencias antiguas a Lima.
 - La preferencia de movimiento reducido conserva el centrado de las imágenes.
+- El botón flotante de WhatsApp usa su versión compacta en pantallas menores a 1440 px para no cubrir los nombres de categorías en portátiles.
 - Revisión de código sin errores ni advertencias. El flujo de GitHub comprueba también ESLint.
 
 ## Limpieza
@@ -26,6 +27,7 @@ Se conservaron el banner actual, las siete fotografías actuales, imágenes de r
 
 - 147 pruebas automatizadas aprobadas, incluida concurrencia de ventas, acceso privado, MFA, cupones, inventario, galerías y recuperación de respaldo.
 - TypeScript y ESLint aprobados; compilación estática para Cloudflare Pages aprobada.
+- 460 referencias internas del sitio exportado comprobadas, sin archivos ni páginas ausentes.
 - Revisión en navegador público a 320, 390, 640 y 1280 px: navegación, búsqueda, estados vacíos, filtros, galerías, colores, favoritos, cantidades, bolsa completa, entrega y enlaces de información.
 - La prueba del navegador conserva la bolsa original y restaura los favoritos. No envía pedidos ni registra operaciones comerciales.
 - El acceso administrativo público exige autenticación. La parte autenticada se revisó mediante código y pruebas de base de datos aislada; no se realizó una sesión manual con las credenciales del propietario.

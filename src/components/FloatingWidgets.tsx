@@ -48,7 +48,7 @@ export default function FloatingWidgets() {
         </div>
 
         {/* Clean text badge on desktop */}
-        <div className="hidden sm:flex flex-col text-left pr-1">
+        <div className="hidden min-[1440px]:flex flex-col text-left pr-1">
           <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-100 leading-none">
             Asesoría Online
           </span>
