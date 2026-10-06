@@ -20,7 +20,6 @@ export default function Logo({
 }: LogoProps) {
   const iconSize = size === "sm" ? 28 : size === "lg" ? 40 : 34;
   const textSize = size === "sm" ? "text-lg" : size === "lg" ? "text-2xl" : "text-xl";
-  const subSize = size === "sm" ? "text-[8px]" : size === "lg" ? "text-[10px]" : "text-[9px]";
 
   return (
     <Link href="/" onClick={onClick} className={`flex items-center gap-2.5 group select-none ${className}`}>

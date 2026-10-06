@@ -30,6 +30,7 @@ La edición de productos comprueba el stock y la versión que había al abrir el
 npm ci
 npm run dev
 node --experimental-strip-types --test tests/*.test.mjs
+npm run lint
 npm run build:cloudflare
 npm run launch:check
 ```
@@ -37,6 +38,8 @@ npm run launch:check
 `predev` y `prebuild` generan un catálogo público inicial y fotografías locales desde Supabase. También se obtiene una copia de la configuración comercial pública para generar los metadatos. Estos archivos se excluyen de Git. Solo usar una clave pública anónima, nunca una clave de servicio.
 
 Un error de consulta del catálogo impide publicar una compilación incompleta. En desarrollo se permite consultar el catálogo en vivo si la preparación inicial no está disponible.
+
+Después de preparar correctamente el catálogo se eliminan las fotografías generadas que ya no usa ninguna galería. La revisión general y el detalle de limpieza están en `docs/revision-general-2026-10-06.md`.
 
 `launch:check` es de lectura. Revisa datos del negocio, productos visibles, condiciones, habilitación de pedidos y configuración del Libro de Reclamaciones. Devuelve código 1 mientras existan pendientes, sin modificar datos. No sustituye la revisión de productos ni una prueba completa de la operación.
 

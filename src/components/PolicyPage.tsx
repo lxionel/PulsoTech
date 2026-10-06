@@ -23,7 +23,7 @@ export function PolicyIdentity() {
 export default function PolicyPage({ title, intro, current, children }: { title: string; intro: string; current: string; children: ReactNode }) {
   return <div className="min-h-screen flex flex-col bg-[#fbfbfd]">
     <Navbar />
-    <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-8 pt-24 sm:pt-28 pb-16">
+    <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-8 pt-8 sm:pt-10 pb-16">
       <Link href="/#inicio" className="inline-flex min-h-11 items-center text-xs font-semibold text-neutral-500 hover:text-neutral-950">← Volver a la tienda</Link>
       <header className="mt-3 mb-7 space-y-3 max-w-3xl">
         <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">PulsoTech · Información de la tienda</p>

@@ -51,7 +51,7 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <div className="store-motion store-product-card group relative rounded-2xl bg-white border border-neutral-200/90 hover:border-neutral-400 hover:shadow-xl transition-[transform,box-shadow,border-color] duration-300 flex flex-col justify-between overflow-hidden h-full">
       {/* Top Card Image Link */}
-      <Link href={productHref(product)} className="block p-4 sm:p-5 pb-0 flex-1">
+      <div className="p-4 sm:p-5 pb-0 flex-1">
         {/* Top Header: Brand, New Tag & Favorite */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
@@ -92,7 +92,7 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
 
         {/* Large Product Image Frame with Hover Transition (only on image hover) */}
-        <div className="relative w-full aspect-[4/3] sm:aspect-square rounded-xl bg-white flex items-center justify-center p-2 overflow-hidden border border-neutral-100 group/image">
+        <Link href={productHref(product)} aria-label={`Ver ${product.name}`} className="relative w-full aspect-[4/3] sm:aspect-square rounded-xl bg-white flex items-center justify-center p-2 overflow-hidden border border-neutral-100 group/image">
           <div className="relative w-full h-full flex items-center justify-center">
             {/* Imagen Principal (Color seleccionado) */}
             <img
@@ -114,7 +114,7 @@ export default function ProductCard({ product }: { product: Product }) {
               />
             )}
           </div>
-        </div>
+        </Link>
 
         {/* Selector de Colores Disponibles (Swatches con aro activo, selección SOLO al hacer clic) */}
         <div className="min-h-11 sm:min-h-0 sm:h-7 flex items-center gap-1.5 pt-2 pb-0.5 shrink-0">
@@ -158,15 +158,15 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
 
         {/* Title & Subtitle (Inmóviles y perfectamente alineados) */}
-        <div className="pt-1 pb-3">
+        <Link href={productHref(product)} className="block pt-1 pb-3">
           <h3 className="text-lg font-extrabold text-neutral-950 leading-snug line-clamp-2 sm:line-clamp-1 min-h-[1.75rem]">
             {product.name}
           </h3>
           <p className="text-sm sm:text-xs text-neutral-500 line-clamp-2 leading-relaxed min-h-[2.5rem] mt-1">
             {product.subtitle}
           </p>
-        </div>
-      </Link>
+        </Link>
+      </div>
 
       {/* Card Bottom: Price & Long Elegant Action Button */}
       <div className="p-3.5 sm:p-4 pt-3.5 border-t border-neutral-100 mt-auto bg-neutral-50/50 flex flex-col gap-3">
@@ -209,7 +209,7 @@ export default function ProductCard({ product }: { product: Product }) {
             ) : (
               <>
                 <ShoppingBag className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-105" />
-                <span>Añadir al Carrito</span>
+                <span>Añadir a la bolsa</span>
               </>
             )}
           </button>

@@ -2,6 +2,13 @@
 
 import { useProducts } from "@/context/ProductsContext";
 import { STORE_POLICIES } from "@/data/store-policies";
+import type { ReactNode } from "react";
+
+export function CommercialEmail({ subject, className, children }: { subject?: string; className?: string; children?: ReactNode }) {
+  const { commerceSettings: config } = useProducts();
+  const email = config.email || STORE_POLICIES.email;
+  return <a href={`mailto:${email}${subject ? `?subject=${encodeURIComponent(subject)}` : ""}`} className={className}>{children || email}</a>;
+}
 
 export function CommercialIdentity() {
   const { commerceSettings: config } = useProducts();

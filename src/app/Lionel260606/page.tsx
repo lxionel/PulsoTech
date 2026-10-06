@@ -5678,7 +5678,7 @@ function AdminWorkspace() {
                     Accesorios tecnológicos y audio
                   </div>
                   <div className="text-[10px] text-neutral-400 mt-0.5">
-                    Lima, Perú • WhatsApp: +{STORE_SETTINGS.whatsappNumber}
+                    Chimbote, Perú • WhatsApp: +{whatsappNumber}
                   </div>
                 </div>
 
@@ -5874,7 +5874,7 @@ function AdminWorkspace() {
                   },
                   {
                     title: "2. Envío por Agencia a Provincia (Shalom / Olva Courier)",
-                    desc: "Para clientes fuera de Lima con número de seguimiento.",
+                    desc: "Para envíos con número de seguimiento.",
                     text: `Hola ${whatsappTemplateSale.customerName}, te saluda PulsoTech. Confirmamos que tu pedido #${whatsappTemplateSale.id} (${whatsappTemplateSale.productName}) ya fue depositado en agencia para el envío a provincia. ${whatsappTemplateSale.trackingNumber ? "Número de guía / seguimiento: " + whatsappTemplateSale.trackingNumber + "." : "Te estaremos adjuntando la fotografía del remito en breve."} Te mantendremos informado hasta que llegue a tus manos. ¡Muchas gracias por tu compra!`,
                   },
                   {

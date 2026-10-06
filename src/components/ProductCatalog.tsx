@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useProducts } from "@/context/ProductsContext";
 import ProductCard from "./ProductCard";
 import AudioFiltersPanel from "./AudioFiltersPanel";
@@ -14,6 +14,7 @@ import {
 } from "@/lib/audio-filters";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { matchesProductCategory, isAudioCategory } from "@/lib/categories";
+import { catalogPriceCeiling, matchesBrand, sortCatalog } from "@/lib/catalog-filter";
 import {
   Search,
   SlidersHorizontal,
@@ -43,13 +44,16 @@ export default function ProductCatalog({
 
   const [selectedBrand, setSelectedBrand] = useState<string>("todas");
   const [priceRange, setPriceRange] = useState<"all" | "under50" | "50to100" | "over100" | "custom">("all");
-  const [maxPrice, setMaxPrice] = useState<number>(180);
+  const [customMaxPrice, setCustomMaxPrice] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"featured" | "price-asc" | "price-desc">("featured");
   const [showOutOfStock, setShowOutOfStock] = useState(false);
   const [onlyNew, setOnlyNew] = useState(false);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [audioFilters, setAudioFilters] = useState<AudioFilters>(DEFAULT_AUDIO_FILTERS);
+  const filtersDialogRef = useRef<HTMLDialogElement>(null);
+  const priceCeiling = catalogPriceCeiling(products);
+  const maxPrice = customMaxPrice === null ? priceCeiling : Math.min(customMaxPrice, priceCeiling);
 
   const availableProducts = useMemo(() => products.filter((product) =>
     showOutOfStock || ((product.stockCount ?? 0) > 0 && product.inStock !== false)
@@ -96,6 +100,22 @@ export default function ProductCatalog({
 
   useBodyScrollLock(isMobileFiltersOpen);
 
+  useEffect(() => {
+    if (!isMobileFiltersOpen) return;
+    const dialog = filtersDialogRef.current;
+    const previousFocus = document.activeElement;
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    const handleResize = () => { if (desktop.matches) setIsMobileFiltersOpen(false); };
+    if (dialog && !dialog.open) dialog.showModal();
+    handleResize();
+    desktop.addEventListener("change", handleResize);
+    return () => {
+      desktop.removeEventListener("change", handleResize);
+      if (dialog?.open) dialog.close();
+      if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus({ preventScroll: true });
+    };
+  }, [isMobileFiltersOpen]);
+
   // Filter products logic
   const productsMatchingGeneralFilters = useMemo(() => {
     return baseProducts.filter((product) => {
@@ -103,14 +123,7 @@ export default function ProductCatalog({
       if (!matchesProductCategory(product.category || "", selectedCategory)) return false;
 
       // Brand filter
-      if (selectedBrand !== "todas") {
-        const prodName = product.name.toLowerCase();
-        const prodBrand = (product.brand || "").toLowerCase();
-        const queryBrand = selectedBrand.toLowerCase();
-        if (!prodBrand.includes(queryBrand) && !prodName.includes(queryBrand)) {
-          return false;
-        }
-      }
+      if (!matchesBrand(product, selectedBrand)) return false;
 
       // Price filter
       if (priceRange === "under50" && product.price > 50) return false;
@@ -155,15 +168,7 @@ export default function ProductCatalog({
   [hasAudioFilters, audioFilterProducts, audioFilters, productsMatchingGeneralFilters]);
 
   // Sort products
-  const sortedProducts = useMemo(() => {
-    const list = [...filteredProducts];
-    if (sortBy === "price-asc") {
-      list.sort((a, b) => a.price - b.price);
-    } else if (sortBy === "price-desc") {
-      list.sort((a, b) => b.price - a.price);
-    }
-    return list;
-  }, [filteredProducts, sortBy]);
+  const sortedProducts = useMemo(() => sortCatalog(filteredProducts, sortBy), [filteredProducts, sortBy]);
 
   const hasActiveFilters =
     hasAudioFilters ||
@@ -191,7 +196,7 @@ export default function ProductCatalog({
     setSelectedCategory("todos");
     setSelectedBrand("todas");
     setPriceRange("all");
-    setMaxPrice(180);
+    setCustomMaxPrice(null);
     setShowOutOfStock(false);
     setOnlyNew(false);
     setSearchQuery("");
@@ -323,19 +328,20 @@ export default function ProductCatalog({
               </div>
               <input
                 type="range"
-                min={40}
-                max={180}
+                aria-label="Precio máximo"
+                min={0}
+                max={priceCeiling}
                 step={5}
                 value={maxPrice}
                 onChange={(e) => {
                   setPriceRange("custom");
-                  setMaxPrice(Number(e.target.value));
+                  setCustomMaxPrice(Number(e.target.value));
                 }}
                 className="w-full accent-neutral-950 cursor-pointer h-1.5 bg-neutral-200 rounded-lg appearance-none"
               />
               <div className="flex justify-between text-[10px] text-neutral-400 font-bold">
-                <span>S/ 40</span>
-                <span>S/ 180</span>
+                <span>S/ 0</span>
+                <span>S/ {priceCeiling}</span>
               </div>
             </div>
           </div>
@@ -469,6 +475,8 @@ export default function ProductCatalog({
                 {/* Mobile Filter Button */}
                 <button
                   onClick={() => setIsMobileFiltersOpen(true)}
+                  aria-haspopup="dialog"
+                  aria-expanded={isMobileFiltersOpen}
                   className="lg:hidden min-h-11 sm:min-h-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-neutral-950 text-white font-bold text-xs uppercase tracking-wider shadow-xs active:scale-95 transition-all cursor-pointer"
                 >
                   <Filter className="w-3.5 h-3.5" />
@@ -627,21 +635,21 @@ export default function ProductCatalog({
 
       {/* Mobile Filters Drawer Modal */}
       {isMobileFiltersOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex justify-end">
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in"
-            onClick={() => setIsMobileFiltersOpen(false)}
-          />
+        <dialog ref={filtersDialogRef} aria-labelledby="mobile-filters-title"
+          onCancel={(event) => { event.preventDefault(); setIsMobileFiltersOpen(false); }}
+          onClick={(event) => { if (event.target === event.currentTarget) setIsMobileFiltersOpen(false); }}
+          className="fixed inset-0 m-0 h-dvh w-screen max-h-none max-w-none border-0 p-0 bg-transparent lg:hidden open:flex justify-end backdrop:bg-black/60 backdrop:backdrop-blur-xs">
           <div className="store-mobile-filters relative w-full max-w-[calc(100%-1rem)] sm:max-w-xs bg-white h-full p-5 sm:p-6 overflow-y-auto overscroll-contain space-y-6 shadow-2xl flex flex-col justify-between z-10 animate-in slide-in-from-right duration-200">
             <div className="space-y-6">
               <div className="flex items-center justify-between pb-4 border-b border-neutral-200">
                 <div className="flex items-center gap-2">
                   <SlidersHorizontal className="w-4 h-4 text-neutral-950" />
-                  <h3 className="font-extrabold text-sm text-neutral-950 uppercase tracking-wider">
+                  <h3 id="mobile-filters-title" className="font-extrabold text-sm text-neutral-950 uppercase tracking-wider">
                     Filtros y Precios
                   </h3>
                 </div>
                 <button
+                  autoFocus
                   onClick={() => setIsMobileFiltersOpen(false)}
                   className="p-2 rounded-xl text-neutral-500 hover:text-black hover:bg-neutral-100 transition-colors cursor-pointer"
                   aria-label="Cerrar filtros"
@@ -686,13 +694,14 @@ export default function ProductCatalog({
                   </div>
                   <input
                     type="range"
-                    min={40}
-                    max={180}
+                    aria-label="Precio máximo"
+                    min={0}
+                    max={priceCeiling}
                     step={5}
                     value={maxPrice}
                     onChange={(e) => {
                       setPriceRange("custom");
-                      setMaxPrice(Number(e.target.value));
+                      setCustomMaxPrice(Number(e.target.value));
                     }}
                     className="w-full accent-neutral-950 cursor-pointer h-2 bg-neutral-200 rounded-lg appearance-none"
                   />
@@ -836,7 +845,7 @@ export default function ProductCatalog({
               )}
             </div>
           </div>
-        </div>
+        </dialog>
       )}
     </section>
   );

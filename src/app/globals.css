@@ -194,7 +194,6 @@ body:has(.store-footer[data-in-view="true"]) .store-whatsapp-widget {
   .store-category-icon,
   .store-product-card img {
     transform: none !important;
-    translate: none !important;
     scale: none !important;
   }
 }

@@ -79,7 +79,7 @@ export default function FavoritesPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-white">
       <Navbar />
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-12 pt-24 sm:px-6 sm:pb-16 sm:pt-28 lg:px-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-12 pt-8 sm:px-6 sm:pb-16 sm:pt-10 lg:px-8">
         <Link href="/#catalogo" className="inline-flex min-h-11 items-center gap-2 text-xs text-neutral-500 hover:text-neutral-950"><ArrowLeft className="h-4 w-4" />Catálogo</Link>
         <div className="mb-6 mt-3 flex flex-wrap items-end justify-between gap-3 border-b border-neutral-200 pb-5 sm:mb-8">
           <div>
@@ -99,11 +99,11 @@ export default function FavoritesPage() {
         </div>
 
         {loading ? (
-          <section aria-label="Cargando favoritos" aria-busy="true" className="grid grid-cols-1 gap-4 min-[360px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <section aria-label="Cargando favoritos" aria-busy="true" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {[0, 1, 2, 3].map((index) => <div key={index} className="motion-safe:animate-pulse overflow-hidden rounded-2xl border border-neutral-200"><div className="aspect-[4/3] bg-neutral-100 sm:aspect-square" /><div className="space-y-3 p-5"><div className="h-4 w-3/4 rounded bg-neutral-100" /><div className="h-6 w-1/2 rounded bg-neutral-100" /><div className="mt-5 h-11 rounded-xl bg-neutral-100" /></div></div>)}
           </section>
         ) : savedProducts.length > 0 ? (
-          <section aria-label="Productos favoritos" className="grid grid-cols-1 gap-4 min-[360px]:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+          <section aria-label="Productos favoritos" className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
             {savedProducts.map((product) => <SavedProduct key={product.id} product={product} onRemove={() => remove(product.id, product.name)} />)}
           </section>
         ) : (
@@ -114,7 +114,7 @@ export default function FavoritesPage() {
               <p className="mt-2 max-w-sm text-sm leading-relaxed text-neutral-500">Toca el corazón de un producto para guardarlo aquí.</p>
               <Link href="/#catalogo" className="mt-6 rounded-xl bg-neutral-950 px-6 py-3 text-sm font-semibold text-white hover:bg-neutral-800">Ver catálogo</Link>
             </section>
-            {suggestions.length > 0 && <section aria-label="Productos del catálogo" className="mt-10"><h2 className="mb-5 text-lg font-semibold">Explora el catálogo</h2><div className="grid grid-cols-1 gap-4 min-[360px]:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">{suggestions.map((product) => <SavedProduct key={product.id} product={product} saved={isFavorite(product.id)} onRemove={() => toggleFavorite(product.id)} />)}</div></section>}
+            {suggestions.length > 0 && <section aria-label="Productos del catálogo" className="mt-10"><h2 className="mb-5 text-lg font-semibold">Explora el catálogo</h2><div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">{suggestions.map((product) => <SavedProduct key={product.id} product={product} saved={isFavorite(product.id)} onRemove={() => toggleFavorite(product.id)} />)}</div></section>}
           </>
         )}
         {missingIds.length > 0 && (

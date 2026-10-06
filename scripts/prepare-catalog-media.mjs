@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { CATALOG_IMAGE_VERSION, prepareCatalogImage } from "./lib/catalog-image.mjs";
 import nextEnv from "@next/env";
 import { catalogProduct, exportableRow } from "./lib/catalog-snapshot.mjs";
+import { pruneCatalogMedia } from "./lib/catalog-cleanup.mjs";
 import { DEFAULT_COMMERCE_SETTINGS, parseCommerceSettings } from "../src/lib/commerce.ts";
 
 nextEnv.loadEnvConfig(process.cwd());
@@ -18,6 +19,7 @@ let commerce = { settings: DEFAULT_COMMERCE_SETTINGS, installed: false };
 const converted = new Map();
 let originalBytes = 0;
 let optimizedBytes = 0;
+let catalogPrepared = false;
 
 async function optimize(image) {
   if (typeof image !== "string") return "";
@@ -62,6 +64,7 @@ try {
     catalog.push(catalogProduct(row, { images, colors }));
   }
   console.log(`Public media: ${manifest.entries.length} products, ${converted.size} unique photos, ${Math.round(originalBytes / 1024)} KB → ${Math.round(optimizedBytes / 1024)} KB.`);
+  catalogPrepared = true;
 } catch (error) {
   if (process.env.npm_lifecycle_event === "prebuild") throw new Error("No se pudo preparar el catálogo. Revisa Supabase antes de publicar.", { cause: error });
   manifest.entries = [];
@@ -72,3 +75,7 @@ try {
 await fs.writeFile(path.join(target, "manifest.json"), JSON.stringify(manifest));
 await fs.writeFile("src/data/catalog-build.json", JSON.stringify(catalog));
 await fs.writeFile("src/data/commerce-build.json", JSON.stringify(commerce));
+if (catalogPrepared) {
+  const removed = await pruneCatalogMedia(target, catalog);
+  if (removed) console.log(`Removed ${removed} unused generated catalog photos.`);
+}

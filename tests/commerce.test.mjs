@@ -51,9 +51,9 @@ test("build snapshot follows visibility and exports no private row fields or dat
 });
 
 test("the general order switch works without deployment modes and still checks business identity", () => {
-  const module = new URL("../src/lib/commerce.ts", import.meta.url).href;
+  const commerceModule = new URL("../src/lib/commerce.ts", import.meta.url).href;
   const seo = new URL("../src/lib/store-seo.ts", import.meta.url).href;
-  const code = `import {canAcceptOrders} from ${JSON.stringify(module)}; import {productStructuredData} from ${JSON.stringify(seo)}; console.log(JSON.stringify([canAcceptOrders(${JSON.stringify(config)}), canAcceptOrders({...${JSON.stringify(config)}, ruc:'20999999999'}), productStructuredData(${JSON.stringify(product)},true), productStructuredData(${JSON.stringify(ready)},true), canAcceptOrders({...${JSON.stringify(config)},ordersEnabled:false}), canAcceptOrders({...${JSON.stringify(config)},email:''})]));`;
+  const code = `import {canAcceptOrders} from ${JSON.stringify(commerceModule)}; import {productStructuredData} from ${JSON.stringify(seo)}; console.log(JSON.stringify([canAcceptOrders(${JSON.stringify(config)}), canAcceptOrders({...${JSON.stringify(config)}, ruc:'20999999999'}), productStructuredData(${JSON.stringify(product)},true), productStructuredData(${JSON.stringify(ready)},true), canAcceptOrders({...${JSON.stringify(config)},ordersEnabled:false}), canAcceptOrders({...${JSON.stringify(config)},email:''})]));`;
   const child = spawnSync(process.execPath, ["--experimental-strip-types", "--input-type=module", "-e", code], { encoding: "utf8", env: { ...process.env, NEXT_PUBLIC_STORE_MODE: "preparation", NEXT_PUBLIC_STORE_RUC: config.ruc, NEXT_PUBLIC_COMPLAINT_BOOK_ENABLED: "true" } });
   assert.equal(child.status, 0, child.stderr);
   const [allowed, mismatched, incomplete, schema, paused, missingDetails] = JSON.parse(child.stdout);
