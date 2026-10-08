@@ -55,7 +55,7 @@ Verificación del 8 de octubre: antes de instalar, el endpoint devolvía `404`. 
 - Lectura anónima de identificadores en la tabla: `401`, denegada.
 - Cero reclamos creados. Las huellas de productos, ajustes y operaciones antes/después coinciden.
 
-Las 168 pruebas automatizadas pasaron en la preparación. No se enviaron solicitudes reales ni mensajes; recepción, constancia y respuesta completas todavía no se han comprobado en el servicio. La pestaña administrativa estaba sin sesión al intentar consultar el módulo tras instalar; falta esa comprobación visual con una sesión nueva, aunque los permisos y el endpoint remoto ya se verificaron por CLI/HTTP. Las copias anteriores a esta instalación mantienen el estado histórico del esquema; generar una nueva copia cifrada cuando se vuelva a abrir el panel.
+Las 168 pruebas automatizadas pasaron en la preparación. No se enviaron solicitudes reales ni mensajes; recepción, constancia y respuesta completas todavía no se han comprobado en el servicio. La pestaña administrativa estaba sin sesión al intentar consultar el módulo tras instalar; falta esa comprobación visual con una sesión nueva, aunque los permisos y el endpoint remoto ya se verificaron por CLI/HTTP. Las copias anteriores a esta instalación mantienen el estado histórico del esquema. Posteriormente se creó una nueva copia cifrada mediante lectura autorizada por CLI, que incluye la tabla instalada y vacía; descifrado y restauración exacta en memoria comprobados ([evidencia](evidencia-respaldo-2026-10-08.json)).
 
 ## Fuentes oficiales
 

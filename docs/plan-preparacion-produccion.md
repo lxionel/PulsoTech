@@ -6,12 +6,12 @@ Referencia inicial: `090f6c5`, 8 de octubre de 2026. Mantener el diseño aprobad
 | --- | --- | --- |
 | 1. Referencia y respaldo | Comprobado | Bundle Git verificado; copia cifrada descargada desde el panel y restaurada sin diferencias en una base temporal. |
 | 2. Panel administrativo | Comprobado parcialmente | Sesión real con MFA; formularios, carga múltiple, orden y eliminación de fotos sin guardar, validaciones de venta y secciones revisados. Las escrituras confirmadas de crear/editar/eliminar deben ensayarse en un proyecto descartable de Supabase. |
-| 3. Venta completa | Comprobado en base aislada | Diez comprobaciones conectan bolsa, descuentos y transacciones SQL sobre la copia restaurada. Falta recorrer una venta confirmada desde la interfaz contra Supabase descartable y confirmar atención/entrega; no se enviaron mensajes. |
+| 3. Venta completa | Ensayo aislado y versión SQL remota comprobados | Diez comprobaciones conectan bolsa, descuentos y transacciones SQL sobre la copia restaurada. Ocho funciones instaladas y permisos/políticas de cinco tablas coinciden con la referencia probada. Falta recorrer una venta confirmada desde la interfaz contra Supabase descartable y confirmar atención/entrega; no se enviaron mensajes. |
 | 4. Capacidad | Preparación técnica y primera medición | Visitantes sin sockets permanentes; refrescos visibles y agrupados. Primera pasada HTTP: 10 clientes, 60 solicitudes, cero errores. Confirmar plan/cuotas y medir etapas mayores, carga sostenida y navegadores reales con un catálogo representativo. |
 | 5. Información comercial | Pendiente del propietario | Responsable, RUC, dirección, correo, horario, entrega, garantía y políticas reales coherentes. |
 | 6. Reclamos | Instalación técnica comprobada; activación pendiente | Tabla instalada con RLS y permisos verificados; función `submit-complaint` activa y origen limitado a la web actual. Faltan identidad definitiva, RUC y secreto de Turnstile, y probar recepción, constancia y respuesta antes de habilitar. |
 | 7. Catálogo definitivo | Pendiente del propietario | Productos, stock, condiciones, especificaciones y originales fotográficos reales. No sustituir la muestra actual por datos inventados. |
-| 8. Recuperación y monitoreo | Recuperación comprobada; seguimiento pendiente | Copia real restaurada en memoria; falta un ensayo en proyecto independiente de Supabase y configurar comprobaciones periódicas/avisos con destino y frecuencia definidos. |
+| 8. Recuperación y monitoreo | Recuperación comprobada; seguimiento pendiente | Copia real restaurada en memoria; nueva copia cifrada posterior a instalar reclamos también recuperada sin diferencias. Falta custodia externa, un ensayo del servicio completo en proyecto independiente de Supabase y configurar comprobaciones periódicas/avisos con destino y frecuencia definidos. |
 | 9. Habilitación de ventas | Pendiente | Misma versión revisada en escritorio y móvil, operación confirmada, cuotas suficientes y pendientes críticos anteriores cerrados. Mantener pedidos pausados mientras falten requisitos. |
 
 ## Orden de trabajo
@@ -29,6 +29,8 @@ El propietario aún no tiene definidos los datos comerciales. Comprará el domin
 ## Evidencia y límites
 
 - [Resultados de esta ejecución](validacion-operativa-2026-10-08.md).
+- [Comparación de funciones y permisos instalados en Supabase](evidencia-supabase-2026-10-08.json): metadatos únicamente; no confirma una venta desde la interfaz.
+- [Copia actualizada y restauración aislada después de instalar reclamos](evidencia-respaldo-2026-10-08.json): el archivo privado está fuera del repositorio.
 - `npm run backup:verify -- <copia> --drill`: recuperación en memoria, sin red.
 - `npm run backup:verify -- <copia> --operations`: añade ensayo de ventas en memoria, sin red.
 - `npm run capacity:check`: plan HTTP sin ejecutar carga.

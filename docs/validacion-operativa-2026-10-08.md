@@ -6,6 +6,7 @@
 - Descarga desde Ajustes → Respaldos & Datos con sesión administrativa y MFA: una copia cifrada con un producto, una venta histórica y cero identidades de operación. La tabla de reclamos no estaba instalada (`null`, no una lista vacía).
 - Restauración de esa copia en PostgreSQL embebido temporal; comparación de todas sus tablas aprobada. Se comparan instantes de fechas sin perder microsegundos, aunque cambie su representación de zona horaria.
 - El respaldo y su clave exclusiva están fuera del repositorio, en `../respaldos-locales/` y `../claves-respaldo/`. La clave se generó solo para cifrar la copia; no modifica la cuenta, no se imprimió y no se envió a Supabase. Trasladar la clave a un gestor privado y conservar otra copia cifrada fuera del equipo.
+- Tras instalar el módulo de reclamos, una consulta de lectura por Supabase CLI obtuvo una instantánea consistente de las mismas tablas operativas. Se cifró en memoria y se guardó como `2026-10-08-post-reclamos.pulsobackup`, sin volcar datos privados en claro. Se descifró el archivo guardado y se restauró en una base nueva en memoria: todas las tablas coinciden. Productos, ajustes y operaciones conservan exactamente el contenido de la copia anterior; reclamos cambia de módulo ausente (`null`) a instalado y vacío (`[]`). [Evidencia resumida](evidencia-respaldo-2026-10-08.json). Falta custodia fuera de este equipo y recuperación del servicio completo.
 
 ## Panel con sesión real
 
@@ -30,7 +31,20 @@ El ajuste publicado `408e109` pasó CI y se verificó a 320 px: las pestañas de
 
 Se crearon únicamente registros sintéticos dentro de la base temporal. Aprobado: bolsa y descuento porcentual; cupón retirado; precio actualizado; venta y stock; reintento sin doble descuento; cantidad insuficiente; comprobación SQL del precio; cancelación y exclusión de ingresos; dos solicitudes por la última unidad; historial anterior intacto. Cancelar no repone existencias automáticamente, según el funcionamiento documentado.
 
-Este ensayo usa el esquema y SQL del repositorio actual, no demuestra que cada función remota instalada tenga esa misma versión. No reemplaza una venta desde la interfaz sobre un proyecto descartable equivalente.
+Este ensayo usa el esquema y SQL del repositorio actual. La comparación remota posterior confirmó las definiciones y permisos descritos abajo. No reemplaza una venta desde la interfaz sobre un proyecto descartable equivalente.
+
+## Comparación con Supabase instalado
+
+Se consultaron únicamente metadatos de PostgreSQL en `upovmpudzgtafobtxnfr`, sin ejecutar funciones de venta ni leer registros de clientes. La referencia se construyó en una base nueva en memoria ejecutando el esquema y los instaladores actuales del repositorio (`7d02bb9`).
+
+- Ocho funciones coinciden: `is_store_admin_account`, `is_store_admin`, `lock_sales_history`, `record_sale`, `change_sale_status`, `remove_sale_record`, `clear_sale_records` y `export_store_backup`. Se compararon cuerpo SQL, argumentos y valores predeterminados, retorno, lenguaje, volatilidad, `SECURITY DEFINER`, configuración de búsqueda y permisos efectivos de ejecución anónimos y autenticados. Solo se normalizaron finales de línea y espacio en los extremos del cuerpo.
+- En `products`, `store_settings`, `store_admins`, `sale_operations` y `complaints` coinciden RLS, políticas y permisos efectivos por tabla y columna para `anon` y `authenticated`.
+- El inventario de funciones propias del esquema público coincide; no se encontraron versiones adicionales u otras funciones propias en ese esquema. Las funciones pertenecientes a extensiones se excluyeron de este inventario.
+- [Evidencia resumida y huellas de los cuerpos](evidencia-supabase-2026-10-08.json), sin datos comerciales, credenciales ni contenido de reclamos.
+
+Esto cierra la duda sobre la versión de esas funciones instaladas. No acredita todos los objetos del esquema, la configuración completa de Auth/Storage, la recuperación del servicio ni concurrencia con conexiones independientes.
+
+El segundo proyecto accesible, «lxionel's Project», contiene otra aplicación. Se consultaron metadatos y conteos; no se reutilizó ni modificó. Sigue pendiente un proyecto exclusivo para el recorrido de escritura desde la interfaz. Antes de crear uno se debe confirmar disponibilidad gratuita o un coste aceptado por el propietario; no se creó ningún proyecto o rama de pago.
 
 ## Sincronización y primera medición
 
@@ -40,13 +54,15 @@ Primera pasada HTTP sobre la versión pública previa a publicar estas correccio
 
 La herramienta prepara etapas de 10, 25, 50 y 100 clientes HTTP y se detiene entre etapas ante errores o p95 superior a tres segundos. Confirmar cuotas y un entorno equivalente antes de ampliarlas. El monitoreo continuo todavía no está activado.
 
+Comprobación puntual posterior sobre la web publicada actual: un cliente, seis solicitudes, cero errores; p50 293 ms, p95/máximo 585 ms y 120.695 bytes. Inicio, catálogo, ficha HTML, manifiesto de galerías y consultas públicas de productos/ajustes respondieron correctamente a nivel HTTP. Informe local: `../respaldos-locales/2026-10-08-disponibilidad.json`. No ejecuta JavaScript ni acredita el funcionamiento visual, capacidad sostenida o seguimiento permanente.
+
 ## Pendientes
 
 ### Continuación: instalación técnica de reclamos
 
-Después de que el propietario completó el acceso de Supabase CLI, se instaló `activate-complaints.sql` en el proyecto configurado y se publicó `submit-complaint` versión 1. Los nueve controles de `verify-complaints.sql` pasaron, con las dos políticas de administración y MFA. Origen permitido: la web pública actual. Preflight válido `204`, origen ajeno `403`, envío vacío `503` por configuración pendiente y lectura anónima `401`. Cero solicitudes creadas; huellas de productos, ajustes y operaciones conservadas. Faltan RUC, identidad definitiva, secreto de Turnstile, nueva copia cifrada con el módulo y prueba completa de recepción/constancia/respuesta. La verificación visual del administrador tras instalar requiere una nueva sesión; la pestaña existente estaba cerrada al acceso administrativo.
+Después de que el propietario completó el acceso de Supabase CLI, se instaló `activate-complaints.sql` en el proyecto configurado y se publicó `submit-complaint` versión 1. Los nueve controles de `verify-complaints.sql` pasaron, con las dos políticas de administración y MFA. Origen permitido: la web pública actual. Preflight válido `204`, origen ajeno `403`, envío vacío `503` por configuración pendiente y lectura anónima `401`. Cero solicitudes creadas; huellas de productos, ajustes y operaciones conservadas. La nueva copia cifrada con el módulo ya se comprobó. Faltan RUC, identidad definitiva, secreto de Turnstile y prueba completa de recepción/constancia/respuesta. La verificación visual del administrador tras instalar requiere una nueva sesión; la pestaña existente estaba cerrada al acceso administrativo.
 
-Pruebas automatizadas: 166 aprobadas, sin fallos. Dominio y correo corporativo futuros; horario provisional de 08:00 a 20:00 o 22:00, sin confirmar. Inicio por internet sin local abierto al público; identidad y domicilio que correspondan al negocio todavía pendientes. No se publicaron datos provisionales.
+Pruebas automatizadas en la última ejecución completa: 168 aprobadas, sin fallos. La comparación de metadatos posterior no modificó código de ejecución ni requirió repetir esa suite. Dominio y correo corporativo futuros; horario provisional de 08:00 a 20:00 o 22:00, sin confirmar. Inicio por internet sin local abierto al público; identidad y domicilio que correspondan al negocio todavía pendientes. No se publicaron datos provisionales.
 
 Se retiró la dirección fija antigua de las políticas tras la aclaración del propietario. El nombre y correo de contacto iniciales se conservan mientras se confirma la identidad comercial definitiva.
 

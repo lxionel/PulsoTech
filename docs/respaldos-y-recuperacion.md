@@ -4,6 +4,8 @@
 
 La recuperación se prueba con PostgreSQL embebido (PGlite). El 8 de octubre de 2026 se descargó una copia cifrada con la sesión administrativa y se restauró en memoria, conservando sus tablas. El ensayo operativo se ejecutó sobre esa copia sin escribir en Supabase; consultar [los resultados](validacion-operativa-2026-10-08.md). No hay una tarea automática de respaldos configurada.
 
+Después de instalar reclamos se obtuvo otra copia mediante una única consulta de lectura con la sesión autorizada de Supabase CLI. Se cifró antes de escribirla en disco y se verificaron descifrado y restauración exacta en memoria. Conserva las tablas anteriores e incluye `complaints` instalada y vacía. Archivo privado: `../respaldos-locales/2026-10-08-post-reclamos.pulsobackup`; la clave exclusiva sigue separada del respaldo y fuera del repositorio. [Evidencia sin datos privados](evidencia-respaldo-2026-10-08.json).
+
 1. Abre el [SQL Editor del proyecto PulsoTech](https://supabase.com/dashboard/project/upovmpudzgtafobtxnfr/sql). Comprueba el nombre del proyecto antes de ejecutar.
 2. En una consulta nueva, pega **todo** `supabase/activate-backups.sql` y pulsa Run. Requiere que las funciones de administrador/MFA y de ventas seguras ya estén instaladas. La instalación es repetible; no cambia stock, ventas ni permisos de escritura de productos. La migración equivalente es `supabase/migrations/20261004020000_store_backups.sql`.
 3. Recarga el panel y abre **Ajustes → Respaldos & Datos → Copia cifrada de la tienda**.
@@ -67,7 +69,7 @@ El SQL de recuperación preserva existencias exactas e identidades de pedidos en
 
 ## Respaldo completo de la plataforma antes de publicar
 
-Antes de producción, completa también un respaldo lógico independiente de la base de datos con las [herramientas oficiales de Supabase](https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore): roles, esquema, datos, historial de migraciones y personalizaciones de Auth/Storage según corresponda. Usa credenciales solo en tu terminal privada y no en el frontend o repositorio. Este entorno todavía no tiene Supabase CLI, Docker ni `pg_dump`; no se han instalado ni ejecutado contra tu proyecto en esta tarea.
+Antes de producción, completa también un respaldo lógico independiente de la base de datos con las [herramientas oficiales de Supabase](https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore): roles, esquema, datos, historial de migraciones y personalizaciones de Auth/Storage según corresponda. Usa credenciales solo en tu terminal privada y no en el frontend o repositorio. Supabase CLI `2.120.0` ya está disponible mediante `npx` y autenticada por el propietario. No se encontraron Docker ni `pg_dump` disponibles para el volcado completo; ese volcado todavía no se ha ejecutado. La consulta de copia operativa no lo sustituye.
 
 Los archivos físicos de Storage y las imágenes externas requieren una copia propia. Reúne por separado el código, configuración del despliegue y recuperación de acceso a Supabase, Cloudflare, correo y GitHub. No copies factores MFA por medio del panel de la tienda. Los respaldos de base de datos de Supabase no incluyen los objetos de Storage; para proyectos gratuitos, Supabase recomienda exportaciones y copias externas regulares ([documentación de respaldos](https://supabase.com/docs/guides/platform/backups)).
 

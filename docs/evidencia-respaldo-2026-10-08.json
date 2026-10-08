@@ -1,0 +1,31 @@
+{
+  "checkedAt": "2026-10-08T21:49:08.506Z",
+  "project": "upovmpudzgtafobtxnfr",
+  "source": "Supabase CLI, one read-only SELECT snapshot; no Auth session impersonation",
+  "backup": "2026-10-08-post-reclamos.pulsobackup",
+  "encryptedRoundTrip": true,
+  "existingTablesUnchanged": true,
+  "previousComplaintsInstalled": false,
+  "complaintsInstalled": true,
+  "counts": {
+    "products": 1,
+    "sales": 1,
+    "operations": 0,
+    "complaints": 0
+  },
+  "isolatedRecovery": {
+    "restored": true,
+    "exactTables": true,
+    "counts": {
+      "products": 1,
+      "sales": 1,
+      "operations": 0,
+      "complaints": 0
+    }
+  },
+  "remoteWrites": false,
+  "limits": [
+    "Operational tables only; Auth, Storage, secrets and hosting are not included.",
+    "A second copy outside this computer and complete Supabase recovery remain pending."
+  ]
+}

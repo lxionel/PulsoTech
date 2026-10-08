@@ -1,0 +1,102 @@
+{
+  "project": "upovmpudzgtafobtxnfr",
+  "referenceCommit": "7d02bb9",
+  "checkedAt": "2026-10-08T21:42:44.533Z",
+  "readOnly": true,
+  "scope": "Definitions, public RPC inventory, RLS policies and effective anon/authenticated table and column privileges. No business data or credentials.",
+  "functions": [
+    {
+      "signature": "public.change_sale_status(text,text)",
+      "installed": true,
+      "matches": true,
+      "differences": [],
+      "bodySha256": "79d0888fe870f77048bc32114e987d1050ad6653ed252c3b23abe8523856b25a"
+    },
+    {
+      "signature": "public.clear_sale_records()",
+      "installed": true,
+      "matches": true,
+      "differences": [],
+      "bodySha256": "9b68042e169501ebb95e3ab0bf4f4ec3c4baeed527bdc2bb1fd5fea4f782f0b3"
+    },
+    {
+      "signature": "public.export_store_backup()",
+      "installed": true,
+      "matches": true,
+      "differences": [],
+      "bodySha256": "77183d22ec388a949c33fa8c4982add072ca460fc4a138d26be414f6e47b4f8a"
+    },
+    {
+      "signature": "public.is_store_admin()",
+      "installed": true,
+      "matches": true,
+      "differences": [],
+      "bodySha256": "f904ef6f1e4011476016b297ef01601f392d084f4836142e1af5b9bd23a44783"
+    },
+    {
+      "signature": "public.is_store_admin_account()",
+      "installed": true,
+      "matches": true,
+      "differences": [],
+      "bodySha256": "ef68a8658a919069d5b11a09e3ab60a0a269f36dae29c636885d52858d2b308b"
+    },
+    {
+      "signature": "public.lock_sales_history()",
+      "installed": true,
+      "matches": true,
+      "differences": [],
+      "bodySha256": "0c47ed2c6e6c6394b5ea38500d381c685337779c6d928386fcaef56194891091"
+    },
+    {
+      "signature": "public.record_sale(jsonb,text,numeric)",
+      "installed": true,
+      "matches": true,
+      "differences": [],
+      "bodySha256": "91aec9a1746d8ffb43a3622e8bce910bbc00fa6b28ee81a76ea9cb8a1273bcc4"
+    },
+    {
+      "signature": "public.remove_sale_record(text)",
+      "installed": true,
+      "matches": true,
+      "differences": [],
+      "bodySha256": "3120fcb6489845fb6d09d7a308972625f704d5067092b76371eb3bcda5224724"
+    }
+  ],
+  "tables": [
+    {
+      "table": "complaints",
+      "installed": true,
+      "matches": true,
+      "differences": []
+    },
+    {
+      "table": "products",
+      "installed": true,
+      "matches": true,
+      "differences": []
+    },
+    {
+      "table": "sale_operations",
+      "installed": true,
+      "matches": true,
+      "differences": []
+    },
+    {
+      "table": "store_admins",
+      "installed": true,
+      "matches": true,
+      "differences": []
+    },
+    {
+      "table": "store_settings",
+      "installed": true,
+      "matches": true,
+      "differences": []
+    }
+  ],
+  "rpcInventoryMatches": true,
+  "limits": [
+    "No confirmed UI sale against a disposable Supabase project.",
+    "Does not verify Auth/Storage configuration, all schema objects, service recovery or concurrent independent connections."
+  ]
+}
