@@ -16,7 +16,7 @@ export function CommercialIdentity() {
   const address = config.address || STORE_POLICIES.address;
   const email = config.email || STORE_POLICIES.email;
   const ruc = config.ruc || STORE_POLICIES.ruc;
-  return <address className="not-italic text-sm leading-7 text-neutral-600"><span className="block font-semibold text-neutral-900">PulsoTech · {owner}</span><span className="block">{address}</span>{ruc && <span className="block">RUC: {ruc}</span>}<a href={`mailto:${email}`} className="underline underline-offset-4 break-all">{email}</a>{config.hours && <span className="block">Atención: {config.hours}</span>}</address>;
+  return <address className="not-italic text-sm leading-7 text-neutral-600"><span className="block font-semibold text-neutral-900">PulsoTech · {owner}</span>{address && <span className="block">{address}</span>}{ruc && <span className="block">RUC: {ruc}</span>}<a href={`mailto:${email}`} className="underline underline-offset-4 break-all">{email}</a>{config.hours && <span className="block">Atención: {config.hours}</span>}</address>;
 }
 
 export function CommercialDelivery() {

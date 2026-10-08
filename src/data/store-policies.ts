@@ -1,7 +1,7 @@
 export const STORE_POLICIES = {
-  updatedAt: "4 de octubre de 2026",
+  updatedAt: "8 de octubre de 2026",
   owner: "Lionel Davor Aguirre Gomero",
-  address: "Esperanza Baja, Jr. Huáscar, Mz. S, Lt. 18, Chimbote, Perú",
+  address: "",
   email: "lioneldavor26@gmail.com",
   area: "Chimbote",
   voluntaryChangeDays: 7,

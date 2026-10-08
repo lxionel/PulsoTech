@@ -24,6 +24,8 @@ Hallazgos corregidos en código:
 
 La versión publicada `2decd32` pasó CI. El formulario vacío muestra el aviso sin bloquear la página y permite seguir editando; sus seis etiquetas principales funcionan. Se comprobó el formulario de producto a 320 y 390 px, los nombres accesibles del registro de venta, el prefijo del enlace de contacto y la distinción entre error de reclamos y lista vacía. Una segunda copia cifrada, descargada después de la revisión, conserva exactamente todas las tablas de la inicial: no hubo escrituras remotas en las pruebas.
 
+El ajuste publicado `408e109` pasó CI y se verificó a 320 px: las pestañas de ventas permanecen dentro del ancho de la página. La ficha pública no preselecciona color; al elegir Negro muestra tres miniaturas y al elegir Blanco dos. No se detectaron imágenes rotas; dos unidades calculan un total de S/ 200. La bolsa conserva su unidad original y abre como página completa.
+
 ## Ensayo operativo sobre la copia
 
 Se crearon únicamente registros sintéticos dentro de la base temporal. Aprobado: bolsa y descuento porcentual; cupón retirado; precio actualizado; venta y stock; reintento sin doble descuento; cantidad insuficiente; comprobación SQL del precio; cancelación y exclusión de ingresos; dos solicitudes por la última unidad; historial anterior intacto. Cancelar no repone existencias automáticamente, según el funcionamiento documentado.
@@ -41,5 +43,7 @@ La herramienta prepara etapas de 10, 25, 50 y 100 clientes HTTP y se detiene ent
 ## Pendientes
 
 Pruebas automatizadas: 166 aprobadas, sin fallos. Dominio y correo corporativo futuros; horario provisional de 08:00 a 20:00 o 22:00, sin confirmar. Inicio por internet sin local abierto al público; identidad y domicilio que correspondan al negocio todavía pendientes. No se publicaron datos provisionales.
+
+Se retiró la dirección fija antigua de las políticas tras la aclaración del propietario. El nombre y correo de contacto iniciales se conservan mientras se confirma la identidad comercial definitiva.
 
 Datos comerciales y catálogo definitivos; instalación/publicación y prueba del Libro; escrituras de interfaz contra Supabase descartable, ensayo de recuperación del servicio completo, carga sostenida con navegadores y monitoreo. Pedidos siguen pausados. Ver [el plan y sus condiciones de cierre](plan-preparacion-produccion.md).

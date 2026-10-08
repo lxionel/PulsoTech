@@ -1,6 +1,6 @@
 # Activación del Libro de Reclamaciones
 
-Las políticas y el canal de atención ya tienen el nombre y domicilio autorizados por el propietario y el correo `lioneldavor26@gmail.com`. La tienda todavía no tiene RUC. El formulario del Libro permanece deshabilitado y el pie de página muestra **Atención y reclamos**, para no presentar ese contacto como un libro ya operativo.
+Las políticas conservan el nombre y correo de contacto iniciales. El propietario todavía no tiene definidos el domicilio comercial, el RUC, el dominio, el correo corporativo y el horario final. Se retiró la dirección fija anterior; estos datos deben confirmarse en la configuración antes de vender. El formulario del Libro permanece deshabilitado y el pie de página muestra **Atención y reclamos**, para no presentar ese contacto como un libro ya operativo.
 
 ## Lo que está preparado en el código
 
@@ -25,7 +25,7 @@ Las políticas y el canal de atención ya tienen el nombre y domicilio autorizad
    - `NEXT_PUBLIC_STORE_RUC`: el mismo RUC real.
    - `NEXT_PUBLIC_COMPLAINT_BOOK_ENABLED=true` solo cuando todo el circuito esté validado.
    - `NEXT_PUBLIC_TURNSTILE_SITE_KEY`: clave pública del widget autorizado para ese hostname.
-   En GitHub Pages se utilizan las Variables de Actions correspondientes y una compilación nueva. Las claves privadas nunca se ponen en esas variables públicas.
+   En Cloudflare Pages se utilizan las variables de compilación correspondientes y una compilación nueva; GitHub Actions también debe recibir las variables públicas necesarias para validar esa configuración. Las claves privadas nunca se ponen en esas variables públicas.
 6. Comprobar una solicitud de prueba, su constancia, lectura exclusiva desde el administrador y envío manual de la respuesta. Si una respuesta de red es incierta, consultar los registros privados antes de reenviar para evitar duplicados.
 7. Organizar el seguimiento de los quince días hábiles y el respaldo/constancia cuando el servicio virtual no esté disponible. Mostrar el aviso y acceso visible exigidos por la normativa; el pie cambia a **Libro de Reclamaciones** al habilitarlo.
 
