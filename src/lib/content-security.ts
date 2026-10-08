@@ -1,6 +1,7 @@
 import type { Product, SaleRecord } from "@/types";
 
 export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+export const MAX_IMAGE_PIXELS = 40_000_000;
 export const MAX_BACKUP_BYTES = 10 * 1024 * 1024;
 const MAX_DATA_IMAGE_LENGTH = Math.ceil(MAX_IMAGE_BYTES / 3) * 4 + 64;
 const BAD_KEYS = new Set(["__proto__", "prototype", "constructor"]);
@@ -59,11 +60,31 @@ export function getProductVideoInfo(value?: string): { isYouTube: boolean; embed
     : null;
 }
 
-export async function validateImageFile(file: File): Promise<void> {
+async function decodeUploadedImage(file: File): Promise<{ width: number; height: number }> {
+  const source = URL.createObjectURL(file);
+  const image = new Image();
+  try {
+    image.src = source;
+    await image.decode();
+    return { width: image.naturalWidth, height: image.naturalHeight };
+  } finally {
+    image.src = "";
+    URL.revokeObjectURL(source);
+  }
+}
+
+export async function validateImageFile(file: File, decode: (file: File) => Promise<{ width: number; height: number }> = decodeUploadedImage): Promise<void> {
   if (!IMAGE_TYPES.has(file.type)) throw new Error("Usa una imagen JPG, PNG, WebP o GIF. No se admiten archivos SVG o HTML.");
   if (!file.size || file.size > MAX_IMAGE_BYTES) throw new Error("La imagen debe pesar como máximo 2 MB.");
   const header = new Uint8Array(await file.slice(0, 12).arrayBuffer());
   if (!imageSignature(header, file.type)) throw new Error("El contenido del archivo no corresponde al formato de imagen indicado.");
+  let size: { width: number; height: number };
+  try { size = await decode(file); }
+  catch { throw new Error(`No se puede abrir ${file.name}. Usa una imagen completa y sin daños.`); }
+  if (!Number.isSafeInteger(size.width) || !Number.isSafeInteger(size.height) || size.width < 1 || size.height < 1) {
+    throw new Error("La imagen no tiene dimensiones válidas.");
+  }
+  if (size.width * size.height > MAX_IMAGE_PIXELS) throw new Error("La imagen supera los 40 megapíxeles. Reduce sus dimensiones antes de subirla.");
 }
 
 export function csvCell(value: string | number): string {

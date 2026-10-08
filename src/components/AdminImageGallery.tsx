@@ -31,7 +31,7 @@ export default function AdminImageGallery({ title, hint, images, onChange, disab
     setBusy(true); onBusyChange(true); setError("");
     try {
       if (images.length + files.length > MAX_GALLERY_IMAGES) throw new Error(`Puedes añadir hasta ${MAX_GALLERY_IMAGES} fotos por galería.`);
-      await Promise.all(files.map(validateImageFile));
+      await Promise.all(files.map((file) => validateImageFile(file)));
       const additions = await Promise.all(files.map((file) => new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("No se pudo leer la imagen."));

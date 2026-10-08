@@ -9,6 +9,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import { AlertCircle, ArrowLeft } from "lucide-react";
+import { resolvePublicProduct } from "@/lib/product-routing";
 
 function QueryProductContent() {
   const searchParams = useSearchParams();
@@ -18,23 +19,7 @@ function QueryProductContent() {
 function DynamicProductContent({ idParam, slugParam }: { idParam: string | null; slugParam: string | null }) {
   const { products, isLoading, isCloudConnected } = useProducts();
 
-  const product = React.useMemo(() => {
-    if (idParam) {
-      const match = products.find((p) => p.id === idParam);
-      if (match) return match;
-    }
-    if (slugParam) {
-      const cleanSlug = slugParam.toLowerCase().trim();
-      const match = products.find(
-        (p) =>
-          p.slug.toLowerCase() === cleanSlug ||
-          p.id.toLowerCase() === cleanSlug ||
-          p.name.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-") === cleanSlug
-      );
-      if (match) return match;
-    }
-    return null;
-  }, [idParam, slugParam, products]);
+  const product = React.useMemo(() => resolvePublicProduct(products, idParam, slugParam), [idParam, slugParam, products]);
 
   if (!product && isLoading) {
     return <ProductLoading />;

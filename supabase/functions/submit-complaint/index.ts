@@ -72,7 +72,21 @@ export function createComplaintHandler(deps: Dependencies) {
       if (!verification.ok) return reply(503, { error: "No se pudo verificar la solicitud. Intenta de nuevo." });
       const proof = await verification.json();
       if (proof.success !== true || proof.hostname !== new URL(origin).hostname || proof.action !== "complaint") return reply(400, { error: "La verificación caducó o no es válida. Complétala de nuevo." });
-      const provider = { name: "Lionel Davor Aguirre Gomero", tradeName: "PulsoTech", address: "Esperanza Baja, Jr. Huáscar, Mz. S, Lt. 18, Chimbote, Perú", email: "lioneldavor26@gmail.com", ruc };
+      // Snapshot the actual business identity, so future edits do not alter old receipts.
+      const settingsResponse = await deps.fetch(`${url}/rest/v1/store_settings?select=key,value&key=in.(commerce_settings,commerce_schema_version)`, {
+        headers: { apikey: key, Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(10000),
+      });
+      if (!settingsResponse.ok) return reply(503, { error: "No pudimos comprobar los datos del negocio. Contacta con PulsoTech antes de reenviar la solicitud." });
+      const settings = await settingsResponse.json();
+      const config = Array.isArray(settings) ? settings.find(row => row.key === "commerce_settings")?.value : null;
+      if (!config || typeof config !== "object" || Array.isArray(config)
+        || settings.find(row => row.key === "commerce_schema_version")?.value !== 1
+        || config.ruc?.trim() !== ruc
+        || ["owner", "address", "email"].some(field => typeof config[field] !== "string" || !config[field].trim())
+        || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(config.email.trim())) {
+        return reply(503, { error: "Los datos del Libro de Reclamaciones todavía no están completos. Contacta con PulsoTech por sus canales de atención." });
+      }
+      const provider = { name: config.owner.trim(), tradeName: "PulsoTech", address: config.address.trim(), email: config.email.trim(), ruc };
       const saved = await deps.fetch(`${url}/rest/v1/complaints?select=id,reference,created_at`, {
         method: "POST", headers: { "Content-Type": "application/json", apikey: key, Authorization: `Bearer ${key}`, Prefer: "return=representation" }, body: JSON.stringify({ provider, submission }), signal: AbortSignal.timeout(15000),
       });

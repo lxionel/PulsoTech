@@ -1,82 +1,28 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useProducts } from "@/context/ProductsContext";
-import { Product } from "@/types";
 import ProductDetailClient from "@/components/ProductDetailClient";
+import ProductLoading from "@/components/ProductLoading";
+import { legacyProductIdentifier, resolvePublicProduct } from "@/lib/product-routing";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 
 export default function NotFoundPage() {
-  const { products } = useProducts();
-  const [matchedProduct, setMatchedProduct] = useState<Product | null>(null);
-  const [isSearchingProduct, setIsSearchingProduct] = useState(true);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const timer = setTimeout(() => {
-      try {
-        const pathname = window.location.pathname;
-        // Detectar si la ruta intentaba abrir un producto: ej: /PulsoTech/producto/freebuds-se-2/ o /producto/freebuds-se-2
-        const match = pathname.match(/\/producto\/([^/?#]+)/i);
-        if (match && match[1]) {
-          const slugOrId = decodeURIComponent(match[1]).replace(/\/$/, "").trim().toLowerCase();
-
-          // 1. Buscar en products del contexto
-          let found = products.find(
-            (p) =>
-              p.slug.toLowerCase() === slugOrId ||
-              p.id.toLowerCase() === slugOrId ||
-              p.name.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-") === slugOrId
-          );
-
-          // 2. Si aún no está en contexto, buscar directamente en localStorage
-          if (!found) {
-            const raw = localStorage.getItem("pulsotech_custom_products");
-            if (raw) {
-              const list: Product[] = JSON.parse(raw);
-              if (Array.isArray(list)) {
-                found = list.find(
-                  (p) =>
-                    p.slug?.toLowerCase() === slugOrId ||
-                    p.id?.toLowerCase() === slugOrId ||
-                    p.name?.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-") === slugOrId
-                );
-              }
-            }
-          }
-
-          if (found) {
-            setMatchedProduct(found);
-            setIsSearchingProduct(false);
-            return;
-          }
-        }
-      } catch (err) {
-        console.error("Error matching route in not-found:", err);
-      }
-
-      setIsSearchingProduct(false);
-    }, 0);
-
-    return () => clearTimeout(timer);
-  }, [products]);
+  const { products, isLoading } = useProducts();
+  const identifier = legacyProductIdentifier(usePathname());
+  // Resolve on every catalog update; browser caches cannot revive hidden or deleted products.
+  const matchedProduct = resolvePublicProduct(products, null, identifier);
 
   // Si se encontró el producto a partir de la URL dinámica, renderizar la ficha directamente
   if (matchedProduct) {
-    return <ProductDetailClient product={matchedProduct} />;
+    return <ProductDetailClient key={matchedProduct.id} product={matchedProduct} />;
   }
 
-  if (isSearchingProduct) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#fbfbfd]">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-neutral-900 border-t-transparent" />
-      </div>
-    );
-  }
+  if (identifier && isLoading) return <ProductLoading />;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fbfbfd] text-[#111113]">

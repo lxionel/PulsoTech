@@ -39,7 +39,7 @@ npm run launch:check
 
 Un error de consulta del catálogo impide publicar una compilación incompleta. En desarrollo se permite consultar el catálogo en vivo si la preparación inicial no está disponible.
 
-Después de preparar correctamente el catálogo se eliminan las fotografías generadas que ya no usa ninguna galería. La revisión general y el detalle de limpieza están en `docs/revision-general-2026-10-06.md`.
+Después de preparar correctamente el catálogo se eliminan las fotografías generadas que ya no usa ninguna galería. La última revisión está en `docs/revision-general-2026-10-08.md`; la limpieza anterior está en `docs/revision-general-2026-10-06.md`.
 
 `launch:check` es de lectura. Revisa datos del negocio, productos visibles, condiciones, habilitación de pedidos y configuración del Libro de Reclamaciones. Devuelve código 1 mientras existan pendientes, sin modificar datos. No sustituye la revisión de productos ni una prueba completa de la operación.
 
@@ -51,11 +51,15 @@ La migración comercial se puede repetir. Oculta productos desactivados, expone 
 
 Mantener CAPTCHA y MFA. Para el Libro de Reclamaciones, seguir `supabase/activate-complaints.sql` y la función protegida con Turnstile. Configurar `NEXT_PUBLIC_STORE_RUC` con el RUC real y `NEXT_PUBLIC_COMPLAINT_BOOK_ENABLED=true` después de probar la atención de reclamos. Los secretos de Turnstile permanecen únicamente en Supabase.
 
+La función `submit-complaint` consulta la identidad comercial guardada en Supabase y exige que su RUC coincida con `COMPLAINT_PROVIDER_RUC`. Guarda una copia de esos datos en cada constancia; los cambios posteriores del negocio no alteran las constancias anteriores. Publicar la versión actual de la función desde una sesión autorizada de Supabase antes de habilitar el libro; publicar la tienda en Cloudflare no despliega las funciones de Supabase.
+
 ## Catálogo, imágenes y buscadores
 
 Los productos presentes al publicar tienen páginas `/productos/<id>/` con título, descripción, enlace canónico e imagen para compartir. Los enlaces antiguos `/producto/?id=...` funcionan; los productos nuevos usan ese enlace hasta la siguiente publicación.
 
 El catálogo inicial reduce la espera por la nube y se refresca en segundo plano. No constituye una reserva de inventario. Mantener originales de las fotografías; el administrador avisa cuando tienen poca resolución. Ampliar una fotografía pequeña no recupera detalles.
+
+La carga de fotografías verifica formato, contenido, apertura y un límite de 40 megapíxeles, además de los 2 MB por archivo. Conserva los originales válidos. Las categorías de la portada permiten navegar también cuando todavía no hay productos en ellas; el catálogo muestra su estado vacío.
 
 El sitio queda fuera de la indexación mientras falten los datos comerciales necesarios. No depende de un modo de prueba. Una pausa temporal de pedidos no elimina una tienda configurada de los buscadores. Los datos estructurados de productos solo se generan para fichas visibles con información comercial suficiente, sin inventar reseñas ni valoraciones.
 

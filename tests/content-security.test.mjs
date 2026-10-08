@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import sharp from "sharp";
 import { MAX_BACKUP_BYTES, MAX_IMAGE_BYTES, isSafeImageSource, getProductVideoInfo, validateImageFile, csvCell, parseStoreBackup, restoreBackupLocally } from "../src/lib/content-security.ts";
 
 const product = {
@@ -28,11 +29,33 @@ test("YouTube embeds only use exact provider hosts and eleven character IDs", ()
   assert.deepEqual(getProductVideoInfo("https://cdn.test/demo.mp4"), { isYouTube: false, embedUrl: "https://cdn.test/demo.mp4" });
 });
 
-test("image uploads check size, allowed MIME and matching file signature before reading content", async () => {
-  await validateImageFile(new File([pngHeader], "photo.png", { type: "image/png" }));
+const decodeImage = async file => {
+  const image = sharp(Buffer.from(await file.arrayBuffer()));
+  const { info } = await image.raw().toBuffer({ resolveWithObject: true });
+  return { width: info.width, height: info.height };
+};
+
+test("image uploads check size, allowed MIME and matching file signature before decoding", async () => {
   await assert.rejects(validateImageFile(new File(["<html>"], "photo.png", { type: "image/png" })), /contenido/);
   await assert.rejects(validateImageFile(new File(["<svg/>"], "photo.svg", { type: "image/svg+xml" })), /SVG/);
   await assert.rejects(validateImageFile(new File([new Uint8Array(MAX_IMAGE_BYTES + 1)], "large.png", { type: "image/png" })), /2 MB/);
+});
+
+test("image uploads reject truncated photos with a valid signature and preserve valid originals", async () => {
+  await assert.rejects(validateImageFile(new File([pngHeader], "broken.png", { type: "image/png" }), decodeImage), /sin daños/);
+  for (const format of ["png", "jpeg", "webp", "gif"]) {
+    const data = await sharp({ create: { width: 1200, height: 800, channels: 3, background: "white" } }).toFormat(format).toBuffer();
+    const file = new File([data], `original.${format}`, { type: `image/${format}` });
+    await validateImageFile(file, decodeImage);
+    assert.deepEqual(Buffer.from(await file.arrayBuffer()), data);
+  }
+});
+
+test("image uploads enforce the same pixel limit as publication", async () => {
+  const file = new File([pngHeader], "large.png", { type: "image/png" });
+  await assert.rejects(validateImageFile(file, async () => ({ width: 8000, height: 8000 })), /40 megapíxeles/);
+  await assert.rejects(validateImageFile(file, async () => ({ width: 0, height: 800 })), /dimensiones/);
+  await validateImageFile(file, async () => ({ width: 8000, height: 5000 }));
 });
 
 test("backup validation rejects corrupt product fields, duplicated IDs and unsafe media", () => {
