@@ -42,8 +42,12 @@ La herramienta prepara etapas de 10, 25, 50 y 100 clientes HTTP y se detiene ent
 
 ## Pendientes
 
+### Continuación: instalación técnica de reclamos
+
+Después de que el propietario completó el acceso de Supabase CLI, se instaló `activate-complaints.sql` en el proyecto configurado y se publicó `submit-complaint` versión 1. Los nueve controles de `verify-complaints.sql` pasaron, con las dos políticas de administración y MFA. Origen permitido: la web pública actual. Preflight válido `204`, origen ajeno `403`, envío vacío `503` por configuración pendiente y lectura anónima `401`. Cero solicitudes creadas; huellas de productos, ajustes y operaciones conservadas. Faltan RUC, identidad definitiva, secreto de Turnstile, nueva copia cifrada con el módulo y prueba completa de recepción/constancia/respuesta. La verificación visual del administrador tras instalar requiere una nueva sesión; la pestaña existente estaba cerrada al acceso administrativo.
+
 Pruebas automatizadas: 166 aprobadas, sin fallos. Dominio y correo corporativo futuros; horario provisional de 08:00 a 20:00 o 22:00, sin confirmar. Inicio por internet sin local abierto al público; identidad y domicilio que correspondan al negocio todavía pendientes. No se publicaron datos provisionales.
 
 Se retiró la dirección fija antigua de las políticas tras la aclaración del propietario. El nombre y correo de contacto iniciales se conservan mientras se confirma la identidad comercial definitiva.
 
-Datos comerciales y catálogo definitivos; instalación/publicación y prueba del Libro; escrituras de interfaz contra Supabase descartable, ensayo de recuperación del servicio completo, carga sostenida con navegadores y monitoreo. Pedidos siguen pausados. Ver [el plan y sus condiciones de cierre](plan-preparacion-produccion.md).
+Datos comerciales y catálogo definitivos; configuración final y prueba completa del Libro ya instalado; escrituras de interfaz contra Supabase descartable, ensayo de recuperación del servicio completo, carga sostenida con navegadores y monitoreo. Pedidos siguen pausados. Ver [el plan y sus condiciones de cierre](plan-preparacion-produccion.md).

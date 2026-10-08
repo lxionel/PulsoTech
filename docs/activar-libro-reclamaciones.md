@@ -29,7 +29,7 @@ Las políticas conservan el nombre y correo de contacto iniciales. El propietari
 6. Comprobar una solicitud de prueba, su constancia, lectura exclusiva desde el administrador y envío manual de la respuesta. Si una respuesta de red es incierta, consultar los registros privados antes de reenviar para evitar duplicados.
 7. Organizar el seguimiento de los quince días hábiles y el respaldo/constancia cuando el servicio virtual no esté disponible. Mostrar el aviso y acceso visible exigidos por la normativa; el pie cambia a **Libro de Reclamaciones** al habilitarlo.
 
-Ningún cambio de base de datos ni publicación de la función ha sido ejecutado automáticamente desde esta tarea. El flujo remoto sigue pendiente de instalación y prueba real.
+El 8 de octubre de 2026 se instaló la tabla y se desplegó `submit-complaint` mediante la sesión CLI completada por el propietario. La instalación técnica está verificada; el formulario público sigue deshabilitado. Los pasos de identidad, secretos y una solicitud completa con constancia/respuesta siguen pendientes.
 
 ## Instalación técnica con CLI
 
@@ -47,7 +47,15 @@ La primera y tercera consultas solo inspeccionan el esquema y los permisos, sin 
 
 `--use-api` despliega únicamente la función indicada sin Docker. La configuración `verify_jwt = false` pertenece exclusivamente a este formulario público; su handler exige Turnstile y datos comerciales válidos antes de insertar. No habilitar el formulario público ni inventar un RUC para comprobarlo. El endpoint puede seguir rechazando solicitudes hasta completar los secretos y la identidad reales.
 
-Verificación del 8 de octubre: el endpoint público devolvió `404` a una solicitud `OPTIONS`, sin datos ni inserciones. Se añadieron pruebas de instalación repetible, conservación de referencias/respuestas y detección de permisos sobrantes; las pruebas aisladas de permisos y handler pasaron. La instalación remota sigue pendiente de la sesión CLI.
+Verificación del 8 de octubre: antes de instalar, el endpoint devolvía `404`. Después de instalar la tabla y desplegar la función (versión 1, `ACTIVE`), se comprobaron los nueve controles de permisos, las dos políticas exclusivas de administración y el helper con MFA. Se configuró `COMPLAINT_ALLOWED_ORIGINS=https://pulsotech.pages.dev`; RUC y secreto de Turnstile siguen sin configurar.
+
+- `OPTIONS` desde la web actual: `204`, con origen exacto.
+- `OPTIONS` desde un origen ajeno: `403`.
+- `POST` vacío, sin datos de consumidor: `503`, bloqueado por configuración incompleta.
+- Lectura anónima de identificadores en la tabla: `401`, denegada.
+- Cero reclamos creados. Las huellas de productos, ajustes y operaciones antes/después coinciden.
+
+Las 168 pruebas automatizadas pasaron en la preparación. No se enviaron solicitudes reales ni mensajes; recepción, constancia y respuesta completas todavía no se han comprobado en el servicio. La pestaña administrativa estaba sin sesión al intentar consultar el módulo tras instalar; falta esa comprobación visual con una sesión nueva, aunque los permisos y el endpoint remoto ya se verificaron por CLI/HTTP. Las copias anteriores a esta instalación mantienen el estado histórico del esquema; generar una nueva copia cifrada cuando se vuelva a abrir el panel.
 
 ## Fuentes oficiales
 
