@@ -20,6 +20,9 @@ Hallazgos corregidos en código:
 - El enlace directo de teléfono de una orden usaba nueve dígitos sin `51`. Los números locales se normalizan con el prefijo de Perú; los internacionales explícitos conservan el suyo y las entradas inválidas no generan enlaces. No se alteran los registros históricos.
 - Un inventario agotado se describía como oculto aunque la visibilidad fuera independiente; ahora indica que no hay unidades.
 - El panel de reclamos mostraba «Sin solicitudes» junto con un error de consulta. Ahora distingue indisponibilidad de lista vacía y bloquea guardar respuestas si no pudo consultar.
+- Las pestañas de ventas excedían el ancho disponible en pantallas de 320 px. Se permite distribuirlas en varias líneas dentro del contenedor.
+
+La versión publicada `2decd32` pasó CI. El formulario vacío muestra el aviso sin bloquear la página y permite seguir editando; sus seis etiquetas principales funcionan. Se comprobó el formulario de producto a 320 y 390 px, los nombres accesibles del registro de venta, el prefijo del enlace de contacto y la distinción entre error de reclamos y lista vacía. Una segunda copia cifrada, descargada después de la revisión, conserva exactamente todas las tablas de la inicial: no hubo escrituras remotas en las pruebas.
 
 ## Ensayo operativo sobre la copia
 

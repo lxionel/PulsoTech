@@ -4214,7 +4214,7 @@ function AdminWorkspace() {
 
               {/* Selector de Sub-Vistas Segmentadas */}
               <div className="flex items-center gap-2 flex-wrap">
-                <div className="inline-flex items-center p-1 rounded-xl bg-neutral-100 border border-neutral-200/80">
+                <div className="inline-flex max-w-full flex-wrap items-center p-1 rounded-xl bg-neutral-100 border border-neutral-200/80">
                   <button
                     type="button"
                     onClick={() => setSalesViewMode("orders")}
