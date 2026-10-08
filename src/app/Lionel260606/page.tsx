@@ -8,7 +8,7 @@ import { STORE_SETTINGS } from "@/data/products";
 import { getAssetUrl } from "@/utils/paths";
 import { Product, ProductColor, SaleRecord } from "@/types";
 import { usePrivateSales } from "@/hooks/usePrivateSales";
-import { salesForAccounting, prepareSaleValues } from "@/lib/sales-validation";
+import { salesForAccounting, prepareSaleValues, customerWhatsAppNumber } from "@/lib/sales-validation";
 import LegacySalesBackup from "@/components/LegacySalesBackup";
 import StoreBackupPanel from "@/components/StoreBackupPanel";
 import Logo from "@/components/Logo";
@@ -315,6 +315,7 @@ function AdminWorkspace() {
   const [copiedTemplateIndex, setCopiedTemplateIndex] = useState<number | null>(null);
 
   const [successNotice, setSuccessNotice] = useState("");
+  const [adminError, setAdminError] = useState("");
 
   // ====== ESTADO DEL FORMULARIO DE AGREGAR / EDITAR PRODUCTO (INICIALMENTE LIMPIO) ======
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
@@ -352,8 +353,9 @@ function AdminWorkspace() {
   const productSaveInProgress = useRef(false);
   const onGalleryBusyChange = (busy: boolean) => setUploadingGalleries((count) => Math.max(0, count + (busy ? 1 : -1)));
   const runAdminAction = async (operation: () => Promise<void>) => {
+    setAdminError("");
     try { await operation(); return true; }
-    catch (failure) { alert(failure instanceof Error ? failure.message : "No se pudo guardar el cambio."); return false; }
+    catch (failure) { setAdminError(failure instanceof Error ? failure.message : "No se pudo guardar el cambio."); return false; }
   };
 
   // Especificaciones Técnicas Dinámicas por Categoría
@@ -529,7 +531,7 @@ function AdminWorkspace() {
     e.preventDefault();
     const rawPhone = phoneInput.replace(/\D/g, "");
     const cleanPhone = rawPhone.length === 9 ? `51${rawPhone}` : rawPhone;
-    if (!/^51\d{9}$/.test(cleanPhone)) { alert("Ingresa el código 51 y los nueve dígitos del celular de Perú."); return; }
+    if (!/^51\d{9}$/.test(cleanPhone)) { setAdminError("Ingresa el código 51 y los nueve dígitos del celular de Perú."); return; }
     if (!await runAdminAction(() => setWhatsappNumber(cleanPhone))) return;
     setPhoneInput(cleanPhone);
     setPhoneSaved(true);
@@ -698,13 +700,13 @@ function AdminWorkspace() {
 
   const handleExportSalesCSV = () => {
     if (!salesReady || salesLoading || salesSaving) {
-      alert("Carga y comprueba el historial antes de exportar ventas.");
+      setAdminError("Carga y comprueba el historial antes de exportar ventas.");
       return;
     }
     const dataToExport = displayedSales;
-    if (!dataToExport.length) { alert("No hay ventas que coincidan con los filtros seleccionados."); return; }
+    if (!dataToExport.length) { setAdminError("No hay ventas que coincidan con los filtros seleccionados."); return; }
     if (dataToExport.length === 0) {
-      alert("No hay ventas registradas para exportar en este período.");
+      setAdminError("No hay ventas registradas para exportar en este período.");
       return;
     }
     const headers = [
@@ -745,9 +747,9 @@ function AdminWorkspace() {
   };
 
   const handleExportProductsCSV = () => {
-    if (isCatalogLoading || !isCloudConnected) { alert("Actualiza el catálogo desde la nube antes de exportar."); return; }
+    if (isCatalogLoading || !isCloudConnected) { setAdminError("Actualiza el catálogo desde la nube antes de exportar."); return; }
     if (products.length === 0) {
-      alert("No hay productos en inventario para exportar.");
+      setAdminError("No hay productos en inventario para exportar.");
       return;
     }
     const headers = ["ID", "Nombre", "Marca", "Categoria", "Precio_PEN", "Precio_Original_PEN", "Stock", "En_Oferta"];
@@ -774,7 +776,7 @@ function AdminWorkspace() {
   };
 
   const handleExportBackupJSON = () => {
-    if (isCatalogLoading || !isCloudConnected) { alert("Actualiza el catálogo desde la nube antes de exportar."); return; }
+    if (isCatalogLoading || !isCloudConnected) { setAdminError("Actualiza el catálogo desde la nube antes de exportar."); return; }
     const backupData = {
       store: "PulsoTech",
       exportedAt: new Date().toISOString(),
@@ -797,12 +799,12 @@ function AdminWorkspace() {
   const handleCreateCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCouponCode.trim()) {
-      alert("Por favor ingresa un código para el cupón (ej: VERANO10).");
+      setAdminError("Por favor ingresa un código para el cupón (ej: VERANO10).");
       return;
     }
     const exists = coupons.some((c) => c.code.toUpperCase() === newCouponCode.trim().toUpperCase());
     if (exists) {
-      alert("Ya existe un cupón con este código.");
+      setAdminError("Ya existe un cupón con este código.");
       return;
     }
     if (!await runAdminAction(() => addCoupon({
@@ -820,7 +822,7 @@ function AdminWorkspace() {
   // Manejadores de colores detallados
   const handleAddColor = () => {
     if (uploadingGalleries || isSavingProduct) return;
-    if (formColors.length >= 30) { alert("Puedes añadir hasta 30 colores."); return; }
+    if (formColors.length >= 30) { setAdminError("Puedes añadir hasta 30 colores."); return; }
     const palette = [
       { name: "Negro", hex: "#18181b" },
       { name: "Blanco", hex: "#FFFFFF" },
@@ -845,7 +847,7 @@ function AdminWorkspace() {
   const handleRemoveColor = (index: number) => {
     if (uploadingGalleries || isSavingProduct) return;
     if (formColors.length <= 1) {
-      alert("El producto debe tener al menos un color disponible.");
+      setAdminError("El producto debe tener al menos un color disponible.");
       return;
     }
     setFormColors(formColors.filter((_, i) => i !== index));
@@ -868,7 +870,7 @@ function AdminWorkspace() {
     const val = newBrandInput.trim();
     if (!val) return;
     if (brands.some((b) => b.toLowerCase() === val.toLowerCase())) {
-      alert("Ya existe una marca con este nombre.");
+      setAdminError("Ya existe una marca con este nombre.");
       return;
     }
     if (!await runAdminAction(() => addBrand(val))) return;
@@ -882,7 +884,7 @@ function AdminWorkspace() {
     const val = newCategoryInput.trim();
     if (!val) return;
     if (categories.some((c) => c.toLowerCase() === val.toLowerCase())) {
-      alert("Ya existe una categoría con este nombre.");
+      setAdminError("Ya existe una categoría con este nombre.");
       return;
     }
     if (!await runAdminAction(() => addCategory(val))) return;
@@ -900,7 +902,7 @@ function AdminWorkspace() {
       return;
     }
     if (brands.some((b) => b.toLowerCase() === trimmed.toLowerCase() && b.toLowerCase() !== original.toLowerCase())) {
-      alert("Ya existe otra marca con este nombre.");
+      setAdminError("Ya existe otra marca con este nombre.");
       return;
     }
     if (!await runAdminAction(() => updateBrand(original, trimmed))) return;
@@ -918,7 +920,7 @@ function AdminWorkspace() {
       return;
     }
     if (categories.some((c) => c.toLowerCase() === trimmed.toLowerCase() && c.toLowerCase() !== original.toLowerCase())) {
-      alert("Ya existe otra categoría con este nombre.");
+      setAdminError("Ya existe otra categoría con este nombre.");
       return;
     }
     if (!await runAdminAction(() => updateCategory(original, trimmed))) return;
@@ -1013,6 +1015,7 @@ function AdminWorkspace() {
 
   // Limpiar formulario para nuevo producto (100% LIMPIO, SIN EJEMPLOS PRECARGADOS)
   const handleNewProductClick = () => {
+    setAdminError("");
     if (uploadingGalleries || isSavingProduct) return;
     if (isCatalogLoading || !isCloudConnected) { setSuccessNotice("Espera a que se cargue el inventario desde la nube antes de crear un producto."); return; }
     setEditingProductSnapshot(null);
@@ -1053,32 +1056,33 @@ function AdminWorkspace() {
   // Guardar producto nuevo o editado
   const handleSaveProduct = async (e: Pick<React.FormEvent, "preventDefault">) => {
     e.preventDefault();
+    setAdminError("");
     if (productSaveInProgress.current || uploadingGalleries) return;
-    if (isCatalogLoading || !isCloudConnected) { alert("Actualiza el inventario desde la nube antes de guardar."); return; }
+    if (isCatalogLoading || !isCloudConnected) { setAdminError("Actualiza el inventario desde la nube antes de guardar."); return; }
     const previousProduct = products.find((product) => product.id === editingProductId);
     const playbackHours = parsePlaybackHours(formPlaybackHours);
     if (isAudioCategory(formCategory) && formPlaybackHours.trim() && playbackHours === undefined) {
-      alert("Ingresa las horas de autonomía por carga como un número mayor que cero.");
+      setAdminError("Ingresa las horas de autonomía por carga como un número mayor que cero.");
       return;
     }
     if (!formName.trim()) {
-      alert("Por favor ingresa el nombre del producto.");
+      setAdminError("Por favor ingresa el nombre del producto.");
       return;
     }
     if (!brands.some((name) => name.toLowerCase() === formBrand.toLowerCase()) || !categories.some((name) => name.toLowerCase() === formCategory.toLowerCase())) {
-      alert("Selecciona una marca y categoría existentes. Puedes crearlas desde Marcas y Categorías.");
+      setAdminError("Selecciona una marca y categoría existentes. Puedes crearlas desde Marcas y Categorías.");
       return;
     }
 
-    if (formPrice === "" || Number(formPrice) <= 0) { alert("Ingresa un precio de venta mayor que cero."); return; }
-    if (formHasPromo && (Number(formOriginalPrice) <= Number(formPrice))) { alert("El precio regular debe ser mayor que el precio de oferta."); return; }
+    if (formPrice === "" || Number(formPrice) <= 0) { setAdminError("Ingresa un precio de venta mayor que cero."); return; }
+    if (formHasPromo && (Number(formOriginalPrice) <= Number(formPrice))) { setAdminError("El precio regular debe ser mayor que el precio de oferta."); return; }
     const priceNum = typeof formPrice === "number" ? formPrice : parseFloat(formPrice as string) || 0;
     const origPriceNum = typeof formOriginalPrice === "number" ? formOriginalPrice : parseFloat(formOriginalPrice as string) || 0;
 
     const finalId = editingProductId || formCustomId;
-    if (!/^\d{6}$/.test(finalId)) { alert("El código debe tener exactamente seis dígitos."); return; }
-    if (!editingProductId && products.some((product) => product.id === finalId)) { alert("Ese código ya existe. Usa un código diferente."); return; }
-    if (editingProductId && !previousProduct) { alert("Este producto ya no existe. Actualiza el inventario antes de editar."); return; }
+    if (!/^\d{6}$/.test(finalId)) { setAdminError("El código debe tener exactamente seis dígitos."); return; }
+    if (!editingProductId && products.some((product) => product.id === finalId)) { setAdminError("Ese código ya existe. Usa un código diferente."); return; }
+    if (editingProductId && !previousProduct) { setAdminError("Este producto ya no existe. Actualiza el inventario antes de editar."); return; }
 
     const slug = formName
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -1149,11 +1153,11 @@ function AdminWorkspace() {
     };
 
     if (!formCommerce.visible && !commerceReady) {
-      alert("Activa los ajustes comerciales en Supabase antes de ocultar un producto. Debe quedar protegido también en la base de datos.");
+      setAdminError("Activa los ajustes comerciales en Supabase antes de ocultar un producto. Debe quedar protegido también en la base de datos.");
       return;
     }
     try { validateProductContent(productPayload); } catch (failure) {
-      alert(failure instanceof Error ? failure.message : "Revisa los datos del producto.");
+      setAdminError(failure instanceof Error ? failure.message : "Revisa los datos del producto.");
       return;
     }
     productSaveInProgress.current = true;
@@ -1165,7 +1169,7 @@ function AdminWorkspace() {
       setTimeout(() => setSuccessNotice(""), 5000);
       setActiveTab("inventory");
     } catch (failure) {
-      alert(failure instanceof Error ? failure.message : "No se pudo guardar el producto. Tus datos siguen en el formulario.");
+      setAdminError(failure instanceof Error ? failure.message : "No se pudo guardar el producto. Tus datos siguen en el formulario.");
     } finally {
       productSaveInProgress.current = false;
       setIsSavingProduct(false);
@@ -1566,6 +1570,15 @@ function AdminWorkspace() {
 
         {/* Contenido del Módulo Activo */}
         <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full flex-1 pt-16 md:pt-6">
+          {adminError && (
+            <div role="alert" className="fixed bottom-4 left-4 right-4 z-[100] flex items-start gap-3 rounded-xl border border-neutral-300 bg-white p-4 text-sm text-neutral-950 shadow-lg md:left-auto md:w-96">
+              <AlertCircle aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0" />
+              <p className="min-w-0 flex-1 break-words">{adminError}</p>
+              <button type="button" aria-label="Cerrar aviso" onClick={() => setAdminError("")} className="shrink-0 rounded-lg p-1 hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 cursor-pointer">
+                <X aria-hidden="true" className="h-4 w-4" />
+              </button>
+            </div>
+          )}
           {/* Banner de Notificación de Éxito */}
           {successNotice && (
             <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm font-medium flex items-center justify-between gap-3 shadow-xs animate-in fade-in">
@@ -2250,7 +2263,7 @@ function AdminWorkspace() {
                                     <span>Agotado (0)</span>
                                   </div>
                                   <div className="text-[10px] text-neutral-400 font-medium mt-0.5">
-                                    Oculto en tienda web
+                                    Sin unidades disponibles
                                   </div>
                                 </div>
                               ) : item.stockCount <= 5 ? (
@@ -2427,9 +2440,7 @@ function AdminWorkspace() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <div className="flex items-center justify-between mb-1">
-                          <label className="text-xs font-bold text-neutral-900">
-                            ID / SKU *
-                          </label>
+                          <label htmlFor="product-sku" className="text-xs font-bold text-neutral-900">ID / SKU *</label>
                           <button
                             type="button"
                             onClick={() => setFormCustomId(generate6DigitId())}
@@ -2444,7 +2455,7 @@ function AdminWorkspace() {
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-neutral-400 text-xs">
                             #
                           </span>
-                          <input
+                          <input id="product-sku"
                             type="text"
                             inputMode="numeric"
                             maxLength={6}
@@ -2458,10 +2469,8 @@ function AdminWorkspace() {
                       </div>
 
                       <div className="sm:col-span-2">
-                        <label className="text-xs font-bold text-neutral-900 block mb-1">
-                          Nombre del Producto *
-                        </label>
-                        <input
+                        <label htmlFor="product-name" className="text-xs font-bold text-neutral-900 block mb-1">Nombre del Producto *</label>
+                        <input id="product-name"
                           type="text"
                           required
                           placeholder="Nombre del modelo o producto"
@@ -2475,10 +2484,8 @@ function AdminWorkspace() {
                     {/* Marca & Categoría (Sin enlaces redundantes) */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="text-xs font-bold text-neutral-900 block mb-1">
-                          Marca
-                        </label>
-                        <select
+                        <label htmlFor="product-brand" className="text-xs font-bold text-neutral-900 block mb-1">Marca</label>
+                        <select id="product-brand"
                           value={formBrand}
                           onChange={(e) => setFormBrand(e.target.value)}
                           className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-xs font-semibold text-neutral-900 focus:outline-none focus:bg-white cursor-pointer"
@@ -2492,10 +2499,8 @@ function AdminWorkspace() {
                       </div>
 
                       <div>
-                        <label className="text-xs font-bold text-neutral-900 block mb-1">
-                          Categoría
-                        </label>
-                        <select
+                        <label htmlFor="product-category" className="text-xs font-bold text-neutral-900 block mb-1">Categoría</label>
+                        <select id="product-category"
                           value={formCategory}
                           onChange={(e) => handleCategoryChange(e.target.value)}
                           className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-xs font-semibold text-neutral-900 focus:outline-none focus:bg-white cursor-pointer"
@@ -2511,10 +2516,8 @@ function AdminWorkspace() {
 
                     {/* Subtítulo Breve */}
                     <div>
-                      <label className="text-xs font-bold text-neutral-900 block mb-1">
-                        Subtítulo o Resumen
-                      </label>
-                      <input
+                      <label htmlFor="product-subtitle" className="text-xs font-bold text-neutral-900 block mb-1">Subtítulo o Resumen</label>
+                      <input id="product-subtitle"
                         type="text"
                         placeholder="Resumen breve del producto"
                         value={formSubtitle}
@@ -2525,10 +2528,8 @@ function AdminWorkspace() {
 
                     {/* Descripción Comercial */}
                     <div>
-                      <label className="text-xs font-bold text-neutral-900 block mb-1">
-                        Descripción del Producto
-                      </label>
-                      <textarea
+                      <label htmlFor="product-description" className="text-xs font-bold text-neutral-900 block mb-1">Descripción del Producto</label>
+                      <textarea id="product-description"
                         rows={3}
                         placeholder="Descripción del producto..."
                         value={formDescription}
@@ -2550,7 +2551,7 @@ function AdminWorkspace() {
                         type="button"
                         onClick={() => {
                           if (!formName.trim()) {
-                            alert("Por favor ingresa el nombre del producto.");
+                            setAdminError("Por favor ingresa el nombre del producto.");
                             return;
                           }
                           setFormActiveStep(2);
@@ -2741,7 +2742,7 @@ function AdminWorkspace() {
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-neutral-500 text-sm">
                             {STORE_SETTINGS.currencySymbol}
                           </span>
-                          <input
+                          <input aria-label="Precio de venta"
                             type="number"
                             step="0.5"
                             required
@@ -2767,7 +2768,7 @@ function AdminWorkspace() {
                           >
                             -
                           </button>
-                          <input
+                          <input aria-label="Stock inicial"
                             type="number"
                             min={0}
                             value={formStock}
@@ -2816,7 +2817,7 @@ function AdminWorkspace() {
                             <label className="text-[11px] font-bold text-neutral-700 block mb-1">
                               Precio Regular ({STORE_SETTINGS.currencySymbol})
                             </label>
-                            <input
+                            <input aria-label="Precio regular"
                               type="number"
                               step="0.5"
                               placeholder="0.00"
@@ -4021,7 +4022,7 @@ function AdminWorkspace() {
                     <label className="text-xs font-bold text-neutral-700 block mb-1">
                       Código del Cupón
                     </label>
-                    <input
+                    <input aria-label="Código del cupón"
                       type="text"
                       placeholder="CÓDIGO DE CUPÓN"
                       value={newCouponCode}
@@ -4036,7 +4037,7 @@ function AdminWorkspace() {
                       <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
                         Tipo de Descuento:
                       </label>
-                      <select
+                      <select aria-label="Tipo de descuento"
                         value={newCouponType}
                         onChange={(e) => setNewCouponType(e.target.value as "percentage" | "fixed")}
                         className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 font-bold focus:outline-none"
@@ -4050,7 +4051,7 @@ function AdminWorkspace() {
                       <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
                         Valor del Descuento:
                       </label>
-                      <input
+                      <input aria-label="Valor del descuento"
                         type="number"
                         min={1}
                         value={newCouponValue}
@@ -4065,7 +4066,7 @@ function AdminWorkspace() {
                     <label className="text-[11px] font-bold text-neutral-600 uppercase block mb-1">
                       Compra Mínima Requerida ({STORE_SETTINGS.currencySymbol}):
                     </label>
-                    <input
+                    <input aria-label="Compra mínima del cupón"
                       type="number"
                       min={0}
                       step={5}
@@ -4528,7 +4529,7 @@ function AdminWorkspace() {
                               <div>
                                 <span className="text-[10px] uppercase font-bold text-neutral-400 block">Teléfono / WhatsApp</span>
                                 <a
-                                  href={`https://wa.me/${s.customerPhone.replace(/\D/g, "")}`}
+                                  href={customerWhatsAppNumber(s.customerPhone) ? `https://wa.me/${customerWhatsAppNumber(s.customerPhone)}` : undefined}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-neutral-900 font-mono font-bold hover:underline"
@@ -4674,7 +4675,7 @@ function AdminWorkspace() {
                         </div>
 
                         {isManualProductEntry || products.length === 0 ? (
-                          <input
+                          <input aria-label="Producto vendido"
                             type="text"
                             placeholder="Nombre del producto vendido"
                             value={manualProductName}
@@ -4682,7 +4683,7 @@ function AdminWorkspace() {
                             className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900 font-semibold"
                           />
                         ) : (
-                          <select
+                          <select aria-label="Producto vendido"
                             value={newSaleProduct}
                             onChange={(e) => setNewSaleProduct(e.target.value)}
                             className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900 font-semibold cursor-pointer"
@@ -4701,7 +4702,7 @@ function AdminWorkspace() {
                           <label className="text-xs font-bold text-neutral-800 block mb-1.5">
                             Cantidad
                           </label>
-                          <input
+                          <input aria-label="Cantidad vendida"
                             type="number"
                             min={1}
                             value={newSaleQty}
@@ -4714,7 +4715,7 @@ function AdminWorkspace() {
                           <label className="text-xs font-bold text-neutral-800 block mb-1.5">
                             Total ({STORE_SETTINGS.currencyCode})
                           </label>
-                          <input
+                          <input aria-label="Total de la venta"
                             type="number"
                             step="0.01"
                             placeholder={
@@ -4734,7 +4735,7 @@ function AdminWorkspace() {
                           <label className="text-xs font-bold text-neutral-800 block mb-1.5">
                             Canal de Venta
                           </label>
-                          <select
+                          <select aria-label="Canal de venta"
                             value={newSaleChannel}
                             onChange={(e) => setNewSaleChannel(e.target.value as "WhatsApp" | "Presencial" | "Web")}
                             className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900 font-semibold cursor-pointer"
@@ -4749,7 +4750,7 @@ function AdminWorkspace() {
                           <label className="text-xs font-bold text-neutral-800 block mb-1.5">
                             Método de Pago
                           </label>
-                          <select
+                          <select aria-label="Método de pago"
                             value={newSalePayment}
                             onChange={(e) => setNewSalePayment(e.target.value)}
                             className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900 font-semibold cursor-pointer"
@@ -4769,13 +4770,13 @@ function AdminWorkspace() {
                           Fecha y Hora del Pedido
                         </label>
                         <div className="grid grid-cols-2 gap-2">
-                          <input
+                          <input aria-label="Fecha de la venta"
                             type="date"
                             value={newSaleDate}
                             onChange={(e) => setNewSaleDate(e.target.value)}
                             className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-300 text-xs font-mono font-semibold text-neutral-900 focus:outline-none focus:border-neutral-900"
                           />
-                          <input
+                          <input aria-label="Hora de la venta"
                             type="time"
                             value={newSaleTime}
                             onChange={(e) => setNewSaleTime(e.target.value)}
@@ -4797,7 +4798,7 @@ function AdminWorkspace() {
                           <label className="text-xs font-bold text-neutral-800 block mb-1.5">
                             Nombre del Cliente
                           </label>
-                          <input
+                          <input aria-label="Nombre del cliente"
                             type="text"
                             placeholder="Nombre del cliente"
                             value={newSaleCustomer}
@@ -4810,7 +4811,7 @@ function AdminWorkspace() {
                           <label className="text-xs font-bold text-neutral-800 block mb-1.5">
                             Teléfono / WhatsApp
                           </label>
-                          <input
+                          <input aria-label="Teléfono del cliente"
                             type="text"
                             placeholder="Número telefónico"
                             value={newSaleCustomerPhone}
@@ -4824,7 +4825,7 @@ function AdminWorkspace() {
                         <label className="text-xs font-bold text-neutral-800 block mb-1.5">
                           Dirección de Despacho
                         </label>
-                        <input
+                        <input aria-label="Dirección de despacho"
                           type="text"
                           placeholder="Dirección completa o agencia de envío"
                           value={newSaleCustomerAddress}
@@ -4838,7 +4839,7 @@ function AdminWorkspace() {
                           <label className="text-xs font-bold text-neutral-800 block mb-1.5">
                             Estado Inicial de Despacho
                           </label>
-                          <select
+                          <select aria-label="Estado inicial de despacho"
                             value={newSaleDeliveryStatus}
                             onChange={(e) => setNewSaleDeliveryStatus(e.target.value as "pending" | "shipped" | "delivered" | "cancelled")}
                             className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900 font-semibold cursor-pointer"
@@ -4853,7 +4854,7 @@ function AdminWorkspace() {
                           <label className="text-xs font-bold text-neutral-800 block mb-1.5">
                             Guía / Courier (Opcional)
                           </label>
-                          <input
+                          <input aria-label="Guía o courier"
                             type="text"
                             placeholder="Número de guía o motorizado"
                             value={newSaleTrackingNumber}
@@ -4867,7 +4868,7 @@ function AdminWorkspace() {
                         <label className="text-xs font-bold text-neutral-800 block mb-1.5">
                           Observaciones o Notas Internas (Opcional)
                         </label>
-                        <input
+                        <input aria-label="Observaciones de la venta"
                           type="text"
                           placeholder="Indicaciones para la entrega o cobro"
                           value={newSaleNotes}
@@ -5855,13 +5856,16 @@ function AdminWorkspace() {
                 <label className="text-xs font-bold text-neutral-700 block mb-1">
                   Número de WhatsApp del Cliente
                 </label>
-                <input
+                <input aria-label="WhatsApp del cliente"
                   type="text"
                   value={customMsgPhone}
                   onChange={(e) => setCustomMsgPhone(e.target.value)}
                   placeholder="Número de WhatsApp"
                   className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:bg-white"
                 />
+                {customMsgPhone.trim() && !customerWhatsAppNumber(customMsgPhone) && (
+                  <p role="alert" className="mt-2 text-xs text-red-700">Introduce nueve dígitos para Perú o un número con su código de país.</p>
+                )}
               </div>
 
               {/* Opciones de Plantillas */}
@@ -5883,10 +5887,10 @@ function AdminWorkspace() {
                     text: `Hola ${whatsappTemplateSale.customerName}, te saluda PulsoTech. Confirmamos la entrega de tu pedido #${whatsappTemplateSale.id}. ¡Gracias por confiar en nosotros! Si tienes alguna consulta sobre ${whatsappTemplateSale.productName} o necesitas atención por una falla, escríbenos por este canal. Atenderemos tu solicitud conforme a las condiciones informadas al comprar y a tus derechos como consumidor.`,
                   },
                 ].map((template, idx) => {
-                  const cleanPhone = customMsgPhone.replace(/\D/g, "");
-                  const waUrl = `https://wa.me/${cleanPhone.startsWith("51") ? cleanPhone : `51${cleanPhone}`}?text=${encodeURIComponent(
+                  const cleanPhone = customerWhatsAppNumber(customMsgPhone);
+                  const waUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
                     template.text
-                  )}`;
+                  )}` : undefined;
 
                   return (
                     <div
@@ -5931,9 +5935,10 @@ function AdminWorkspace() {
 
                         <a
                           href={waUrl}
+                          aria-disabled={!waUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
+                          className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs aria-disabled:opacity-40 aria-disabled:cursor-not-allowed"
                         >
                           <Send className="w-3.5 h-3.5" />
                           <span>Enviar por WhatsApp</span>

@@ -1,5 +1,14 @@
 import type { SaleRecord } from "../types/index.ts";
 
+/** Local nine-digit customer numbers use Peru; international numbers keep their prefix. */
+export function customerWhatsAppNumber(value: string): string | null {
+  const input = value.trim();
+  if (!/^\+?[\d\s().-]+$/.test(input)) return null;
+  const digits = input.replace(/\D/g, "");
+  if (!input.startsWith("+") && /^[1-9]\d{8}$/.test(digits)) return `51${digits}`;
+  return /^[1-9]\d{7,14}$/.test(digits) && (input.startsWith("+") || digits.length >= 10) ? digits : null;
+}
+
 export function salesForAccounting(records: SaleRecord[]): SaleRecord[] {
   return records.filter((sale) => sale.deliveryStatus !== "cancelled");
 }

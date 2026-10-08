@@ -33,6 +33,7 @@ node --experimental-strip-types --test tests/*.test.mjs
 npm run lint
 npm run build:cloudflare
 npm run launch:check
+npm run capacity:check
 ```
 
 `predev` y `prebuild` generan un catálogo público inicial y fotografías locales desde Supabase. También se obtiene una copia de la configuración comercial pública para generar los metadatos. Estos archivos se excluyen de Git. Solo usar una clave pública anónima, nunca una clave de servicio.
@@ -63,7 +64,9 @@ La carga de fotografías verifica formato, contenido, apertura y un límite de 4
 
 El sitio queda fuera de la indexación mientras falten los datos comerciales necesarios. No depende de un modo de prueba. Una pausa temporal de pedidos no elimina una tienda configurada de los buscadores. Los datos estructurados de productos solo se generan para fichas visibles con información comercial suficiente, sin inventar reseñas ni valoraciones.
 
-Los cambios del administrador se reflejan en el catálogo en vivo. Volver a publicar para actualizar el HTML, sitemap y metadatos de enlaces compartidos. Usar `NEXT_PUBLIC_STORE_URL` para la URL definitiva. La antigua variable `NEXT_PUBLIC_STORE_MODE` ya no se utiliza.
+El panel mantiene sincronización en tiempo real. Los visitantes no abren conexiones Realtime: el catálogo se consulta al entrar, al recuperar el foco si han pasado al menos 15 segundos y cada 60–75 segundos mientras la pestaña está visible y conectada. Los cambios agrupados del panel se consolidan en una lectura. Antes del pedido se comprueban otra vez precios, disponibilidad y condiciones; una lectura automática no sustituye esa comprobación. Volver a publicar para actualizar el HTML, sitemap y metadatos de enlaces compartidos. Usar `NEXT_PUBLIC_STORE_URL` para la URL definitiva. La antigua variable `NEXT_PUBLIC_STORE_MODE` ya no se utiliza.
+
+`capacity:check` muestra un plan sin hacer solicitudes. `npm run capacity:check -- --execute --stages 10` ejecuta una comprobación HTTP acotada y de lectura; no simula JavaScript, sesiones ni compras. Primero confirmar cuotas y probar un entorno equivalente antes de aumentar etapas. No confundir una pasada HTTP con capacidad sostenida. `--stages 1` sirve como comprobación puntual de disponibilidad, no instala monitoreo permanente.
 
 ## Antes de empezar a vender
 
@@ -72,5 +75,7 @@ Completar datos del negocio, fotografías y condiciones reales. Revisar las pol�
 Probar en celular y escritorio: colores y galerías, favoritos, cantidades, cupones, dirección y referencia, cambios de precio, agotados y envío de la solicitud. Verificar también registro de ventas, stock y atención de reclamos.
 
 Guardar respaldos cifrados fuera del repositorio y ensayar una recuperación en una base separada. `npm run backup:verify -- <archivo>` ayuda a preparar la recuperación sin publicar datos personales. No restaurar sobre una base con inventario, clientes o ventas activas.
+
+Con dependencias de desarrollo instaladas, `npm run backup:verify -- <archivo> --drill` restaura y compara todas las tablas en una base PostgreSQL temporal en memoria. `--operations` añade un ensayo de bolsa, descuentos, venta, reintentos, cancelación y dos solicitudes por la última unidad. Ambos piden la contraseña en terminal, no generan datos descifrados en disco ni escriben en Supabase. El [plan de preparación](docs/plan-preparacion-produccion.md) distingue estas comprobaciones de las pendientes en el servicio real.
 
 La exportación del catálogo JSON es una copia de productos y fotografías; no restaura Supabase desde el navegador. Seguir [la guía de recuperación](docs/respaldos-y-recuperacion.md) para las copias operativas cifradas. Consultar [la revisión funcional](docs/revision-operativa-2026-10-06.md) para los cambios y comprobaciones del panel y la compra.

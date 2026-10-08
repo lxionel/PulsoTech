@@ -1,6 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { salesForAccounting, prepareSaleValues } from "../src/lib/sales-validation.ts";
+import { salesForAccounting, prepareSaleValues, customerWhatsAppNumber } from "../src/lib/sales-validation.ts";
+
+test("customer WhatsApp links add Peru for local numbers and preserve international prefixes", () => {
+  assert.equal(customerWhatsAppNumber("902 377 567"), "51902377567");
+  assert.equal(customerWhatsAppNumber("+51 (902) 377-567"), "51902377567");
+  assert.equal(customerWhatsAppNumber("51902377567"), "51902377567");
+  assert.equal(customerWhatsAppNumber("+1 (202) 555-0123"), "12025550123");
+  for (const value of ["", "123", "phone: 902377567", "++51902377567", "000000000", "000000000000", "1234567890123456"]) assert.equal(customerWhatsAppNumber(value), null);
+});
 
 const input = { quantity: 2, customTotal: "", unitPrice: 19.99, date: "2026-10-06", time: "00:05" };
 

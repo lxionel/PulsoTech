@@ -33,12 +33,24 @@ async function readPassword() {
 
 try {
   const args = process.argv.slice(2);
-  if (![1, 3].includes(args.length) || (args.length === 3 && args[1] !== "--sql")) throw new Error('Uso: npm run backup:verify -- "C:\\ruta\\archivo.pulsobackup" [--sql "C:\\ruta\\copia.recovery.sql"]');
+  const drill = args.length === 2 && ["--drill", "--operations"].includes(args[1]);
+  if (!drill && (![1, 3].includes(args.length) || (args.length === 3 && args[1] !== "--sql"))) throw new Error('Uso: npm run backup:verify -- "C:\\ruta\\archivo.pulsobackup" [--drill | --operations | --sql "C:\\ruta\\copia.recovery.sql"]');
   const file = resolve(args[0]);
   if ((await stat(file)).size > MAX_OPERATIONAL_BACKUP_BYTES * 1.4 + 4096) throw new Error("Archivo demasiado grande.");
   const snapshot = await decryptStoreBackup(await readFile(file, "utf8"), await readPassword());
   const counts = backupSummary(snapshot);
   process.stdout.write(`Copia verificada: ${snapshot.createdAt}\nProductos: ${counts.products}; ventas: ${counts.sales}; códigos: ${counts.operations}; reclamos: ${counts.complaints}.\n`);
+  if (drill) {
+    if (args[1] === "--operations") {
+      const { verifyIsolatedOperations } = await import("./lib/operational-drill.mjs");
+      const result = await verifyIsolatedOperations(snapshot);
+      process.stdout.write(`Operaciones aprobadas: ${result.checks.length}. Todas se ejecutaron en memoria.\n`);
+    } else {
+      const { verifyIsolatedRecovery } = await import("./lib/recovery-drill.mjs");
+      await verifyIsolatedRecovery(snapshot);
+    }
+    process.stdout.write("Recuperación comprobada en una base temporal en memoria: todas las tablas coinciden. No se modificó Supabase.\n");
+  }
   if (args[2]) {
     const target = resolve(args[2]);
     if (!target.endsWith(".recovery.sql")) throw new Error("El archivo de recuperación debe terminar en .recovery.sql.");

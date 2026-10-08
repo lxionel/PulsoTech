@@ -6,6 +6,7 @@ import { Product } from "@/types";
 import { createMutationQueue, confirmMutation, createReadGuard } from "@/lib/confirmed-mutation";
 import { validateProductContent } from "@/lib/content-security";
 import { productForCache } from "@/lib/browser-cache";
+import { createCatalogRefresh } from "@/lib/catalog-refresh";
 import { PRODUCTS } from "@/data/products";
 import { canAcceptOrders, DEFAULT_COMMERCE_SETTINGS, isStorefrontProduct, parseCommerceSettings, type CommerceSettings } from "@/lib/commerce";
 import {
@@ -39,7 +40,7 @@ interface ProductsContextType {
   updateCategory: (oldCategory: string, newCategory: string) => Promise<void>;
   deleteCategory: (category: string) => Promise<void>;
   isCloudConnected: boolean;
-  refreshFromCloud: () => Promise<Product[] | null>;
+  refreshFromCloud: (background?: boolean) => Promise<Product[] | null>;
   commerceSettings: CommerceSettings;
   commerceReady: boolean;
   canReceiveOrders: () => boolean;
@@ -115,6 +116,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const [commerceReady, setCommerceReady] = useState(false);
   const latestCommerce = useRef({ settings: DEFAULT_COMMERCE_SETTINGS, ready: false });
   const [cloudReads] = useState(() => createReadGuard());
+  const activeCloudRead = useRef<object | null>(null);
 
   const state = useRef({ products, brands, categories });
   const [enqueue] = useState(() => createMutationQueue());
@@ -138,14 +140,18 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Función para refrescar desde Supabase
-  const refreshFromCloud = useCallback(async () => {
+  const refreshFromCloud = useCallback(async (background = false) => {
+    // Automatic refreshes cannot supersede the fresh read requested at checkout.
+    if (background && activeCloudRead.current) return null;
     const revision = cloudReads.begin();
     if (!isSupabaseReady()) {
       setIsCloudConnected(false);
       setIsLoading(false);
       return null;
     }
-    setIsLoading(true);
+    const request = {};
+    activeCloudRead.current = request;
+    if (!background) setIsLoading(true);
     try {
       const [cloudProds, cloudSettings] = await Promise.all([
         fetchProductsFromSupabase(),
@@ -182,53 +188,56 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       setCommerceReady(false);
       setIsCloudConnected(false);
     } finally {
+      if (activeCloudRead.current === request) activeCloudRead.current = null;
       if (cloudReads.isCurrent(revision)) setIsLoading(false);
     }
     return null;
   }, [saveProductsLocal, setProducts, setBrands, setCategories, isAdmin, cloudReads]);
 
-  // Inicialización y suscripción en tiempo real
+  // Public visitors use bounded refreshes; only administration holds a socket.
   useEffect(() => {
-    let isMounted = true;
+    let firstRead = true;
+    const sync = createCatalogRefresh({
+      refresh: () => { const background = !firstRead; firstRead = false; return refreshFromCloud(background); },
+      isActive: () => document.visibilityState === "visible" && navigator.onLine,
+      now: Date.now,
+      random: Math.random,
+      schedule: (callback, delay) => { const id = window.setTimeout(callback, delay); return () => window.clearTimeout(id); },
+    });
+    const resume = () => { void sync.resume(); };
+    const visibility = () => { if (document.visibilityState === "visible") resume(); else sync.pause(); };
+    document.addEventListener("visibilitychange", visibility);
+    window.addEventListener("focus", resume);
+    window.addEventListener("online", resume);
+    window.addEventListener("offline", sync.pause);
 
     const timer = window.setTimeout(() => {
       setProducts(isSupabaseReady() ? PRODUCTS : getInitialProducts());
       setBrands(getInitialBrands());
       setCategories(getInitialCategories());
-      void refreshFromCloud();
+      if (!navigator.onLine) setIsLoading(false);
+      void sync.start();
     }, 0);
 
     // Suscripción Realtime en Supabase si está disponible
-    const client = getSupabaseClient();
-    if (client) {
-      const channel = client
-        .channel("realtime-products-sync")
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "products" },
-          () => { if (isMounted) void refreshFromCloud(); }
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "store_settings", filter: "key=eq.commerce_settings" },
-          () => { if (isMounted) void refreshFromCloud(); }
-        )
-        .subscribe();
-
-      return () => {
-        isMounted = false;
-        cloudReads.invalidate();
-        window.clearTimeout(timer);
-        client.removeChannel(channel);
-      };
-    }
+    const client = isAdmin ? getSupabaseClient() : null;
+    const channel = client?.channel("realtime-products-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, sync.changed)
+      .on("postgres_changes", { event: "*", schema: "public", table: "store_settings" }, sync.changed)
+      .subscribe();
 
     return () => {
-      isMounted = false;
+      sync.stop();
+      document.removeEventListener("visibilitychange", visibility);
+      window.removeEventListener("focus", resume);
+      window.removeEventListener("online", resume);
+      window.removeEventListener("offline", sync.pause);
       cloudReads.invalidate();
+      activeCloudRead.current = null;
       window.clearTimeout(timer);
+      if (client && channel) void client.removeChannel(channel);
     };
-  }, [refreshFromCloud, saveProductsLocal, setProducts, setBrands, setCategories, cloudReads]);
+  }, [refreshFromCloud, saveProductsLocal, setProducts, setBrands, setCategories, cloudReads, isAdmin]);
 
   // Sincronizar storage entre pestañas cuando se usa modo local
   useEffect(() => {

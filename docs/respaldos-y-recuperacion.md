@@ -2,7 +2,7 @@
 
 ## Estado y activación
 
-El código está preparado y la recuperación se ha probado localmente con PostgreSQL embebido (PGlite). Esta tarea no ha ejecutado la instalación ni descargado datos reales del proyecto remoto. No hay una tarea automática de respaldos configurada.
+La recuperación se prueba con PostgreSQL embebido (PGlite). El 8 de octubre de 2026 se descargó una copia cifrada con la sesión administrativa y se restauró en memoria, conservando sus tablas. El ensayo operativo se ejecutó sobre esa copia sin escribir en Supabase; consultar [los resultados](validacion-operativa-2026-10-08.md). No hay una tarea automática de respaldos configurada.
 
 1. Abre el [SQL Editor del proyecto PulsoTech](https://supabase.com/dashboard/project/upovmpudzgtafobtxnfr/sql). Comprueba el nombre del proyecto antes de ejecutar.
 2. En una consulta nueva, pega **todo** `supabase/activate-backups.sql` y pulsa Run. Requiere que las funciones de administrador/MFA y de ventas seguras ya estén instaladas. La instalación es repetible; no cambia stock, ventas ni permisos de escritura de productos. La migración equivalente es `supabase/migrations/20261004020000_store_backups.sql`.
