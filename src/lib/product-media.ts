@@ -12,6 +12,13 @@ export function colorImages(color?: ProductColor): string[] {
   return color.images !== undefined ? uniqueImages(color.images) : uniqueImages([color.image]);
 }
 
+/** Keep a customer's choice stable when the live catalog reorders or removes colors. */
+export function colorIndexByName(colors: readonly ProductColor[], name: string | null): number | null {
+  if (name === null) return null;
+  const index = colors.findIndex(color => color.name === name);
+  return index < 0 ? null : index;
+}
+
 export function withColorImages(color: ProductColor, images: string[]): ProductColor {
   const gallery = uniqueImages(images);
   return { ...color, images: gallery, image: gallery[0] || "" };

@@ -7,6 +7,7 @@
 - Las rutas antiguas de producto consultan únicamente el catálogo visible actual. Ya no rescatan productos eliminados u ocultos desde localStorage ni conservan una ficha anterior después de cambiar el catálogo. Se admite también `/productos/<identificador>/` cuando lo resuelve la página 404.
 - Un enlace con ID explícito inexistente ya no abre otro producto porque su slug coincida. Los enlaces que solo incluyen slug siguen funcionando.
 - Las fotos subidas deben poder decodificarse, además de cumplir formato, cabecera y tamaño. Se rechazan archivos truncados y fotografías de más de 40 megapíxeles, límite que coincide con el procesamiento de publicación. No se recomprimen los originales durante la carga.
+- La elección de color se conserva por nombre tanto en las tarjetas como en la ficha. Reordenar colores en el catálogo en vivo ya no cambia la elección del cliente; retirar o renombrar ese color exige elegir nuevamente. Si se acorta una galería, el contador y las flechas se ajustan a las fotos restantes.
 - La función de reclamos obtiene responsable, dirección, correo y RUC desde la configuración comercial guardada. Exige coincidencia del RUC con el entorno de la función y conserva una copia de la identidad en cada constancia. La pausa de ventas no bloquea la atención de reclamos.
 
 ## Archivos e imágenes
@@ -19,11 +20,11 @@ Se verificaron las siete fotos actuales del catálogo, el banner, el SVG de resp
 
 ## Comprobaciones
 
-- 155 pruebas aprobadas; ocho casos adicionales sobre rutas, imágenes y constancias. Incluyen las pruebas existentes de permisos, MFA, ventas atómicas, concurrencia, cupones, stock, galerías y recuperación de respaldos en base aislada.
+- 157 pruebas aprobadas; diez casos adicionales sobre rutas, imágenes, colores actualizados en vivo y constancias. Incluyen las pruebas existentes de permisos, MFA, ventas atómicas, concurrencia, cupones, stock, galerías y recuperación de respaldos en base aislada.
 - ESLint, TypeScript y compilación estática de Cloudflare Pages aprobados. Exportación de 14 páginas HTML; 43 referencias internas únicas comprobadas, sin destinos ausentes.
 - `npm audit --omit=dev`: cero vulnerabilidades. La auditoría completa mantiene cinco alertas de la cadena de ESLint que depende de `braces` 3.0.3. No existe una versión corregida de ese paquete en el registro durante esta revisión. No se aplicó el retroceso de versión mayor sugerido por `npm audit fix --force`.
 - Navegador público: portada, menú, categoría Audífonos, producto, galerías por color, favoritos, bolsa completa, cupón inválido, cantidades, entrega separada de referencia, políticas y acceso administrativo. Se comprobó el cambio de una a dos unidades: precio unitario S/100 y total S/200. Se restituyeron la bolsa original (Blanco, una unidad) y los favoritos vacíos.
-- Revisión a 320, 390 y 768 px sin desbordamiento horizontal ni imágenes rotas en las vistas consultadas. Las pruebas de escritorio y de las correcciones publicadas se registran al terminar la publicación.
+- Revisión a 320, 390, 768 y 1440 px sin desbordamiento horizontal ni imágenes rotas en las vistas consultadas. En la versión publicada se verificaron también las tres categorías desbloqueadas, sus indicadores activos, los estados vacíos, los filtros de precio y la compatibilidad del enlace antiguo `/producto/huawei-freebuds-se-2/`.
 - La verificación Turnstile del acceso administrativo se completó. Su iframe emitió mensajes técnicos propios; no se observaron errores de ejecución de la aplicación en las vistas públicas revisadas.
 
 ## Alcance y pendientes

@@ -9,17 +9,17 @@ import { STORE_SETTINGS } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import { getAssetUrl } from "@/utils/paths";
 import { ShoppingBag, Heart, Check } from "lucide-react";
-import { productGallery } from "@/lib/product-media";
+import { colorIndexByName, productGallery } from "@/lib/product-media";
 import CompareProductButton from "./CompareProductButton";
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem, toggleFavorite, isFavorite } = useCart();
-  const [selectedColorIndex, setSelectedColorIndex] = useState<number | null>(null);
-  const [galleryColorIndex, setGalleryColorIndex] = useState<number | null>(null);
+  const [selectedColorName, setSelectedColorName] = useState<string | null>(null);
   const [justAdded, setJustAdded] = useState(false);
   const isFav = isFavorite(product.id);
 
   const colors = product.colors || [];
+  const selectedColorIndex = colorIndexByName(colors, selectedColorName);
   const fallbackImg = getAssetUrl("/placeholder-earbuds.svg");
   const currentColor = (selectedColorIndex !== null ? colors[selectedColorIndex] : undefined) || colors[0] || {
     name: "Original",
@@ -27,7 +27,7 @@ export default function ProductCard({ product }: { product: Product }) {
     image: product.images?.[0] || fallbackImg,
   };
 
-  const gallery = productGallery(product, galleryColorIndex, fallbackImg);
+  const gallery = productGallery(product, selectedColorIndex, fallbackImg);
   const primaryImage = getAssetUrl(gallery[0]);
   const secondaryImage = gallery[1] ? getAssetUrl(gallery[1]) : null;
 
@@ -37,6 +37,7 @@ export default function ProductCard({ product }: { product: Product }) {
     e.preventDefault();
     e.stopPropagation();
     if (isOutOfStock) return;
+    if (colors.length && selectedColorIndex === null) return;
     addItem(product, currentColor, 1);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1200);
@@ -129,8 +130,7 @@ export default function ProductCard({ product }: { product: Product }) {
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      setSelectedColorIndex(idx);
-                      setGalleryColorIndex(idx);
+                      setSelectedColorName(color.name);
                     }}
                     aria-label={`Color ${color.name}`}
                     aria-pressed={isSelected}

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { colorImages, productGallery, withColorImages, moveImage } from "../src/lib/product-media.ts";
+import { colorImages, colorIndexByName, productGallery, withColorImages, moveImage } from "../src/lib/product-media.ts";
 import { parseStoreBackup } from "../src/lib/content-security.ts";
 
 const black = { name: "Negro", hex: "#18181b", image: "/black-front.png", images: ["/black-front.png", "/black-side.png", "/black-case.png"] };
@@ -13,6 +13,24 @@ test("color galleries never include general photos or pictures belonging to othe
   assert.deepEqual(productGallery(product, 1, "/empty.svg"), white.images);
   assert.deepEqual(productGallery({ ...product, colors: [black, { ...white, image: "", images: [] }] }, 1, "/empty.svg"), ["/empty.svg"]);
   assert.deepEqual(productGallery({ ...product, images: [] }, null, "/empty.svg"), black.images);
+});
+
+test("reordering live colors preserves the chosen variant and only its photographs", () => {
+  const selection = "Blanco";
+  for (const colors of [[black, white], [white, black]]) {
+    const index = colorIndexByName(colors, selection);
+    assert.equal(colors[index].name, selection);
+    assert.deepEqual(productGallery({ ...product, colors }, index, "/empty.svg"), white.images);
+  }
+  assert.equal(colorIndexByName(product.colors, null), null);
+});
+
+test("a removed or renamed selected color requires a new choice instead of silently choosing another", () => {
+  for (const colors of [[black], [{ ...white, name: "Perla" }, black], []]) {
+    const index = colorIndexByName(colors, "Blanco");
+    assert.equal(index, null);
+    assert.deepEqual(productGallery({ ...product, colors }, index, "/empty.svg"), product.images);
+  }
 });
 
 test("legacy colors keep their photo and removing the last photo does not resurrect it", () => {

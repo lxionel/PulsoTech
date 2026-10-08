@@ -8,7 +8,7 @@ import { STORE_SETTINGS } from "@/data/products";
 import { getAssetUrl } from "@/utils/paths";
 import { AUDIO_TYPE_OPTIONS, parsePlaybackHours } from "@/lib/audio-filters";
 import { getProductVideoInfo } from "@/lib/content-security";
-import { colorImages, productGallery } from "@/lib/product-media";
+import { colorImages, colorIndexByName, productGallery } from "@/lib/product-media";
 import { useCart } from "@/context/CartContext";
 import { useProducts } from "@/context/ProductsContext";
 import { productCommerce } from "@/lib/commerce";
@@ -62,14 +62,14 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   const commercial = productCommerce(product);
 
   const [quantity, setQuantity] = useState(1);
-  const [selectedColorIndex, setSelectedColorIndex] = useState<number | null>(null);
+  const [selectedColorName, setSelectedColorName] = useState<string | null>(null);
   const [colorRequired, setColorRequired] = useState(false);
   const colorSelector = React.useRef<HTMLDivElement>(null);
   const purchaseActions = React.useRef<HTMLDivElement>(null);
   const specificationDetails = React.useRef<HTMLDetailsElement>(null);
   const [purchaseActionsVisible, setPurchaseActionsVisible] = useState(false);
-  const [galleryColorIndex, setGalleryColorIndex] = useState<number | null>(null);
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [galleryColorName, setGalleryColorName] = useState<string | null>(null);
+  const [requestedImageIndex, setSelectedImageIndex] = useState(0);
   const [imageSize, setImageSize] = useState<{ source: string; width: number; height: number } | null>(null);
   const [isVideoActive, setIsVideoActive] = useState(false);
   const isFav = isFavorite(product.id);
@@ -138,6 +138,8 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   }, [product]);
 
   const colors = React.useMemo(() => product.colors || [], [product.colors]);
+  const selectedColorIndex = colorIndexByName(colors, selectedColorName);
+  const galleryColorIndex = colorIndexByName(colors, galleryColorName);
   const fallbackImg = getAssetUrl("/placeholder-earbuds.svg");
   const currentColor = React.useMemo(() => {
     return (
@@ -155,25 +157,26 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
     return productGallery(product, galleryColorIndex, fallbackImg);
   }, [product, galleryColorIndex, fallbackImg]);
 
+  const selectedImageIndex = Math.min(requestedImageIndex, galleryImages.length - 1);
   const activeImage = galleryImages[selectedImageIndex] || galleryImages[0];
   const currentImageSize = imageSize?.source === activeImage ? imageSize : null;
 
   const handleSelectColor = (index: number) => {
-    setSelectedColorIndex(index);
+    setSelectedColorName(colors[index].name);
     setColorRequired(false);
-    setGalleryColorIndex(index);
+    setGalleryColorName(colors[index].name);
     setIsVideoActive(false);
     setSelectedImageIndex(0);
   };
 
   const handleNextImage = () => {
     setIsVideoActive(false);
-    setSelectedImageIndex((prev) => (prev + 1) % galleryImages.length);
+    setSelectedImageIndex((prev) => (Math.min(prev, galleryImages.length - 1) + 1) % galleryImages.length);
   };
 
   const handlePrevImage = () => {
     setIsVideoActive(false);
-    setSelectedImageIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
+    setSelectedImageIndex((prev) => (Math.min(prev, galleryImages.length - 1) - 1 + galleryImages.length) % galleryImages.length);
   };
 
   const requireColorSelection = () => {
@@ -363,7 +366,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                     </button>
                   );
                 })}
-                {!!product.images?.length && galleryColorIndex !== null && <button type="button" onClick={() => { setGalleryColorIndex(null); setSelectedImageIndex(0); setIsVideoActive(false); }} className="min-h-11 shrink-0 px-1 text-xs lg:text-[11px] whitespace-nowrap text-neutral-500 underline underline-offset-4 hover:text-black cursor-pointer">Ver todas</button>}
+                {!!product.images?.length && galleryColorIndex !== null && <button type="button" onClick={() => { setGalleryColorName(null); setSelectedImageIndex(0); setIsVideoActive(false); }} className="min-h-11 shrink-0 px-1 text-xs lg:text-[11px] whitespace-nowrap text-neutral-500 underline underline-offset-4 hover:text-black cursor-pointer">Ver todas</button>}
               </div>
             )}
           </div>
