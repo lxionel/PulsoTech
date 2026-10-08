@@ -31,6 +31,24 @@ Las políticas conservan el nombre y correo de contacto iniciales. El propietari
 
 Ningún cambio de base de datos ni publicación de la función ha sido ejecutado automáticamente desde esta tarea. El flujo remoto sigue pendiente de instalación y prueba real.
 
+## Instalación técnica con CLI
+
+Se comprobó la ayuda de Supabase CLI `2.120.0`. Iniciar sesión desde una terminal local con `npx --yes supabase@2.120.0 login`; no compartir tokens ni contraseñas por chat. Confirmar que la referencia corresponde al proyecto configurado en PulsoTech antes de ejecutar:
+
+```powershell
+# Desde la raíz del repositorio; sustituir <referencia> por la del proyecto correcto.
+npx --yes supabase@2.120.0 db query --linked --project-ref <referencia> --file supabase/verify-complaints.sql
+npx --yes supabase@2.120.0 db query --linked --project-ref <referencia> --file supabase/activate-complaints.sql
+npx --yes supabase@2.120.0 db query --linked --project-ref <referencia> --file supabase/verify-complaints.sql
+npx --yes supabase@2.120.0 functions deploy submit-complaint --project-ref <referencia> --use-api
+```
+
+La primera y tercera consultas solo inspeccionan el esquema y los permisos, sin leer datos de consumidores. Tras instalar, las comprobaciones booleanas deben ser `true`; revisar además que `policies` contenga únicamente las dos políticas del administrador y sus condiciones `is_store_admin()`. Esto no sustituye las pruebas de sesión y CAPTCHA. El SQL de activación conserva registros y restablece los permisos del módulo. No ejecutar `db reset` ni un `db push` general para instalar este archivo.
+
+`--use-api` despliega únicamente la función indicada sin Docker. La configuración `verify_jwt = false` pertenece exclusivamente a este formulario público; su handler exige Turnstile y datos comerciales válidos antes de insertar. No habilitar el formulario público ni inventar un RUC para comprobarlo. El endpoint puede seguir rechazando solicitudes hasta completar los secretos y la identidad reales.
+
+Verificación del 8 de octubre: el endpoint público devolvió `404` a una solicitud `OPTIONS`, sin datos ni inserciones. Se añadieron pruebas de instalación repetible, conservación de referencias/respuestas y detección de permisos sobrantes; las pruebas aisladas de permisos y handler pasaron. La instalación remota sigue pendiente de la sesión CLI.
+
 ## Fuentes oficiales
 
 - [Libro de Reclamaciones y formato, Indecopi](https://consumidor.gob.pe/libro-de-reclamaciones/).

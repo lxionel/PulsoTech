@@ -34,6 +34,7 @@ El propietario aún no tiene definidos los datos comerciales. Comprará el domin
 - `npm run capacity:check`: plan HTTP sin ejecutar carga.
 - `npm run capacity:check -- --execute --stages 1`: comprobación puntual de disponibilidad; no es un monitor permanente.
 - `npm run launch:check`: pendientes comerciales, solo lectura.
+- `supabase/verify-complaints.sql`: diagnóstico de esquema y permisos del Libro, sin consultar datos de consumidores; ver [instalación](activar-libro-reclamaciones.md).
 
 La prueba embebida ejecuta SQL real y conserva inventario e historial de la copia. PGlite no reproduce el servicio completo de Auth, PostgREST, Realtime, Storage, varios servidores PostgreSQL o redes móviles. Las dos solicitudes por la última unidad no demuestran concurrencia entre conexiones PostgreSQL independientes. Una pasada HTTP no certifica usuarios simultáneos ni disponibilidad futura.
 
