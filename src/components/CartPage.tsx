@@ -275,10 +275,10 @@ export default function CartPage() {
                 <fieldset>
                   <legend className="text-lg font-semibold mb-4">Forma de pago</legend>
                   <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-3">
-                    {([['contra_entrega', 'Contra entrega', Truck], ['transferencia', 'Transferencia', Wallet]] as const).map(([value, label, Icon]) => <label key={value} className={"min-h-20 flex items-center gap-3 p-4 rounded-lg border cursor-pointer " + (paymentMethod === value ? "border-neutral-950 bg-neutral-50" : "border-neutral-200 hover:border-neutral-400")}>
+                    {([['contra_entrega', 'Contra entrega', Truck], ['transferencia', 'Transferencia', Wallet]] as const).map(([value, label, Icon]) => <label key={value} className={"min-h-20 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 p-3 sm:flex sm:gap-3 sm:p-4 rounded-lg border cursor-pointer " + (paymentMethod === value ? "border-neutral-950 bg-neutral-50" : "border-neutral-200 hover:border-neutral-400")}>
                       <Icon aria-hidden="true" className="w-5 h-5 shrink-0 text-neutral-600" />
-                      <span className="flex-1 text-sm font-medium">{label}</span>
-                      <input type="radio" name="payment-method" value={value} checked={paymentMethod === value} disabled={isCheckingStock} onChange={() => setCheckoutDraft((previous) => ({ ...previous, paymentMethod: value }))} className="w-4 h-4 accent-neutral-950 shrink-0" />
+                      <span className="order-3 col-span-2 min-w-0 text-sm font-medium sm:order-none sm:flex-1">{label}</span>
+                      <input type="radio" name="payment-method" value={value} checked={paymentMethod === value} disabled={isCheckingStock} onChange={() => setCheckoutDraft((previous) => ({ ...previous, paymentMethod: value }))} className="order-2 sm:order-none w-4 h-4 accent-neutral-950 shrink-0" />
                     </label>)}
                   </div>
                 </fieldset>
