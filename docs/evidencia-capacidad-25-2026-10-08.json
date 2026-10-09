@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-09T01:49:50.147Z",
+  "plan": {
+    "target": "https://pulsotech.pages.dev",
+    "stages": [
+      25
+    ],
+    "visitsPerClient": 1,
+    "timeoutMs": 10000,
+    "stopOn": "cualquier error HTTP o p95 superior a 3000 ms",
+    "scope": "HTTP estático y consultas públicas; sin JavaScript, Realtime, sesiones ni escrituras"
+  },
+  "results": [
+    {
+      "clients": 25,
+      "completedVisits": 25,
+      "requests": 150,
+      "errors": 0,
+      "p50Ms": 305,
+      "p95Ms": 781,
+      "maxMs": 807,
+      "bytes": 3017375,
+      "resources": [
+        {
+          "resource": "inicio",
+          "requests": 25,
+          "errors": 0,
+          "p95Ms": 385
+        },
+        {
+          "resource": "catálogo",
+          "requests": 25,
+          "errors": 0,
+          "p95Ms": 282
+        },
+        {
+          "resource": "ficha HTML",
+          "requests": 25,
+          "errors": 0,
+          "p95Ms": 352
+        },
+        {
+          "resource": "galerías",
+          "requests": 25,
+          "errors": 0,
+          "p95Ms": 88
+        },
+        {
+          "resource": "productos API",
+          "requests": 25,
+          "errors": 0,
+          "p95Ms": 798
+        },
+        {
+          "resource": "ajustes públicos API",
+          "requests": 25,
+          "errors": 0,
+          "p95Ms": 764
+        }
+      ]
+    }
+  ],
+  "capacityCertified": false,
+  "limitation": "Una pasada HTTP desde una sola ubicación no demuestra capacidad sostenida ni valida la interacción en navegadores."
+}

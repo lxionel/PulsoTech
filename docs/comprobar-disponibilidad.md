@@ -16,6 +16,10 @@ Usa un runner estándar `ubuntu-24.04`, dura como máximo cinco minutos y se omi
 
 En la cuenta del propietario se verificó **Actions → Notify me: on GitHub, Email (Failed workflows only)**. Los avisos se envían conforme a esa preferencia y al usuario asociado a la ejecución programada. No se provocó una caída ni se confirmó entrega de un correo de prueba. Los avisos básicos no suprimen incidentes repetidos mediante un estado propio ni envían un aviso específico de recuperación. El éxito posterior puede consultarse en Actions.
 
+La [primera ejecución](https://github.com/lxionel/PulsoTech/actions/runs/37871467334), disparada al publicar el workflow y asociada a `lxionel`, aprobó los nueve recursos sin reintentos. GitHub confirmó el workflow en estado `active`; la ejecución por horario comenzará en el siguiente intervalo disponible.
+
+Tras actualizar las acciones oficiales y fijar el runner, la [segunda ejecución](https://github.com/lxionel/PulsoTech/actions/runs/37871736660) aprobó otra vez los nueve recursos, sin reintentos ni advertencias de runtime antiguo. Estas comprobaciones iniciales se dispararon al publicar código; no se ha esperado una ejecución por horario ni verificado la recepción de correo.
+
 Para pausar: Actions → Check public storefront availability → menú del workflow → Disable workflow. Para revisar manualmente: Run workflow. GitHub desactiva programaciones en repositorios públicos tras 60 días sin actividad; comprobar que siga activo antes de abrir ventas. Una revisión cada seis horas puede omitir interrupciones breves entre ejecuciones.
 
 Referencias: [programación y límites](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule), [avisos por correo](https://docs.github.com/en/subscriptions-and-notifications/how-tos/managing-github-actions-notifications), [condiciones de ejecución gratuita](https://docs.github.com/en/billing/concepts/product-billing/github-actions).

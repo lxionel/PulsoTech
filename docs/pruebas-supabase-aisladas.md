@@ -6,6 +6,8 @@ El propietario confirmó que PulsoTech usa el plan gratuito. Los dos proyectos a
 
 Los diez grupos de integración pasaron en la [ejecución de GitHub](https://github.com/lxionel/PulsoTech/actions/runs/37868539908), referencia `8e37466`. La eliminación de contenedores y volúmenes temporales terminó correctamente. La [validación de aplicación](https://github.com/lxionel/PulsoTech/actions/runs/37868539965) también aprobó sus 168 pruebas, lint y compilación estática. [Evidencia resumida](evidencia-integracion-supabase-2026-10-08.json).
 
+La ampliación `c56d13b` aprobó once grupos, incluyendo 250 lecturas en paralelo sin errores; [ejecución y métricas](https://github.com/lxionel/PulsoTech/actions/runs/37871467220). Después de actualizar las herramientas, `f9f1967` volvió a aprobar [integración y limpieza](https://github.com/lxionel/PulsoTech/actions/runs/37871736682), y [178 pruebas, lint y compilación](https://github.com/lxionel/PulsoTech/actions/runs/37871736677). La CLI sigue fijada a la misma versión y el aislamiento se conserva.
+
 ## Coste y aislamiento
 
 El repositorio `lxionel/PulsoTech` es público. Los runners estándar de GitHub son gratuitos para repositorios públicos ([condiciones de GitHub Actions](https://docs.github.com/en/billing/concepts/product-billing/github-actions)). El trabajo se omite si el repositorio pasa a privado, utiliza `ubuntu-24.04`, limita su duración a veinte minutos y no sube artefactos ni conserva cachés. No configura ningún recurso de pago de Supabase. La CLI se ejecuta desde el paquete oficial fijado a `2.120.0`, sin depender de la acción antigua que usaba Node.js 20.
