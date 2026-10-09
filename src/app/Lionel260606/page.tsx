@@ -4025,6 +4025,7 @@ function AdminWorkspace() {
                     </label>
                     <input aria-label="Código del cupón"
                       type="text"
+                      maxLength={40}
                       placeholder="CÓDIGO DE CUPÓN"
                       value={newCouponCode}
                       onChange={(e) => setNewCouponCode(e.target.value.toUpperCase())}
@@ -4054,7 +4055,9 @@ function AdminWorkspace() {
                       </label>
                       <input aria-label="Valor del descuento"
                         type="number"
-                        min={1}
+                        min={0.01}
+                        max={newCouponType === "percentage" ? 100 : undefined}
+                        step={0.01}
                         value={newCouponValue}
                         onChange={(e) => setNewCouponValue(parseFloat(e.target.value) || 0)}
                         className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono font-bold text-neutral-900 focus:outline-none"
@@ -4070,7 +4073,7 @@ function AdminWorkspace() {
                     <input aria-label="Compra mínima del cupón"
                       type="number"
                       min={0}
-                      step={5}
+                      step={0.01}
                       value={newCouponMin}
                       onChange={(e) => setNewCouponMin(parseFloat(e.target.value) || 0)}
                       className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono font-bold text-neutral-900 focus:outline-none"
