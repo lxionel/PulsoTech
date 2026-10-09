@@ -4508,7 +4508,7 @@ function AdminWorkspace() {
                                 {STORE_SETTINGS.currencySymbol}{s.total.toFixed(2)}
                               </div>
                               <div className="text-[10px] font-bold text-neutral-400">
-                                {currentStatus === "delivered" ? "● Cobrado" : "● Pendiente / Contraentrega"}
+                                {({ pending: "● Pendiente de despacho", shipped: "● En camino", delivered: "● Entregado y cobrado", cancelled: "● Cancelado" })[currentStatus]}
                               </div>
                             </div>
                           </div>
