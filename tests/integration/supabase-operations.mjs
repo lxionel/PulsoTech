@@ -21,7 +21,12 @@ function sql(query) {
   return command("docker", ["exec", "-i", container, "psql", "-U", "postgres", "-d", "postgres", "-X", "-qAt", "-v", "ON_ERROR_STOP=1"], query).trim();
 }
 function success(response) {
-  assert.equal(response.error, null, `API failure during ${stage}`);
+  if (response.error) {
+    const failure = new Error("Isolated API failure.");
+    const code = response.error.code;
+    failure.publicReason = typeof code === "string" && /^[a-zA-Z0-9_]{1,64}$/.test(code) ? code : "api_failure";
+    throw failure;
+  }
   return response.data;
 }
 function totp(secret, now = Date.now()) {
@@ -89,8 +94,11 @@ try {
   success(await service.auth.admin.createUser({ email: "ordinary@example.invalid", password, email_confirm: true }));
   assert.match(owner.id, /^[0-9a-f-]{36}$/);
   sql(`insert into public.store_admins(user_id) values ('${owner.id}');`);
+  stage = "administrator password sign-in";
   success(await admin.auth.signInWithPassword({ email: "admin@example.invalid", password }));
+  stage = "ordinary password sign-in";
   success(await ordinary.auth.signInWithPassword({ email: "ordinary@example.invalid", password }));
+  stage = "password-only and anonymous permission checks";
   assert.equal(success(await admin.rpc("is_store_admin_account")), true);
   assert.ok((await record(admin, sale("VTA-password-only"))).error);
   assert.deepEqual(success(await admin.from("store_settings").select("key").eq("key", "sales_records")), []);
@@ -211,8 +219,9 @@ try {
   console.log(JSON.stringify(report, null, 2));
   if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY,
     `## Isolated Supabase verification\n\n${checks.map(check => `- Passed: ${check}`).join("\n")}\n\nSynthetic records only. No hosted project contacted. Browser flow and public CAPTCHA remain separate checks.\n`);
-} catch {
+} catch (failure) {
   // Auth responses, command output and exception objects can contain ephemeral credentials.
-  console.error(`::error title=Isolated Supabase verification::Failed during: ${stage}. Credentials and private payloads were not logged.`);
+  const reason = failure?.publicReason || "assertion_or_local_command";
+  console.error(`::error title=Isolated Supabase verification::Failed during: ${stage}; category: ${reason}. Credentials and private payloads were not logged.`);
   process.exitCode = 1;
 }
