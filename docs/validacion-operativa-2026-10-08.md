@@ -68,6 +68,18 @@ Comprobación puntual posterior sobre la web publicada actual: un cliente, seis 
 
 ## Pendientes
 
+### Continuación: panel autenticado, ventas y reclamos
+
+La sesión estaba activa en otra pestaña del navegador integrado; se identificó esa pestaña y se continuó allí. No se solicitó nuevamente credenciales. Inventario inicial y final: un producto, cuatro unidades y una venta histórica conservada.
+
+Desde el formulario de ventas se comprobaron rechazos previos al guardado: cinco unidades con stock de cuatro muestra el aviso de stock insuficiente; total cero muestra el aviso de importe inválido; cantidad 1.5 presenta `stepMismatch` de la validación nativa. El total sugerido pasa a S/ 200.00 con dos unidades. Los valores del formulario se devolvieron a cantidad uno y total sin sobreescritura, y se cerró con Cancelar. No se procesó una venta válida ni se cambió su estado, se retiró historial o se enviaron mensajes.
+
+El formulario se revisó visualmente a 360 px, sin desbordamiento horizontal de página. La edición y navegación mientras se guarda están protegidas por el `fieldset` deshabilitado del área de ventas, revisado en código; no se ensayó una escritura lenta desde la interfaz. Las pruebas existentes de doble envío, lectura no confirmada y respuesta incierta permanecen separadas de esa comprobación visual.
+
+En Ajustes, el Libro de Reclamaciones instalado carga y actualiza correctamente, mostrando cero solicitudes sin errores de consola. El control de recepción de pedidos permanece deshabilitado por los requisitos comerciales pendientes. Se corrigió el indicador que anunciaba «receptor de pedidos activo» para describir el número de atención configurado; el contador de la tienda ahora filtra por visibilidad y usa singular cuando corresponde. La ocultación de productos está cubierta por las pruebas existentes; no se ocultó el producto de muestra para probar el contador en producción.
+
+La sesión no cierra por sí sola el pendiente de venta completa. Sigue faltando registrar y comprobar una operación válida desde la interfaz en un entorno descartable equivalente, y comprobar atención/entrega. Las operaciones HTTP/SQL aisladas ya aprobadas no deben presentarse como ese ensayo.
+
 ### Continuación: recorrido público desde navegador
 
 Se comprobó la tienda publicada con JavaScript: ficha sin color inicial, aviso al añadir sin escoger, tres fotos negras y dos blancas, precio por cantidad, acceso desde el producto de la bolsa, stock máximo de cuatro unidades, cupón inexistente, compra desde la barra móvil y campos separados de entrega. La acción final permanece deshabilitada por la pausa comercial. No se enviaron mensajes ni se modificaron datos del negocio. Bolsa original restaurada a una unidad blanca y campos ficticios limpiados. [Detalle de lo comprobado y sus límites](recorrido-publico-2026-10-08.md).

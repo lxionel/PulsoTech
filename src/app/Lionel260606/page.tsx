@@ -19,7 +19,7 @@ import AdminStockControl from "@/components/AdminStockControl";
 import AdminImageGallery from "@/components/AdminImageGallery";
 import AdminCommerceSettings from "@/components/AdminCommerceSettings";
 import ProductCommercialFields from "@/components/ProductCommercialFields";
-import { commerceSpecs, productCommerce, type ProductCommerce } from "@/lib/commerce";
+import { commerceSpecs, productCommerce, isStorefrontProduct, type ProductCommerce } from "@/lib/commerce";
 import { colorImages, withColorImages, uniqueImages } from "@/lib/product-media";
 import { isAudioCategory } from "@/lib/categories";
 import { parsePlaybackHours } from "@/lib/audio-filters";
@@ -382,6 +382,7 @@ function AdminWorkspace() {
   };
 
   // Métricas Generales
+  const visibleProductCount = products.filter(isStorefrontProduct).length;
   const totalRevenue = salesForAccounting(sales).reduce((acc, s) => acc + s.total, 0);
   const lowStockCount = products.filter((p) => (p.stockCount || 0) > 0 && (p.stockCount || 0) <= 5).length;
   const outOfStockCount = products.filter((p) => (p.stockCount || 0) <= 0).length;
@@ -5337,7 +5338,7 @@ function AdminWorkspace() {
                     </div>
                     <div className="text-[11px] text-emerald-600 font-bold mt-0.5 flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      <span>Receptor de pedidos activo</span>
+                      <span>{whatsappNumber ? "Número de atención configurado" : "Número de atención pendiente"}</span>
                     </div>
                   </div>
                 </div>
@@ -5370,10 +5371,10 @@ function AdminWorkspace() {
                   </div>
                   <div>
                     <div className="text-base sm:text-lg font-black text-neutral-950 font-mono tracking-tight">
-                      {products.length} productos
+                      {visibleProductCount} {visibleProductCount === 1 ? "producto" : "productos"}
                     </div>
                     <div className="text-[11px] text-neutral-500 mt-0.5">
-                      Disponibles en tienda web
+                      Visibles en la tienda web
                     </div>
                   </div>
                 </div>
@@ -5388,7 +5389,7 @@ function AdminWorkspace() {
                   </div>
                   <div>
                     <div className="text-base sm:text-lg font-black text-neutral-950 font-mono tracking-tight">
-                      {sales.length} órdenes
+                      {sales.length} {sales.length === 1 ? "orden" : "órdenes"}
                     </div>
                     <div className="text-[11px] text-neutral-500 mt-0.5">
                       Historial comercial registrado
