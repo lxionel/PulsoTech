@@ -2128,6 +2128,10 @@ function AdminWorkspace() {
                             onClick={async () => {
                               if (confirm(`¿Estás seguro de eliminar "${item.name}" del catálogo?`)) {
                                 if (!await runAdminAction(() => deleteProduct(item.id))) return;
+                                if (editingProductId === item.id) {
+                                  setEditingProductId(null);
+                                  setEditingProductSnapshot(null);
+                                }
                                 setSuccessNotice(`Producto "${item.name}" eliminado del catálogo.`);
                                 setTimeout(() => setSuccessNotice(""), 4000);
                               }
@@ -2327,6 +2331,10 @@ function AdminWorkspace() {
                                   onClick={async () => {
                               if (confirm(`¿Estás seguro de eliminar "${item.name}" del catálogo?`)) {
                                       if (!await runAdminAction(() => deleteProduct(item.id))) return;
+                                      if (editingProductId === item.id) {
+                                        setEditingProductId(null);
+                                        setEditingProductSnapshot(null);
+                                      }
                                       setSuccessNotice(`Producto "${item.name}" eliminado del catálogo.`);
                                       setTimeout(() => setSuccessNotice(""), 4000);
                                     }
