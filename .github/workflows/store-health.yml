@@ -1,0 +1,58 @@
+name: Check public storefront availability
+
+on:
+  schedule:
+    # Lima (UTC-5): 00:17, 06:17, 12:17 and 18:17.
+    - cron: "17 5,11,17,23 * * *"
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/store-health.yml"
+      - "scripts/check-health.mjs"
+      - "scripts/lib/store-health.mjs"
+      - "src/lib/admin-auth.ts"
+      - "src/lib/supabase.ts"
+      - "package.json"
+      - "package-lock.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "store-health-${{ github.ref }}"
+  cancel-in-progress: false
+
+jobs:
+  health:
+    # Keep this free: standard public-repository runner, no paid services or AI.
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Check public pages, catalog and sample image
+        run: npm run health:check -- --report "$RUNNER_TEMP/pulsotech-health.json"
+      - name: Publish availability summary
+        if: always()
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile, appendFile } from "node:fs/promises";
+          import { join } from "node:path";
+          let text = "## Disponibilidad de PulsoTech\n\n";
+          try {
+            const report = JSON.parse(await readFile(join(process.env.RUNNER_TEMP, "pulsotech-health.json"), "utf8"));
+            text += `Resultado: **${report.ok ? "Correcto" : "Requiere revisión"}**. Fecha UTC: ${report.checkedAt}.\n\n`;
+            text += "| Recurso | Estado | HTTP | Intentos | Último intento (ms) |\n| --- | --- | --- | --- | --- |\n";
+            text += report.checks.map(row => `| ${row.resource} | ${row.reason} | ${row.status} | ${row.attempts} | ${row.ms} |`).join("\n");
+            text += "\n\nConsultas públicas de lectura. Sin sesiones, pedidos, reparaciones automáticas ni datos de clientes.\n";
+          } catch {
+            text += "No se generó el diagnóstico. Revisa los pasos de preparación y ejecución; esto no confirma por sí solo una caída de la tienda.\n";
+          }
+          await appendFile(process.env.GITHUB_STEP_SUMMARY, text);
+          NODE

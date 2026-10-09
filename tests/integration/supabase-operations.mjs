@@ -10,6 +10,7 @@ import { salesForAccounting } from "../../src/lib/sales-validation.ts";
 import { createRecoverySql } from "../../src/lib/store-backup.ts";
 
 const checks = [];
+let publicReadLoad;
 let stage = "isolation guard";
 const container = "supabase_db_pulsotech-ci";
 const pause = ms => new Promise(resolvePause => setTimeout(resolvePause, ms));
@@ -136,6 +137,31 @@ try {
   assert.ok(unauthorizedUpdate.error || unauthorizedUpdate.data.length === 0);
   checks.push("administrator saves and edits galleries; visitors read only the chosen color");
 
+  stage = "bounded parallel public catalog reads";
+  const timings = [];
+  const loadStarted = performance.now();
+  // Fixed synthetic catalog in this container only. Twenty-five visits per round,
+  // each issuing two public reads; never load-test a hosted project from this suite.
+  for (let round = 0; round < 5; round++) {
+    await Promise.all(Array.from({ length: 25 }, async () => {
+      const started = performance.now();
+      const [catalog, settings] = await Promise.all([
+        anon.from("products").select("id,name,price,stock_count,in_stock").limit(2),
+        anon.from("store_settings").select("key,value").eq("key", "commerce_schema_version"),
+      ]);
+      assert.deepEqual(success(catalog), [{ id: row.id, name: row.name, price: 100, stock_count: 3, in_stock: true }]);
+      assert.deepEqual(success(settings), [{ key: "commerce_schema_version", value: 1 }]);
+      timings.push(Math.round(performance.now() - started));
+    }));
+    if (round < 4) await pause(250);
+  }
+  timings.sort((a, b) => a - b);
+  publicReadLoad = { clientsPerRound: 25, rounds: 5, requests: 250, errors: 0,
+    p95VisitMs: timings[Math.ceil(timings.length * 0.95) - 1], maxVisitMs: timings.at(-1),
+    elapsedMs: Math.round(performance.now() - loadStarted), environment: "disposable local Supabase on GitHub runner",
+    hostedCapacityCertified: false, browserTest: false };
+  checks.push("25 parallel public visits across five rounds return exact catalog and schema data without errors");
+
   stage = "checkout totals and confirmed sale";
   const product = { ...saved, stockCount: saved.stock_count, inStock: saved.in_stock };
   const coupon = { id: "qa", code: "QA10", discountType: "percentage", discountValue: 10, minPurchase: 50, isActive: true };
@@ -228,10 +254,10 @@ try {
   assert.deepEqual(success(await anon.from("products").select("id").eq("id", row.id)), []);
   checks.push("removal preserves retry identities and administrator product deletion works");
 
-  const report = { passed: true, checks, syntheticOnly: true, hostedProjectsContacted: false, browserTest: false };
+  const report = { passed: true, checks, publicReadLoad, syntheticOnly: true, hostedProjectsContacted: false, browserTest: false };
   console.log(JSON.stringify(report, null, 2));
   if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY,
-    `## Isolated Supabase verification\n\n${checks.map(check => `- Passed: ${check}`).join("\n")}\n\nSynthetic records only. No hosted project contacted. Browser flow and public CAPTCHA remain separate checks.\n`);
+    `## Isolated Supabase verification\n\n${checks.map(check => `- Passed: ${check}`).join("\n")}\n\nPublic reads: ${publicReadLoad.requests}; clients per round: ${publicReadLoad.clientsPerRound}; rounds: ${publicReadLoad.rounds}; errors: ${publicReadLoad.errors}; p95 visit: ${publicReadLoad.p95VisitMs} ms; maximum: ${publicReadLoad.maxVisitMs} ms.\n\nSynthetic records only. No hosted project contacted. This is not a hosted capacity certification. Browser flow and public CAPTCHA remain separate checks.\n`);
 } catch (failure) {
   // Auth responses, command output and exception objects can contain ephemeral credentials.
   const reason = failure?.publicReason || "assertion_or_local_command";

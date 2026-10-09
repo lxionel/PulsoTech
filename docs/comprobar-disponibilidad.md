@@ -6,7 +6,19 @@ Desde la carpeta del proyecto, con Node.js 22.6 o posterior y las dependencias i
 npm run health:check
 ```
 
-Ejecuta una comprobación en ese momento y termina. No instala tareas automáticas ni mantiene un proceso abierto. También se puede pedir en este chat que se ejecute. La frecuencia de una eventual tarea automática sigue pendiente de elegir; no hay avisos automáticos activados.
+Ejecuta una comprobación en ese momento y termina. También se puede pedir en este chat que se ejecute.
+
+## Seguimiento programado en GitHub
+
+El workflow **Check public storefront availability** ejecuta el mismo diagnóstico cada seis horas: **00:17, 06:17, 12:17 y 18:17, hora de Lima**. También permite ejecución manual desde Actions y se comprueba al cambiar sus archivos. La programación usa UTC; GitHub puede retrasar ejecuciones. No depende del equipo del propietario ni utiliza IA o tokens de Codex.
+
+Usa un runner estándar `ubuntu-latest`, dura como máximo cinco minutos y se omite si el repositorio pasa a privado. No utiliza secretos administrativos, sube artefactos ni conserva cachés. No modifica la tienda ni intenta repararla. El resumen muestra los recursos, errores e intentos; si falla la instalación o el diagnóstico, la ejecución también queda fallida. Una interrupción de GitHub o del acceso desde su runner puede causar el fallo: investigar antes de atribuirlo a la tienda.
+
+En la cuenta del propietario se verificó **Actions → Notify me: on GitHub, Email (Failed workflows only)**. Los avisos se envían conforme a esa preferencia y al usuario asociado a la ejecución programada. No se provocó una caída ni se confirmó entrega de un correo de prueba. Los avisos básicos no suprimen incidentes repetidos mediante un estado propio ni envían un aviso específico de recuperación. El éxito posterior puede consultarse en Actions.
+
+Para pausar: Actions → Check public storefront availability → menú del workflow → Disable workflow. Para revisar manualmente: Run workflow. GitHub desactiva programaciones en repositorios públicos tras 60 días sin actividad; comprobar que siga activo antes de abrir ventas. Una revisión cada seis horas puede omitir interrupciones breves entre ejecuciones.
+
+Referencias: [programación y límites](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule), [avisos por correo](https://docs.github.com/en/subscriptions-and-notifications/how-tos/managing-github-actions-notifications), [condiciones de ejecución gratuita](https://docs.github.com/en/billing/concepts/product-billing/github-actions).
 
 ## Qué revisa
 

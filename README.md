@@ -45,7 +45,7 @@ Después de preparar correctamente el catálogo se eliminan las fotografías gen
 
 `launch:check` es de lectura. Revisa datos del negocio, productos visibles, condiciones, habilitación de pedidos y configuración del Libro de Reclamaciones. Devuelve código 1 mientras existan pendientes, sin modificar datos. No sustituye la revisión de productos ni una prueba completa de la operación.
 
-`health:check` comprueba en ese momento las páginas públicas, las respuestas del catálogo y una imagen local de muestra. Valida contenido además del estado HTTP y reintenta una vez los fallos. No programa tareas ni envía avisos automáticos. Ver [alcance y uso](docs/comprobar-disponibilidad.md).
+`health:check` comprueba en ese momento las páginas públicas, las respuestas del catálogo y una imagen local de muestra. Valida contenido además del estado HTTP y reintenta una vez los fallos. El workflow **Check public storefront availability** ejecuta ese diagnóstico cada seis horas en GitHub, sin IA ni equipo local. Los avisos siguen las preferencias de GitHub Actions del propietario. Ver [horarios, alcance y límites](docs/comprobar-disponibilidad.md).
 
 ## Base de datos y seguridad
 
