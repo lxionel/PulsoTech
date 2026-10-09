@@ -4486,11 +4486,11 @@ function AdminWorkspace() {
                         >
                           {/* Fila Superior: Producto, ID, Canal, Pago y Monto Total */}
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-neutral-100">
-                            <div className="flex items-center gap-2 flex-wrap">
+                            <div className="min-w-0 flex-1 flex items-center gap-2 flex-wrap">
                               <span className="font-extrabold text-neutral-950 text-sm">
                                 {s.productName}
                               </span>
-                              <span className="text-[11px] font-mono font-bold bg-neutral-100 text-neutral-700 px-2 py-0.5 rounded-md border border-neutral-200">
+                              <span className="max-w-full break-all text-[11px] font-mono font-bold bg-neutral-100 text-neutral-700 px-2 py-0.5 rounded-md border border-neutral-200">
                                 #{s.id}
                               </span>
                               <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-neutral-900 text-white">
@@ -4503,8 +4503,8 @@ function AdminWorkspace() {
                               )}
                             </div>
 
-                            <div className="text-right flex items-baseline sm:flex-col sm:items-end justify-between sm:justify-start">
-                              <div className="font-black text-neutral-950 text-base sm:text-lg font-mono tracking-tight">
+                            <div className="shrink-0 text-right flex items-baseline sm:flex-col sm:items-end justify-between sm:justify-start gap-3 sm:gap-0">
+                              <div className="whitespace-nowrap font-black text-neutral-950 text-base sm:text-lg font-mono tracking-tight">
                                 {STORE_SETTINGS.currencySymbol}{s.total.toFixed(2)}
                               </div>
                               <div className="text-[10px] font-bold text-neutral-400">

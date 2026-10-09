@@ -18,7 +18,11 @@ El propietario autorizó expresamente usar un producto temporal oculto en el Sup
 5. Stock temporal baja de dos a una unidad, confirmado después de recargar. Stock existente permanece en cuatro.
 6. Cancelar únicamente la nueva orden desde su selector. Su estado pasa a cancelado, sale de ingresos y el acumulado vuelve a S/ 100.00. No repone stock: el producto temporal mantiene una unidad. Esta conducta evita asumir una devolución física por cambiar el estado.
 
-Se encontró un error visual durante la cancelación: la tarjeta conservaba «Pendiente / Contraentrega». Se cambió ese texto por una etiqueta que corresponde al estado real: pendiente de despacho, en camino, entregado y cobrado o cancelado. La comprobación de publicación y limpieza se registra al completarse.
+Se encontró un error visual durante la cancelación: la tarjeta conservaba «Pendiente / Contraentrega». Se cambió ese texto por una etiqueta que corresponde al estado real: pendiente de despacho, en camino, entregado y cobrado o cancelado. Cambio `9728fcf`, lint y compilación local aprobados; [validación de GitHub](https://github.com/lxionel/PulsoTech/actions/runs/37886733829) y Cloudflare aprobados. El navegador confirmó «Cancelado» y ausencia de la etiqueta incorrecta tras recargar.
+
+También se observó que el ID largo de una nueva venta comprimía el importe y separaba `S/` del número. Se permitió contraer y envolver el bloque de datos, manteniendo el importe en una sola línea. La comprobación de publicación y limpieza se registra al completarse.
+
+El enlace directo del producto oculto mostró «Producto no encontrado» en la pestaña de la tienda utilizada para comprobarlo.
 
 ## Limpieza y límites
 
