@@ -13,7 +13,8 @@
     "lint": "eslint",
     "backup:verify": "node --experimental-strip-types scripts/recover-backup.mjs",
     "launch:check": "node --experimental-strip-types scripts/check-launch.mjs",
-    "capacity:check": "node scripts/check-capacity.mjs"
+    "capacity:check": "node scripts/check-capacity.mjs",
+    "health:check": "node --experimental-strip-types scripts/check-health.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.1",

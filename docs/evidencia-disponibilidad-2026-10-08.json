@@ -1,0 +1,81 @@
+{
+  "checkedAt": "2026-10-09T01:24:48.638Z",
+  "target": "https://pulsotech.pages.dev",
+  "ok": true,
+  "checks": [
+    {
+      "resource": "/",
+      "ok": true,
+      "status": 200,
+      "reason": "ok",
+      "attempts": 1,
+      "ms": 483
+    },
+    {
+      "resource": "/bolsa/",
+      "ok": true,
+      "status": 200,
+      "reason": "ok",
+      "attempts": 1,
+      "ms": 580
+    },
+    {
+      "resource": "/catalogo/",
+      "ok": true,
+      "status": 200,
+      "reason": "ok",
+      "attempts": 1,
+      "ms": 564
+    },
+    {
+      "resource": "/favoritos/",
+      "ok": true,
+      "status": 200,
+      "reason": "ok",
+      "attempts": 1,
+      "ms": 506
+    },
+    {
+      "resource": "ajustes públicos",
+      "ok": true,
+      "status": 200,
+      "reason": "ok",
+      "attempts": 1,
+      "ms": 1445
+    },
+    {
+      "resource": "ficha HTML",
+      "ok": true,
+      "status": 200,
+      "reason": "ok",
+      "attempts": 1,
+      "ms": 290
+    },
+    {
+      "resource": "galerías",
+      "ok": true,
+      "status": 200,
+      "reason": "ok",
+      "attempts": 1,
+      "ms": 238
+    },
+    {
+      "resource": "imagen de muestra",
+      "ok": true,
+      "status": 200,
+      "reason": "ok",
+      "attempts": 1,
+      "ms": 60
+    },
+    {
+      "resource": "productos",
+      "ok": true,
+      "status": 200,
+      "reason": "ok",
+      "attempts": 1,
+      "ms": 1489
+    }
+  ],
+  "imageSampled": true,
+  "scope": "HTTP público y contenido; no ejecuta JavaScript ni comprueba compras, sesiones o todas las imágenes."
+}

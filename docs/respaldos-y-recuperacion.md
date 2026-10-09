@@ -8,6 +8,8 @@ Después de instalar reclamos se obtuvo otra copia mediante una única consulta 
 
 Adicionalmente, la integración temporal del repositorio público restauró tablas sintéticas sobre PostgreSQL 17 real, comparó todas las tablas exactamente y verificó la continuación de la secuencia de reclamos y el acceso con Auth/MFA. [Ejecución aprobada](https://github.com/lxionel/PulsoTech/actions/runs/37868539908). Ese ensayo conserva el esquema y las cuentas del contenedor; no reemplaza la reconstrucción completa de Auth, Storage, secretos y alojamiento ni la custodia del respaldo real fuera de este equipo.
 
+Por indicación del propietario, se comprobó también una copia temporal con nombre propio en el disco D:. Su SHA-256 coincidió con el original y todas las tablas se recuperaron exactamente en memoria. La copia y su carpeta temporal se eliminaron al terminar; el respaldo original y su clave separada se conservaron. No se copió la clave a esa carpeta ni se generaron datos descifrados en disco. D: pertenece al mismo equipo: la custodia externa continúa pendiente.
+
 1. Abre el [SQL Editor del proyecto PulsoTech](https://supabase.com/dashboard/project/upovmpudzgtafobtxnfr/sql). Comprueba el nombre del proyecto antes de ejecutar.
 2. En una consulta nueva, pega **todo** `supabase/activate-backups.sql` y pulsa Run. Requiere que las funciones de administrador/MFA y de ventas seguras ya estén instaladas. La instalación es repetible; no cambia stock, ventas ni permisos de escritura de productos. La migración equivalente es `supabase/migrations/20261004020000_store_backups.sql`.
 3. Recarga el panel y abre **Ajustes → Respaldos & Datos → Copia cifrada de la tienda**.

@@ -11,7 +11,7 @@ Referencia inicial: `090f6c5`, 8 de octubre de 2026. Mantener el diseño aprobad
 | 5. Información comercial | Pendiente del propietario | Responsable, RUC, dirección, correo, horario, entrega, garantía y políticas reales coherentes. |
 | 6. Reclamos | Instalación técnica comprobada; activación pendiente | Tabla instalada con RLS y permisos verificados; función `submit-complaint` activa y origen limitado a la web actual. Faltan identidad definitiva, RUC y secreto de Turnstile, y probar recepción, constancia y respuesta antes de habilitar. |
 | 7. Catálogo definitivo | Pendiente del propietario | Productos, stock, condiciones, especificaciones y originales fotográficos reales. No sustituir la muestra actual por datos inventados. |
-| 8. Recuperación y monitoreo | Recuperación operativa comprobada; seguimiento pendiente | Copia real restaurada en memoria; nueva copia cifrada posterior a instalar reclamos también recuperada sin diferencias. Tablas sintéticas restauradas exactamente en PostgreSQL real, conservando acceso Auth/MFA y numeración de reclamos. Falta custodia externa, recuperación de plataforma completa y comprobaciones periódicas/avisos con destino y frecuencia definidos. |
+| 8. Recuperación y monitoreo | Recuperación operativa y diagnóstico manual comprobados; seguimiento pendiente | Copia real restaurada en memoria; nueva copia cifrada posterior a instalar reclamos también recuperada sin diferencias. Tablas sintéticas restauradas exactamente en PostgreSQL real, conservando acceso Auth/MFA y numeración de reclamos. Nueve comprobaciones públicas de disponibilidad aprobadas. Falta custodia externa, recuperación de plataforma completa y decidir si se activan comprobaciones periódicas/avisos. |
 | 9. Habilitación de ventas | Pendiente | Misma versión revisada en escritorio y móvil, operación confirmada, cuotas suficientes y pendientes críticos anteriores cerrados. Mantener pedidos pausados mientras falten requisitos. |
 
 ## Orden de trabajo
@@ -38,6 +38,7 @@ Confirmó el plan gratuito de PulsoTech. Las pruebas de servicios se ejecutan en
 - `npm run backup:verify -- <copia> --operations`: añade ensayo de ventas en memoria, sin red.
 - `npm run capacity:check`: plan HTTP sin ejecutar carga.
 - `npm run capacity:check -- --execute --stages 1`: comprobación puntual de disponibilidad; no es un monitor permanente.
+- `npm run health:check`: diagnóstico manual con validación de contenido y reintento de fallos; [procedimiento y límites](comprobar-disponibilidad.md). No se ha programado su ejecución.
 - `npm run launch:check`: pendientes comerciales, solo lectura.
 - `supabase/verify-complaints.sql`: diagnóstico de esquema y permisos del Libro, sin consultar datos de consumidores; ver [instalación](activar-libro-reclamaciones.md).
 
