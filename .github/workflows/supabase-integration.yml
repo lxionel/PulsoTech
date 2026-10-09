@@ -14,6 +14,7 @@ on:
       - "src/lib/cart-stock.ts"
       - "src/lib/product-media.ts"
       - "src/lib/sales-validation.ts"
+      - "src/lib/store-backup.ts"
       - "src/types/index.ts"
 
 permissions:

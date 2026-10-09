@@ -7,6 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 import { addCartItem, inspectCheckout } from "../../src/lib/cart-stock.ts";
 import { productGallery } from "../../src/lib/product-media.ts";
 import { salesForAccounting } from "../../src/lib/sales-validation.ts";
+import { createRecoverySql } from "../../src/lib/store-backup.ts";
 
 const checks = [];
 let stage = "isolation guard";
@@ -205,6 +206,18 @@ try {
   assert.ok((await ordinary.rpc("export_store_backup")).error);
   assert.ok((await anon.rpc("export_store_backup")).error);
   checks.push("complaint data and operational export remain restricted to the MFA administrator");
+
+  stage = "operational recovery on real PostgreSQL";
+  // This fixed container contains synthetic records only; Auth and schema are retained.
+  sql("truncate public.products,public.store_settings,public.sale_operations,public.complaints restart identity;");
+  sql(createRecoverySql(snapshot));
+  const restored = success(await admin.rpc("export_store_backup"));
+  assert.deepEqual(restored.tables, snapshot.tables);
+  const nextComplaint = success(await service.from("complaints").insert({ provider: { synthetic: true }, submission: { synthetic: true } }).select("reference").single());
+  assert.equal(nextComplaint.reference, snapshot.tables.complaints[0].reference + 1);
+  assert.equal(success(await admin.rpc("is_store_admin")), true);
+  assert.equal(sql("select count(*) from auth.users;"), "2");
+  checks.push("operational data restores exactly on real PostgreSQL; complaint numbering and Auth access survive");
 
   stage = "synthetic record removal";
   success(await admin.rpc("remove_sale_record", { p_id: request.id }));

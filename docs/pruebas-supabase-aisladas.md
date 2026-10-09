@@ -20,6 +20,7 @@ Las cuentas se crean mediante la API administrativa local con correos `example.i
 - Protección de historial y metadatos de operaciones frente a escrituras directas.
 - Dos solicitudes HTTP por la última unidad. Un retardo aplicado únicamente al producto sintético permite observar dos procesos PostgreSQL distintos y simultáneos en `pg_stat_activity`; se exige una sola venta y stock cero.
 - Permisos de lectura/respuesta de reclamos y exportación privada con MFA.
+- Restauración de las tablas operativas sintéticas sobre PostgreSQL real, comparación exacta, continuación de la numeración de reclamos y conservación del acceso Auth/MFA. Se conserva el esquema y Auth del entorno temporal; no equivale a reconstruir un proyecto completo después de perderlo.
 - Retirada de ventas y eliminación del producto sintético; se conservan las identidades que impiden descontar de nuevo una operación retirada.
 
 ## Ejecución y límites
