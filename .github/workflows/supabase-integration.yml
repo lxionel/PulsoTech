@@ -1,0 +1,60 @@
+name: Verify isolated Supabase operations
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/supabase-integration.yml"
+      - "tests/integration/**"
+      - "package.json"
+      - "package-lock.json"
+      - "supabase_schema.sql"
+      - "supabase/activate-*.sql"
+      - "src/lib/cart-stock.ts"
+      - "src/lib/product-media.ts"
+      - "src/lib/sales-validation.ts"
+      - "src/types/index.ts"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration:
+    # Standard runners are free for public repositories. Do not incur private-repo usage.
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PULSOTECH_CI_WORKDIR: ${{ runner.temp }}/pulsotech-isolated
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: supabase/setup-cli@v1
+        with:
+          version: "2.120.0"
+      - name: Install application dependencies
+        run: npm ci
+      - name: Prepare disposable local configuration
+        run: |
+          mkdir -p "$PULSOTECH_CI_WORKDIR/supabase"
+          cp tests/integration/supabase/config.toml "$PULSOTECH_CI_WORKDIR/supabase/config.toml"
+      - name: Start isolated Auth, PostgREST and PostgreSQL
+        # CLI startup output includes ephemeral keys; keep it out of public logs.
+        run: |
+          if ! supabase start --workdir "$PULSOTECH_CI_WORKDIR" --exclude realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor > "$RUNNER_TEMP/pulsotech-start.log" 2>&1; then
+            echo "The isolated Supabase stack could not start. No hosted project was contacted."
+            docker ps --format '{{.Names}}: {{.Status}}'
+            exit 1
+          fi
+      - name: Verify real sessions, permissions and sales transactions
+        run: node --experimental-strip-types tests/integration/supabase-operations.mjs
+      - name: Remove disposable containers and data
+        if: always()
+        run: supabase stop --workdir "$PULSOTECH_CI_WORKDIR" --no-backup > /dev/null 2>&1
