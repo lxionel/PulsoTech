@@ -68,6 +68,12 @@ Comprobación puntual posterior sobre la web publicada actual: un cliente, seis 
 
 ## Pendientes
 
+### Continuación: recorrido público desde navegador
+
+Se comprobó la tienda publicada con JavaScript: ficha sin color inicial, aviso al añadir sin escoger, tres fotos negras y dos blancas, precio por cantidad, acceso desde el producto de la bolsa, stock máximo de cuatro unidades, cupón inexistente, compra desde la barra móvil y campos separados de entrega. La acción final permanece deshabilitada por la pausa comercial. No se enviaron mensajes ni se modificaron datos del negocio. Bolsa original restaurada a una unidad blanca y campos ficticios limpiados. [Detalle de lo comprobado y sus límites](recorrido-publico-2026-10-08.md).
+
+Se corrigió un desbordamiento del selector de transferencia en su tarjeta a 360 px (`5244091`). Lint y compilación local pasaron; Cloudflare confirmó publicación y se verificó visualmente la corrección a 360 px, contención de controles a 320 y 390 px y conservación de la fila horizontal a 1280 px. No se observó desbordamiento horizontal de página ni errores de consola durante el recorrido. Sigue pendiente una venta completa con pedidos habilitados y el recorrido administrativo de escrituras.
+
 ### Continuación: monitoreo y lecturas simultáneas
 
 Por autorización del propietario se activó **Check public storefront availability** cada seis horas, a las 00:17, 06:17, 12:17 y 18:17, hora de Lima. La [primera ejecución desde GitHub](https://github.com/lxionel/PulsoTech/actions/runs/37871467334) aprobó nueve recursos sin reintentos. En la cuenta `lxionel` se verificó la preferencia de Actions: avisos en GitHub y por correo, solo para ejecuciones fallidas. No se provocó un fallo de la tienda ni se comprobó entrega de un correo. No utiliza Codex, modifica datos o intenta reparaciones. [Procedimiento](comprobar-disponibilidad.md).
