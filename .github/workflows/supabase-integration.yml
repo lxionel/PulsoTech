@@ -29,8 +29,6 @@ jobs:
     if: github.event.repository.private == false
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    env:
-      PULSOTECH_CI_WORKDIR: ${{ runner.temp }}/pulsotech-isolated
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -43,8 +41,10 @@ jobs:
         run: npm ci
       - name: Prepare disposable local configuration
         run: |
-          mkdir -p "$PULSOTECH_CI_WORKDIR/supabase"
-          cp tests/integration/supabase/config.toml "$PULSOTECH_CI_WORKDIR/supabase/config.toml"
+          task_ci_dir="$RUNNER_TEMP/pulsotech-isolated"
+          mkdir -p "$task_ci_dir/supabase"
+          cp tests/integration/supabase/config.toml "$task_ci_dir/supabase/config.toml"
+          echo "PULSOTECH_CI_WORKDIR=$task_ci_dir" >> "$GITHUB_ENV"
       - name: Start isolated Auth, PostgREST and PostgreSQL
         # CLI startup output includes ephemeral keys; keep it out of public logs.
         run: |

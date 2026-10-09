@@ -213,6 +213,6 @@ try {
     `## Isolated Supabase verification\n\n${checks.map(check => `- Passed: ${check}`).join("\n")}\n\nSynthetic records only. No hosted project contacted. Browser flow and public CAPTCHA remain separate checks.\n`);
 } catch {
   // Auth responses, command output and exception objects can contain ephemeral credentials.
-  console.error(`Isolated Supabase verification failed during: ${stage}. Credentials and private payloads were not logged.`);
+  console.error(`::error title=Isolated Supabase verification::Failed during: ${stage}. Credentials and private payloads were not logged.`);
   process.exitCode = 1;
 }
