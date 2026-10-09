@@ -28,16 +28,16 @@ jobs:
   integration:
     # Standard runners are free for public repositories. Do not incur private-repo usage.
     if: github.event.repository.private == false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
-      - uses: supabase/setup-cli@v1
-        with:
-          version: "2.120.0"
+          package-manager-cache: false
       - name: Install application dependencies
         run: npm ci
       - name: Prepare disposable local configuration
@@ -49,13 +49,13 @@ jobs:
       - name: Start isolated Auth, PostgREST and PostgreSQL
         # CLI startup output includes ephemeral keys; keep it out of public logs.
         run: |
-          if ! supabase start --workdir "$PULSOTECH_CI_WORKDIR" --exclude realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor > "$RUNNER_TEMP/pulsotech-start.log" 2>&1; then
+          if ! npx --yes supabase@2.120.0 start --workdir "$PULSOTECH_CI_WORKDIR" --exclude realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor > "$RUNNER_TEMP/pulsotech-start.log" 2>&1; then
             echo "The isolated Supabase stack could not start. No hosted project was contacted."
             docker ps --format '{{.Names}}: {{.Status}}'
             exit 1
           fi
       - name: Verify real sessions, permissions and sales transactions
-        run: node --experimental-strip-types tests/integration/supabase-operations.mjs
+        run: npm exec --yes --package=supabase@2.120.0 -- node --experimental-strip-types tests/integration/supabase-operations.mjs
       - name: Remove disposable containers and data
         if: always()
-        run: supabase stop --workdir "$PULSOTECH_CI_WORKDIR" --no-backup > /dev/null 2>&1
+        run: npx --yes supabase@2.120.0 stop --workdir "$PULSOTECH_CI_WORKDIR" --no-backup > /dev/null 2>&1

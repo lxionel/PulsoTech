@@ -8,7 +8,7 @@ Los diez grupos de integración pasaron en la [ejecución de GitHub](https://git
 
 ## Coste y aislamiento
 
-El repositorio `lxionel/PulsoTech` es público. Los runners estándar de GitHub son gratuitos para repositorios públicos ([condiciones de GitHub Actions](https://docs.github.com/en/billing/concepts/product-billing/github-actions)). El trabajo se omite si el repositorio pasa a privado, utiliza `ubuntu-latest`, limita su duración a veinte minutos y no sube artefactos ni conserva cachés. No configura ningún recurso de pago de Supabase.
+El repositorio `lxionel/PulsoTech` es público. Los runners estándar de GitHub son gratuitos para repositorios públicos ([condiciones de GitHub Actions](https://docs.github.com/en/billing/concepts/product-billing/github-actions)). El trabajo se omite si el repositorio pasa a privado, utiliza `ubuntu-24.04`, limita su duración a veinte minutos y no sube artefactos ni conserva cachés. No configura ningún recurso de pago de Supabase. La CLI se ejecuta desde el paquete oficial fijado a `2.120.0`, sin depender de la acción antigua que usaba Node.js 20.
 
 La configuración del runner se crea en una carpeta temporal independiente. No copia `supabase/.temp`, archivos `.env`, respaldos, credenciales del propietario ni secretos del repositorio. La prueba obtiene las claves efímeras del servicio local sin imprimirlas y acepta exclusivamente `http://127.0.0.1:54321`; las peticiones rechazan redirecciones y otros destinos. El esquema y los instaladores del repositorio se aplican solo al contenedor `supabase_db_pulsotech-ci`.
 
@@ -19,6 +19,7 @@ Las cuentas se crean mediante la API administrativa local con correos `example.i
 - Instalación actual y disponibilidad de sus funciones a través de PostgREST.
 - Rechazo de ventas anónimas, sesiones solo con contraseña y usuarios con MFA que no sean administradores.
 - Creación y edición de un producto, persistencia de varias fotos por color y selección de su galería con la misma función de la tienda.
+- Cinco rondas de 25 visitas públicas paralelas, dos consultas por visita: 250 consultas de catálogo y versión comercial, con contenido exacto y cero errores. Usa un producto sintético pequeño; no representa un catálogo definitivo ni acredita capacidad del alojamiento.
 - Cantidad, cupón, importe, registro de venta, stock, reintento idempotente, cantidad insuficiente y cambio de precio.
 - Cancelación y contabilidad; cancelación no implica devolución física ni repone existencias automáticamente.
 - Protección de historial y metadatos de operaciones frente a escrituras directas.
