@@ -2,6 +2,10 @@
 
 El propietario confirmó que PulsoTech usa el plan gratuito. Los dos proyectos accesibles están activos y corresponden a aplicaciones distintas; no se reutiliza, pausa ni elimina el segundo. La alternativa preparada ejecuta PostgreSQL, Auth y PostgREST dentro de un runner temporal de GitHub Actions, sin crear un proyecto alojado adicional.
 
+## Resultado comprobado
+
+Los diez grupos de integración pasaron en la [ejecución de GitHub](https://github.com/lxionel/PulsoTech/actions/runs/37868539908), referencia `8e37466`. La eliminación de contenedores y volúmenes temporales terminó correctamente. La [validación de aplicación](https://github.com/lxionel/PulsoTech/actions/runs/37868539965) también aprobó sus 168 pruebas, lint y compilación estática. [Evidencia resumida](evidencia-integracion-supabase-2026-10-08.json).
+
 ## Coste y aislamiento
 
 El repositorio `lxionel/PulsoTech` es público. Los runners estándar de GitHub son gratuitos para repositorios públicos ([condiciones de GitHub Actions](https://docs.github.com/en/billing/concepts/product-billing/github-actions)). El trabajo se omite si el repositorio pasa a privado, utiliza `ubuntu-latest`, limita su duración a veinte minutos y no sube artefactos ni conserva cachés. No configura ningún recurso de pago de Supabase.

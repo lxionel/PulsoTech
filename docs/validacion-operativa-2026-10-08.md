@@ -44,7 +44,17 @@ Se consultaron únicamente metadatos de PostgreSQL en `upovmpudzgtafobtxnfr`, si
 
 Esto cierra la duda sobre la versión de esas funciones instaladas. No acredita todos los objetos del esquema, la configuración completa de Auth/Storage, la recuperación del servicio ni concurrencia con conexiones independientes.
 
-El segundo proyecto accesible, «lxionel's Project», contiene otra aplicación. Se consultaron metadatos y conteos; no se reutilizó ni modificó. Sigue pendiente un proyecto exclusivo para el recorrido de escritura desde la interfaz. Antes de crear uno se debe confirmar disponibilidad gratuita o un coste aceptado por el propietario; no se creó ningún proyecto o rama de pago.
+El segundo proyecto accesible, «lxionel's Project», contiene otra aplicación. Se consultaron metadatos y conteos; no se reutilizó ni modificó. El propietario confirmó que PulsoTech usa el plan gratuito. Se preparó una alternativa con servicios reales en un runner temporal de GitHub; no se creó ningún proyecto alojado ni rama de pago. El recorrido completo de escritura desde la interfaz sigue pendiente.
+
+## Integración en servicios reales temporales
+
+La [ejecución `8e37466`](https://github.com/lxionel/PulsoTech/actions/runs/37868539908) aprobó diez grupos contra PostgreSQL 17, Supabase Auth y PostgREST en contenedores desechables de GitHub Actions. Se crearon cuentas sintéticas por la API administrativa local y se enroló/verificó TOTP realmente; no se falsificaron JWT ni niveles MFA. La cuenta con contraseña sola y un usuario con MFA sin pertenencia administrativa no pudieron registrar ventas.
+
+Por HTTP se comprobó crear/editar/eliminar productos, guardar varias fotos por color, leer únicamente la galería elegida, cupón e importe, venta con descuento de stock, reintento sin doble descuento, rechazo de stock insuficiente y precio desactualizado, cancelación sin reposición automática y protección del historial. Para la última unidad se observaron dos procesos PostgreSQL distintos y simultáneos ejecutando las solicitudes: solo una venta se confirmó y el stock quedó en cero.
+
+También se comprobaron permisos de reclamos/respuestas, exportación privada y restauración exacta de las tablas sintéticas sobre PostgreSQL real. La secuencia de reclamos continuó y las cuentas/acceso MFA se conservaron. Retirar ventas conservó las identidades de reintento. La limpieza de contenedores y volúmenes terminó correctamente. La [validación habitual](https://github.com/lxionel/PulsoTech/actions/runs/37868539965) aprobó 168 pruebas, lint y compilación.
+
+Se usó un runner estándar del repositorio público; sin datos privados de producción, secretos del propietario ni conexiones de este ensayo a proyectos alojados. [Evidencia](evidencia-integracion-supabase-2026-10-08.json) y [procedimiento](pruebas-supabase-aisladas.md). No se ejecutó una venta desde el navegador ni CAPTCHA público, mensajes o recuperación completa de Auth/Storage; no certifica capacidad del plan gratuito.
 
 ## Sincronización y primera medición
 
@@ -66,4 +76,4 @@ Pruebas automatizadas en la última ejecución completa: 168 aprobadas, sin fall
 
 Se retiró la dirección fija antigua de las políticas tras la aclaración del propietario. El nombre y correo de contacto iniciales se conservan mientras se confirma la identidad comercial definitiva.
 
-Datos comerciales y catálogo definitivos; configuración final y prueba completa del Libro ya instalado; escrituras de interfaz contra Supabase descartable, ensayo de recuperación del servicio completo, carga sostenida con navegadores y monitoreo. Pedidos siguen pausados. Ver [el plan y sus condiciones de cierre](plan-preparacion-produccion.md).
+Datos comerciales y catálogo definitivos; configuración final y prueba completa del Libro ya instalado; escrituras completas desde la interfaz, recuperación de plataforma completa, custodia externa de respaldos, carga sostenida con navegadores y monitoreo. La persistencia HTTP, concurrencia con conexiones independientes y recuperación de tablas operativas ya pasaron en los servicios temporales. Pedidos siguen pausados. Ver [el plan y sus condiciones de cierre](plan-preparacion-produccion.md).

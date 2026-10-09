@@ -6,6 +6,8 @@ La recuperación se prueba con PostgreSQL embebido (PGlite). El 8 de octubre de 
 
 Después de instalar reclamos se obtuvo otra copia mediante una única consulta de lectura con la sesión autorizada de Supabase CLI. Se cifró antes de escribirla en disco y se verificaron descifrado y restauración exacta en memoria. Conserva las tablas anteriores e incluye `complaints` instalada y vacía. Archivo privado: `../respaldos-locales/2026-10-08-post-reclamos.pulsobackup`; la clave exclusiva sigue separada del respaldo y fuera del repositorio. [Evidencia sin datos privados](evidencia-respaldo-2026-10-08.json).
 
+Adicionalmente, la integración temporal del repositorio público restauró tablas sintéticas sobre PostgreSQL 17 real, comparó todas las tablas exactamente y verificó la continuación de la secuencia de reclamos y el acceso con Auth/MFA. [Ejecución aprobada](https://github.com/lxionel/PulsoTech/actions/runs/37868539908). Ese ensayo conserva el esquema y las cuentas del contenedor; no reemplaza la reconstrucción completa de Auth, Storage, secretos y alojamiento ni la custodia del respaldo real fuera de este equipo.
+
 1. Abre el [SQL Editor del proyecto PulsoTech](https://supabase.com/dashboard/project/upovmpudzgtafobtxnfr/sql). Comprueba el nombre del proyecto antes de ejecutar.
 2. En una consulta nueva, pega **todo** `supabase/activate-backups.sql` y pulsa Run. Requiere que las funciones de administrador/MFA y de ventas seguras ya estén instaladas. La instalación es repetible; no cambia stock, ventas ni permisos de escritura de productos. La migración equivalente es `supabase/migrations/20261004020000_store_backups.sql`.
 3. Recarga el panel y abre **Ajustes → Respaldos & Datos → Copia cifrada de la tienda**.

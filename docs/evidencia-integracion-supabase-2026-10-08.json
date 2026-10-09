@@ -1,0 +1,42 @@
+{
+  "userDate": "2026-10-08",
+  "verifiedAt": "2026-10-09T01:14:27.701Z",
+  "commit": "8e374664a9c62a0d09f51918c25aadff4fa26a8c",
+  "workflow": "Verify isolated Supabase operations",
+  "url": "https://github.com/lxionel/PulsoTech/actions/runs/37868539908",
+  "conclusion": "success",
+  "runner": "Standard GitHub-hosted Ubuntu runner, public repository",
+  "cliVersion": "2.120.0",
+  "environment": "Disposable local Docker stack: PostgreSQL 17, Supabase Auth and PostgREST",
+  "hostedProjectCreated": false,
+  "productionDataUsed": false,
+  "productionWrites": false,
+  "syntheticDataOnly": true,
+  "cleanup": "success",
+  "groupsPassed": 10,
+  "checks": [
+    "current schema installed with real PostgreSQL and PostgREST",
+    "anonymous and password-only sessions cannot register sales",
+    "Auth issues real aal2 sessions; MFA does not grant administrator membership",
+    "administrator saves and edits galleries; visitors read only the chosen color",
+    "quantity, coupon, confirmed stock, idempotency and stale-price checks pass over HTTP",
+    "cancellation excludes revenue without restoring stock; history cannot be overwritten directly",
+    "two overlapping PostgreSQL backends compete for the last unit; exactly one sale succeeds",
+    "complaint data and operational export remain restricted to the MFA administrator",
+    "operational data restores exactly on real PostgreSQL; complaint numbering and Auth access survive",
+    "removal preserves retry identities and administrator product deletion works"
+  ],
+  "applicationValidation": {
+    "url": "https://github.com/lxionel/PulsoTech/actions/runs/37868539965",
+    "conclusion": "success",
+    "unitTests": 168,
+    "lint": true,
+    "staticBuild": true
+  },
+  "limits": [
+    "No browser sale flow was executed.",
+    "No public complaint CAPTCHA, WhatsApp messages or consumer responses were sent.",
+    "This is not a capacity certification for the hosted Free project.",
+    "Operational restoration retained Auth and schema; complete platform disaster recovery and external backup custody remain pending."
+  ]
+}
