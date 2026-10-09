@@ -191,11 +191,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     try {
       persistBrowserValues(localStorage, [
         ["pulsotech_cart", JSON.stringify(cartForCache(savedItems))],
+      ]);
+    } catch { /* Storage can be disabled entirely; the current session remains usable. */ }
+  }, [savedItems, isLoaded]);
+
+  // Coupon or contact changes must not overwrite another tab's current bag.
+  useEffect(() => {
+    if (!isLoaded) return;
+    try {
+      persistBrowserValues(localStorage, [
         ["pulsotech_phone", whatsappNumber],
         ["pulsotech_coupons", JSON.stringify(coupons)],
       ]);
     } catch { /* Storage can be disabled entirely; the current session remains usable. */ }
-  }, [savedItems, whatsappNumber, coupons, isLoaded]);
+  }, [whatsappNumber, coupons, isLoaded]);
 
   useEffect(() => {
     if (isFavoritesLoading) return;

@@ -4123,7 +4123,7 @@ function AdminWorkspace() {
                               : "bg-neutral-100 text-neutral-400 border-neutral-200"
                           }`}
                         >
-                          %
+                          {coupon.discountType === "percentage" ? "%" : STORE_SETTINGS.currencySymbol.trim()}
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
