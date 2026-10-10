@@ -16,6 +16,11 @@ import AdminAccess, { useAdministrator } from "@/components/AdminAccess";
 import AdminPasswordSettings from "@/components/AdminPasswordSettings";
 import AdminComplaints from "@/components/AdminComplaints";
 import AdminStockControl from "@/components/AdminStockControl";
+import ColorStockEditor from "@/components/ColorStockEditor";
+import OrderTrackingTools from "@/components/OrderTrackingTools";
+import ProductFaqEditor from "@/components/ProductFaqEditor";
+import { hasColorStock, colorStockTotal, stockForColor } from "@/lib/variant-stock";
+import { parseProductFaq, serializeProductFaq, type ProductQuestion } from "@/lib/product-faq";
 import AdminImageGallery from "@/components/AdminImageGallery";
 import AdminCommerceSettings from "@/components/AdminCommerceSettings";
 import ProductCommercialFields from "@/components/ProductCommercialFields";
@@ -278,6 +283,7 @@ function AdminWorkspace() {
   const [saleFormError, setSaleFormError] = useState("");
   const [lastRegisteredSale, setLastRegisteredSale] = useState<SaleRecord | null>(null);
   const [newSaleQty, setNewSaleQty] = useState(1);
+  const [newSaleColor, setNewSaleColor] = useState("");
   const [newSaleCustomer, setNewSaleCustomer] = useState("");
   const [newSaleChannel, setNewSaleChannel] = useState<"WhatsApp" | "Presencial" | "Web">("WhatsApp");
   const [newSalePayment, setNewSalePayment] = useState("Yape / Plin");
@@ -290,7 +296,7 @@ function AdminWorkspace() {
   const [newSaleNotes, setNewSaleNotes] = useState("");
   const [newSaleCustomerPhone, setNewSaleCustomerPhone] = useState("");
   const [newSaleCustomerAddress, setNewSaleCustomerAddress] = useState("");
-  const [newSaleDeliveryStatus, setNewSaleDeliveryStatus] = useState<"pending" | "shipped" | "delivered" | "cancelled">("pending");
+  const [newSaleDeliveryStatus, setNewSaleDeliveryStatus] = useState<NonNullable<SaleRecord["deliveryStatus"]>>("pending");
   const [newSaleTrackingNumber, setNewSaleTrackingNumber] = useState("");
   const [salesStatusFilter, setSalesStatusFilter] = useState<string>("all");
 
@@ -335,6 +341,9 @@ function AdminWorkspace() {
   const [formStock, setFormStock] = useState<number>(10);
   const [formSubtitle, setFormSubtitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
+  const [formFaq, setFormFaq] = useState<ProductQuestion[]>([]);
+  const [formColorStock, setFormColorStock] = useState(false);
+  const [formHero, setFormHero] = useState(false);
   const [formVideoUrl, setFormVideoUrl] = useState("");
   
   // Múltiples Colores Detallados con sus Fotografías (empieza con 1 casilla limpia)
@@ -346,6 +355,7 @@ function AdminWorkspace() {
     },
   ]);
   const [previewColorIndex, setPreviewColorIndex] = useState(0);
+  const displayedStock = formColorStock ? formColors.reduce((sum, color) => sum + (color.stockCount || 0), 0) : formStock;
 
   const [formProductImages, setFormProductImages] = useState<string[]>([]);
   const [uploadingGalleries, setUploadingGalleries] = useState(0);
@@ -596,7 +606,8 @@ function AdminWorkspace() {
       productName = selectedProd.name;
       unitPrice = selectedProd.price;
 
-      if (selectedProd.stockCount < newSaleQty) {
+      if (hasColorStock(selectedProd) && !selectedProd.colors.some((color) => color.name === newSaleColor)) { setSaleFormError("Elige el color vendido para descontar su stock."); return; }
+      if (stockForColor(selectedProd, newSaleColor || null) < newSaleQty) {
         setSaleFormError(`El producto solo tiene ${selectedProd.stockCount} unidad(es). Actualiza el inventario y revisa la cantidad.`);
         return;
       }
@@ -632,6 +643,7 @@ function AdminWorkspace() {
       customerAddress: newSaleCustomerAddress.trim() || undefined,
       deliveryStatus: newSaleDeliveryStatus,
       trackingNumber: newSaleTrackingNumber.trim() || undefined,
+      selectedColor: selectedProd && newSaleColor ? newSaleColor : undefined,
       date: dateFormatted,
       timestamp,
       notes: newSaleNotes.trim() || undefined,
@@ -649,7 +661,7 @@ function AdminWorkspace() {
     setNewSaleCustomer("");
     setNewSaleCustomerPhone("");
     setNewSaleCustomerAddress("");
-    setNewSaleTrackingNumber("");
+    setNewSaleTrackingNumber(""); setNewSaleColor("");
     setNewSaleDeliveryStatus("pending");
     setNewSaleQty(1);
     setNewSaleCustomPrice("");
@@ -672,7 +684,7 @@ function AdminWorkspace() {
 
   const handleUpdateDeliveryStatus = async (
     saleId: string,
-    status: "pending" | "shipped" | "delivered" | "cancelled"
+    status: NonNullable<SaleRecord["deliveryStatus"]>
   ) => {
     if (!await executeSale({ kind: "status", id: saleId, status })) return;
     setSuccessNotice(status === "cancelled" ? `Orden #${saleId} cancelada y excluida de los ingresos. Revisa el inventario: las unidades no se reponen automáticamente.` : `Estado de la orden #${saleId} actualizado.`);
@@ -975,6 +987,9 @@ function AdminWorkspace() {
     setFormStock(product.stockCount);
     setFormSubtitle(product.subtitle || "");
     setFormDescription(product.description || "");
+    setFormFaq(parseProductFaq(product));
+    setFormHero(product.specs.storeHero === "yes");
+    setFormColorStock(hasColorStock(product));
     setFormVideoUrl(product.videoUrl || "");
     setFormColors(
       product.colors && product.colors.length > 0
@@ -1037,6 +1052,7 @@ function AdminWorkspace() {
     setFormStock(0);
     setFormSubtitle("");
     setFormDescription("");
+    setFormFaq([]); setFormHero(false); setFormColorStock(false);
     setFormVideoUrl("");
     setFormColors([
       {
@@ -1093,7 +1109,10 @@ function AdminWorkspace() {
       .replace(/[\s_-]+/g, "-")
       .replace(/^-+|-+$/g, "");
 
-    const finalColors = formColors.map((color) => withColorImages({ ...color, name: color.name.trim() }, colorImages(color)));
+    let finalStock: number; let faq: string;
+    try { finalStock = formColorStock ? colorStockTotal(formColors) : formStock; faq = serializeProductFaq(formFaq); }
+    catch (error) { setAdminError(error instanceof Error ? error.message : "Revisa el stock y las preguntas."); return; }
+    const finalColors = formColors.map((color) => withColorImages({ ...color, name: color.name.trim(), stockCount: formColorStock ? color.stockCount : undefined }, colorImages(color)));
     const images = uniqueImages(formProductImages);
 
     // Consolidar especificaciones técnicas válidas
@@ -1125,8 +1144,8 @@ function AdminWorkspace() {
       originalPrice: formHasPromo && origPriceNum > priceNum ? origPriceNum : undefined,
       brand: formBrand,
       category: formCategory,
-      inStock: formStock > 0,
-      stockCount: formStock,
+      inStock: finalStock > 0,
+      stockCount: finalStock,
       isFeatured: previousProduct?.isFeatured ?? true,
       isNew: previousProduct?.isNew ?? true,
       rating: previousProduct?.rating ?? 0,
@@ -1138,6 +1157,7 @@ function AdminWorkspace() {
       specs: {
         ...previousProduct?.specs,
         ...commerceSpecs(formCommerce),
+        storeFaq: faq, storeHero: formHero ? "yes" : undefined,
         audioType: isAudioCategory(formCategory) ? formAudioType || undefined : undefined,
         ancEnabled: isAudioCategory(formCategory) ? formAncEnabled || undefined : undefined,
         playbackHours: isAudioCategory(formCategory) && playbackHours !== undefined ? String(playbackHours) : undefined,
@@ -2095,7 +2115,7 @@ function AdminWorkspace() {
                       {/* Bottom Bar: Control de Stock + Botones de Acción */}
                       <div className="flex flex-wrap items-center justify-between pt-2 border-t border-neutral-100 gap-2">
                         {/* Control de Stock con Stepper & Entrada Directa */}
-                        <AdminStockControl stock={item.stockCount} onChange={(value, delta) => updateStock(item.id, value, delta)} />
+                        {hasColorStock(item) ? <button type="button" onClick={() => handleEditClick(item)} className="min-h-11 text-xs font-semibold underline underline-offset-4">Editar stock por color</button> : <AdminStockControl stock={item.stockCount} onChange={(value, delta) => updateStock(item.id, value, delta)} />}
 
                         {/* Botones de Acción */}
                         <div className="flex items-center gap-1">
@@ -2296,7 +2316,7 @@ function AdminWorkspace() {
 
                             {/* Control de Stock con Stepper & Entrada Directa */}
                             <td className="py-3.5 px-3 whitespace-nowrap">
-                              <AdminStockControl stock={item.stockCount} onChange={(value, delta) => updateStock(item.id, value, delta)} />
+                              {hasColorStock(item) ? <button type="button" onClick={() => handleEditClick(item)} className="min-h-11 text-xs font-semibold underline underline-offset-4">Editar stock por color</button> : <AdminStockControl stock={item.stockCount} onChange={(value, delta) => updateStock(item.id, value, delta)} />}
                             </td>
 
                             {/* Acciones */}
@@ -2547,6 +2567,9 @@ function AdminWorkspace() {
                       />
                     </div>
 
+                    <ProductFaqEditor value={formFaq} onChange={setFormFaq} />
+                    <label className="flex items-center gap-2 text-xs font-semibold"><input type="checkbox" checked={formHero} onChange={(event) => setFormHero(event.target.checked)} className="w-4 h-4 accent-black" />Destacar este producto en la portada</label>
+
                     {/* Botones de Navegación del Paso 1 */}
                     <div className="pt-3 border-t border-neutral-100 flex items-center justify-between">
                       <button
@@ -2766,13 +2789,13 @@ function AdminWorkspace() {
 
                       <div>
                         <label className="text-xs font-bold text-neutral-900 block mb-1">
-                          Stock Inicial
+                          {formColorStock ? "Stock total" : "Stock"}
                         </label>
                         <div className="flex items-center gap-1.5">
                           <button
                             type="button"
                             onClick={() => setFormStock(Math.max(0, (formStock || 0) - 1))}
-                            disabled={formStock <= 0}
+                            disabled={formColorStock || formStock <= 0}
                             className="w-9 h-9 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 active:scale-95 text-neutral-800 font-black text-sm flex items-center justify-center cursor-pointer disabled:opacity-30 shadow-2xs"
                           >
                             -
@@ -2780,13 +2803,15 @@ function AdminWorkspace() {
                           <input aria-label="Stock inicial"
                             type="number"
                             min={0}
-                            value={formStock}
+                            value={displayedStock}
+                            disabled={formColorStock}
                             onChange={(e) => setFormStock(Math.max(0, parseInt(e.target.value, 10) || 0))}
                             className="flex-1 text-center py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-base font-extrabold text-neutral-950 focus:outline-none focus:bg-white focus:border-neutral-900 font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             style={{ MozAppearance: 'textfield' }}
                           />
                           <button
                             type="button"
+                            disabled={formColorStock}
                             onClick={() => setFormStock((formStock || 0) + 1)}
                             className="w-9 h-9 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 active:scale-95 text-neutral-800 font-black text-sm flex items-center justify-center cursor-pointer shadow-2xs"
                           >
@@ -2794,11 +2819,11 @@ function AdminWorkspace() {
                           </button>
                         </div>
                         <div className="text-[11px] font-bold text-neutral-700 mt-1 flex items-center gap-1.5">
-                          <span className={`w-2 h-2 rounded-full ${formStock > 5 ? "bg-emerald-500" : formStock > 0 ? "bg-amber-500" : "bg-rose-500"}`} />
+                          <span className={`w-2 h-2 rounded-full ${displayedStock > 5 ? "bg-emerald-500" : displayedStock > 0 ? "bg-amber-500" : "bg-rose-500"}`} />
                           <span>
-                            {formStock > 5
+                            {displayedStock > 5
                               ? "En Stock"
-                              : formStock > 0
+                              : displayedStock > 0
                               ? "Bajo stock"
                               : "Agotado"}
                           </span>
@@ -2806,6 +2831,7 @@ function AdminWorkspace() {
                       </div>
                     </div>
 
+                    <ColorStockEditor enabled={formColorStock} colors={formColors} onEnabled={(enabled) => { if (!enabled && formColors.every((color) => Number.isSafeInteger(color.stockCount))) { try { setFormStock(colorStockTotal(formColors)); } catch { /* Keep the previous total until the quantities are valid. */ } } setFormColorStock(enabled); }} onChange={setFormColors} />
                     {/* Switch Promoción Especial */}
                     <div className="p-3.5 rounded-xl border border-neutral-200 bg-neutral-50/60 space-y-2.5">
                       <label className="flex items-center gap-2.5 cursor-pointer select-none">
@@ -3020,7 +3046,7 @@ function AdminWorkspace() {
                         </div>
                         <div>
                           <span className="text-[10px] text-neutral-400 block uppercase">Stock</span>
-                          <strong className="text-neutral-950 block">{formStock} unidades</strong>
+                          <strong className="text-neutral-950 block">{displayedStock} unidades</strong>
                         </div>
                         <div>
                           <span className="text-[10px] text-neutral-400 block uppercase">Colores</span>
@@ -3084,10 +3110,10 @@ function AdminWorkspace() {
                       )}
                     </div>
                     <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold flex items-center gap-1.5 ${
-                      Number(formStock) > 0 ? "bg-neutral-100 text-neutral-900" : "bg-neutral-100 text-neutral-500"
+                      Number(displayedStock) > 0 ? "bg-neutral-100 text-neutral-900" : "bg-neutral-100 text-neutral-500"
                     }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${Number(formStock) > 0 ? "bg-emerald-500" : "bg-rose-500"}`} />
-                      <span>{Number(formStock) > 0 ? "En Stock" : "Agotado"}</span>
+                      <span className={`w-1.5 h-1.5 rounded-full ${Number(displayedStock) > 0 ? "bg-emerald-500" : "bg-rose-500"}`} />
+                      <span>{Number(displayedStock) > 0 ? "En Stock" : "Agotado"}</span>
                     </span>
                   </div>
 
@@ -4419,6 +4445,7 @@ function AdminWorkspace() {
                     {[
                       { id: "all", label: "Todas las Órdenes", count: sales.length, dotColor: "bg-neutral-400" },
                       { id: "pending", label: "Pendientes", count: sales.filter((s) => (s.deliveryStatus || "pending") === "pending").length, dotColor: "bg-amber-400" },
+                      { id: "prepared", label: "En preparación", count: sales.filter((s) => s.deliveryStatus === "prepared").length, dotColor: "bg-neutral-400" },
                       { id: "shipped", label: "En Camino", count: sales.filter((s) => s.deliveryStatus === "shipped").length, dotColor: "bg-blue-400" },
                       { id: "delivered", label: "Entregados", count: sales.filter((s) => s.deliveryStatus === "delivered").length, dotColor: "bg-emerald-600" },
                       { id: "cancelled", label: "Cancelados", count: sales.filter((s) => s.deliveryStatus === "cancelled").length, dotColor: "bg-neutral-300" },
@@ -4519,7 +4546,7 @@ function AdminWorkspace() {
                                 {STORE_SETTINGS.currencySymbol}{s.total.toFixed(2)}
                               </div>
                               <div className="text-[10px] font-bold text-neutral-400">
-                                {({ pending: "● Pendiente de despacho", shipped: "● En camino", delivered: "● Entregado y cobrado", cancelled: "● Cancelado" })[currentStatus]}
+                                {({ pending: "● Pendiente de despacho", prepared: "● En preparación", shipped: "● En camino", delivered: "● Entregado y cobrado", cancelled: "● Cancelado" })[currentStatus]}
                               </div>
                             </div>
                           </div>
@@ -4529,7 +4556,7 @@ function AdminWorkspace() {
                             <div>
                               <span className="text-[10px] uppercase font-bold text-neutral-400 block">Cliente</span>
                               <span className="font-bold text-neutral-900">{s.customerName}</span>
-                              <span className="text-neutral-400 text-[11px] ml-1.5 font-mono">({s.quantity} un.)</span>
+                              <span className="text-neutral-400 text-[11px] ml-1.5 font-mono">({s.quantity} un.){s.selectedColor ? ` · ${s.selectedColor}` : ""}</span>
                             </div>
 
                             <div>
@@ -4558,6 +4585,7 @@ function AdminWorkspace() {
                               </div>
                             )}
 
+                            <OrderTrackingTools saleId={s.id} />
                             {s.trackingNumber && (
                               <div>
                                 <span className="text-[10px] uppercase font-bold text-neutral-400 block">Guía / Courier</span>
@@ -4581,13 +4609,14 @@ function AdminWorkspace() {
                                 onChange={(e) =>
                                   handleUpdateDeliveryStatus(
                                     s.id,
-                                    e.target.value as "pending" | "shipped" | "delivered" | "cancelled"
+                                    e.target.value as NonNullable<SaleRecord["deliveryStatus"]>
                                   )
                                 }
                                 className="text-xs font-bold px-3 py-1.5 rounded-xl border border-neutral-300 bg-white text-neutral-900 focus:outline-none focus:border-neutral-900 cursor-pointer shadow-2xs"
                               >
                                 <option value="pending">● Pendiente de Despacho</option>
-                                <option value="shipped">● En Camino (Courier / Reparto)</option>
+                                <option value="prepared">En preparación</option>
+                            <option value="shipped">● En Camino (Courier / Reparto)</option>
                                 <option value="delivered">● Entregado y Cobrado</option>
                                 <option value="cancelled">● Cancelado</option>
                               </select>
@@ -4697,7 +4726,7 @@ function AdminWorkspace() {
                         ) : (
                           <select aria-label="Producto vendido"
                             value={newSaleProduct}
-                            onChange={(e) => setNewSaleProduct(e.target.value)}
+                            onChange={(e) => { setNewSaleProduct(e.target.value); setNewSaleColor(""); }}
                             className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900 font-semibold cursor-pointer"
                           >
                             {products.map((item) => (
@@ -4709,6 +4738,7 @@ function AdminWorkspace() {
                         )}
                       </div>
 
+                      {!isManualProductEntry && products.find((product) => product.id === newSaleProduct)?.colors.length ? <label className="block text-xs font-bold text-neutral-800">Color vendido<select aria-label="Color vendido" value={newSaleColor} onChange={(event) => setNewSaleColor(event.target.value)} className="mt-1.5 w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 bg-white text-xs"><option value="">Elige un color</option>{products.find((product) => product.id === newSaleProduct)?.colors.map((color) => <option key={color.name} value={color.name}>{color.name}{color.stockCount !== undefined ? ' — ' + color.stockCount + ' uds' : ''}</option>)}</select></label> : null}
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="text-xs font-bold text-neutral-800 block mb-1.5">
@@ -4853,10 +4883,11 @@ function AdminWorkspace() {
                           </label>
                           <select aria-label="Estado inicial de despacho"
                             value={newSaleDeliveryStatus}
-                            onChange={(e) => setNewSaleDeliveryStatus(e.target.value as "pending" | "shipped" | "delivered" | "cancelled")}
+                            onChange={(e) => setNewSaleDeliveryStatus(e.target.value as NonNullable<SaleRecord["deliveryStatus"]>)}
                             className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900 font-semibold cursor-pointer"
                           >
                             <option value="pending">Pendiente de Despacho</option>
+                            <option value="prepared">En preparación</option>
                             <option value="shipped">En Camino (Courier / Motorizado)</option>
                             <option value="delivered">Entregado y Cobrado</option>
                           </select>

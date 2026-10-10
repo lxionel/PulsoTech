@@ -3,6 +3,7 @@ export interface ProductColor {
   hex: string;
   image: string;
   images?: string[];
+  stockCount?: number;
 }
 
 export interface ProductSpecItem {
@@ -107,6 +108,7 @@ export interface SaleRecord {
   notes?: string;
   customerPhone?: string;
   customerAddress?: string;
-  deliveryStatus?: "pending" | "shipped" | "delivered" | "cancelled";
+  deliveryStatus?: "pending" | "prepared" | "shipped" | "delivered" | "cancelled";
   trackingNumber?: string;
+  selectedColor?: string;
 }

@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { Product } from "@/types";
 import { createMutationQueue, confirmMutation, createReadGuard } from "@/lib/confirmed-mutation";
 import { validateProductContent } from "@/lib/content-security";
+import { hasColorStock } from "@/lib/variant-stock";
+import type { SaleCommandSuccess } from "@/lib/private-sales";
 import { productForCache } from "@/lib/browser-cache";
 import { createCatalogRefresh } from "@/lib/catalog-refresh";
 import { PRODUCTS } from "@/data/products";
@@ -29,7 +31,7 @@ interface ProductsContextType {
   updateProduct: (product: Product, expected?: Product) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   updateStock: (id: string, deltaOrExact: number, isDelta?: boolean) => Promise<void>;
-  applyConfirmedStock: (stock: { id: string; stockCount: number; inStock: boolean }) => void;
+  applyConfirmedStock: (stock: NonNullable<SaleCommandSuccess["stock"]>) => void;
   exportProductsJson: () => string;
   brands: string[];
   addBrand: (brand: string) => Promise<void>;
@@ -298,6 +300,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const updateStock = useCallback((id: string, value: number, isDelta = false) => enqueue(async () => {
     const target = state.current.products.find((item) => item.id === id);
     if (!target) throw new Error("El producto ya no existe.");
+    if (hasColorStock(target)) throw new Error("Este producto tiene stock por color. Edita sus cantidades desde el formulario del producto.");
     const stock = isDelta ? Math.max(0, target.stockCount + value) : value;
     if (!Number.isSafeInteger(stock) || stock < 0 || stock > 1e6) throw new Error("El stock debe ser un número entero entre 0 y 1 000 000.");
     const updatedAt = new Date().toISOString();
@@ -310,9 +313,10 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   }), [enqueue, writeConfirmed, commitProducts, refreshFromCloud]);
 
   // A receipt from the sales transaction is already persisted; do not write it again.
-  const applyConfirmedStock = useCallback((stock: { id: string; stockCount: number; inStock: boolean }) => {
+  const applyConfirmedStock = useCallback((stock: NonNullable<SaleCommandSuccess["stock"]>) => {
     if (!Number.isSafeInteger(stock.stockCount) || stock.stockCount < 0) return;
-    commitProducts(state.current.products.map((item) => item.id === stock.id ? { ...item, ...stock } : item));
+    commitProducts(state.current.products.map((item) => item.id === stock.id ? { ...item, stockCount: stock.stockCount, inStock: stock.inStock, updatedAt: stock.updatedAt || item.updatedAt,
+      colors: stock.colorStocks ? item.colors.map((color) => ({ ...color, stockCount: stock.colorStocks?.find((row) => row.name === color.name)?.stockCount ?? color.stockCount })) : item.colors } : item));
   }, [commitProducts]);
 
   const changeGroup = useCallback((field: "brand" | "category", action: "add" | "rename" | "delete", name: string, replacement = "") => enqueue(async () => {

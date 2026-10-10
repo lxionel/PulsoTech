@@ -2,11 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { toggleComparisonSelection, resolveComparisonProducts } from "../src/lib/comparison.ts";
 
-test("comparison selects two models and prevents a third selection", () => {
+test("comparison selects three models and prevents a fourth selection", () => {
   let ids = toggleComparisonSelection([], "a");
   ids = toggleComparisonSelection(ids, "b");
   assert.deepEqual(ids, ["a", "b"]);
-  assert.deepEqual(toggleComparisonSelection(ids, "c"), ["a", "b"]);
+  ids = toggleComparisonSelection(ids, "c");
+  assert.deepEqual(ids, ["a", "b", "c"]);
+  assert.deepEqual(toggleComparisonSelection(ids, "d"), ids);
 });
 
 test("removing a selected model allows a replacement without losing the other", () => {

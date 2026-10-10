@@ -12,6 +12,7 @@ export default function FloatingWidgets() {
   if (
     /^\/bolsa\/?$/.test(pathname || "") ||
     /^\/favoritos\/?$/.test(pathname || "") ||
+    /^\/pedido\/?$/.test(pathname || "") ||
     (pathname && pathname.includes("Lionel260606")) ||
     (typeof window !== "undefined" && window.location.pathname.includes("Lionel260606"))
   ) {

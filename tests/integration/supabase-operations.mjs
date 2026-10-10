@@ -80,7 +80,7 @@ try {
   const ordinary = client(local.ANON_KEY);
 
   stage = "install current schema";
-  for (const file of ["supabase_schema.sql", "supabase/activate-atomic-sales.sql", "supabase/activate-backups.sql", "supabase/activate-commerce.sql", "supabase/activate-complaints.sql"]) {
+  for (const file of ["supabase_schema.sql", "supabase/activate-atomic-sales.sql", "supabase/activate-backups.sql", "supabase/activate-commerce.sql", "supabase/activate-complaints.sql", "supabase/activate-shopping-experience.sql"]) {
     sql(await readFile(new URL(`../../${file}`, import.meta.url), "utf8"));
   }
   for (let attempt = 0; attempt < 30; attempt++) {
@@ -235,7 +235,7 @@ try {
 
   stage = "operational recovery on real PostgreSQL";
   // This fixed container contains synthetic records only; Auth and schema are retained.
-  sql("truncate public.products,public.store_settings,public.sale_operations,public.complaints restart identity;");
+  sql("truncate public.products,public.store_settings,public.sale_operations,public.complaints,public.order_tracking_links restart identity;");
   sql(createRecoverySql(snapshot));
   const restored = success(await admin.rpc("export_store_backup"));
   assert.deepEqual(restored.tables, snapshot.tables);
@@ -253,6 +253,49 @@ try {
   success(await admin.from("products").delete().eq("id", row.id));
   assert.deepEqual(success(await anon.from("products").select("id").eq("id", row.id)), []);
   checks.push("removal preserves retry identities and administrator product deletion works");
+
+  stage = "separate color stock over real PostgREST sessions";
+  const variantColors = [{ name: "Negro", hex: "#111111", image: "/qa-black.png", stockCount: 1 }, { name: "Blanco", hex: "#ffffff", image: "/qa-white.png", stockCount: 2 }];
+  success(await admin.from("products").insert({ ...row, id: "qa-variant", slug: "synthetic-variant", colors: variantColors, stock_count: 3 }));
+  assert.ok((await admin.from("products").update({ stock_count: 4 }).eq("id", "qa-variant")).error);
+  const variantRace = await Promise.all([
+    record(admin, { ...sale("VTA-variant-a"), selectedColor: "Negro" }, "qa-variant"),
+    record(second, { ...sale("VTA-variant-b"), selectedColor: "Negro" }, "qa-variant"),
+  ]);
+  assert.equal(variantRace.filter(result => !result.error).length, 1);
+  const won = variantRace.find(result => !result.error).data;
+  assert.deepEqual(won.stock.colorStocks, [{ name: "Negro", stockCount: 0 }, { name: "Blanco", stockCount: 2 }]);
+  assert.equal(won.stock.stockCount, 2);
+  assert.equal(success(await record(admin, { ...sale(won.sale.id), selectedColor: "Negro" }, "qa-variant")).replayed, true);
+  assert.ok((await record(admin, sale("VTA-variant-no-color"), "qa-variant")).error);
+  checks.push("variant race sells black once, keeps both white units and requires an explicit color");
+
+  stage = "private order link permissions and state updates";
+  assert.ok((await ordinary.rpc("create_order_tracking_link", { p_sale_id: won.sale.id })).error);
+  assert.ok((await anon.rpc("create_order_tracking_link", { p_sale_id: won.sale.id })).error);
+  assert.ok((await anon.from("order_tracking_links").select("*")).error);
+  const orderLink = success(await admin.rpc("create_order_tracking_link", { p_sale_id: won.sale.id }));
+  assert.match(orderLink.code, /^[a-f0-9]{64}$/);
+  assert.equal(success(await anon.rpc("get_order_tracking", { p_code: won.sale.id })), null);
+  for (const status of ["prepared", "shipped", "delivered", "cancelled"]) {
+    success(await admin.rpc("change_sale_status", { p_id: won.sale.id, p_status: status }));
+    const publicOrder = success(await anon.rpc("get_order_tracking", { p_code: orderLink.code }));
+    assert.deepEqual(publicOrder, { productName: row.name, quantity: 1, status });
+  }
+  const renewedLink = success(await admin.rpc("create_order_tracking_link", { p_sale_id: won.sale.id }));
+  assert.equal(success(await anon.rpc("get_order_tracking", { p_code: orderLink.code })), null);
+  const privateSnapshot = success(await admin.rpc("export_store_backup"));
+  assert.equal(privateSnapshot.tables.order_tracking_links.length, 1);
+  assert.equal(JSON.stringify(privateSnapshot).includes(renewedLink.code), false);
+  sql("truncate public.products,public.store_settings,public.sale_operations,public.complaints,public.order_tracking_links restart identity;");
+  sql(createRecoverySql(privateSnapshot));
+  assert.deepEqual(success(await admin.rpc("export_store_backup")).tables, privateSnapshot.tables);
+  assert.equal(success(await anon.rpc("get_order_tracking", { p_code: renewedLink.code })).status, "cancelled");
+  sql("update public.order_tracking_links set expires_at=now()-interval '1 second';");
+  assert.equal(success(await anon.rpc("get_order_tracking", { p_code: renewedLink.code })), null);
+  success(await admin.rpc("remove_sale_record", { p_id: won.sale.id }));
+  assert.equal(sql("select count(*) from public.order_tracking_links;"), "0");
+  checks.push("private tracking exposes three fields only; states, renewal, expiry, deletion and exact backup recovery pass");
 
   const report = { passed: true, checks, publicReadLoad, syntheticOnly: true, hostedProjectsContacted: false, browserTest: false };
   console.log(JSON.stringify(report, null, 2));

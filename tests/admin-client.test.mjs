@@ -7,6 +7,7 @@ import { verifyAdminAccess, isPublicSupabaseKey } from "../src/lib/admin-auth.ts
 import { normalizeSalesRecords } from "../src/lib/private-sales.ts";
 import { attachCatalogMedia } from "../src/lib/catalog-media.ts";
 import { parseCommerceSettings } from "../src/lib/commerce.ts";
+import { parseOrderTracking } from "../src/lib/order-tracking.ts";
 import { parseCoupons } from "../src/lib/coupon-validation.ts";
 
 const require = createRequire(import.meta.url);
@@ -66,6 +67,7 @@ new Function("require", "module", "exports", source)((name) => {
   if (name === "./private-sales") return { normalizeSalesRecords };
   if (name === "./catalog-media") return { attachCatalogMedia };
   if (name === "./commerce") return { parseCommerceSettings };
+  if (name === "./order-tracking") return { parseOrderTracking };
   if (name === "./coupon-validation") return { parseCoupons };
   return require(name);
 }, compiledModule, compiledModule.exports);

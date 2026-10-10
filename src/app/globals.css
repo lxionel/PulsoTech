@@ -52,7 +52,7 @@ body:has(.store-footer[data-in-view="true"]) .store-whatsapp-widget {
     padding-bottom: calc(72px + env(safe-area-inset-bottom));
   }
 
-  body:has(.store-product-page[data-purchase-actions-visible="true"]) .store-whatsapp-widget {
+  body:has(.store-product-page) .store-whatsapp-widget {
     display: none;
   }
 }

@@ -2,7 +2,9 @@
 
 import { productHref } from "@/lib/catalog-links";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { COMPARISON_LIMIT } from "@/lib/comparison";
+import { comparisonDifference } from "@/lib/catalog-discovery";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -35,8 +37,9 @@ export default function ProductComparison() {
   const pathname = usePathname();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const barRef = useRef<HTMLElement>(null);
-  const isAdmin = pathname.includes("Lionel260606");
-  const visible = isOpen && selectedProducts.length === 2 && !isAdmin && !isCartOpen && !isFavoritesOpen;
+  const [differencesOnly, setDifferencesOnly] = useState(false);
+  const isAdmin = pathname.includes("Lionel260606") || /^\/pedido\/?$/.test(pathname);
+  const visible = isOpen && selectedProducts.length >= 2 && !isAdmin && !isCartOpen && !isFavoritesOpen;
   useBodyScrollLock(visible);
 
   useEffect(() => {
@@ -63,17 +66,17 @@ export default function ProductComparison() {
     { label: "Micrófono", values: selectedProducts.map((product) => findCustomSpec(product, ["microfono"]) || UNSPECIFIED) },
     { label: "Conectividad", values: selectedProducts.map((product) => findCustomSpec(product, ["bluetooth", "conectividad"]) || product.specs?.connectivity?.trim() || UNSPECIFIED) },
     { label: "Disponibilidad", values: selectedProducts.map((product) => (product.stockCount ?? 0) > 0 && product.inStock !== false ? "En stock" : "Agotado") },
-  ];
+  ].filter((row) => !differencesOnly || comparisonDifference(row.values));
 
   return (
     <>
       {!isCartOpen && !isFavoritesOpen && (
         <aside ref={barRef} tabIndex={-1} aria-label="Modelos seleccionados para comparar" className="store-motion store-comparison-bar fixed bottom-4 left-4 right-20 sm:right-auto sm:w-[min(620px,calc(100vw-15rem))] z-40 rounded-2xl border border-neutral-200 bg-white shadow-xl p-3 flex items-center gap-2 sm:gap-3">
           <div className="min-w-0 flex-1" aria-live="polite">
-            <p className="text-xs sm:text-sm font-extrabold text-neutral-950">{selectedProducts.length}/2 modelos</p>
+            <p className="text-xs sm:text-sm font-extrabold text-neutral-950">{selectedProducts.length}/{COMPARISON_LIMIT} modelos</p>
             <p className="text-[10px] sm:text-xs text-neutral-500 truncate">{selectedProducts.length === 1 ? "Elige otro para comparar" : "Listos para comparar"}</p>
           </div>
-          <button type="button" disabled={selectedProducts.length !== 2} onClick={() => setIsOpen(true)} className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white text-xs font-bold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0">
+          <button type="button" disabled={selectedProducts.length < 2} onClick={() => setIsOpen(true)} className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white text-xs font-bold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0">
             <GitCompareArrows aria-hidden="true" className="w-3.5 h-3.5 hidden sm:block" />
             Comparar
           </button>
@@ -94,7 +97,7 @@ export default function ProductComparison() {
             const rect = event.currentTarget.getBoundingClientRect();
             if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) setIsOpen(false);
           }}
-          className="store-motion m-auto w-[calc(100%-2rem)] max-w-3xl max-h-[85dvh] p-0 rounded-2xl bg-white border border-neutral-200 text-neutral-950 shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-xs open:flex flex-col"
+          className="store-motion m-auto w-[calc(100%-2rem)] max-w-5xl max-h-[85dvh] p-0 rounded-2xl bg-white border border-neutral-200 text-neutral-950 shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-xs open:flex flex-col"
         >
           <div className="p-4 sm:p-5 border-b border-neutral-200 flex items-start justify-between gap-3 shrink-0">
             <div>
@@ -105,10 +108,11 @@ export default function ProductComparison() {
               <X aria-hidden="true" className="w-5 h-5" />
             </button>
           </div>
-          <div className="overflow-y-auto min-h-0">
-            <table className="w-full table-fixed text-xs sm:text-sm">
-              <caption className="sr-only">Características de los dos modelos seleccionados</caption>
-              <colgroup><col className="w-[28%]" /><col className="w-[36%]" /><col className="w-[36%]" /></colgroup>
+          <label className="flex items-center gap-2 px-4 sm:px-5 py-3 border-b border-neutral-200 text-xs cursor-pointer"><input type="checkbox" checked={differencesOnly} onChange={(event) => setDifferencesOnly(event.target.checked)} className="w-4 h-4 accent-black" />Mostrar diferencias</label>
+          <div className="overflow-auto min-h-0">
+            <table className={`w-full table-fixed text-xs sm:text-sm ${selectedProducts.length === 3 ? "min-w-[680px]" : ""}`}>
+              <caption className="sr-only">Características de los modelos seleccionados</caption>
+              <colgroup><col style={{ width: "28%" }} />{selectedProducts.map((product) => <col key={product.id} style={{ width: `${72 / selectedProducts.length}%` }} />)}</colgroup>
               <thead>
                 <tr>
                   <th scope="col" className="sticky top-0 z-10 bg-white p-2 sm:p-4 text-left align-top text-neutral-500 font-semibold break-words">Características</th>
@@ -126,6 +130,7 @@ export default function ProductComparison() {
                 </tr>
               </thead>
               <tbody>
+                {rows.length === 0 && <tr><td colSpan={selectedProducts.length + 1} className="p-6 text-center text-neutral-500">No hay diferencias en las características registradas.</td></tr>}
                 {rows.map((row) => (
                   <tr key={row.label} className="border-t border-neutral-100 even:bg-neutral-50/60">
                     <th scope="row" className="px-2 py-3 sm:px-4 text-left font-semibold text-neutral-600 break-words">{row.label}</th>

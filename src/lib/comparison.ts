@@ -1,6 +1,6 @@
 import type { Product } from "@/types";
 
-export const COMPARISON_LIMIT = 2;
+export const COMPARISON_LIMIT = 3;
 
 export function toggleComparisonSelection(ids: string[], id: string): string[] {
   const selected = Array.from(new Set(ids)).slice(0, COMPARISON_LIMIT);

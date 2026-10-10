@@ -4,8 +4,19 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { getAssetUrl } from "@/utils/paths";
+import { useProducts } from "@/context/ProductsContext";
+import { productHref } from "@/lib/catalog-links";
+import { isStorefrontProduct } from "@/lib/commerce";
 
 export default function HeroSection() {
+  const { products } = useProducts();
+  const featured = products.find((product) => product.specs.storeHero === "yes" && isStorefrontProduct(product) && product.inStock && product.stockCount > 0);
+  if (featured) return <div className="w-full h-full min-h-[460px] bg-neutral-950 text-white flex items-center pt-20 pb-8 sm:pb-12">
+    <div className="max-w-7xl mx-auto w-full px-5 sm:px-8 lg:px-12 grid grid-cols-1 sm:grid-cols-2 items-center gap-6 sm:gap-12">
+      <div className="order-2 sm:order-1 text-center sm:text-left max-w-lg mx-auto sm:mx-0"><p className="text-xs uppercase tracking-widest text-neutral-400 mb-3">{featured.brand}</p><h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-tight">{featured.name}</h1>{featured.subtitle && <p className="text-sm sm:text-base text-neutral-300 leading-7 mt-4">{featured.subtitle}</p>}<Link href={productHref(featured)} className="inline-flex min-h-12 items-center justify-center px-7 bg-[#15803d] hover:bg-[#166534] text-white text-sm font-semibold rounded-lg mt-6">Ver producto</Link><Link href="#catalogo" className="inline-flex min-h-12 items-center px-5 text-sm text-neutral-300 hover:text-white mt-6">Explorar catálogo</Link></div>
+      <div className="order-1 sm:order-2 bg-white rounded-xl p-5 aspect-[4/3] sm:aspect-square max-h-[min(50dvh,440px)] flex items-center justify-center"><img src={getAssetUrl(featured.colors[0]?.image || featured.images?.[0] || "/placeholder-earbuds.svg")} alt={featured.name} fetchPriority="high" className="w-auto h-auto max-w-full max-h-full object-contain" /></div>
+    </div>
+  </div>;
   return (
     <div className="store-motion relative w-full min-h-[460px] sm:h-full sm:min-h-[340px] overflow-hidden bg-neutral-950 select-none flex items-center">
       {/* Background Panoramic Photography en maxima resolucion */}
@@ -27,13 +38,6 @@ export default function HeroSection() {
       {/* En móvil, el contenido se centra en el espacio debajo de la cabecera. */}
       <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 xl:px-14 w-full pt-16 sm:pt-20 pb-0 sm:pb-8">
         <div className="store-hero-copy max-w-[340px] sm:max-w-[440px] mx-auto sm:mx-0 flex flex-col items-center sm:items-start text-center sm:text-left space-y-3 sm:space-y-4">
-          {/* Badge original: Fondo negro y letras blancas, limpio y sin punto */}
-          <div>
-            <span className="inline-block px-2.5 sm:px-3 py-1 rounded-md text-[10px] sm:text-xs font-black tracking-widest uppercase bg-neutral-950 text-white shadow-xs border border-white/10 sm:border-transparent">
-              STOCK DISPONIBLE
-            </span>
-          </div>
-
           {/* Título breve, con saltos equilibrados en móvil. */}
           <h1 className="text-[clamp(2rem,8.2vw,2.75rem)] sm:text-4xl lg:text-[44px] font-black tracking-tight leading-[1.12] text-white text-balance sm:text-wrap">
             Tecnología para tu día a día

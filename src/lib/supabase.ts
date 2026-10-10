@@ -1,3 +1,4 @@
+import { parseOrderTracking } from "./order-tracking";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { Product, ProductColor, ProductSpecs, ProductSpecItem, SoundProfile, Coupon, SaleRecord } from "@/types";
 import { isPublicSupabaseKey, verifyAdminAccess } from "./admin-auth";
@@ -469,6 +470,7 @@ export async function executeSalesCommand(command: SaleCommand): Promise<SaleCom
     if (sale.id !== command.sale.id || !records.some((record) => record.id === sale.id)) throw new Error("Orden no confirmada.");
     const stock = data.stock ?? null;
     if (command.productId && (!stock || stock.id !== command.productId || !Number.isSafeInteger(stock.stockCount) || stock.stockCount < 0 || typeof stock.inStock !== "boolean")) throw new Error("Stock no confirmado.");
+    if (stock?.colorStocks !== undefined && (!Array.isArray(stock.colorStocks) || stock.colorStocks.some((color: { name: string; stockCount: number }) => typeof color.name !== "string" || !Number.isSafeInteger(color.stockCount) || color.stockCount < 0) || stock.colorStocks.reduce((sum: number, color: { stockCount: number }) => sum + color.stockCount, 0) !== stock.stockCount)) throw new Error("Stock por color no confirmado.");
     return { ok: true, records, sale, stock };
   } catch {
     return { ok: false, message: "No pudimos confirmar la operación. Recarga el historial antes de reintentar.", uncertain: true };
@@ -486,6 +488,23 @@ export async function fetchStoreBackup(): Promise<unknown> {
   if (error) throw new Error(error.code === "PT413" ? error.message : "No se pudo obtener la copia. Comprueba tu acceso y conexión.");
   if (!data) throw new Error("Supabase no confirmó los datos de la copia.");
   return data;
+}
+
+export async function createOrderTrackingLink(saleId: string): Promise<{ code: string; expiresAt: string }> {
+  const client = getSupabaseClient();
+  if (!client) throw new Error("La conexión no está disponible.");
+  await requireStoreAdmin(client);
+  const { data, error } = await client.rpc("create_order_tracking_link", { p_sale_id: saleId }).abortSignal(AbortSignal.timeout(15000));
+  if (error || !data || !/^[a-f0-9]{64}$/.test(data.code) || !Number.isFinite(Date.parse(data.expiresAt))) throw new Error("No se confirmó el enlace. Reintenta con tu sesión de administrador activa.");
+  return { code: data.code, expiresAt: data.expiresAt };
+}
+
+export async function fetchOrderTracking(code: string, signal: AbortSignal) {
+  const client = getSupabaseClient();
+  if (!client) throw new Error("La conexión no está disponible.");
+  const { data, error } = await client.rpc("get_order_tracking", { p_code: code }).abortSignal(AbortSignal.any([signal, AbortSignal.timeout(12000)]));
+  if (error) throw new Error("No se pudo consultar el pedido.");
+  return parseOrderTracking(data);
 }
 
 export async function fetchCouponsFromSupabase(): Promise<Coupon[] | null> {

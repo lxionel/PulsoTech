@@ -1,4 +1,5 @@
 import type { CartItem, Coupon, Product, ProductColor } from "@/types";
+import { hasColorStock, stockForColor } from "./variant-stock.ts";
 
 export function availableStock(product?: Product): number {
   if (!product || product.inStock === false || !Number.isFinite(product.stockCount)) return 0;
@@ -10,7 +11,9 @@ function colorName(item: CartItem): string {
 }
 
 export function cartQuantityLimit(items: CartItem[], products: Product[], productId: string, color: string): number {
-  const stock = availableStock(products.find((product) => product.id === productId));
+  const product = products.find((product) => product.id === productId);
+  if (product && hasColorStock(product)) return stockForColor(product, color);
+  const stock = availableStock(product);
   const otherColors = items.reduce((sum, item) => item.product.id === productId && colorName(item) !== color
     ? sum + item.quantity : sum, 0);
   return Math.max(0, stock - otherColors);
@@ -32,6 +35,9 @@ export function inspectCart(items: CartItem[], products: Product[]) {
     else if (product.colors?.length && !product.colors.some((color) => color.name === colorName(item))) {
       message = "Este color ya no está disponible. Retíralo y elige otro en la ficha.";
     } else if (!Number.isInteger(item.quantity) || item.quantity < 1) message = "Revisa la cantidad de este producto.";
+    else if (hasColorStock(product) && items.filter((line) => line.product.id === product.id && colorName(line) === colorName(item)).reduce((sum, line) => sum + line.quantity, 0) > stockForColor(product, colorName(item))) {
+      message = `Quedan ${stockForColor(product, colorName(item))} unidades de ${colorName(item)}. Reduce la cantidad o elige otro color.`;
+    }
     else if (items.filter((line) => line.product.id === product.id).reduce((sum, line) => sum + line.quantity, 0) > availableStock(product)) {
       message = `Quedan ${availableStock(product)} unidades en total para este modelo, entre todos los colores. Reduce la cantidad.`;
     }
@@ -49,8 +55,8 @@ export function addCartItem(items: CartItem[], products: Product[], productId: s
   if (product.colors?.length && !product.colors.some((candidate) => candidate.name === color.name)) {
     return { items, notice: "El color seleccionado ya no está disponible. Elige otro en la ficha." };
   }
-  const used = items.filter((item) => item.product.id === productId).reduce((sum, item) => sum + item.quantity, 0);
-  const added = Math.min(quantity, Math.max(0, stock - used));
+  const used = items.filter((item) => item.product.id === productId && colorName(item) === color.name).reduce((sum, item) => sum + item.quantity, 0);
+  const added = Math.min(quantity, Math.max(0, cartQuantityLimit(items, products, productId, color.name) - used));
   if (added === 0) return { items, notice: `Ya tienes todas las unidades disponibles de ${product.name} en tu bolsa.` };
   const liveColor = product.colors?.find((candidate) => candidate.name === color.name) || color;
   const exists = items.some((item) => item.product.id === productId && colorName(item) === color.name);

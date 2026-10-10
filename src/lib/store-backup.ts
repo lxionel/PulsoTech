@@ -6,7 +6,7 @@ export interface StoreSnapshot {
   format: "PulsoTech-operational-backup";
   version: 1;
   createdAt: string;
-  tables: { products: Row[]; store_settings: Row[]; sale_operations: Row[]; complaints: Row[] | null };
+  tables: { products: Row[]; store_settings: Row[]; sale_operations: Row[]; complaints: Row[] | null; order_tracking_links?: Row[] };
 }
 const productColumns = "id name slug subtitle description price original_price brand category in_stock stock_count is_featured is_new rating reviews_count video_url colors images custom_specs specs sound_profile features tags created_at updated_at".split(" ");
 const complaintColumns = "id reference created_at provider submission status response responded_at".split(" ");
@@ -26,11 +26,15 @@ export function validateStoreSnapshot(value: unknown): asserts value is StoreSna
   if (!isRow(value) || value.format !== "PulsoTech-operational-backup" || value.version !== 1 ||
       typeof value.createdAt !== "string" || !Number.isFinite(Date.parse(value.createdAt)) || !isRow(value.tables) ||
       Object.keys(value).some((key) => !["format", "version", "createdAt", "tables"].includes(key)) ||
-      Object.keys(value.tables).some((key) => !["products", "store_settings", "sale_operations", "complaints"].includes(key))) throw new Error("Formato de copia no admitido.");
+      Object.keys(value.tables).some((key) => !["products", "store_settings", "sale_operations", "complaints", "order_tracking_links"].includes(key))) throw new Error("Formato de copia no admitido.");
   const tables = value.tables;
   rows(tables.products, "id", productColumns, 10000);
   rows(tables.store_settings, "key", ["key", "value", "updated_at"], settingKeys.length);
   rows(tables.sale_operations, "id", ["id", "request_hash", "product_id", "created_at"], 100000);
+  if (tables.order_tracking_links !== undefined) {
+    rows(tables.order_tracking_links, "sale_id", ["sale_id", "token_hash", "created_at", "expires_at"], 10000);
+    if (tables.order_tracking_links.some((row) => typeof row.token_hash !== "string" || !/^[a-f0-9]{64}$/.test(row.token_hash) || typeof row.created_at !== "string" || !Number.isFinite(Date.parse(row.created_at)) || typeof row.expires_at !== "string" || !Number.isFinite(Date.parse(row.expires_at)))) throw new Error("Enlaces de seguimiento inválidos.");
+  }
   if (tables.products.some((p) => typeof p.name !== "string" || typeof p.price !== "number" || !Number.isFinite(p.price) || p.price < 0 ||
       !Number.isSafeInteger(p.stock_count) || Number(p.stock_count) < 0 || typeof p.in_stock !== "boolean")) throw new Error("Inventario inválido.");
   for (const setting of tables.store_settings) {
@@ -39,7 +43,7 @@ export function validateStoreSnapshot(value: unknown): asserts value is StoreSna
       key === "ordersEnabled" ? typeof value !== "boolean" : !["owner", "ruc", "address", "email", "hours", "deliveryArea", "deliveryCost", "deliveryTime"].includes(key) || typeof value !== "string" || value.length > 500))) throw new Error("Configuración comercial inválida.");
     if (setting.key === "commerce_schema_version" && setting.value !== 1) throw new Error("Versión comercial no admitida.");
     if (setting.key === "sales_records") {
-      rows(setting.value, "id", ["id", "productName", "quantity", "total", "channel", "customerName", "date", "timestamp", "paymentMethod", "notes", "customerPhone", "customerAddress", "deliveryStatus", "trackingNumber"], 10000);
+      rows(setting.value, "id", ["id", "productName", "quantity", "total", "channel", "customerName", "date", "timestamp", "paymentMethod", "notes", "customerPhone", "customerAddress", "deliveryStatus", "trackingNumber", "selectedColor"], 10000);
       if (setting.value.some((sale) => !Number.isSafeInteger(sale.quantity) || Number(sale.quantity) < 1 || typeof sale.total !== "number" || !Number.isFinite(sale.total) || sale.total < 0)) throw new Error("Ventas inválidas.");
     }
   }
@@ -117,9 +121,12 @@ do $$ begin
 end $$;
 ${snapshot.tables.complaints !== null ? `lock table public.complaints in access exclusive mode;
 do $$ begin if exists(select 1 from public.complaints) then raise exception 'El destino tiene reclamos: no se reemplazaron datos.'; end if; end $$;` : ""}
+${snapshot.tables.order_tracking_links !== undefined ? `lock table public.order_tracking_links in access exclusive mode;
+do $$ begin if exists(select 1 from public.order_tracking_links) then raise exception 'El destino tiene enlaces de seguimiento: no se reemplazaron datos.'; end if; end $$;` : ""}
 ${insert("products", snapshot.tables.products)}
 ${insert("store_settings", snapshot.tables.store_settings)}
 ${insert("sale_operations", snapshot.tables.sale_operations)}
+${snapshot.tables.order_tracking_links !== undefined ? insert("order_tracking_links", snapshot.tables.order_tracking_links) : ""}
 ${snapshot.tables.complaints !== null ? insert("complaints", snapshot.tables.complaints, true) + "\nselect setval(pg_get_serial_sequence('public.complaints','reference'), greatest(coalesce((select max(reference) from public.complaints),0),1), exists(select 1 from public.complaints));" : ""}
 commit;
 `;

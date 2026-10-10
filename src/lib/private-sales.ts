@@ -22,7 +22,7 @@ export interface SaleCommandSuccess {
   ok: true;
   records: SaleRecord[];
   sale?: SaleRecord;
-  stock?: { id: string; stockCount: number; inStock: boolean } | null;
+  stock?: { id: string; stockCount: number; inStock: boolean; updatedAt?: string; colorStocks?: { name: string; stockCount: number }[] } | null;
 }
 export type SaleCommandResult = SaleCommandSuccess | { ok: false; message: string; uncertain: boolean };
 
@@ -35,8 +35,8 @@ export function normalizeSalesRecords(value: unknown): SaleRecord[] {
       typeof item.date !== "string" || !Number.isSafeInteger(item.quantity) || item.quantity <= 0 ||
       !Number.isFinite(item.total) || item.total < 0 ||
       (item.channel !== undefined && !["WhatsApp", "Presencial", "Web"].includes(item.channel)) ||
-      (item.deliveryStatus !== undefined && !["pending", "shipped", "delivered", "cancelled"].includes(item.deliveryStatus)) ||
-      ["paymentMethod", "notes", "customerPhone", "customerAddress", "trackingNumber"].some((key) => {
+      (item.deliveryStatus !== undefined && !["pending", "prepared", "shipped", "delivered", "cancelled"].includes(item.deliveryStatus)) ||
+      ["paymentMethod", "notes", "customerPhone", "customerAddress", "trackingNumber", "selectedColor"].some((key) => {
         const field = item[key as keyof SaleRecord];
         return field !== undefined && typeof field !== "string";
       })) throw new Error("Historial inválido.");

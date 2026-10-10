@@ -18,7 +18,7 @@ export default function CompareProductButton({ product, compact = false }: { pro
       aria-pressed={isSelected}
       aria-label={`${isSelected ? "Quitar de la comparación" : "Comparar"}: ${product.name}`}
       disabled={limitReached}
-      title={limitReached ? "Quita un modelo para comparar otro. Máximo 2 modelos." : undefined}
+      title={limitReached ? `Quita un modelo para comparar otro. Máximo ${COMPARISON_LIMIT} modelos.` : undefined}
       onClick={() => toggleProduct(product.id)}
       className={compact ? `min-h-11 inline-flex items-center gap-2 text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${isSelected ? "text-neutral-950" : "text-neutral-500 hover:text-neutral-950"}` : `min-h-11 sm:min-h-0 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-colors active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ${isSelected
         ? "bg-neutral-100 border-neutral-300 text-neutral-950"

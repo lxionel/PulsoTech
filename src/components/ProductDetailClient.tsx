@@ -15,6 +15,10 @@ import { productCommerce } from "@/lib/commerce";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
+import ProductImageViewer from "@/components/ProductImageViewer";
+import { relatedProducts as findRelatedProducts } from "@/lib/catalog-discovery";
+import { stockForColor } from "@/lib/variant-stock";
+import { parseProductFaq } from "@/lib/product-faq";
 import ShareProductButton from "@/components/ShareProductButton";
 import CompareProductButton from "@/components/CompareProductButton";
 import { useComparison } from "@/context/ComparisonContext";
@@ -35,6 +39,7 @@ import {
   Heart,
   Play,
   Plus,
+  Maximize2,
 } from "lucide-react";
 
 function getSpecIcon(label: string) {
@@ -72,16 +77,18 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   const [requestedImageIndex, setSelectedImageIndex] = useState(0);
   const [imageSize, setImageSize] = useState<{ source: string; width: number; height: number } | null>(null);
   const [isVideoActive, setIsVideoActive] = useState(false);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const isFav = isFavorite(product.id);
-  const isOutOfStock = (product.stockCount ?? 0) <= 0 || product.inStock === false;
-  const purchaseQuantity = isOutOfStock ? 0 : Math.min(quantity, product.stockCount);
+  const selectedStock = stockForColor(product, product.colors.some((color) => color.name === selectedColorName) ? selectedColorName : null);
+  const isOutOfStock = selectedStock <= 0;
+  const purchaseQuantity = isOutOfStock ? 0 : Math.min(quantity, selectedStock);
   const purchaseTotal = Math.round(product.price * purchaseQuantity * 100) / 100;
-  const showMobilePurchase = !purchaseActionsVisible && !isCartOpen && !isFavoritesOpen && !(isComparisonOpen && selectedProducts.length === 2);
+  const showMobilePurchase = !purchaseActionsVisible && !isImageViewerOpen && !isCartOpen && !isFavoritesOpen && !(isComparisonOpen && selectedProducts.length >= 2);
 
   React.useEffect(() => {
     const target = purchaseActions.current;
     if (!target) return;
-    const observer = new IntersectionObserver(([entry]) => setPurchaseActionsVisible(entry.isIntersecting && entry.intersectionRatio > 0.15), { rootMargin: "0px 0px -80px 0px", threshold: [0, 0.15] });
+    const observer = new IntersectionObserver(([entry]) => setPurchaseActionsVisible(entry.isIntersecting), { rootMargin: "0px 0px -76px 0px", threshold: 0 });
     observer.observe(target);
     return () => observer.disconnect();
   }, []);
@@ -162,6 +169,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   const currentImageSize = imageSize?.source === activeImage ? imageSize : null;
 
   const handleSelectColor = (index: number) => {
+    setQuantity(1);
     setSelectedColorName(colors[index].name);
     setColorRequired(false);
     setGalleryColorName(colors[index].name);
@@ -201,7 +209,8 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
     addItem(product, currentColor, purchaseQuantity);
   };
 
-  const relatedProducts = products.filter((p) => p.id !== product.id);
+  const relatedProducts = findRelatedProducts(product, products);
+  const questions = parseProductFaq(product);
   const hasOverview = Boolean(product.description || product.features.length);
   const specificationMidpoint = Math.ceil(allSpecsList.length / 2);
   const specificationColumns = [
@@ -265,12 +274,12 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                   )}
                 </div>
               ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
+                <button type="button" onClick={() => setIsImageViewerOpen(true)} aria-label={`Ampliar fotos de ${product.name}`} className="absolute inset-0 flex items-center justify-center cursor-zoom-in">
                   <img key={activeImage} src={getAssetUrl(activeImage)} alt={product.name}
                     decoding="async" fetchPriority="high"
                     onLoad={(event) => { const image = event.currentTarget; setImageSize({ source: activeImage, width: image.naturalWidth, height: image.naturalHeight }); }}
                     className="block w-auto h-auto max-w-full max-h-full object-contain" />
-                </div>
+                </button>
               )}
 
               {/* Prev/Next arrows if multiple images and not in video mode */}
@@ -296,6 +305,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
               )}
 
               {/* Image counter or Video indicator */}
+              {!isVideoActive && <button type="button" onClick={() => setIsImageViewerOpen(true)} aria-label="Ver fotos a pantalla completa" className="absolute bottom-3 left-3 w-11 h-11 rounded-full bg-white/95 border border-neutral-200 flex items-center justify-center hover:bg-neutral-50"><Maximize2 aria-hidden="true" className="w-4 h-4" /></button>}
               {isVideoActive ? (
                 <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 px-2.5 py-1 rounded-lg bg-red-600 text-white text-[10px] font-bold shadow-sm flex items-center gap-1">
                   <Play className="w-3 h-3 fill-white" />
@@ -403,9 +413,9 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                     const isSelected = selectedColorIndex === index;
                     const preview = colorImages(color)[0];
                     return (
-                      <button key={color.name + index} type="button" onClick={() => handleSelectColor(index)} aria-label={`Color ${color.name}`} aria-pressed={isSelected} title={color.name}
+                      <button key={color.name + index} type="button" onClick={() => handleSelectColor(index)} aria-label={`Color ${color.name}`} aria-pressed={isSelected} title={stockForColor(product, color.name) === 0 ? `${color.name}: agotado` : color.name}
                         className={`relative w-16 h-16 sm:w-[68px] sm:h-[68px] rounded-md border p-1.5 transition-colors duration-150 cursor-pointer flex items-center justify-center ${isSelected ? "border-neutral-950 ring-1 ring-neutral-950" : "border-neutral-200 hover:border-neutral-500"}`}>
-                        {preview ? <img src={getAssetUrl(preview)} alt="" className="w-full h-full object-contain" /> : <span aria-hidden="true" className="w-6 h-6 rounded-full border border-neutral-300" style={{ backgroundColor: color.hex }} />}
+                        {preview ? <img src={getAssetUrl(preview)} alt="" className={`w-full h-full object-contain ${stockForColor(product, color.name) === 0 ? "opacity-40" : ""}`} /> : <span aria-hidden="true" className="w-6 h-6 rounded-full border border-neutral-300" style={{ backgroundColor: color.hex }} />}
                       </button>
                     );
                   })}
@@ -414,19 +424,19 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
               </div>
             )}
 
-            <div className="store-product-purchase space-y-4">
+            <div ref={purchaseActions} className="store-product-purchase space-y-4">
               <div className="store-product-price flex flex-wrap items-baseline gap-3">
                 <span className="text-[32px] font-semibold tracking-tight text-neutral-950 tabular-nums">{STORE_SETTINGS.currencySymbol}{product.price.toFixed(2)}</span>
                 {!!product.originalPrice && product.originalPrice > product.price && <span className="text-sm text-neutral-400 line-through tabular-nums">{STORE_SETTINGS.currencySymbol}{product.originalPrice.toFixed(2)}</span>}
               </div>
               {purchaseQuantity > 1 && <p aria-live="polite" aria-atomic="true" className="text-sm text-neutral-600 tabular-nums">{purchaseQuantity} unidades · <span className="font-semibold text-neutral-950">Total {STORE_SETTINGS.currencySymbol}{purchaseTotal.toFixed(2)}</span></p>}
-              <div ref={purchaseActions} className="space-y-3">
+              <div className="space-y-3">
                 {isOutOfStock ? <div className="min-h-12 rounded-md bg-neutral-100 text-neutral-500 font-medium text-sm flex items-center justify-center">Agotado</div> : <>
                   <div className="flex gap-3">
                     <div role="group" aria-label="Cantidad" className="flex shrink-0 items-center border border-neutral-300 rounded-md">
                       <button type="button" onClick={() => setQuantity(Math.max(1, purchaseQuantity - 1))} disabled={purchaseQuantity <= 1} aria-label="Reducir cantidad" className="w-11 min-h-12 text-neutral-600 hover:text-black cursor-pointer disabled:opacity-40">−</button>
                       <span className="w-8 text-center text-sm font-medium tabular-nums">{purchaseQuantity}</span>
-                      <button type="button" onClick={() => setQuantity(Math.min(product.stockCount, purchaseQuantity + 1))} disabled={purchaseQuantity >= product.stockCount} aria-label="Aumentar cantidad" className="w-11 min-h-12 text-neutral-600 hover:text-black cursor-pointer disabled:opacity-40">+</button>
+                      <button type="button" onClick={() => setQuantity(Math.min(selectedStock, purchaseQuantity + 1))} disabled={purchaseQuantity >= selectedStock} aria-label="Aumentar cantidad" className="w-11 min-h-12 text-neutral-600 hover:text-black cursor-pointer disabled:opacity-40">+</button>
                     </div>
                     <button type="button" onClick={handleAddToCart} className="flex-1 min-w-0 min-h-12 px-2 sm:px-4 rounded-md bg-neutral-950 hover:bg-neutral-800 text-white text-[13px] sm:text-sm font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer">
                       <ShoppingBag className="hidden min-[360px]:block w-4 h-4 shrink-0" />Añadir a la bolsa
@@ -502,6 +512,12 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
         </details>}
 
         {/* Related Products Section */}
+        {questions.length > 0 && <section aria-labelledby="product-questions" className="mt-8 sm:mt-12 border-t border-neutral-200">
+          <h2 id="product-questions" className="py-5 text-lg font-semibold">Preguntas sobre este producto</h2>
+          <div className="divide-y divide-neutral-200 border-b border-neutral-200">
+            {questions.map((row, index) => <details key={index} className="group py-1"><summary className="min-h-12 py-3 flex justify-between items-center gap-4 list-none [&::-webkit-details-marker]:hidden cursor-pointer text-sm font-medium">{row.question}<Plus className="w-4 h-4 shrink-0 text-neutral-500 group-open:rotate-45" /></summary><p className="text-sm text-neutral-600 whitespace-pre-line leading-7 pb-4 max-w-3xl">{row.answer}</p></details>)}
+          </div>
+        </section>}
         {relatedProducts.length > 0 && (
           <div className="mt-20 pt-12 border-t border-neutral-200">
             <div className="flex items-center justify-between mb-8">
@@ -510,7 +526,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                   Otros modelos disponibles
                 </h2>
                 <p className="text-xs text-neutral-500">
-                  Compara y encuentra los audífonos ideales para ti.
+                  Explora opciones de la misma categoría.
                 </p>
               </div>
               <Link
@@ -569,6 +585,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
       </aside>}
 
       <Footer />
+      {isImageViewerOpen && <ProductImageViewer images={galleryImages} index={selectedImageIndex} title={product.name} onIndexChange={setSelectedImageIndex} onClose={() => setIsImageViewerOpen(false)} />}
     </div>
   );
 }

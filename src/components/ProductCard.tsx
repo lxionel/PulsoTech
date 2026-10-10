@@ -1,6 +1,7 @@
 "use client";
 
 import { productHref } from "@/lib/catalog-links";
+import { stockForColor } from "@/lib/variant-stock";
 
 import React, { useState } from "react";
 import Link from "next/link";
@@ -31,7 +32,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const primaryImage = getAssetUrl(gallery[0]);
   const secondaryImage = gallery[1] ? getAssetUrl(gallery[1]) : null;
 
-  const isOutOfStock = (product.stockCount ?? 0) <= 0 || product.inStock === false;
+  const isOutOfStock = stockForColor(product, selectedColorName) <= 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -59,11 +60,6 @@ export default function ProductCard({ product }: { product: Product }) {
             <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
               {product.brand}
             </span>
-            {product.id && (
-              <span className="font-mono text-[10px] font-bold text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded border border-neutral-200">
-                #{product.id}
-              </span>
-            )}
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
@@ -72,11 +68,7 @@ export default function ProductCard({ product }: { product: Product }) {
               <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-neutral-100 text-neutral-500 border border-neutral-200 tracking-wide">
                 Agotado
               </span>
-            ) : (
-              <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-neutral-950 text-white tracking-wide">
-                En Stock
-              </span>
-            )}
+            ) : null}
 
             {/* Favorite button */}
             <button
@@ -198,7 +190,7 @@ export default function ProductCard({ product }: { product: Product }) {
             className={`w-full min-h-12 sm:min-h-0 py-2.5 sm:py-3 px-4 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2 shadow-xs active:scale-[0.97] transition-all duration-200 cursor-pointer ${
               justAdded
                 ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
-                : "bg-neutral-950 hover:bg-neutral-800 text-white hover:shadow-md"
+                : "bg-[#15803d] hover:bg-[#166534] text-white"
             }`}
           >
             {justAdded ? (

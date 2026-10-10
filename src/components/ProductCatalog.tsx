@@ -3,6 +3,10 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useProducts } from "@/context/ProductsContext";
 import ProductCard from "./ProductCard";
+import Link from "next/link";
+import { productHref } from "@/lib/catalog-links";
+import { searchSuggestions, matchesCatalogSearch } from "@/lib/catalog-discovery";
+import { getAssetUrl } from "@/utils/paths";
 import AudioFiltersPanel from "./AudioFiltersPanel";
 import {
   type AudioFilters,
@@ -46,6 +50,9 @@ export default function ProductCatalog({
   const [priceRange, setPriceRange] = useState<"all" | "under50" | "50to100" | "over100" | "custom">("all");
   const [customMaxPrice, setCustomMaxPrice] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchBox = useRef<HTMLDivElement>(null);
+  const compactFilters = products.length < 9;
   const [sortBy, setSortBy] = useState<"featured" | "price-asc" | "price-desc">("featured");
   const [showOutOfStock, setShowOutOfStock] = useState(false);
   const [onlyNew, setOnlyNew] = useState(false);
@@ -105,7 +112,7 @@ export default function ProductCatalog({
     const dialog = filtersDialogRef.current;
     const previousFocus = document.activeElement;
     const desktop = window.matchMedia("(min-width: 1024px)");
-    const handleResize = () => { if (desktop.matches) setIsMobileFiltersOpen(false); };
+    const handleResize = () => { if (desktop.matches && !compactFilters) setIsMobileFiltersOpen(false); };
     if (dialog && !dialog.open) dialog.showModal();
     handleResize();
     desktop.addEventListener("change", handleResize);
@@ -114,7 +121,7 @@ export default function ProductCatalog({
       if (dialog?.open) dialog.close();
       if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus({ preventScroll: true });
     };
-  }, [isMobileFiltersOpen]);
+  }, [isMobileFiltersOpen, compactFilters]);
 
   // Filter products logic
   const productsMatchingGeneralFilters = useMemo(() => {
@@ -134,17 +141,7 @@ export default function ProductCatalog({
       // New releases
       if (onlyNew && !product.isNew) return false;
 
-      // Search query: busca por ID, nombre, marca o subtítulo
-      const query = searchQuery.trim().toLowerCase();
-      if (query) {
-        const matchesQuery =
-          product.id.toLowerCase().includes(query) ||
-          product.name.toLowerCase().includes(query) ||
-          (product.subtitle && product.subtitle.toLowerCase().includes(query)) ||
-          (product.brand && product.brand.toLowerCase().includes(query)) ||
-          (product.tags && product.tags.some((t) => t.toLowerCase().includes(query)));
-        if (!matchesQuery) return false;
-      }
+      if (!matchesCatalogSearch(product, searchQuery)) return false;
 
       return true;
     });
@@ -169,6 +166,7 @@ export default function ProductCatalog({
 
   // Sort products
   const sortedProducts = useMemo(() => sortCatalog(filteredProducts, sortBy), [filteredProducts, sortBy]);
+  const suggestions = searchSuggestions(baseProducts, searchQuery);
 
   const hasActiveFilters =
     hasAudioFilters ||
@@ -216,7 +214,7 @@ export default function ProductCatalog({
     ? "Catálogo de Cargadores Portátiles"
     : selectedCategory !== "todos"
     ? `Catálogo: ${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}`
-    : "Catálogo Disponible";
+    : "Catálogo";
 
   const breadcrumbLabel = isAudioCat
     ? "Audífonos"
@@ -236,7 +234,7 @@ export default function ProductCatalog({
             <span className="text-neutral-300">/</span>
             <span className="text-neutral-900 font-bold">{breadcrumbLabel}</span>
           </div>
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-neutral-950">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-neutral-950">
             {categoryTitle}
           </h2>
           <p className="text-sm sm:text-base text-neutral-600 max-w-2xl leading-relaxed">
@@ -245,14 +243,16 @@ export default function ProductCatalog({
         </div>
 
         {/* Search Input */}
-        <div className="relative w-full md:w-80 shrink-0">
+        <div ref={searchBox} className="relative w-full md:w-80 shrink-0" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setSearchFocused(false); }}>
           <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             aria-label="Buscar productos"
-            placeholder="Buscar por ID, modelo o marca..."
+            placeholder="Buscar modelo o marca"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => { setSearchQuery(e.target.value); setSearchFocused(true); }}
+            onFocus={() => setSearchFocused(true)}
+            onKeyDown={(event) => { if (event.key === "Escape") setSearchFocused(false); if (event.key === "ArrowDown" && suggestions.length) { event.preventDefault(); searchBox.current?.querySelector<HTMLAnchorElement>("nav a")?.focus(); } }}
             className="w-full min-h-12 sm:min-h-0 pl-10 pr-9 py-2.5 rounded-xl bg-white border border-neutral-200 text-base sm:text-xs font-medium text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 transition-colors shadow-2xs"
           />
           {searchQuery && (
@@ -264,13 +264,19 @@ export default function ProductCatalog({
               <X className="w-3.5 h-3.5" />
             </button>
           )}
+          {searchFocused && searchQuery.trim() && suggestions.length > 0 && <nav aria-label="Resultados rápidos" className="absolute top-full left-0 right-0 mt-2 z-20 rounded-xl border border-neutral-200 bg-white shadow-lg overflow-hidden">
+            {suggestions.map((product) => <Link key={product.id} href={productHref(product)} onClick={() => setSearchFocused(false)} className="flex items-center gap-3 p-3 hover:bg-neutral-50 focus:bg-neutral-100">
+              <img src={getAssetUrl(product.colors?.[0]?.image || product.images?.[0] || "/placeholder-earbuds.svg")} alt="" className="w-11 h-11 shrink-0 object-contain" />
+              <div className="min-w-0"><p className="text-xs font-semibold truncate">{product.name}</p><p className="text-xs text-neutral-500 mt-1">S/ {product.price.toFixed(2)}</p></div>
+            </Link>)}
+          </nav>}
         </div>
       </div>
 
       {/* Main Two-Column E-Commerce Layout: Vertical Filters (Left) + Grid (Right) */}
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
         {/* Left Column: Vertical Sidebar Filters (Desktop) */}
-        <aside className="hidden lg:block w-64 lg:w-72 shrink-0 bg-white p-6 rounded-2xl border border-neutral-200/80 shadow-2xs space-y-6 sticky top-24">
+        <aside className={`${compactFilters ? "hidden" : "hidden lg:block"} w-64 lg:w-72 shrink-0 bg-white p-6 rounded-2xl border border-neutral-200/80 shadow-2xs space-y-6 sticky top-24`}>
           {/* Header of filters sidebar */}
           <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
             <div className="flex items-center gap-2">
@@ -477,7 +483,7 @@ export default function ProductCatalog({
                   onClick={() => setIsMobileFiltersOpen(true)}
                   aria-haspopup="dialog"
                   aria-expanded={isMobileFiltersOpen}
-                  className="lg:hidden min-h-11 sm:min-h-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-neutral-950 text-white font-bold text-xs uppercase tracking-wider shadow-xs active:scale-95 transition-all cursor-pointer"
+                  className={`${compactFilters ? "" : "lg:hidden"} min-h-11 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-neutral-200 bg-white text-neutral-950 font-semibold text-xs cursor-pointer`}
                 >
                   <Filter className="w-3.5 h-3.5" />
                   <span>Filtros</span>
@@ -600,7 +606,7 @@ export default function ProductCatalog({
           {isLoading && products.length === 0 ? (
             <div role="status" className="py-16 text-center text-sm text-neutral-500">Cargando productos...</div>
           ) : sortedProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${compactFilters ? "lg:grid-cols-3 xl:grid-cols-4" : "xl:grid-cols-3"} gap-4 sm:gap-6`}>
               {sortedProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
@@ -638,7 +644,7 @@ export default function ProductCatalog({
         <dialog ref={filtersDialogRef} aria-labelledby="mobile-filters-title"
           onCancel={(event) => { event.preventDefault(); setIsMobileFiltersOpen(false); }}
           onClick={(event) => { if (event.target === event.currentTarget) setIsMobileFiltersOpen(false); }}
-          className="fixed inset-0 m-0 h-dvh w-screen max-h-none max-w-none border-0 p-0 bg-transparent lg:hidden open:flex justify-end backdrop:bg-black/60 backdrop:backdrop-blur-xs">
+          className="fixed inset-0 m-0 h-dvh w-screen max-h-none max-w-none border-0 p-0 bg-transparent open:flex justify-end backdrop:bg-black/60 backdrop:backdrop-blur-xs">
           <div className="store-mobile-filters relative w-full max-w-[calc(100%-1rem)] sm:max-w-xs bg-white h-full p-5 sm:p-6 overflow-y-auto overscroll-contain space-y-6 shadow-2xl flex flex-col justify-between z-10 animate-in slide-in-from-right duration-200">
             <div className="space-y-6">
               <div className="flex items-center justify-between pb-4 border-b border-neutral-200">

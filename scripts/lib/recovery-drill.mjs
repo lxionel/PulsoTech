@@ -24,6 +24,7 @@ export async function verifyIsolatedRecovery(snapshot, exercise) {
     for (const path of ["supabase/activate-atomic-sales.sql", "supabase/activate-backups.sql"]) await load(path);
     if (snapshot.tables.store_settings.some(row => row.key === "commerce_schema_version")) await load("supabase/activate-commerce.sql");
     if (snapshot.tables.complaints !== null) await load("supabase/activate-complaints.sql");
+    if (snapshot.tables.order_tracking_links !== undefined) await load("supabase/activate-shopping-experience.sql");
     await db.exec(createRecoverySql(snapshot));
     await db.query("select set_config('request.jwt.claim.sub',$1,false),set_config('request.jwt.claims',$2,false)", [owner, JSON.stringify({ sub: owner, aal: "aal2" })]);
     await db.exec("set role authenticated");
