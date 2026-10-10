@@ -17,6 +17,7 @@ test("separate color stock caps each variant without consuming another color", (
   assert.equal(inspectCart(items, [product]).issues.size, 0);
   const changed = { ...product, stockCount: 3, colors: [product.colors[0], { ...product.colors[1], stockCount: 0 }] };
   assert.equal(stockForColor(changed, "Blanco"), 0);
+  assert.match(addCartItem([], [changed], changed.id, changed.colors[1], 1).notice, /color está agotado/);
   assert.match(inspectCart(items, [changed]).issues.get(`${product.id}:Blanco`), /0 unidades de Blanco/);
 });
 test("legacy stock stays shared and invalid variant inventories are rejected", () => {

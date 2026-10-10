@@ -119,10 +119,15 @@ do $$ begin
     raise exception 'Recuperación detenida: el destino debe estar vacío. No se reemplazaron datos.';
   end if;
 end $$;
+do $$ declare occupied boolean; begin
+  if to_regclass('public.order_tracking_links') is not null then
+    execute 'lock table public.order_tracking_links in access exclusive mode';
+    execute 'select exists(select 1 from public.order_tracking_links)' into occupied;
+    if occupied then raise exception 'El destino tiene enlaces de seguimiento: no se reemplazaron datos.'; end if;
+  end if;
+end $$;
 ${snapshot.tables.complaints !== null ? `lock table public.complaints in access exclusive mode;
 do $$ begin if exists(select 1 from public.complaints) then raise exception 'El destino tiene reclamos: no se reemplazaron datos.'; end if; end $$;` : ""}
-${snapshot.tables.order_tracking_links !== undefined ? `lock table public.order_tracking_links in access exclusive mode;
-do $$ begin if exists(select 1 from public.order_tracking_links) then raise exception 'El destino tiene enlaces de seguimiento: no se reemplazaron datos.'; end if; end $$;` : ""}
 ${insert("products", snapshot.tables.products)}
 ${insert("store_settings", snapshot.tables.store_settings)}
 ${insert("sale_operations", snapshot.tables.sale_operations)}

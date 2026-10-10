@@ -28,9 +28,14 @@ Las huellas y vencimientos están incluidos en el respaldo cifrado y en la recup
 
 ## Validación
 
-- 187 pruebas locales aprobadas, incluyendo inventario por color, agotados, compatibilidad con productos anteriores, reintentos, permisos, seguimiento, renovación, caducidad y recuperación exacta.
+- 188 pruebas locales aprobadas, incluyendo inventario por color, agotados, compatibilidad con productos anteriores, reintentos, permisos, seguimiento, renovación, caducidad y recuperación exacta. Un respaldo antiguo también rechaza un destino ocupado por enlaces de seguimiento.
 - Revisión de código y compilación estática aprobadas.
 - Extensión aplicada al proyecto PulsoTech mediante `supabase/activate-shopping-experience.sql`. La migración equivalente se conserva en `supabase/migrations/20261010000000_color_stock_and_order_tracking.sql`.
 - Se comprueba que los datos del producto #534777 y del historial permanezcan idénticos antes y después de la instalación.
 
-La verificación publicada en escritorio y móvil, y la integración de las funciones nuevas sobre PostgreSQL/PostgREST real, se documentan después del despliegue. Las condiciones comerciales reales y la activación de pedidos siguen pendientes del negocio.
+- Integración aprobada en GitHub sobre PostgreSQL, Auth/MFA y PostgREST reales, en contenedores descartables. Dos sesiones compiten por la última unidad de Negro: solo una venta; Blanco conserva su stock. También se comprueban permisos, renovación, vencimiento, limpieza y recuperación de enlaces. [Ejecución de la versión principal](https://github.com/lxionel/PulsoTech/actions/runs/38090325055).
+- Navegador publicado: filtros compactos, resultados vacíos y restablecimiento; sugerencias con foto y precio y selección con teclado; color explícito y galería correspondiente; visor completo, ampliación, flechas y Escape en escritorio. En 390 × 844 no hay desbordamiento horizontal; las miniaturas y flechas funcionan en el visor móvil. El precio visible oculta la barra fija, y el salto a especificaciones la muestra al quedar fuera de pantalla. No se envían pedidos ni se modifica la bolsa existente.
+- Seguimiento publicado sin código muestra el estado de enlace no disponible, con `noindex, nofollow` y `no-referrer`. El recorrido válido se prueba con datos sintéticos en la integración aislada, sin emitir un enlace para la venta histórica.
+- En esta sesión el navegador solicita acceso al panel; los controles administrativos nuevos se validan por compilación y pruebas, sin afirmar un ensayo autenticado de su interfaz. La selección táctil por gesto está implementada, pero no se acredita una prueba física en teléfono.
+
+Las condiciones comerciales reales y la activación de pedidos siguen pendientes del negocio. La portada destacada, las preguntas propias y el inventario separado por color se activan al editar cada producto, con sus datos reales. No se crean reseñas ni se anuncian productos más vendidos sin evidencia.

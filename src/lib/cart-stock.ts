@@ -55,6 +55,7 @@ export function addCartItem(items: CartItem[], products: Product[], productId: s
   if (product.colors?.length && !product.colors.some((candidate) => candidate.name === color.name)) {
     return { items, notice: "El color seleccionado ya no está disponible. Elige otro en la ficha." };
   }
+  if (hasColorStock(product) && stockForColor(product, color.name) === 0) return { items, notice: "Este color está agotado. Elige otro en la ficha del producto." };
   const used = items.filter((item) => item.product.id === productId && colorName(item) === color.name).reduce((sum, item) => sum + item.quantity, 0);
   const added = Math.min(quantity, Math.max(0, cartQuantityLimit(items, products, productId, color.name) - used));
   if (added === 0) return { items, notice: `Ya tienes todas las unidades disponibles de ${product.name} en tu bolsa.` };

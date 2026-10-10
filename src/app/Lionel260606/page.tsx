@@ -2776,9 +2776,9 @@ function AdminWorkspace() {
                           </span>
                           <input aria-label="Precio de venta"
                             type="number"
-                            step="0.5"
+                            step="0.01"
                             required
-                            min={1}
+                            min={0.01}
                             placeholder="0.00"
                             value={formPrice}
                             onChange={(e) => setFormPrice(parseFloat(e.target.value) || 0)}
@@ -2854,7 +2854,7 @@ function AdminWorkspace() {
                             </label>
                             <input aria-label="Precio regular"
                               type="number"
-                              step="0.5"
+                              step="0.01"
                               placeholder="0.00"
                               value={formOriginalPrice}
                               onChange={(e) => setFormOriginalPrice(parseFloat(e.target.value) || 0)}

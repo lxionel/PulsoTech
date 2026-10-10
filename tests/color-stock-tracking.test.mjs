@@ -86,3 +86,12 @@ test("renewal, expiry and deletion revoke access, and backups restore the privat
   await role("postgres");
   assert.equal((await db.query("select count(*)::integer n from order_tracking_links")).rows[0].n, 0);
 });
+
+test("an older backup cannot restore over an existing private link", async () => {
+  await role("postgres");
+  await db.exec("truncate products,store_settings,sale_operations,order_tracking_links");
+  await db.exec("insert into order_tracking_links values('VTA-orphan',repeat('a',64),now(),now()+interval '1 day')");
+  const oldSnapshot = { format: "PulsoTech-operational-backup", version: 1, createdAt: new Date().toISOString(), tables: { products: [], store_settings: [], sale_operations: [], complaints: null } };
+  await assert.rejects(db.exec(createRecoverySql(oldSnapshot)), /destino tiene enlaces/);
+  await db.exec("rollback");
+});

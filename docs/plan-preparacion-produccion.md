@@ -30,6 +30,7 @@ Confirmó el plan gratuito de PulsoTech. Las pruebas de servicios se ejecutan en
 
 ## Evidencia y límites
 
+- [Mejoras de compra, galería, inventario por color y seguimiento privado del 10 de octubre](mejoras-tienda-2026-10-10.md): alcance implementado, comprobación pública y pruebas aisladas. Los datos comerciales y el catálogo definitivo continúan pendientes.
 - [Resultados de esta ejecución](validacion-operativa-2026-10-08.md).
 - [Comparación de funciones y permisos instalados en Supabase](evidencia-supabase-2026-10-08.json): metadatos únicamente; no confirma una venta desde la interfaz.
 - [Copia actualizada y restauración aislada después de instalar reclamos](evidencia-respaldo-2026-10-08.json): el archivo privado está fuera del repositorio.

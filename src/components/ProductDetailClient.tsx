@@ -72,7 +72,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
   const colorSelector = React.useRef<HTMLDivElement>(null);
   const purchaseActions = React.useRef<HTMLDivElement>(null);
   const specificationDetails = React.useRef<HTMLDetailsElement>(null);
-  const [purchaseActionsVisible, setPurchaseActionsVisible] = useState(false);
+  const [purchaseActionsVisible, setPurchaseActionsVisible] = useState(true);
   const [galleryColorName, setGalleryColorName] = useState<string | null>(null);
   const [requestedImageIndex, setSelectedImageIndex] = useState(0);
   const [imageSize, setImageSize] = useState<{ source: string; width: number; height: number } | null>(null);
